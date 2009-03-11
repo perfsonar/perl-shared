@@ -180,9 +180,13 @@ Creates a URI from a host, port, and endpoint
 sub getHttpURI {
     my ( $host, $port, $endpoint ) = @_;
     my $logger = get_logger( "perfSONAR_PS::Transport" );
-    $logger->debug( "Created URI: http://" . $host . ":" . $port . "/" . $endpoint );
     $endpoint = "/" . $endpoint if ( $endpoint =~ /^[^\/]/ );
-    return 'http://' . $host . ':' . $port . $endpoint;
+	if ($host =~ /:/) {
+	    $host = "[".$host."]";
+	}
+    my $uri = 'http://' . $host . ':' . $port . $endpoint;
+    $logger->debug( "Created URI: $uri");
+	return $uri;
 }
 
 =head2 setContactEndPoint($self, $contactEndPoint)  
