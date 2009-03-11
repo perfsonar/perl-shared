@@ -1,0 +1,39 @@
+<html>
+  <head>
+    <title>perfAdmin - Service Display - perfSONAR-BUOY One Way Latency Data</title>
+  </head>
+  <body>
+    <table width="95%" align="center" cellpadding="1" border="2">
+      <tr>
+        <th align="center" colspan="5"><tmpl_var name=EVENTTYPE> @ <tmpl_var name=SERVICE></th>
+      </tr>
+      <tr>
+        <th align="center">Source Address</th>
+        <th align="center">Source Host</th>
+        <th align="center">Destination Address</th>
+        <th align="center">Destination Host</th>
+        <th align="center">Graph</th>
+      </tr>
+      <tmpl_loop name=PAIRS>
+      <tr>
+        <td align="center">
+          <tmpl_var name=SADDRESS>&nbsp;
+        </td>
+        <td align="center">
+          <tmpl_var name=SHOST>&nbsp;
+        </td>
+        <td align="center">
+          <tmpl_var name=DADDRESS>&nbsp;
+        </td>
+        <td align="center">
+          <tmpl_var name=DHOST>&nbsp;
+        </td>
+        <td align="center">
+          <input type="submit" value="Graph" id="graph2.<tmpl_var name=COUNT>" name="graph2.<tmpl_var name=COUNT>" onClick="window.open('./delayGraph.cgi?url=<tmpl_var name=SERVICE>&key=<tmpl_var name=KEY>&dst=<tmpl_var name=DADDRESS>&src=<tmpl_var name=SADDRESS>','graph2.<tmpl_var name=COUNT>','width=950,height=500,status=yes,scrollbars=yes,resizable=yes')" />
+        </td>
+      </tr>
+      </tmpl_loop>
+    </table>
+  </body>
+</html>
+

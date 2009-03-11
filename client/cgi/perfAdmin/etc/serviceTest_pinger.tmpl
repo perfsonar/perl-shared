@@ -1,0 +1,45 @@
+<html>
+  <head>
+    <title>perfAdmin - Service Display - PingER Latency Data</title>
+  </head>
+  <body>
+    <table width="95%" align="center" cellpadding="1" border="2">
+      <tr>
+        <th align="center" colspan="5"><tmpl_var name=EVENTTYPE> @ <tmpl_var name=SERVICE></th>
+      </tr>
+      <tr>
+        <th align="center">Source Address</th>
+        <th align="center">Source Host</th>
+        <th align="center">Destination Address</th>
+        <th align="center">Destination Host</th>
+        <th align="center">Graph</th>
+      </tr>
+      <tmpl_loop name=PAIRS>
+      <tr>
+        <td align="center">
+          <tmpl_var name=SADDRESS>&nbsp;
+        </td>
+        <td align="center">
+          <tmpl_var name=SHOST>&nbsp;
+        </td>
+        <td align="center">
+          <tmpl_var name=DADDRESS>&nbsp;
+        </td>
+        <td align="center">
+          <tmpl_var name=DHOST>&nbsp;
+        </td>
+        <tmpl_if name=PRESENT>   
+        <td align="center">
+          <input type="submit" value="Graph" id="pgraph2.<tmpl_var name=COUNT>" name="pgraph2.<tmpl_var name=COUNT>" onClick="window.open('./pinger/index.cgi?ma=<tmpl_var name=SERVICE>&get_it=jh34587wuhlkh789hbyf78343gort03idjuhf3785t0gfgofbf78o4348orgofg7o4fg7&link=<tmpl_var name=SHOST>:<tmpl_var name=DHOST>:<tmpl_var name=PACKETSIZE>&time_start=<tmpl_var name=STARTTIME>&time_end=<tmpl_var name=ENDTIME>&upper_rtt=auto&gmt_offset=-5&gtype=rt&gpresent=lines','pgraph.<tmpl_var name=COUNT>','width=460,height=250,status=yes,scrollbars=yes,resizable=yes')" />
+        </td>
+        <tmpl_else>
+        <td align="center">
+          <input type="submit" value="Graph" id="pgraph2.<tmpl_var name=COUNT>" name="pgraph2.<tmpl_var name=COUNT>" onClick="window.open('http://tukki.fnal.gov/pinger/pingerUI.pl?ma=<tmpl_var name=SERVICE>&get_it=jh34587wuhlkh789hbyf78343gort03idjuhf3785t0gfgofbf78o4348orgofg7o4fg7&link=<tmpl_var name=SHOST>:<tmpl_var name=DHOST>:<tmpl_var name=PACKETSIZE>&time_start=<tmpl_var name=STARTTIME>&time_end=<tmpl_var name=ENDTIME>&upper_rtt=auto&gmt_offset=-5&gtype=rt&gpresent=lines', 'pgraph.<tmpl_var name=COUNT>', 'width=460,height=250,status=yes,scrollbars=yes,resizable=yes')" />
+        </td>
+        </tmpl_if>
+      </tr>
+      </tmpl_loop>
+    </table>
+  </body>
+</html>
+

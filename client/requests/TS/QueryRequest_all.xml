@@ -1,0 +1,7 @@
+<nmwg:message type="QueryRequest" xmlns:nmwg="http://ggf.org/ns/nmwg/base/2.0/">
+    <nmwg:metadata id="meta0">
+      <nmwg:eventType>http://ggf.org/ns/nmwg/topology/20070809</nmwg:eventType>
+    </nmwg:metadata>
+
+    <nmwg:data id="data0" metadataIdRef="meta0" />
+</nmwg:message>

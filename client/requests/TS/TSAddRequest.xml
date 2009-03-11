@@ -1,0 +1,11 @@
+<nmwg:message type="TSAddRequest" xmlns:nmwg="http://ggf.org/ns/nmwg/base/2.0/">
+    <nmwg:metadata id="meta0">
+        <nmwg:eventType>http://ggf.org/ns/nmwg/topology/20070809</nmwg:eventType>
+    </nmwg:metadata>
+
+    <nmwg:data id="data0" metadataIdRef="meta0">
+        <nmtopo:topology xmlns:nmtopo="http://ogf.org/schema/network/topology/base/20070828/">
+            <nmtopo:domain id="urn:ogf:network:domain=internet2.edu" />
+        </nmtopo:topology>
+    </nmwg:data>
+</nmwg:message>
