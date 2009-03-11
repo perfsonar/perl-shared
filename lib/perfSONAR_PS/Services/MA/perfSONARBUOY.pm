@@ -7,7 +7,7 @@ use fields 'LS_CLIENT', 'NAMESPACES', 'METADATADB', 'LOGGER', 'RES';
 use strict;
 use warnings;
 
-our $VERSION = 0.10;
+our $VERSION = 3.1;
 
 =head1 NAME
 
@@ -126,10 +126,6 @@ sub init {
                 $self->{CONF}->{"perfsonarbuoy"}->{"owmesh"} = $self->{DIRECTORY} . "/" . $self->{CONF}->{"perfsonarbuoy"}->{"owmesh"};
             }
         }
-        else {
-            $self->{LOGGER}->fatal("Value for 'owmesh' is not set.");
-            return -1;            
-        }
     }
     else {
         $self->{LOGGER}->fatal("Value for 'owmesh' is not set.");
@@ -182,7 +178,7 @@ sub init {
         if ( exists $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_name"}
             and $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_name"} )
         {
-            if ( defined $self->{DIRECTORY} ) {
+            if ( exists $self->{DIRECTORY} and $self->{DIRECTORY} and -d $self->{DIRECTORY} ) {
                 unless ( $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_name"} =~ "^/" ) {
                     $self->{LOGGER}->warn( "Setting the value of \"\" to \"" . $self->{DIRECTORY} . "/" . $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_name"} . "\"" );
                     $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_name"} = $self->{DIRECTORY} . "/" . $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_name"};
@@ -894,7 +890,7 @@ sub createStorage {
 
 =head2 generateStoreParameters($self, { conf, paramHash, test, counter } )
 
-Given the parameterse from an owmesh file, list these in nmwg form.
+Given the parameters from an owmesh file, list these in nmwg form.
 
 =cut
 
@@ -962,6 +958,7 @@ sub generateStoreEndPointPair {
         @dstPart = split( /:/, $parameters->{conf}->get_val( NODE => $parameters->{n},      TYPE => $parameters->{type}, ATTR => "ADDR" ) );
     }
     else {
+        $self->{LOGGER}->warn( "Type \"" . $parameters->{type} . "\" was not recognized." );
         return;
     }
 
@@ -1022,9 +1019,10 @@ sub prepareDatabases {
     my $error = q{};
     my $metadatadb = new perfSONAR_PS::DB::XMLDB( { env => $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_name"}, cont => $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_file"}, ns => \%ma_namespaces, } );
     unless ( $metadatadb->openDB( { txn => q{}, error => \$error } ) == 0 ) {
-        throw perfSONAR_PS::Error_compat( "error.ls.xmldb", "There was an error opening \"" . $self->{CONF}->{"ls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"ls"}->{"metadata_db_file"} . "\": " . $error );
+        throw perfSONAR_PS::Error_compat( "error.perfSONAR-BUOY.xmldb", "There was an error opening \"" . $self->{CONF}->{"ls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"ls"}->{"metadata_db_file"} . "\": " . $error );
         return;
     }
+    $self->{LOGGER}->info( "Returning \"" . $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_file"} . "\"" );
     return $metadatadb;
 }
 
@@ -1055,6 +1053,23 @@ We then sleep for some amount of time and do it again.
 sub registerLS {
     my ( $self, $sleep_time ) = validateParamsPos( @_, 1, { type => SCALARREF }, );
 
+    if ( $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_type"} eq "xmldb" ) {
+        unless ( -d $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_name"} ) {
+            $self->{LOGGER}->fatal( "XMLDB is not defined, disallowing registration." );
+            return -1;
+        }
+    }
+    elsif ( $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_type"} eq "file" ) {
+        unless ( -f $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_file"} ) {
+            $self->{LOGGER}->fatal( "Store file not defined, disallowing registration." );
+            return -1;
+        }
+    }
+    else {
+        $self->{LOGGER}->fatal( "Metadata database is not configured, disallowing registration." );
+        return -1;
+    }
+    
     my ( $status, $res );
     my $ls = q{};
 
@@ -1309,6 +1324,7 @@ sub handleEvent {
     $self->{LOGGER}->debug("Request filter parameters: cf: $cf resolution: $resolution start: $start end: $end");
 
     if ( $parameters->{messageType} eq "MetadataKeyRequest" ) {
+        $self->{LOGGER}->info( "MetadataKeyRequest initiated." );
         return $self->maMetadataKeyRequest(
             {
                 output             => $parameters->{output},
@@ -1321,6 +1337,7 @@ sub handleEvent {
         );
     }
     elsif ( $parameters->{messageType} eq "SetupDataRequest" ) {
+        $self->{LOGGER}->info( "SetupDataRequest initiated." );
         return $self->maSetupDataRequest(
             {
                 output             => $parameters->{output},
@@ -1387,6 +1404,7 @@ sub maMetadataKeyRequest {
 
     my $nmwg_key = find( $parameters->{metadata}, "./nmwg:key", 1 );
     if ($nmwg_key) {
+        $self->{LOGGER}->info( "Key found - running MetadataKeyRequest with existing key." );
         $self->metadataKeyRetrieveKey(
             {
                 metadatadb         => $self->{METADATADB},
@@ -1399,6 +1417,7 @@ sub maMetadataKeyRequest {
         );
     }
     else {
+        $self->{LOGGER}->info( "Key not found - running MetadataKeyRequest without a key." );
         $self->metadataKeyRetrieveMetadataData(
             {
                 metadatadb         => $self->{METADATADB},
@@ -1412,6 +1431,7 @@ sub maMetadataKeyRequest {
 
     }
     if ( $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_type"} eq "xmldb" ) {
+        $self->{LOGGER}->debug( "Closing database." );
         $self->{METADATADB}->closeDB( { error => \$error } );
     }
     return;
@@ -1446,7 +1466,7 @@ sub metadataKeyRetrieveKey {
     my $hashKey = extract( find( $parameters->{key}, ".//nmwg:parameter[\@name=\"maKey\"]", 1 ), 0 );
     unless ($hashKey) {
         my $msg = "Key error in metadata storage: cannot find 'maKey' in request message.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         throw perfSONAR_PS::Error_compat( "error.ma.storage_result", $msg );
         return;
     }
@@ -1454,7 +1474,7 @@ sub metadataKeyRetrieveKey {
     my $hashId = $self->{CONF}->{"perfsonarbuoy"}->{"hashToId"}->{$hashKey};
     unless ($hashId) {
         my $msg = "Key error in metadata storage: 'maKey' cannot be found.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         throw perfSONAR_PS::Error_compat( "error.ma.storage_result", $msg );
         return;
     }
@@ -1467,9 +1487,11 @@ sub metadataKeyRetrieveKey {
         $query = "/nmwg:store[\@type=\"MAStore\"]/nmwg:data[\@id=\"" . $hashId . "\"]";
     }
 
+    $self->{LOGGER}->debug( "Running query \"" . $query . "\"" );
+
     if ( $parameters->{metadatadb}->count( { query => $query } ) != 1 ) {
         my $msg = "Key error in metadata storage: 'maKey' should exist, but matching data not found in database.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         throw perfSONAR_PS::Error_compat( "error.ma.storage_result", $msg );
         return;
     }
@@ -1526,6 +1548,8 @@ sub metadataKeyRetrieveMetadataData {
         $queryString = "/nmwg:store[\@type=\"MAStore\"]/nmwg:metadata[" . getMetadataXQuery( { node => $parameters->{metadata} } ) . "]";
     }
 
+    $self->{LOGGER}->debug( "Running query \"" . $query . "\"" );
+
     my $results             = $parameters->{metadatadb}->querySet( { query => $queryString } );
     my %et                  = ();
     my $eventTypes          = find( $parameters->{metadata}, "./nmwg:eventType", 0 );
@@ -1558,6 +1582,8 @@ sub metadataKeyRetrieveMetadataData {
         $queryString = $queryString . "]]";
     }
 
+    $self->{LOGGER}->debug( "Running query \"" . $queryString . "\"" );
+
     my $dataResults = $parameters->{metadatadb}->querySet( { query => $queryString } );
     if ( $results->size() > 0 and $dataResults->size() > 0 ) {
         my %mds = ();
@@ -1586,7 +1612,7 @@ sub metadataKeyRetrieveMetadataData {
             my $hashKey = $self->{CONF}->{"perfsonarbuoy"}->{"idToHash"}->{$hashId};
             unless ($hashKey) {
                 my $msg = "Key error in metadata storage: 'maKey' cannot be found.";
-                $self->{LOGGER}->error($msg);
+                $self->{LOGGER}->error( $msg );
                 throw perfSONAR_PS::Error_compat( "error.ma.storage", $msg );
             }
 
@@ -1614,7 +1640,7 @@ sub metadataKeyRetrieveMetadataData {
     }
     else {
         my $msg = "Database \"" . $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_file"} . "\" returned 0 results for search";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         throw perfSONAR_PS::Error_compat( "error.ma.storage", $msg );
     }
     return;
@@ -1672,6 +1698,7 @@ sub maSetupDataRequest {
 
     my $nmwg_key = find( $parameters->{metadata}, "./nmwg:key", 1 );
     if ($nmwg_key) {
+        $self->{LOGGER}->info( "Key found - running SetupDataRequest with existing key." );
         $self->setupDataRetrieveKey(
             {
                 metadatadb         => $self->{METADATADB},
@@ -1685,6 +1712,7 @@ sub maSetupDataRequest {
         );
     }
     else {
+        $self->{LOGGER}->info( "Key not found - running SetupDataRequest without key." );
         $self->setupDataRetrieveMetadataData(
             {
                 metadatadb         => $self->{METADATADB},
@@ -1697,6 +1725,7 @@ sub maSetupDataRequest {
         );
     }
     if ( $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_type"} eq "xmldb" ) {
+        $self->{LOGGER}->debug( "Closing database." );
         $self->{METADATADB}->closeDB( { error => \$error } );
     }
     return;
@@ -1759,6 +1788,8 @@ sub setupDataRetrieveKey {
         $query = "/nmwg:store[\@type=\"MAStore\"]/nmwg:data[\@id=\"" . $hashId . "\"]";
     }
 
+    $self->{LOGGER}->debug( "Running query \"" . $query . "\"" );
+
     $results = $parameters->{metadatadb}->querySet( { query => $query } );
     if ( $results->size() != 1 ) {
         my $msg = "Key error in metadata storage: 'maKey' should exist, but matching data not found in database.";
@@ -1781,6 +1812,8 @@ sub setupDataRetrieveKey {
     elsif ( $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_type"} eq "xmldb" ) {
         $query2 = "/nmwg:store[\@type=\"MAStore\"]/nmwg:metadata[\@id=\"" . $md_id_val . "\"]";
     }
+
+    $self->{LOGGER}->debug( "Running query \"" . $query . "\"" );
 
     my $results2 = $parameters->{metadatadb}->querySet( { query => $query2 } );
     if ( $results2->size() != 1 ) {
@@ -1822,7 +1855,6 @@ sub setupDataRetrieveKey {
     my @filters = @{ $parameters->{filters} };
     if ( $#filters > -1 ) {
         $self->addSelectParameters( { parameter_block => find( $sentKey, ".//nmwg:parameters", 1 ), filters => \@filters } );
-
         $mdIdRef = $filters[-1][0]->getAttribute("id");
     }
 
@@ -1879,6 +1911,8 @@ sub setupDataRetrieveMetadataData {
         $queryString = "/nmwg:store[\@type=\"MAStore\"]/nmwg:metadata[" . getMetadataXQuery( { node => $parameters->{metadata} } ) . "]";
     }
 
+    $self->{LOGGER}->debug( "Running query \"" . $queryString . "\"" );
+
     my $results = $parameters->{metadatadb}->querySet( { query => $queryString } );
 
     my %et                  = ();
@@ -1911,6 +1945,8 @@ sub setupDataRetrieveMetadataData {
         }
         $queryString = $queryString . "]]";
     }
+
+    $self->{LOGGER}->debug( "Running query \"" . $queryString . "\"" );
     my $dataResults = $parameters->{metadatadb}->querySet( { query => $queryString } );
 
     my %used = ();
@@ -1922,7 +1958,6 @@ sub setupDataRetrieveMetadataData {
     my @filters = @{ $parameters->{filters} };
     if ( $#filters > -1 ) {
         my @filter_arr = @{ $filters[-1] };
-
         $base_id = $filter_arr[0]->getAttribute("id");
     }
 
@@ -2000,7 +2035,7 @@ sub setupDataRetrieveMetadataData {
     }
     else {
         my $msg = "Database \"" . $self->{CONF}->{"perfsonarbuoy"}->{"metadata_db_file"} . "\" returned 0 results for search";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         throw perfSONAR_PS::Error_compat( "error.ma.storage", $msg );
     }
     return;
@@ -2031,7 +2066,7 @@ sub handleData {
     );
 
     my $type = extract( find( $parameters->{data}, "./nmwg:key/nmwg:parameters/nmwg:parameter[\@name=\"type\"]", 1 ), 0 );
-    if ( lc($type) eq "mysql" or lc($type) eq "sql" ) {
+    if ( lc( $type ) eq "mysql" or lc( $type ) eq "sql" ) {
         $self->retrieveSQL(
 
             {
@@ -2048,7 +2083,7 @@ sub handleData {
     }
     else {
         my $msg = "Database \"" . $type . "\" is not yet supported";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         getResultCodeData( $parameters->{output}, "data." . genuid(), $parameters->{id}, $msg, 1 );
     }
     return;
@@ -2090,7 +2125,7 @@ sub retrieveSQL {
     }
 
     unless ( $parameters->{d} ) {
-        $self->{LOGGER}->error("No data element.");
+        $self->{LOGGER}->error( "No data element." );
         throw perfSONAR_PS::Error_compat( "error.ma.storage", "No data element found." );
     }
 
@@ -2099,7 +2134,7 @@ sub retrieveSQL {
     my $dbpass    = extract( find( $parameters->{d}, "./nmwg:key//nmwg:parameter[\@name=\"pass\"]",  1 ), 1 );
     my $dbtable   = extract( find( $parameters->{d}, "./nmwg:key//nmwg:parameter[\@name=\"table\"]", 1 ), 1 );
 
-    unless ($dbconnect) {
+    unless ( $dbconnect ) {
         $self->{LOGGER}->error( "Data element " . $parameters->{d}->getAttribute("id") . " is missing some SQL elements" );
         throw perfSONAR_PS::Error_compat( "error.ma.storage", "Unable to open associated database" );
     }
@@ -2167,7 +2202,7 @@ sub retrieveSQL {
         }
         else {
             my $msg = "Improper eventType found.";
-            $self->{LOGGER}->error($msg);
+            $self->{LOGGER}->error( $msg );
             getResultCodeData( $parameters->{output}, $id, $parameters->{mid}, $msg, 1 );
             return;
         }
@@ -2259,7 +2294,7 @@ sub retrieveSQL {
 
                 if ( $#{$result1} == -1 or $#{$result2} == -1 ) {
                     my $msg = "Cannot find data range tables in database, aborting.";
-                    $self->{LOGGER}->error($msg);
+                    $self->{LOGGER}->error( $msg );
                     getResultCodeData( $parameters->{output}, $id, $parameters->{mid}, $msg, 1 );
                     return;
                 }
@@ -2301,12 +2336,13 @@ sub retrieveSQL {
         }
         else {
             my $msg = "Improper eventType found.";
-            $self->{LOGGER}->error($msg);
+            $self->{LOGGER}->error( $msg );
             getResultCodeData( $parameters->{output}, $id, $parameters->{mid}, $msg, 1 );
             return;
         }
     }
-
+    
+    $self->{LOGGER}->info( "Query \"" . $query . "\" formed." );
     my $datadb = new perfSONAR_PS::DB::SQL( { name => $dbconnect, schema => \@dbSchema, user => $dbuser, pass => $dbpass } );
 
     $datadb->openDB;
@@ -2315,12 +2351,11 @@ sub retrieveSQL {
 
     if ( $#{$result} == -1 ) {
         my $msg = "Query returned 0 results";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         getResultCodeData( $parameters->{output}, $id, $parameters->{mid}, $msg, 1 );
         return;
     }
     else {
-
         if ( $dataType eq "BWCTL" ) {
             my $prefix = "iperf";
             my $uri    = "http://ggf.org/ns/nmwg/tools/iperf/2.0/";
@@ -2518,8 +2553,8 @@ The perfSONAR-PS subversion repository is located at:
 
   http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -2530,11 +2565,14 @@ $Id$
 =head1 AUTHOR
 
 Jason Zurawski, zurawski@internet2.edu
+Jeff Boote, boote@internet2.edu
+Aaron Brown, aaron@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 

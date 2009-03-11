@@ -74,7 +74,7 @@ sub callMA {
     my ( $self, $message_dom ) = @_; 
     my $msg;
     eval {
-        $msg = $self->SUPER::callMA( { message =>  $message_dom->asString  } );
+        $msg = $self->SUPER::callMA(message =>  $message_dom->asString, timeout => 300 );
     };
     if($EVAL_ERROR || !$msg) {
         $self->{LOGGER}->error("Message element not found in return. $EVAL_ERROR");

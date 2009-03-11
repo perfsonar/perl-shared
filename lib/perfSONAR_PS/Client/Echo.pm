@@ -83,7 +83,7 @@ sub ping {
 	my $doc = perfSONAR_PS::XML::Document->new();
 	$self->createEchoRequest($doc);
 
-    my $timeout = 5;
+    my $timeout = 15;
 	my ($status, $res) = consultArchive($host, $port, $endpoint, $doc->getValue(), $timeout);
 	if ($status != 0) {
 		my $msg = "Error contacting service \"" . $self->{URI} . "\" : $res";

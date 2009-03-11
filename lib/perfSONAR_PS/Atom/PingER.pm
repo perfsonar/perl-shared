@@ -109,9 +109,9 @@ sub  setMetaFeed {
       
    }
    $result = $gls->getLSLocation( {  eventTypes => \@eventTypes  } );
-   #### my @local_ma  = qw{ http://lhcopnmon1-mgm.fnal.gov:8075/perfSONAR_PS/services/pinger/ma http://newmon.bnl.gov:8077/perfSONAR_PS/services/pinger/ma};
+   #### my @result  = qw{ http://lhcopnmon1-mgm.fnal.gov:8075/perfSONAR_PS/services/pinger/ma http://newmon.bnl.gov:8077/perfSONAR_PS/services/pinger/ma};
    ########## 
-   foreach my $s  (@{ $result } )  {
+    foreach my $s  (@{ $result } )  {
       #my $ma = $url =~ /^http\:/s?$url:$url;
       my $service = Service->new({ xml => $s });
       my $url =  $service->get_accessPoint;
@@ -174,8 +174,8 @@ sub  setMetaFeed {
      }
    }
     
-   $cache->set('hashed_mdkr',  freeze($CACHED_MDKR));
-   $cache->set('hashed_sdr',  freeze($CACHED_SDR)); 
+   $cache->set('hashed_mdkr',  freeze($CACHED_MDKR)) if ref $CACHED_MDKR;
+   $cache->set('hashed_sdr',  freeze($CACHED_SDR)) if ref $CACHED_SDR; 
    return;
 }
  

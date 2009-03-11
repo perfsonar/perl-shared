@@ -7,7 +7,7 @@ use fields 'LS_CLIENT', 'NAMESPACES', 'METADATADB', 'LOGGER', 'NETLOGGER';
 use strict;
 use warnings;
 
-our $VERSION = 0.10;
+our $VERSION = 3.1;
 
 =head1 NAME
 
@@ -105,7 +105,7 @@ sub init {
     $self->{LOGGER}    = get_logger( "perfSONAR_PS::Services::MA::SNMP" );
     $self->{NETLOGGER} = get_logger( "NetLogger" );
 
-    unless ( exists $self->{CONF}->{"root_hints_url"} ) {
+    unless ( exists $self->{CONF}->{"root_hints_url"} and $self->{CONF}->{"root_hints_url"} ) {
         $self->{CONF}->{"root_hints_url"} = "http://www.perfsonar.net/gls.root.hints";
         $self->{LOGGER}->warn( "gLS Hints file not set, using default at \"http://www.perfsonar.net/gls.root.hints\"." );
     }
@@ -113,29 +113,30 @@ sub init {
     unless ( exists $self->{CONF}->{"snmp"}->{"metadata_db_type"}
         and $self->{CONF}->{"snmp"}->{"metadata_db_type"} )
     {
-        $self->{LOGGER}->error( "Value for 'metadata_db_type' is not set." );
+        $self->{LOGGER}->fatal( "Value for 'metadata_db_type' is not set." );
         return -1;
     }
 
     if ( $self->{CONF}->{"snmp"}->{"metadata_db_type"} eq "file" ) {
-        unless ( exists $self->{CONF}->{"snmp"}->{"metadata_db_file"}
-            and $self->{CONF}->{"snmp"}->{"metadata_db_file"} )
-        {
-            $self->{LOGGER}->error( "Value for 'metadata_db_file' is not set." );
-            return -1;
-        }
-        else {
-            if ( defined $self->{DIRECTORY} ) {
+        if ( exists $self->{CONF}->{"snmp"}->{"metadata_db_file"} and $self->{CONF}->{"snmp"}->{"metadata_db_file"} ) {
+            if ( exists $self->{DIRECTORY} and $self->{DIRECTORY} and -d $self->{DIRECTORY} ) {
                 unless ( $self->{CONF}->{"snmp"}->{"metadata_db_file"} =~ "^/" ) {
                     $self->{CONF}->{"snmp"}->{"metadata_db_file"} = $self->{DIRECTORY} . "/" . $self->{CONF}->{"snmp"}->{"metadata_db_file"};
+                    $self->{LOGGER}->info( "Setting \"metadata_db_file\" to \"" . $self->{DIRECTORY} . "/" . $self->{CONF}->{"snmp"}->{"metadata_db_file"} . "\"" );
                 }
             }
         }
+        else {
+            $self->{LOGGER}->fatal( "Value for 'metadata_db_file' is not set." );
+            return -1;
+        }
     }
     elsif ( $self->{CONF}->{"snmp"}->{"metadata_db_type"} eq "xmldb" ) {
-        eval { load perfSONAR_PS::DB::XMLDB; };
+        eval { 
+            load perfSONAR_PS::DB::XMLDB; 
+        };
         if ( $EVAL_ERROR ) {
-            $self->{LOGGER}->error( "Couldn't load perfSONAR_PS::DB::XMLDB: $EVAL_ERROR" );
+            $self->{LOGGER}->fatal( "Couldn't load perfSONAR_PS::DB::XMLDB: $EVAL_ERROR" );
             return -1;
         }
 
@@ -149,29 +150,31 @@ sub init {
         if ( exists $self->{CONF}->{"snmp"}->{"metadata_db_name"}
             and $self->{CONF}->{"snmp"}->{"metadata_db_name"} )
         {
-            if ( defined $self->{DIRECTORY} ) {
+            if ( exists $self->{DIRECTORY} and $self->{DIRECTORY} and -d $self->{DIRECTORY} ) {
                 unless ( $self->{CONF}->{"snmp"}->{"metadata_db_name"} =~ "^/" ) {
                     $self->{CONF}->{"snmp"}->{"metadata_db_name"} = $self->{DIRECTORY} . "/" . $self->{CONF}->{"snmp"}->{"metadata_db_name"};
+                    $self->{LOGGER}->info( "Setting \"metadata_db_name\" to \"" . $self->{DIRECTORY} . "/" . $self->{CONF}->{"snmp"}->{"metadata_db_name"} . "\"" );
                 }
             }
             unless ( -d $self->{CONF}->{"snmp"}->{"metadata_db_name"} ) {
                 system( "mkdir " . $self->{CONF}->{"snmp"}->{"metadata_db_name"} );
+                $self->{LOGGER}->info( "Creating directory \"" . $self->{CONF}->{"snmp"}->{"metadata_db_name"} . "\"" );
             }
         }
         else {
-            $self->{LOGGER}->error( "Value for 'metadata_db_name' is not set." );
+            $self->{LOGGER}->fatal( "Value for 'metadata_db_name' is not set." );
             return -1;
         }
     }
     else {
-        $self->{LOGGER}->error( "Wrong value for 'metadata_db_type' set." );
+        $self->{LOGGER}->fatal( "Wrong value for 'metadata_db_type' set." );
         return -1;
     }
 
     unless ( exists $self->{CONF}->{"snmp"}->{"rrdtool"}
         and $self->{CONF}->{"snmp"}->{"rrdtool"} )
     {
-        $self->{LOGGER}->error( "Value for 'rrdtool' is not set." );
+        $self->{LOGGER}->fatal( "Value for 'rrdtool' is not set." );
         return -1;
     }
 
@@ -200,6 +203,7 @@ sub init {
             if ( defined $self->{CONF}->{"ls_instance"}
                 and $self->{CONF}->{"ls_instance"} )
             {
+                $self->{LOGGER}->warn( "Setting \"ls_instance\" to \"" . $self->{CONF}->{"ls_instance"} . "\"" );
                 $self->{CONF}->{"snmp"}->{"ls_instance"} = $self->{CONF}->{"ls_instance"};
             }
             else {
@@ -213,6 +217,7 @@ sub init {
             if ( defined $self->{CONF}->{"ls_registration_interval"}
                 and $self->{CONF}->{"ls_registration_interval"} )
             {
+                $self->{LOGGER}->warn( "Setting \"ls_registration_interval\" to \"" . $self->{CONF}->{"ls_registration_interval"} . "\"" );
                 $self->{CONF}->{"snmp"}->{"ls_registration_interval"} = $self->{CONF}->{"ls_registration_interval"};
             }
             else {
@@ -223,7 +228,7 @@ sub init {
 
         if ( not $self->{CONF}->{"snmp"}->{"service_accesspoint"} ) {
             unless ( $self->{CONF}->{external_address} ) {
-                $self->{LOGGER}->error( "With LS registration enabled, you need to specify either the service accessPoint for the service or the external_address" );
+                $self->{LOGGER}->fatal( "With LS registration enabled, you need to specify either the service accessPoint for the service or the external_address" );
                 return -1;
             }
             $self->{LOGGER}->info( "Setting service access point to http://" . $self->{CONF}->{external_address} . ":" . $self->{PORT} . $self->{ENDPOINT} );
@@ -269,7 +274,6 @@ sub init {
         and $self->{CONF}->{"snmp"}->{"metadata_db_external"} )
     {
         if ( $self->{CONF}->{"snmp"}->{"metadata_db_external"} eq "none" ) {
-
             # do nothing
         }
         elsif ( $self->{CONF}->{"snmp"}->{"metadata_db_external"} eq "cricket" ) {
@@ -305,12 +309,18 @@ sub init {
                 }                
             }
             else {
-                $self->{LOGGER}->error( "Cannot find cricket; please set environmental variable CRICKET_HOME or 'metadata_db_external_cricket_home' in the configuration file." );
+                $self->{LOGGER}->fatal( "Cannot find cricket; please set environmental variable CRICKET_HOME or 'metadata_db_external_cricket_home' in the configuration file." );
                 return -1;
             }
 
-            eval { load perfSONAR_PS::DB::Cricket; };
-            unless ( $EVAL_ERROR ) {
+            eval { 
+                load perfSONAR_PS::DB::Cricket; 
+            };
+            if ( $EVAL_ERROR ) {
+                $self->{LOGGER}->fatal( "Cannot load \"perfSONAR_PS::DB::Cricket\", aborting: " . $EVAL_ERROR );
+                return -1;
+            }
+            else {
                 my $cricket = new perfSONAR_PS::DB::Cricket(
                     {
                         file    => $self->{CONF}->{"snmp"}->{"metadata_db_file"},
@@ -326,15 +336,21 @@ sub init {
             }
         }
         elsif ( $self->{CONF}->{"snmp"}->{"metadata_db_external"} eq "cacti" ) {
-            eval { load perfSONAR_PS::DB::Cacti; };
-            unless ( $EVAL_ERROR ) {
+            eval { 
+                load perfSONAR_PS::DB::Cacti; 
+            };
+            if ( $EVAL_ERROR ) {
+                $self->{LOGGER}->fatal( "Cannot load \"perfSONAR_PS::DB::Cacti\", aborting: " . $EVAL_ERROR );
+                return -1;
+            }
+            else {
                 my $cacti = new perfSONAR_PS::DB::Cacti( { conf => $self->{CONF}->{"snmp"}->{"metadata_db_external_source"}, file => $self->{CONF}->{"snmp"}->{"metadata_db_file"} } );
                 $cacti->openDB();
                 $cacti->closeDB();
             }
         }
         else {
-            $self->{LOGGER}->error( "External monitoring source \"" . $self->{CONF}->{"snmp"}->{"metadata_db_external"} . "\" not currently supported." );
+            $self->{LOGGER}->fatal( "External monitoring source \"" . $self->{CONF}->{"snmp"}->{"metadata_db_external"} . "\" not currently supported." );
             return -1;
         }
     }
@@ -343,7 +359,7 @@ sub init {
         $self->{METADATADB} = new perfSONAR_PS::DB::File( { file => $self->{CONF}->{"snmp"}->{"metadata_db_file"} } );
         $self->{METADATADB}->openDB( { error => \$error } );
         unless ( $self->{METADATADB} ) {
-            $self->{LOGGER}->error( "Couldn't initialize store file: $error" );
+            $self->{LOGGER}->fatal( "Couldn't initialize store file: $error" );
             return -1;
         }
     }
@@ -351,25 +367,28 @@ sub init {
         my $error      = q{};
         my $metadatadb = $self->prepareDatabases;
         unless ( $metadatadb ) {
-            $self->{LOGGER}->error( "There was an error opening \"" . $self->{CONF}->{"ls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"ls"}->{"metadata_db_file"} . "\": " . $error );
+            $self->{LOGGER}->fatal( "There was an error opening \"" . $self->{CONF}->{"ls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"ls"}->{"metadata_db_file"} . "\": " . $error );
             return -1;
         }
 
         if ( $self->{CONF}->{"snmp"}->{"db_autoload"} and $self->{CONF}->{"snmp"}->{"autoload_metadata_db_file"} ) {
             my $status = $self->loadXMLDB( { metadatadb => $metadatadb } );
-            return -1 if $status == -1;
+            if ( $status == -1 ) {
+                $self->{LOGGER}->fatal( "Canot open XMLDB, aborting." );
+                return -1;
+            }
         }
 
         $metadatadb->closeDB( { error => \$error } );
         $self->{METADATADB} = q{};
     }
     else {
-        $self->{LOGGER}->error( "Wrong value for 'metadata_db_type' set." );
+        $self->{LOGGER}->fatal( "Wrong value for 'metadata_db_type' set." );
         return -1;
     }
 
     unless ( $self->buildHashedKeys == 0 ) {
-        $self->{LOGGER}->error( "Error building key database." );
+        $self->{LOGGER}->fatal( "Error building key database." );
         return -1;
     }
 
@@ -413,7 +432,7 @@ sub loadXMLDB {
     my $sourceDB = new perfSONAR_PS::DB::File( { file => $self->{CONF}->{"snmp"}->{"autoload_metadata_db_file"} } );
     $sourceDB->openDB( { error => \$sourceError } );
     unless ( $sourceDB ) {
-        $self->{LOGGER}->error( "Couldn't initialize store file: $sourceError" );
+        $self->{LOGGER}->fatal( "Couldn't initialize store file: $sourceError" );
         return -1;
     }
 
@@ -461,7 +480,7 @@ sub loadXMLDB {
         }
     }
     else {
-        $self->{LOGGER}->error( "Source file \"" . $self->{CONF}->{"snmp"}->{"autoload_metadata_db_file"} . "\" error, aborting." );
+        $self->{LOGGER}->fatal( "Source file \"" . $self->{CONF}->{"snmp"}->{"autoload_metadata_db_file"} . "\" error, aborting." );
         return -1;
     }
     return 0;
@@ -497,7 +516,7 @@ sub buildHashedKeys {
         my $metadatadb = $self->prepareDatabases( { doc => $parameters->{output} } );
         my $error = q{};
         unless ( $metadatadb ) {
-            $self->{LOGGER}->error( "Database could not be opened." );
+            $self->{LOGGER}->fatal( "Database could not be opened." );
             return -1;
         }
 
@@ -519,7 +538,7 @@ sub buildHashedKeys {
         }
     }
     else {
-        $self->{LOGGER}->error( "Wrong value for 'metadata_db_type' set." );
+        $self->{LOGGER}->fatal( "Wrong value for 'metadata_db_type' set." );
         return -1;
     }
     return 0;
@@ -551,6 +570,23 @@ We then sleep for some amount of time and do it again.
 
 sub registerLS {
     my ( $self, $sleep_time ) = validateParamsPos( @_, 1, { type => SCALARREF }, );
+
+    if ( $self->{CONF}->{"snmp"}->{"metadata_db_type"} eq "xmldb" ) {
+        unless ( -d $self->{CONF}->{"snmp"}->{"metadata_db_name"} ) {
+            $self->{LOGGER}->fatal( "XMLDB is not defined, disallowing registration." );
+            return -1;
+        }
+    }
+    elsif ( $self->{CONF}->{"snmp"}->{"metadata_db_type"} eq "file" ) {
+        unless ( -f $self->{CONF}->{"snmp"}->{"metadata_db_file"} ) {
+            $self->{LOGGER}->fatal( "Store file not defined, disallowing registration." );
+            return -1;
+        }
+    }
+    else {
+        $self->{LOGGER}->fatal( "Metadata database is not configured, disallowing registration." );
+        return -1;
+    }
 
     my ( $status, $res );
     my $ls = q{};
@@ -594,19 +630,19 @@ sub registerLS {
     elsif ( $self->{CONF}->{"snmp"}->{"metadata_db_type"} eq "xmldb" ) {
         my $metadatadb = $self->prepareDatabases;
         unless ( $metadatadb ) {
-            $self->{LOGGER}->error( "Database could not be opened." );
+            $self->{LOGGER}->fatal( "Database could not be opened." );
             return -1;
         }
         @resultsString = $metadatadb->query( { query => "/nmwg:store[\@type=\"MAStore\"]/nmwg:metadata", txn => q{}, error => \$error } );
         $metadatadb->closeDB( { error => \$error } );
     }
     else {
-        $self->{LOGGER}->error( "Wrong value for 'metadata_db_type' set." );
+        $self->{LOGGER}->fatal( "Wrong value for 'metadata_db_type' set." );
         return -1;
     }
 
     if ( $#resultsString == -1 ) {
-        $self->{LOGGER}->error( "No data to register with LS" );
+        $self->{LOGGER}->warn( "No data to register with LS" );
         return -1;
     }
     $ls->registerStatic( \@resultsString );
@@ -808,6 +844,7 @@ sub handleEvent {
     $self->{LOGGER}->debug( "Request filter parameters: cf: $cf resolution: $resolution start: $start end: $end" );
 
     if ( $parameters->{messageType} eq "MetadataKeyRequest" ) {
+        $self->{LOGGER}->info( "MetadataKeyRequest initiated." );
         $self->maMetadataKeyRequest(
             {
                 output             => $parameters->{output},
@@ -820,6 +857,7 @@ sub handleEvent {
         );
     }
     elsif ( $parameters->{messageType} eq "SetupDataRequest" ) {
+        $self->{LOGGER}->info( "SetupDataRequest initiated." );
         $self->maSetupDataRequest(
             {
                 output             => $parameters->{output},
@@ -832,6 +870,7 @@ sub handleEvent {
         );
     }
     elsif ( $parameters->{messageType} eq "DataInfoRequest" ) {
+        $self->{LOGGER}->info( "DataInfoRequest initiated." );
         $self->maDataInfoRequest(
             {
                 output             => $parameters->{output},
@@ -900,6 +939,7 @@ sub maMetadataKeyRequest {
 
     my $nmwg_key = find( $parameters->{metadata}, "./nmwg:key", 1 );
     if ( $nmwg_key ) {
+        $self->{LOGGER}->info( "Key found - running MetadataKeyRequest with existing key." );
         $self->metadataKeyRetrieveKey(
             {
                 metadatadb         => $self->{METADATADB},
@@ -912,6 +952,7 @@ sub maMetadataKeyRequest {
         );
     }
     else {
+        $self->{LOGGER}->info( "Key not found - running MetadataKeyRequest without a key." );
         $self->metadataKeyRetrieveMetadataData(
             {
                 metadatadb         => $self->{METADATADB},
@@ -925,6 +966,7 @@ sub maMetadataKeyRequest {
 
     }
     if ( $self->{CONF}->{"snmp"}->{"metadata_db_type"} eq "xmldb" ) {
+        $self->{LOGGER}->debug( "Closing database." );
         $self->{METADATADB}->closeDB( { error => \$error } );
     }
     return;
@@ -979,6 +1021,8 @@ sub metadataKeyRetrieveKey {
     elsif ( $self->{CONF}->{"snmp"}->{"metadata_db_type"} eq "xmldb" ) {
         $query = "/nmwg:store[\@type=\"MAStore\"]/nmwg:data[\@id=\"" . $hashId . "\"]";
     }
+
+    $self->{LOGGER}->debug( "Running query \"" . $query . "\"" );
 
     if ( $parameters->{metadatadb}->count( { query => $query } ) != 1 ) {
         my $msg = "Key error in metadata storage - key not found in database.";
@@ -1039,6 +1083,8 @@ sub metadataKeyRetrieveMetadataData {
         $queryString = "/nmwg:store[\@type=\"MAStore\"]/nmwg:metadata[" . getMetadataXQuery( { node => $parameters->{metadata} } ) . "]";
     }
 
+    $self->{LOGGER}->debug( "Running query \"" . $queryString . "\"" );
+    
     my $results             = $parameters->{metadatadb}->querySet( { query => $queryString } );
     my %et                  = ();
     my $eventTypes          = find( $parameters->{metadata}, "./nmwg:eventType", 0 );
@@ -1070,6 +1116,9 @@ sub metadataKeyRetrieveMetadataData {
         }
         $queryString = $queryString . "]]";
     }
+    
+    $self->{LOGGER}->debug( "Running query \"" . $queryString . "\"" );
+    
     my $dataResults = $parameters->{metadatadb}->querySet( { query => $queryString } );
     if ( $results->size() > 0 and $dataResults->size() > 0 ) {
         my %mds = ();
@@ -1168,6 +1217,7 @@ sub maDataInfoRequest {
 
     my $nmwg_key = find( $parameters->{metadata}, "./nmwg:key", 1 );
     if ( $nmwg_key ) {
+        $self->{LOGGER}->info( "Key found - running DataInfoRequest with existing key." );
         $self->dataInfoRetrieveKey(
             {
                 metadatadb         => $self->{METADATADB},
@@ -1180,6 +1230,7 @@ sub maDataInfoRequest {
         );
     }
     else {
+        $self->{LOGGER}->info( "Key found - running DataInfoRequest with existing key." );
         $self->dataInfoRetrieveMetadataData(
             {
                 metadatadb         => $self->{METADATADB},
@@ -1193,6 +1244,7 @@ sub maDataInfoRequest {
 
     }
     if ( $self->{CONF}->{"snmp"}->{"metadata_db_type"} eq "xmldb" ) {
+        $self->{LOGGER}->debug( "Closing database." );
         $self->{METADATADB}->closeDB( { error => \$error } );
     }
     return;
@@ -1243,6 +1295,8 @@ sub dataInfoRetrieveKey {
     elsif ( $self->{CONF}->{"snmp"}->{"metadata_db_type"} eq "xmldb" ) {
         $query = "/nmwg:store[\@type=\"MAStore\"]/nmwg:data[\@id=\"" . $hashId . "\"]";
     }
+
+    $self->{LOGGER}->debug( "Running query \"" . $query . "\"" );
 
     my $results = $parameters->{metadatadb}->querySet( { query => $query } );
     if ( $results->size() != 1 ) {
@@ -1344,6 +1398,8 @@ sub dataInfoRetrieveMetadataData {
         $queryString = "/nmwg:store[\@type=\"MAStore\"]/nmwg:metadata[" . getMetadataXQuery( { node => $parameters->{metadata} } ) . "]";
     }
 
+    $self->{LOGGER}->debug( "Running query \"" . $queryString . "\"" );
+
     my $results             = $parameters->{metadatadb}->querySet( { query => $queryString } );
     my %et                  = ();
     my $eventTypes          = find( $parameters->{metadata}, "./nmwg:eventType", 0 );
@@ -1375,6 +1431,9 @@ sub dataInfoRetrieveMetadataData {
         }
         $queryString = $queryString . "]]";
     }
+    
+    $self->{LOGGER}->debug( "Running query \"" . $queryString . "\"" );
+    
     my $dataResults = $parameters->{metadatadb}->querySet( { query => $queryString } );
     if ( $results->size() > 0 and $dataResults->size() > 0 ) {
         my %mds = ();
@@ -1514,6 +1573,7 @@ sub maSetupDataRequest {
 
     my $nmwg_key = find( $parameters->{metadata}, "./nmwg:key", 1 );
     if ( $nmwg_key ) {
+        $self->{LOGGER}->info( "Key found - running SetupDataRequest with existing key." );
         $self->setupDataRetrieveKey(
             {
                 metadatadb         => $self->{METADATADB},
@@ -1527,6 +1587,7 @@ sub maSetupDataRequest {
         );
     }
     else {
+        $self->{LOGGER}->info( "Key found - running SetupDataRequest with existing key." );
         $self->setupDataRetrieveMetadataData(
             {
                 metadatadb         => $self->{METADATADB},
@@ -1539,6 +1600,7 @@ sub maSetupDataRequest {
         );
     }
     if ( $self->{CONF}->{"snmp"}->{"metadata_db_type"} eq "xmldb" ) {
+        $self->{LOGGER}->debug( "Closing database." );
         $self->{METADATADB}->closeDB( { error => \$error } );
     }
     $msg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Services.MA.SetupDataRequest.end" );
@@ -1603,6 +1665,8 @@ sub setupDataRetrieveKey {
     elsif ( $self->{CONF}->{"snmp"}->{"metadata_db_type"} eq "xmldb" ) {
         $query = "/nmwg:store[\@type=\"MAStore\"]/nmwg:data[\@id=\"" . $hashId . "\"]";
     }
+
+    $self->{LOGGER}->debug( "Running query \"" . $query . "\"" );
 
     $results = $parameters->{metadatadb}->querySet( { query => $query } );
     if ( $results->size() != 1 ) {
@@ -1691,6 +1755,8 @@ sub setupDataRetrieveMetadataData {
         $queryString = "/nmwg:store[\@type=\"MAStore\"]/nmwg:metadata[" . getMetadataXQuery( { node => $parameters->{metadata} } ) . "]";
     }
 
+    $self->{LOGGER}->debug( "Running query \"" . $queryString . "\"" );
+
     my $results = $parameters->{metadatadb}->querySet( { query => $queryString } );
 
     my %et                  = ();
@@ -1723,8 +1789,10 @@ sub setupDataRetrieveMetadataData {
         }
         $queryString = $queryString . "]]";
     }
+    
+    $self->{LOGGER}->debug( "Running query \"" . $queryString . "\"" );
+    
     my $dataResults = $parameters->{metadatadb}->querySet( { query => $queryString } );
-
     my %used = ();
     for my $x ( 0 .. $dataResults->size() ) {
         $used{$x} = 0;
@@ -1826,6 +1894,7 @@ sub handleData {
     my $type = extract( find( $parameters->{data}, "./nmwg:key/nmwg:parameters/nmwg:parameter[\@name=\"type\"]", 1 ), 0 );
 
     if ( $type eq "rrd" ) {
+        $self->{LOGGER}->info( "Handling RRD type data." );
         $self->retrieveRRD(
             {
                 d                  => $parameters->{data},
@@ -1839,6 +1908,7 @@ sub handleData {
         );
     }
     elsif ( $type eq "sqlite" ) {
+        $self->{LOGGER}->info( "Handling SQL type data." );
         $self->retrieveSQL(
 
             {
@@ -1902,7 +1972,7 @@ sub retrieveSQL {
         }
     }
 
-    $self->{LOGGER}->error( "No data element" ) if ( not defined $parameters->{d} );
+    $self->{LOGGER}->error( "No data element" ) unless ( defined $parameters->{d} );
 
     my $file   = extract( find( $parameters->{d}, "./nmwg:key//nmwg:parameter[\@name=\"file\"]",  1 ), 1 );
     my $table  = extract( find( $parameters->{d}, "./nmwg:key//nmwg:parameter[\@name=\"table\"]", 1 ), 1 );
@@ -1914,20 +1984,16 @@ sub retrieveSQL {
         throw perfSONAR_PS::Error_compat( "error.ma.storage", "Unable to open associated database" );
     }
 
-    print "\n\nFILE: ", $file, "\n\n";
-
     my $backup = $file;
     if ( $backup =~ m/^DBI:SQLite:dbname=/mx ) {
         $backup =~ s/^DBI:SQLite:dbname=//mx;
     }
-    if ( $self->{DIRECTORY} ) {
+    if ( exists $self->{DIRECTORY} and $self->{DIRECTORY} and -d $self->{DIRECTORY} ) {
         if ( !( $backup =~ "^/" ) ) {
             $backup = $self->{DIRECTORY} . "/" . $backup;
         }
     }
     $file = "dbi:SQLite:dbname=" . $backup;
-
-    print "\n\nFILE: ", $file, "\n\n";
 
     my $query = {};
     if ( $parameters->{time_settings}->{"START"}->{"internal"} or $parameters->{time_settings}->{"END"}->{"internal"} ) {
@@ -1949,6 +2015,8 @@ sub retrieveSQL {
     else {
         $query = "select * from " . $table . " where id=\"" . $parameters->{d}->getAttribute( "metadataIdRef" ) . "\";";
     }
+
+    $self->{LOGGER}->info( "Query to database is \"" . $query . "\"" );
 
     my @dbSchema = ( "id", "time", "value", "eventtype", "misc" );
     my $datadb = new perfSONAR_PS::DB::SQL( { name => $file, schema => \@dbSchema, user => $dbuser, pass => $dbpass } );
@@ -2212,23 +2280,23 @@ __END__
 
 =head1 SEE ALSO
 
-L<Log::Log4perl>, L<Module::Load>, L<Digest::MD5>, L<English>,
+L<Log::Log4perl>, L<Module::Load>, L<Digest::MD5>, L<English>, 
 L<Params::Validate>, L<Date::Manip>, L<perfSONAR_PS::Services::MA::General>,
 L<perfSONAR_PS::Common>, L<perfSONAR_PS::Messages>,
 L<perfSONAR_PS::Client::LS::Remote>, L<perfSONAR_PS::Error_compat>,
-L<perfSONAR_PS::DB::File>, L<perfSONAR_PS::DB::RRD>, L<perfSONAR_PS::DB::SQL>,
+L<perfSONAR_PS::DB::File>, L<perfSONAR_PS::DB::RRD>, L<perfSONAR_PS::DB::SQL>, 
 L<perfSONAR_PS::Utils::ParameterValidation>, L<perfSONAR_PS::Utils::NetLogger>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -2239,15 +2307,17 @@ $Id$
 =head1 AUTHOR
 
 Jason Zurawski, zurawski@internet2.edu
+Aaron Brown, aaron@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2007-2009, Internet2
 
 All rights reserved.
 

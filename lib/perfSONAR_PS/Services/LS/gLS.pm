@@ -7,7 +7,7 @@ use fields 'STATE', 'LOGGER', 'IPTRIE', 'CLAIMTREE';
 use strict;
 use warnings;
 
-our $VERSION = 0.10;
+our $VERSION = 3.1;
 
 =head1 NAME
 
@@ -158,7 +158,7 @@ sub init {
     }
 
     if ( exists $self->{CONF}->{"root_hints_file"} and $self->{CONF}->{"root_hints_file"} ) {
-        if ( exists $self->{DIRECTORY} and $self->{DIRECTORY} ) {
+        if ( exists $self->{DIRECTORY} and $self->{DIRECTORY} and -d $self->{DIRECTORY} ) {
             unless ( $self->{CONF}->{"root_hints_file"} =~ "^/" ) {
                 $self->{CONF}->{"root_hints_file"} = $self->{DIRECTORY} . "/" . $self->{CONF}->{"root_hints_file"};
                 $self->{LOGGER}->debug( "Setting full path to 'root_hints_file': \"" . $self->{CONF}->{"root_hints_file"} . "\"" );
@@ -176,7 +176,7 @@ sub init {
     }
 
     if ( exists $self->{CONF}->{"gls"}->{"metadata_db_name"} and $self->{CONF}->{"gls"}->{"metadata_db_name"} ) {
-        if ( exists $self->{DIRECTORY} and $self->{DIRECTORY} ) {
+        if ( exists $self->{DIRECTORY} and $self->{DIRECTORY} and -d $self->{DIRECTORY} ) {
             unless ( $self->{CONF}->{"gls"}->{"metadata_db_name"} =~ "^/" ) {
                 $self->{CONF}->{"gls"}->{"metadata_db_name"} = $self->{DIRECTORY} . "/" . $self->{CONF}->{"gls"}->{"metadata_db_name"};
                 $self->{LOGGER}->debug( "Setting full path to 'metadata_db_name': \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "\"" );
@@ -196,11 +196,12 @@ sub init {
             print CONF "set_lk_detect DB_LOCK_MINLOCKS\n";
             print CONF "set_cachesize 0 33554432 0\n";
             print CONF "set_flags DB_LOG_AUTOREMOVE\n";
+            print CONF "set_lg_regionmax 2097152\n";
             close( CONF );
         }
     }
     else {
-        $self->{LOGGER}->error( "Value for 'metadata_db_name' is not set, exiting." );
+        $self->{LOGGER}->fatal( "Value for 'metadata_db_name' is not set, exiting." );
         return -1;
     }
 
@@ -270,7 +271,7 @@ sub init {
 
     unless ( exists $self->{CONF}->{"gls"}->{"service_accesspoint"} and $self->{CONF}->{"gls"}->{"service_accesspoint"} ) {
         unless ( exists $self->{CONF}->{external_address} and $self->{CONF}->{external_address} ) {
-            $self->{LOGGER}->error( "With LS registration enabled, you need to specify either the service accessPoint for the service or the external_address, exiting." );
+            $self->{LOGGER}->fatal( "With LS registration enabled, you need to specify either the service accessPoint for the service or the external_address, exiting." );
             return -1;
         }
         $self->{LOGGER}->info( "Setting service access point to http://" . $self->{CONF}->{external_address} . ":" . $self->{PORT} . $self->{ENDPOINT} );
@@ -315,7 +316,7 @@ sub init {
     my $error = q{};
     my $metadatadb = $self->prepareDatabase( { recover => 1, container => $self->{CONF}->{"gls"}->{"metadata_db_file"} } );
     unless ( $metadatadb ) {
-        $self->{LOGGER}->error( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_db_file"} . "\": " . $error );
+        $self->{LOGGER}->fatal( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_db_file"} . "\": " . $error );
         return -1;
     }
     $metadatadb->checkpoint( { error => \$error } );
@@ -323,7 +324,7 @@ sub init {
 
     my $summarydb = $self->prepareDatabase( { recover => 1, container => $self->{CONF}->{"gls"}->{"metadata_summary_db_file"} } );
     unless ( $summarydb ) {
-        $self->{LOGGER}->error( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_summary_db_file"} . "\": " . $error );
+        $self->{LOGGER}->fatal( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_summary_db_file"} . "\": " . $error );
         return -1;
     }
     $summarydb->checkpoint( { error => \$error } );
@@ -532,7 +533,7 @@ sub registerLS {
     }
 
     if ( $#{ $gls->{ROOTS} } <= -1 ) {
-        $self->{LOGGER}->warn( "No gLS Root services to contact, exiting." );
+        $self->{LOGGER}->error( "No gLS Root services to contact, exiting." );
         return -1;
     }
     
@@ -543,7 +544,7 @@ sub registerLS {
         $database = $self->prepareDatabase( { container => $self->{CONF}->{"gls"}->{"metadata_db_file"} } );
         unless ( $database ) {
             $self->{LOGGER}->error( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_db_file"} . "\": " . $error );
-            $self->{LOGGER}->error( "Error: \"" . $error . "\"" ) if $error;
+            $self->{LOGGER}->fatal( "Error: \"" . $error . "\"" ) if $error;
             return -1;
         }
 
@@ -662,7 +663,7 @@ sub registerLS {
         $database = $self->prepareDatabase( { container => $self->{CONF}->{"gls"}->{"metadata_summary_db_file"} } );
         unless ( $database ) {
             $self->{LOGGER}->error( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_summary_db_file"} . "\"." );
-            $self->{LOGGER}->error( "Error: \"" . $error . "\"" ) if $error;
+            $self->{LOGGER}->fatal( "Error: \"" . $error . "\"" ) if $error;
             return -1;
         }
 
@@ -781,7 +782,7 @@ sub summarizeLS {
     #   object then close out.
     my $metadatadb = $self->prepareDatabase( { container => $self->{CONF}->{"gls"}->{"metadata_db_file"} } );
     unless ( $metadatadb ) {
-        $self->{LOGGER}->error( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_db_file"} . "\": " . $error );
+        $self->{LOGGER}->fatal( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_db_file"} . "\": " . $error );
         return -1;
     }
 
@@ -836,7 +837,7 @@ sub summarizeLS {
     # End the DB critical section
     unless ( $self->closeDatabase( { db => $metadatadb, dbTr => $dbTr, error => $errorFlag } ) == 0 ) {
         undef %map;
-        $self->{LOGGER}->error( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_db_file"} . "\"." );
+        $self->{LOGGER}->fatal( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_db_file"} . "\"." );
         $self->{LOGGER}->error( "Error: \"" . $error . "\"" ) if $error;
         return -1;
     }
@@ -1274,7 +1275,7 @@ sub summarizeLS {
         undef %map;
         undef %serviceSummaryMap;
         undef %summaryMap;
-        $self->{LOGGER}->error( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_summary_db_file"} . "\": " . $error );
+        $self->{LOGGER}->fatal( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_summary_db_file"} . "\": " . $error );
         return -1;
     }
 
@@ -1932,7 +1933,7 @@ sub cleanLSAux {
     my $errorFlag = 0;
     my $database = $self->prepareDatabase( { container => $parameters->{container} } );
     unless ( $database ) {
-        $self->{LOGGER}->error( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $parameters->{container} . "\": " . $error );
+        $self->{LOGGER}->fatal( "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $parameters->{container} . "\": " . $error );
         return -1;
     }
 
@@ -2311,7 +2312,7 @@ sub lsRegisterRequest {
     my $database = $self->prepareDatabase( { container => $self->{CONF}->{"gls"}->{"metadata_db_file"} } );
     unless ( $database ) {
         my $msg = "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $self->{CONF}->{"gls"}->{"metadata_db_file"} . "\": " . $error;
-        $self->{LOGGER}->error( $msg );
+        $self->{LOGGER}->fatal( $msg );
         throw perfSONAR_PS::Error_compat( "error.ls.xmldb", $msg );
         return -1;
     }
@@ -2892,7 +2893,7 @@ sub lsDeregisterRequest {
     my $database = $self->prepareDatabase( { container => $dbContainer } );
     unless ( $database ) {
         my $msg = "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $dbContainer . "\": " . $error;
-        $self->{LOGGER}->error( $msg );
+        $self->{LOGGER}->fatal( $msg );
         throw perfSONAR_PS::Error_compat( "error.ls.xmldb", $msg );
         return -1;
     }
@@ -3050,7 +3051,7 @@ sub lsKeepaliveRequest {
     my $database = $self->prepareDatabase( { container => $dbContainer } );
     unless ( $database ) {
         my $msg = "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $dbContainer . "\": " . $error;
-        $self->{LOGGER}->error( $msg );
+        $self->{LOGGER}->fatal( $msg );
         throw perfSONAR_PS::Error_compat( "error.ls.xmldb", $msg );
         return -1;
     }
@@ -3283,7 +3284,7 @@ sub lsQueryRequest {
         my $database = $self->prepareDatabase( { container => $dbContainer } );
         unless ( $database ) {
             my $msg = "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $dbContainer . "\": " . $error;
-            $self->{LOGGER}->error( $msg );
+            $self->{LOGGER}->fatal( $msg );
             throw perfSONAR_PS::Error_compat( "error.ls.xmldb", $msg );
             return -1;
         }
@@ -3449,7 +3450,7 @@ sub lsQueryRequest {
         my $database = $self->prepareDatabase( { container => $dbContainer } );
         unless ( $database ) {
             my $msg = "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $dbContainer . "\": " . $error;
-            $self->{LOGGER}->error( $msg );
+            $self->{LOGGER}->fatal( $msg );
             throw perfSONAR_PS::Error_compat( "error.ls.xmldb", $msg );
             return -1;
         }
@@ -3565,7 +3566,7 @@ sub lsKeyRequest {
         my $database = $self->prepareDatabase( { container => $dbContainer } );
         unless ( $database ) {
             my $msg = "There was an error opening \"" . $self->{CONF}->{"gls"}->{"metadata_db_name"} . "/" . $dbContainer . "\": " . $error;
-            $self->{LOGGER}->error( $msg );
+            $self->{LOGGER}->fatal( $msg );
             throw perfSONAR_PS::Error_compat( "error.ls.xmldb", $msg );
             return -1;
         }
@@ -3640,16 +3641,16 @@ L<perfSONAR_PS::Common>, L<perfSONAR_PS::Messages>, L<perfSONAR_PS::DB::XMLDB>
 L<perfSONAR_PS::Error_compat>, L<perfSONAR_PS::Utils::ParameterValidation>,
 L<perfSONAR_PS::Client::LS>, L<perfSONAR_PS::Client::gLS>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -3663,12 +3664,13 @@ Jason Zurawski, zurawski@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2007-2009, Internet2
 
 All rights reserved.
 

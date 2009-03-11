@@ -145,7 +145,7 @@ sub getDOM {
 
                                                      ['value' =>  $self->get_value],
 
-                                           ['type' =>  (($self->get_type    =~ m/(hostname)$/)?$self->get_type:undef)],
+                                           ['type' =>  (($self->get_type    =~ m/(hostname|ipv4)$/)?$self->get_type:undef)],
 
                                                      ['port' =>  $self->get_port],
 
@@ -381,13 +381,13 @@ sub  querySQL {
                     foreach my $classes (@{$query->{$table}{$entry}}) {
                          if($classes && $classes eq 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Src') {
         
-                            if    ($self->get_value && ( (  ( ($self->get_type eq 'hostname')  && $entry eq 'ip_name_src')) || (  ( ($self->get_type eq 'hostname')  && $entry eq 'ip_name') or  ( ($self->get_type eq 'ipv4')  && $entry eq 'ip_number')) )) {
+                            if    ($self->get_value && ( (  ($entry eq 'ip_name_src')) || (  ($entry eq 'ip_name') or  ( ($self->get_type eq 'ipv4')  && $entry eq 'ip_number')) )) {
                                 $query->{$table}{$entry} =  $self->get_value;
                                 $self->get_LOGGER->debug(" Got value for SQL query $table.$entry: " . $self->get_value);
                                 last;  
                             }
 
-                            elsif ($self->get_text && ( (  ( ($self->get_type eq 'hostname')  && $entry eq 'ip_name_src')) || (  ( ($self->get_type eq 'hostname')  && $entry eq 'ip_name') or  ( ($self->get_type eq 'ipv4')  && $entry eq 'ip_number')) )) {
+                            elsif ($self->get_text && ( (  ($entry eq 'ip_name_src')) || (  ($entry eq 'ip_name') or  ( ($self->get_type eq 'ipv4')  && $entry eq 'ip_number')) )) {
                                 $query->{$table}{$entry} =  $self->get_text;
                                 $self->get_LOGGER->debug(" Got value for SQL query $table.$entry: " . $self->get_text);
                                 last;  
@@ -473,7 +473,7 @@ sub fromDOM {
     $self->set_value($dom->getAttribute('value')) if($dom->getAttribute('value'));
 
     $self->get_LOGGER->debug(" Attribute value= ". $self->get_value) if $self->get_value;
-    $self->set_type($dom->getAttribute('type')) if($dom->getAttribute('type') && ($dom->getAttribute('type')   =~ m/(hostname)$/));
+    $self->set_type($dom->getAttribute('type')) if($dom->getAttribute('type') && ($dom->getAttribute('type')   =~ m/(hostname|ipv4)$/));
 
     $self->get_LOGGER->debug(" Attribute type= ". $self->get_type) if $self->get_type;
     $self->set_port($dom->getAttribute('port')) if($dom->getAttribute('port'));

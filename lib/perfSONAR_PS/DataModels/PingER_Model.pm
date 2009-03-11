@@ -47,13 +47,18 @@ $addressL3->{sql} =  { metaData => {'transport'  =>   {value => 'type'},
 				   },
 		     };
 						     
-$addressL4->{sql} =  { metaData => { 'ip_name_src' => {'value' =>  ['value' , 'text'], 'if' => 'type:hostname'},
-        			     'ip_name_dst' => {'value' =>  ['value' , 'text'], 'if' => 'type:hostname'},
-        		           },
-        	       host =>     { 'ip_number'  =>  {'value' =>  ['value' , 'text'], 'if' => 'type:ipv4'},
-				   },	 
-        	     };
-
+#$addressL4->{sql} =  { metaData => { 'ip_name_src' => {'value' =>  ['value' , 'text'], 'if' => 'type:hostname'},
+#        			     'ip_name_dst' => {'value' =>  ['value' , 'text'], 'if' => 'type:hostname'},
+#        		           },
+#        	       host =>     { 'ip_number'  =>  {'value' =>  ['value' , 'text'], 'if' => 'type:ipv4'},
+#				   },	 
+#        	     };
+$addressL4->{sql} =  { metaData => { 'ip_name_src' => {'value' =>  ['value' , 'text']},
+				     'ip_name_dst' => {'value' =>  ['value' , 'text']},
+				  },
+		      host =>	  { 'ip_number'  =>  {'value' =>  ['value' , 'text'], 'if' => 'type:ipv4'},
+				  },	
+		    };
 $interfaceL3->{sql} =  { metaData => { 'transport'   => {'value' => 'ipAddress'},
         	 		       'ip_name_src' => {'value' => 'ifHostName'},
 		 		       'ip_name_dst' => {'value' => 'ifHostName'},
@@ -74,14 +79,20 @@ $endPointL4->{sql}= { metaData => { 'ip_name_src' => {'value' => ['address', 'in
   
 $endPoint->{attrs}->{type} = 'enum:hostname,ipv4';  							  
  
-$endPoint->{sql} = { metaData => { 'ip_name_src' =>   { value => ['value' , 'text'], if => 'type:hostname'}, 
-        	 		   'ip_name_dst' =>   { value => ['value' , 'text'], if => 'type:hostname'}, 
+#$endPoint->{sql} = { metaData => { 'ip_name_src' =>   { value => ['value' , 'text'], if => 'type:hostname'}, 
+#        	 		   'ip_name_dst' =>   { value => ['value' , 'text'], if => 'type:hostname'}, 
+#		 		 },
+#		     host =>	 { 'ip_number'  =>    { value => ['value' , 'text'], if => 'type:ipv4'}, 
+#		 		   'ip_name'    =>    { value => ['value' , 'text'], if => 'type:hostname'}, 
+#		 		 },
+#		    };  	      
+$endPoint->{sql} = { metaData => { 'ip_name_src' =>   { value => ['value' , 'text']}, 
+        	 		   'ip_name_dst' =>   { value => ['value' , 'text']}, 
 		 		 },
 		     host =>	 { 'ip_number'  =>    { value => ['value' , 'text'], if => 'type:ipv4'}, 
-		 		   'ip_name'    =>    { value => ['value' , 'text'], if => 'type:hostname'}, 
+		 		   'ip_name'    =>    { value => ['value' , 'text']}, 
 		 		 },
-		    };  	      
-
+		    };  
 						      
 $endPointPair->{sql} =   { metaData => { 'ip_name_src' =>   { value => 'src'},  
         				 'ip_name_dst' =>   { value => 'dst'},  
@@ -90,9 +101,6 @@ $endPointPair->{sql} =   { metaData => { 'ip_name_src' =>   { value => 'src'},
 		        	         'ip_name'     =>   { value => ['src', 'dst']},					  
         	        	       },
 			  };	     
-					     
-
-
 $service_parameter->({ attrs => { name => 'enum:keyword,consolidationFunction,resolution,count,packetInterval,packetSize,ttl,valueUnits,startTime,endTime,protocol,transport,setLimit', 
         		          value => 'scalar', xmlns => 'nmwg'}, 
 		       elements => [],

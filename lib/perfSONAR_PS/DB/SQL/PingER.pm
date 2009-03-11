@@ -255,7 +255,10 @@ sub soi_host {
 					 index => 'ip_name',
 					 limit => 1
 					});
-	return $query if(!ref($query) && $query < 0);
+	if(!ref($query) && $query < 0) {
+	    self->ERRORMSG("soi_host  failed for ip_name=$param->{ip_name}  ip_number=$param->{ip_number} ");
+	    return $query;
+	}
 	# insert if not there
 	my $n = scalar (keys %{$query});
 	if ( $n == 0  ) {
@@ -320,7 +323,7 @@ sub soi_metadata {
 	    }  
 	    unless(defined $param->{$name}) {
 	        $self->ERRORMSG("soi_metadata requires $name or $what_num set and  ");
-	       return -1;
+	        return -1;
 	    }
 	}  
         my $query = $self->getFromTable({ query =>  ['ip_name_src'    => { 'eq' => $param->{ip_name_src}  },
@@ -388,7 +391,8 @@ sub  getMeta  {
 					validate => METADATA,
 				  	index => 'metaID',
 					limit => $limit,
-				      });  
+				      });
+				       
     return $results; 
 }
 
@@ -459,6 +463,7 @@ sub  getData {
 				      	    index =>  [qw(metaID timestamp)],
 					    limit =>  $limit,
 				         });
+	$self->LOGGER->logdie($self->ERRORMSG) if($self->ERRORMSG);
         if ($objects &&  (ref($objects) eq 'HASH') && %{$objects}) {
 	        $iterator_local->{$_} = $objects->{$_} for keys  %{$objects}; 
 		$self->LOGGER->debug(" Added data rows ..... ......: " . scalar %{$objects});		
@@ -502,6 +507,7 @@ sub getTimeDiffs {
 					    index =>  [qw(COUNT(timestamp))],
 					    select => [qw/COUNT(timestamp)/], 
       	 			       });
+	$self->LOGGER->logdie($self->ERRORMSG) if($self->ERRORMSG);
 	my $count_from = ($count_table && ref $count_table)?(keys %{$count_table})[0]:0;  			       
 	my $time_diff = $self->getFromTable({ 
         				   query =>  $param->{sql}, 
@@ -573,7 +579,7 @@ sub insertData {
 	    $self->ERRORMSG("insertData   requires single HASH ref parameter  with proper keys " . $self->ERRORMSG);
 	    return -1;
 	} 	
-	 $hash->{'timestamp'} = $self->fixTimestamp( $hash->{'timestamp'} );  
+	$hash->{'timestamp'} = $self->fixTimestamp( $hash->{'timestamp'} );  
 	return -1 unless    $hash->{'timestamp'}  ;  
 	 
 	# get the data table  and create them if necessary (1)

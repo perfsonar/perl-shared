@@ -350,13 +350,13 @@ sub  querySQL {
                     foreach my $classes (@{$query->{$table}{$entry}}) {
                          if($classes && $classes eq 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl4::Message::Metadata::Subject::EndPointPair::EndPoint::Address') {
         
-                            if    ($self->get_value && ( (  ( ($self->get_type eq 'hostname')  && $entry eq 'ip_name_src') or  ( ($self->get_type eq 'hostname')  && $entry eq 'ip_name_dst')) || (  ( ($self->get_type eq 'ipv4')  && $entry eq 'ip_number')) )) {
+                            if    ($self->get_value && ( (  ($entry eq 'ip_name_src') or  ($entry eq 'ip_name_dst')) || (  ( ($self->get_type eq 'ipv4')  && $entry eq 'ip_number')) )) {
                                 $query->{$table}{$entry} =  $self->get_value;
                                 $self->get_LOGGER->debug(" Got value for SQL query $table.$entry: " . $self->get_value);
                                 last;  
                             }
 
-                            elsif ($self->get_text && ( (  ( ($self->get_type eq 'hostname')  && $entry eq 'ip_name_src') or  ( ($self->get_type eq 'hostname')  && $entry eq 'ip_name_dst')) || (  ( ($self->get_type eq 'ipv4')  && $entry eq 'ip_number')) )) {
+                            elsif ($self->get_text && ( (  ($entry eq 'ip_name_src') or  ($entry eq 'ip_name_dst')) || (  ( ($self->get_type eq 'ipv4')  && $entry eq 'ip_number')) )) {
                                 $query->{$table}{$entry} =  $self->get_text;
                                 $self->get_LOGGER->debug(" Got value for SQL query $table.$entry: " . $self->get_text);
                                 last;  

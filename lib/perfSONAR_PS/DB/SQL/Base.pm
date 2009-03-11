@@ -268,6 +268,7 @@ sub  getFromTable {
      if ($EVAL_ERROR) {
         $self->ERRORMSG("getFromTable  failed with error \"" . $EVAL_ERROR . "\"." );
 	$self->LOGGER->error(" !!! getFromTable  failed with error \"" . $EVAL_ERROR . "\"." );	
+	return -1;
      } 
      return $results;
 }
