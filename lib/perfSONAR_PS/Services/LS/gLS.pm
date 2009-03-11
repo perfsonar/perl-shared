@@ -3379,7 +3379,12 @@ sub lsQueryRequest {
                                 my $address = extract( find( $n, "./nmtl3:subnet/nmtl3:address", 1 ), 0 );
                                 my $mask    = extract( find( $n, "./nmtl3:subnet/nmtl3:netmask", 1 ), 0 );
                                 if ( $address ) {
-                                    $address .= "/" . $mask if $mask;
+                                    if ( $mask ) {
+                                        $address .= "/" . $mask;
+                                    }
+                                    else {
+                                        $address .= "/32";
+                                    }
                                     @cidr_list = Net::CIDR::cidradd( $address, @cidr_list );
                                 }
                             }
