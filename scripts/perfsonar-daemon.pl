@@ -124,6 +124,7 @@ use perfSONAR_PS::Request;
 use perfSONAR_PS::RequestHandler;
 use perfSONAR_PS::Error_compat qw/:try/;
 use perfSONAR_PS::Error;
+use perfSONAR_PS::Services::Echo;
 
 my %child_pids = ();
 
@@ -311,6 +312,8 @@ if ( not defined $conf{"port"} ) {
     $logger->error( "No ports defined" );
     exit( -1 );
 }
+
+$modules_loaded{$echo_module} = 1;
 
 foreach my $port ( keys %{ $conf{"port"} } ) {
     my %port_conf = %{ mergeConfig( \%conf, $conf{"port"}->{$port} ) };
