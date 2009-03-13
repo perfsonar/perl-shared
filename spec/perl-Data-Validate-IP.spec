@@ -1,3 +1,5 @@
+%{!?perl_vendorlib: %define perl_vendorlib %(eval "`%{__perl} -V:installvendorlib`"; echo $installvendorlib)}
+
 Name:           perl-Data-Validate-IP
 Version:        0.08
 Release:        1%{?dist}
@@ -8,13 +10,9 @@ URL:            http://search.cpan.org/dist/Data-Validate-IP/
 Source0:        http://www.cpan.org/modules/by-module/Data/Data-Validate-IP-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
-BuildRequires:  perl(ExtUtils::MakeMaker)
-BuildRequires:  perl(Net::Netmask)
-BuildRequires:  perl(Test::Simple)
 Requires:       perl(Net::Netmask)
 Requires:       perl(Test::Simple)
-#Requires:       perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
-Requires:	perl
+Requires:       perl
 
 %description
 This module collects ip validation routines to make input validation, and
@@ -24,7 +22,7 @@ untainting easier and more readable.
 %setup -q -n Data-Validate-IP-%{version}
 
 %build
-%{__perl} Makefile.PL INSTALLDIRS=vendor
+%{__perl} Makefile.PL INSTALL_BASE=/usr
 make %{?_smp_mflags}
 
 %install
@@ -37,7 +35,7 @@ find $RPM_BUILD_ROOT -depth -type d -exec rmdir {} 2>/dev/null \;
 
 %{_fixperms} $RPM_BUILD_ROOT/*
 
-%check
+%check || :
 make test
 
 %clean
@@ -46,8 +44,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc Changes README
-%{perl_vendorlib}/*
-%{_mandir}/man3/*
+/usr/*
 
 %changelog
 * Wed Mar 04 2009 Jason Zurawski 0.08-1

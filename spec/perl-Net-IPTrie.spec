@@ -1,3 +1,5 @@
+%{!?perl_vendorlib: %define perl_vendorlib %(eval "`%{__perl} -V:installvendorlib`"; echo $installvendorlib)}
+
 Name:           perl-Net-IPTrie
 Version:        0.4
 Release:        1%{?dist}
@@ -8,13 +10,10 @@ URL:            http://search.cpan.org/dist/Net-IPTrie/
 Source0:        http://www.cpan.org/modules/by-module/Net/Net-IPTrie-v%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
-BuildRequires:  perl(Module::Build)
-BuildRequires:  perl(NetAddr::IP) >= 4.007
-BuildRequires:  perl(Test::Simple)
+Requires:       perl(Class::Struct) >= 0.63
 Requires:       perl(NetAddr::IP) >= 4.007
 Requires:       perl(Test::Simple)
-#Requires:       perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
-Requires:	perl
+Requires:       perl
 
 %description
 This module uses a radix tree (or trie) to quickly build the hierarchy of a
@@ -25,7 +24,7 @@ fast subnet or routing lookups. It is implemented exclusively in Perl.
 %setup -q -n Net-IPTrie-v%{version}
 
 %build
-%{__perl} Build.PL installdirs=vendor
+%{__perl} Build.PL install_base=/usr
 ./Build
 
 %install
@@ -36,7 +35,7 @@ find $RPM_BUILD_ROOT -depth -type d -exec rmdir {} 2>/dev/null \;
 
 %{_fixperms} $RPM_BUILD_ROOT/*
 
-%check
+%check || :
 ./Build test
 
 %clean
@@ -45,8 +44,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc README
-%{perl_vendorlib}/*
-%{_mandir}/man3/*
+/usr/*
 
 %changelog
 * Wed Mar 04 2009 Jason Zurawski 0.4-1
