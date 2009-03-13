@@ -2282,53 +2282,64 @@ sub retrieveSQL {
                 return;
             }
 
+
+            my $src_id = q{};
+            my $dst_id = q{};
             foreach my $row ( @{$result_d} ) {
                 my $year = $row->[0];
                 my $mon  = $row->[1];
                 $mon = "0" . $mon if $mon =~ m/^\d$/;
 
                 $nodedb->openDB;
-                my $result1 = $nodedb->query( { query => "select distinct node_id from " . $year . $mon . "_NODES where addr=\"" . $parameters->{src} . "\";" } );
-                my $result2 = $nodedb->query( { query => "select distinct node_id from " . $year . $mon . "_NODES where addr=\"" . $parameters->{dst} . "\";" } );
+                my $result1 = $nodedb->query( { query => "select distinct node_id from " . $year . $mon . "_NODES where addr like \"" . $parameters->{src} . "%\";" } );
+                my $result2 = $nodedb->query( { query => "select distinct node_id from " . $year . $mon . "_NODES where addr like \"" . $parameters->{dst} . "%\";" } );
                 $nodedb->closeDB;
+                
+                $src_id = $result1->[0][0] if not $src_id and $result1->[0][0];
+                $dst_id = $result2->[0][0] if not $dst_id and $result2->[0][0];
+            }
 
-                if ( $#{$result1} == -1 or $#{$result2} == -1 ) {
-                    my $msg = "Cannot find data range tables in database, aborting.";
-                    $self->{LOGGER}->error( $msg );
-                    getResultCodeData( $parameters->{output}, $id, $parameters->{mid}, $msg, 1 );
-                    return;
-                }
-                else {
-                    @dbSchema = ( "send_id", "recv_id", "tspec_id", "ti", "timestamp", "throughput", "jitter", "lost", "sent" );
-                    if ( $parameters->{time_settings}->{"START"}->{"internal"} or $parameters->{time_settings}->{"END"}->{"internal"} ) {
-                        if ( $query ) {
-                            $query = $query . " union select * from " . $year . $mon . "_DATA where send_id=\"" . $result1->[0][0] . "\" and recv_id=\"" . $result2->[0][0] . "\" and";
-                        }
-                        else {
-                            $query = "select * from " . $year . $mon . "_DATA where send_id=\"" . $result1->[0][0] . "\" and recv_id=\"" . $result2->[0][0] . "\" and";
-                        }
+            unless ( $src_id and $dst_id ) {
+                my $msg = "Cannot find node IDs in database, aborting.";
+                $self->{LOGGER}->error($msg);
+                getResultCodeData( $parameters->{output}, $id, $parameters->{mid}, $msg, 1 );
+                return;
+            }
 
-                        my $queryCount = 0;
-                        if ( $parameters->{time_settings}->{"START"}->{"internal"} ) {
-                            $query = $query . " timestamp > " . $parameters->{time_settings}->{"START"}->{"internal"};
-                            $queryCount++;
-                        }
-                        if ( $parameters->{time_settings}->{"END"}->{"internal"} ) {
-                            if ( $queryCount ) {
-                                $query = $query . " and timestamp < " . $parameters->{time_settings}->{"END"}->{"internal"};
-                            }
-                            else {
-                                $query = $query . " timestamp < " . $parameters->{time_settings}->{"END"}->{"internal"};
-                            }
-                        }
+            foreach my $row ( @{$result_d} ) {
+                my $year = $row->[0];
+                my $mon  = $row->[1];
+                $mon = "0" . $mon if $mon =~ m/^\d$/;
+
+                @dbSchema = ( "send_id", "recv_id", "tspec_id", "ti", "timestamp", "throughput", "jitter", "lost", "sent" );
+                if ( $parameters->{time_settings}->{"START"}->{"internal"} or $parameters->{time_settings}->{"END"}->{"internal"} ) {
+                    if ( $query ) {
+                        $query = $query . " union select * from " . $year . $mon . "_DATA where send_id=\"" . $src_id . "\" and recv_id=\"" . $dst_id . "\" and";
                     }
                     else {
-                        if ( $query ) {
-                            $query = $query . " union select * from " . $year . $mon . "_DATA where send_id=\"" . $result1->[0][0] . "\" and recv_id=\"" . $result2->[0][0] . "\"";
+                        $query = "select * from " . $year . $mon . "_DATA where send_id=\"" . $src_id . "\" and recv_id=\"" . $dst_id . "\" and";
+                    }
+
+                    my $queryCount = 0;
+                    if ( $parameters->{time_settings}->{"START"}->{"internal"} ) {
+                        $query = $query . " timestamp > " . $parameters->{time_settings}->{"START"}->{"internal"};
+                        $queryCount++;
+                    }
+                    if ( $parameters->{time_settings}->{"END"}->{"internal"} ) {
+                        if ( $queryCount ) {
+                            $query = $query . " and timestamp < " . $parameters->{time_settings}->{"END"}->{"internal"};
                         }
                         else {
-                            $query = "select * from " . $year . $mon . "_DATA where send_id=\"" . $result1->[0][0] . "\" and recv_id=\"" . $result2->[0][0] . "\"";
+                            $query = $query . " timestamp < " . $parameters->{time_settings}->{"END"}->{"internal"};
                         }
+                    }
+                }
+                else {
+                    if ( $query ) {
+                        $query = $query . " union select * from " . $year . $mon . "_DATA where send_id=\"" . $src_id . "\" and recv_id=\"" . $dst_id . "\"";
+                    }
+                    else {
+                        $query = "select * from " . $year . $mon . "_DATA where send_id=\"" . $src_id . "\" and recv_id=\"" . $dst_id . "\"";
                     }
                 }
             }
