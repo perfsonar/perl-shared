@@ -28,6 +28,8 @@ unless ( $confdir ) {
     exit( 1 );
 }
 
+my $load = shift;
+
 no strict 'refs';
 eval {
     require RRDp;
@@ -44,6 +46,7 @@ eval {
     }
 
     RRDp::start( $rrdtool );
+    my $cmd = q{};
     my $cmd .= "create " . $confdir . "/localhost.rrd --start N --step 1 ";
     $cmd    .= "DS:ifinoctets:COUNTER:10:U:U ";
     $cmd    .= "DS:ifoutoctets:COUNTER:10:U:U ";
@@ -149,7 +152,12 @@ foreach my $et ( ( "netutil", "neterr", "netdisc" ) ) {
 print $fileHandle "</nmwg:store>\n";
 close( $fileHandle );
 
-print $fileName;
+if ( $load ) {
+    system( "mv " . $filename . $confdir . "/store.xml" );
+}
+else {
+    print $fileName;
+}
 
 __END__
 
