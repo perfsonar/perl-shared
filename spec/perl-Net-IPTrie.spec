@@ -1,4 +1,5 @@
-%{!?perl_vendorlib: %define perl_vendorlib %(eval "`%{__perl} -V:installvendorlib`"; echo $installvendorlib)}
+%{!?perl_prefix: %define perl_prefix %(eval "`%{__perl} -V:installprefix`"; echo $installprefix)}
+%{!?perl_style: %define perl_style %(eval "`%{__perl} -V:installstyle`"; echo $installstyle)}
 
 Name:           perl-Net-IPTrie
 Version:        0.4
@@ -45,6 +46,9 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %doc README
 /usr/*
+
+%post
+ln -s %{perl_prefix}/%{perl_style}/Net %{perl_prefix}/%{perl_style}/vendor_perl
 
 %changelog
 * Wed Mar 04 2009 Jason Zurawski 0.4-1

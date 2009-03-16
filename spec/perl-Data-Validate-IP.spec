@@ -1,4 +1,5 @@
-%{!?perl_vendorlib: %define perl_vendorlib %(eval "`%{__perl} -V:installvendorlib`"; echo $installvendorlib)}
+%{!?perl_prefix: %define perl_prefix %(eval "`%{__perl} -V:installprefix`"; echo $installprefix)}
+%{!?perl_style: %define perl_style %(eval "`%{__perl} -V:installstyle`"; echo $installstyle)}
 
 Name:           perl-Data-Validate-IP
 Version:        0.08
@@ -22,7 +23,7 @@ untainting easier and more readable.
 %setup -q -n Data-Validate-IP-%{version}
 
 %build
-%{__perl} Makefile.PL INSTALL_BASE=/usr
+%{__perl} Makefile.PL INSTALL_BASE=%{perl_prefix}
 make %{?_smp_mflags}
 
 %install
@@ -45,6 +46,10 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %doc Changes README
 /usr/*
+
+%post
+ln -s %{perl_prefix}/%{perl_style}/Data %{perl_prefix}/%{perl_style}/vendor_perl
+ln -s %{perl_prefix}/%{perl_style}/auto %{perl_prefix}/%{perl_style}/vendor_perl
 
 %changelog
 * Wed Mar 04 2009 Jason Zurawski 0.08-1
