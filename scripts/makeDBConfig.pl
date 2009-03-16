@@ -35,7 +35,7 @@ print $fileHandle "set_cachesize 0 33554432 0\n";
 print $fileHandle "set_flags DB_LOG_AUTOREMOVE\n";
 print $fileHandle "set_lg_regionmax 2097152\n";
 
-close($fileHandle);
+close( $fileHandle );
 
 print $fileName;
 

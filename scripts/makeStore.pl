@@ -25,7 +25,7 @@ use File::Temp qw(tempfile);
 
 my $confdir = shift;
 unless ( $confdir ) {
-    exit(1);
+    exit( 1 );
 }
 
 no strict 'refs';
@@ -38,12 +38,12 @@ eval {
         $rrdtool = <RRDTOOL>;
         $rrdtool =~ s/rrdtool:\s+//mx;
         $rrdtool =~ s/\n//gmx;
-        unless ( close(RRDTOOL) ) {
+        unless ( close( RRDTOOL ) ) {
             return -1;
         }
     }
 
-    RRDp::start($rrdtool);
+    RRDp::start( $rrdtool );
     my $cmd .= "create " . $confdir . "/localhost.rrd --start N --step 1 ";
     $cmd    .= "DS:ifinoctets:COUNTER:10:U:U ";
     $cmd    .= "DS:ifoutoctets:COUNTER:10:U:U ";
@@ -60,12 +60,12 @@ eval {
     $cmd    .= "RRA:AVERAGE:0.5:48:5040 ";
     $cmd    .= "RRA:AVERAGE:0.5:60:4032 ";
     $cmd    .= "RRA:AVERAGE:0.5:120:2016";
-    RRDp::cmd($cmd);
+    RRDp::cmd( $cmd );
     my $answer = RRDp::read();
 
 };
 if ( $EVAL_ERROR ) {
-    print "Store generation error: \"".$EVAL_ERROR."\"\n";
+    print "Store generation error: \"" . $EVAL_ERROR . "\"\n";
 }
 
 my ( $fileHandle, $fileName ) = tempfile();
@@ -147,7 +147,7 @@ foreach my $et ( ( "netutil", "neterr", "netdisc" ) ) {
     }
 }
 print $fileHandle "</nmwg:store>\n";
-close($fileHandle);
+close( $fileHandle );
 
 print $fileName;
 
