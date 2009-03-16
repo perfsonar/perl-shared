@@ -1,9 +1,13 @@
-#!/usr/bin/perl -w -I ../lib
+#!/usr/bin/perl -w
+
+use strict;
+use warnings;
+
+our $VERSION = 3.1;
 
 =head1 NAME
 
-loadStoreFile.pl - Load the contents of an XML file (commonly a used to store
-metadata configuration for an MA) into an XML Databatabase.
+loadStoreFile.pl
 
 =head1 DESCRIPTION
 
@@ -18,8 +22,6 @@ file information directly.
 
 =cut
 
-use strict;
-use warnings;
 use Getopt::Long;
 use XML::LibXML;
 use Digest::MD5 qw(md5_hex);
@@ -136,24 +138,28 @@ $metadatadb->closeDB({ error => \$error });
 
 exit(1);
 
+__END__
+
 =head1 SEE ALSO
 
-L<strict>, L<warnings>, L<Getopt::Long>, L<XML::LibXML>, L<Digest::MD5>, 
-L<perfSONAR_PS::DB::XMLDB>, L<perfSONAR_PS::Services::LS::General>
+L<Getopt::Long>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
 Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+  http://code.google.com/p/perfsonar-ps/issues/list
 
 =head1 VERSION
 
-$Id:$
+$Id$
 
 =head1 AUTHOR
 
@@ -161,16 +167,14 @@ Jason Zurawski, zurawski@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2
 
 All rights reserved.
 
 =cut
-
-
-

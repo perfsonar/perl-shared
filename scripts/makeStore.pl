@@ -2,22 +2,29 @@
 
 use strict;
 use warnings;
-use English qw( -no_match_vars );
-use File::Temp qw(tempfile);
+
+our $VERSION = 3.1;
 
 =head1 NAME
 
-makeStore - Create a test store.xml and localhost.rrd file.
+makeStore.pl
 
 =head1 DESCRIPTION
 
 Create a temporary store file to ensure that the SNMP MA service
 works properly.
 
+=head1 SYNOPSIS
+
+makeStore.pl
+
 =cut
 
+use English qw( -no_match_vars );
+use File::Temp qw(tempfile);
+
 my $confdir = shift;
-unless ($confdir) {
+unless ( $confdir ) {
     exit(1);
 }
 
@@ -145,23 +152,23 @@ close($fileHandle);
 print $fileName;
 
 __END__
-	
+
 =head1 SEE ALSO
 
 L<English>, L<File::Temp>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
 Questions and comments can be directed to the author, or the mailing list.
 Bugs, feature requests, and improvements can be directed here:
 
-https://bugs.internet2.edu/jira/browse/PSPS
+  http://code.google.com/p/perfsonar-ps/issues/list
 
 =head1 VERSION
 
@@ -179,7 +186,7 @@ along with this software.  If not, see
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008, Internet2
+Copyright (c) 2004-2009, Internet2
 
 All rights reserved.
 
