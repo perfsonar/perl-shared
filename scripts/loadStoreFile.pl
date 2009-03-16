@@ -150,7 +150,8 @@ __END__
 
 =head1 SEE ALSO
 
-L<Getopt::Long>
+L<Getopt::Long>, L<XML::LibXML>, L<Digest::MD5>, L<perfSONAR_PS::DB::XMLDB>,
+L<perfSONAR_PS::Services::LS::General>
 
 To join the 'perfSONAR Users' mailing list, please visit:
 
