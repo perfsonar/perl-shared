@@ -46,7 +46,6 @@ eval {
     }
 
     RRDp::start( $rrdtool );
-    my $cmd = q{};
     my $cmd .= "create " . $confdir . "/localhost.rrd --start N --step 1 ";
     $cmd    .= "DS:ifinoctets:COUNTER:10:U:U ";
     $cmd    .= "DS:ifoutoctets:COUNTER:10:U:U ";
@@ -153,7 +152,7 @@ print $fileHandle "</nmwg:store>\n";
 close( $fileHandle );
 
 if ( $load ) {
-    system( "mv " . $filename . $confdir . "/store.xml" );
+    system( "mv " . $fileName . " " . $confdir . "/store.xml" );
 }
 else {
     print $fileName;
