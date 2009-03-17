@@ -1,116 +1,211 @@
 package perfSONAR_PS::Collectors::TL1::Agent::OME;
 
-
-use Data::Dumper;
-
 use strict;
 use warnings;
+
+our $VERSION = 3.1;
+
+use fields 'AGENT', 'LOGGER', 'AID_TYPE', 'AID', 'COUNTER';
+
+=head1 NAME
+
+perfSONAR_PS::Collectors::TL1::Agent::OME
+
+=head1 DESCRIPTION
+
+TBD
+
+=cut
+
+use Data::Dumper;
 use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger);
 use perfSONAR_PS::Utils::ParameterValidation;
 use perfSONAR_PS::Utils::TL1::OME;
 
-our $VERSION = 0.09;
+=head2 new($class, @params)
 
-use fields 'AGENT', 'LOGGER', 'AID_TYPE', 'AID', 'COUNTER';
+TBD
+
+=cut
 
 sub new {
-    my ($class, @params) = @_;
+    my ( $class, @params ) = @_;
 
-    my $parameters = validateParams(@params,
-            {
-            address => 0,
-            port => 0,
+    my $parameters = validateParams(
+        @params,
+        {
+            address  => 0,
+            port     => 0,
             username => 0,
             password => 0,
-            agent => 0,
-            aid => 1,
-            counter => 1,
+            agent    => 0,
+            aid      => 1,
+            counter  => 1,
             aid_type => 1,
-            });
+        }
+    );
 
-    my $self = fields::new($class);
+    my $self = fields::new( $class );
 
-    $self->{LOGGER} = get_logger("perfSONAR_PS::Collectors::TL1::Agent::OME");
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::Collectors::TL1::Agent::OME" );
 
     # we need to be able to generate a new tl1 agent or reuse an existing one. Not neither.
-    if (not $parameters->{agent} and
-             (not $parameters->{address} or
-             not $parameters->{port} or
-             not $parameters->{username} or
-             not $parameters->{password})
-       ) {
+    if (
+        not $parameters->{agent}
+        and (  not $parameters->{address}
+            or not $parameters->{port}
+            or not $parameters->{username}
+            or not $parameters->{password} )
+        )
+    {
         return;
     }
 
-    if (not defined $parameters->{agent}) {
-	$parameters->{agent} = perfSONAR_PS::Utils::TL1::OME->new();
-	$parameters->{agent}->initialize(
-                    username => $parameters->{username},
-                    password => $parameters->{password},
-                    address => $parameters->{address},
-                    port => $parameters->{port},
-                    cache_time => 300
-                );
+    unless ( exists $parameters->{agent} ) {
+        $parameters->{agent} = perfSONAR_PS::Utils::TL1::OME->new();
+        $parameters->{agent}->initialize(
+            username   => $parameters->{username},
+            password   => $parameters->{password},
+            address    => $parameters->{address},
+            port       => $parameters->{port},
+            cache_time => 300
+        );
     }
 
-    $self->counter($parameters->{counter});
-    $self->agent($parameters->{agent});
-    $self->aid($parameters->{aid});
-    $self->aid_type($parameters->{aid_type});
+    $self->counter( $parameters->{counter} );
+    $self->agent( $parameters->{agent} );
+    $self->aid( $parameters->{aid} );
+    $self->aid_type( $parameters->{aid_type} );
 
     return $self;
 }
 
-sub run {
-	my ($self) = @_;
+=head2 run($self)
 
-	if ($self->{AID_TYPE} =~ /^OC/) {
-		$self->{LOGGER}->info("Agent: ".Dumper($self->{AGENT}));
-		return $self->{AGENT}->getOCN_PM($self->{AID}, $self->{COUNTER});
-	} elsif ($self->{AID_TYPE} =~ /^STS/) {
-		return $self->{AGENT}->getSTS_PM($self->{AID}, $self->{COUNTER});
-	} elsif ($self->{AID_TYPE} =~ /^ETH/) {
-		return $self->{AGENT}->getETH_PM($self->{AID}, $self->{COUNTER});
-	}
+TBD
+
+=cut
+
+sub run {
+    my ( $self ) = @_;
+
+    if ( exists $self->{AID_TYPE} and $self->{AID_TYPE} =~ /^OC/ ) {
+        $self->{LOGGER}->info( "Agent: " . Dumper( $self->{AGENT} ) );
+        return $self->{AGENT}->getOCN_PM( $self->{AID}, $self->{COUNTER} );
+    }
+    elsif ( exists $self->{AID_TYPE} and $self->{AID_TYPE} =~ /^STS/ ) {
+        return $self->{AGENT}->getSTS_PM( $self->{AID}, $self->{COUNTER} );
+    }
+    elsif ( exists $self->{AID_TYPE} and $self->{AID_TYPE} =~ /^ETH/ ) {
+        return $self->{AGENT}->getETH_PM( $self->{AID}, $self->{COUNTER} );
+    }
+    return;
 }
 
-sub agent {
-    my ($self, $agent) = @_;
+=head2 agent($self, $agent)
 
-    if ($agent) {
+TBD
+
+=cut
+
+sub agent {
+    my ( $self, $agent ) = @_;
+
+    if ( defined $agent and $agent ) {
         $self->{AGENT} = $agent;
     }
-
     return $self->{AGENT};
 }
 
-sub counter {
-    my ($self, $counter) = @_;
+=head2 counter($self, $counter)
 
-    if ($counter) {
+TBD
+
+=cut
+
+sub counter {
+    my ( $self, $counter ) = @_;
+
+    if ( defined $counter and $counter ) {
         $self->{COUNTER} = $counter;
     }
-
     return $self->{COUNTER};
 }
 
-sub aid {
-    my ($self, $aid) = @_;
+=head2 aid($self, $aid)
 
-    if ($aid) {
+TBD
+
+=cut
+
+sub aid {
+    my ( $self, $aid ) = @_;
+
+    if ( defined $aid and $aid ) {
         $self->{AID} = $aid;
     }
-
     return $self->{AID};
 }
 
-sub aid_type {
-    my ($self, $aid_type) = @_;
+=head2 aid_type($self, $aid_type)
 
-    if ($aid_type) {
+TBD
+
+=cut
+
+sub aid_type {
+    my ( $self, $aid_type ) = @_;
+
+    if ( defined $aid_type and $aid_type ) {
         $self->{AID_TYPE} = $aid_type;
     }
-
     return $self->{AID_TYPE};
 }
+
+1;
+
+__END__
+
+=head1 SEE ALSO
+
+L<Data::Dumper>, L<Params::Validate>, L<Log::Log4perl>,
+L<perfSONAR_PS::Utils::ParameterValidation>, L<perfSONAR_PS::Utils::TL1::OME>
+
+To join the 'perfSONAR Users' mailing list, please visit:
+
+  https://mail.internet2.edu/wws/info/perfsonar-user
+
+The perfSONAR-PS subversion repository is located at:
+
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+  http://code.google.com/p/perfsonar-ps/issues/list
+
+=head1 VERSION
+
+$Id$
+
+=head1 AUTHOR
+
+Aaron Brown, aaron@internet2.edu
+Jason Zurawski, zurawski@internet2.edu
+
+=head1 LICENSE
+
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
+
+All rights reserved.
+
+=cut
+
+# vim: expandtab shiftwidth=4 tabstop=4
