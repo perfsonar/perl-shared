@@ -1,5 +1,10 @@
 #!/usr/bin/perl -w -I ./lib ../lib
 
+use warnings;
+use strict;
+
+our $VERSION = 3.1;
+
 =head1 NAME
 
 perfsonar-daemon.pl - The main daemon that dispatches requests to the backend
@@ -15,9 +20,6 @@ Each perfSONAR-PS module should be designed to be run by this daemon.
 
 =cut
 
-use warnings;
-use strict;
-
 use Getopt::Long;
 use Time::HiRes qw( gettimeofday );
 use POSIX qw( setsid );
@@ -30,8 +32,6 @@ use Module::Load;
 use HTTP::Daemon;
 use English '-no_match_vars';
 use Carp;
-
-our $VERSION = 0.09;
 
 my $libdir;
 my $confdir;
@@ -64,9 +64,8 @@ BEGIN {
         # scripts and whatnot relative to the binary.
 
         $dirname = dirname( $PROGRAM_NAME );
-        if ( !( $dirname =~ /^\// ) ) {
-            $dirname = getcwd . "/" . $dirname;
-        }
+        $dirname = getcwd . "/" . $dirname unless $dirname =~ /^\//;
+
         $confdir = $dirname;
         $libdir  = dirname( $PROGRAM_NAME ) . "/lib";
     }
@@ -165,16 +164,12 @@ if ( not $status or $HELP ) {
     exit( 1 );
 }
 
-if ( not defined $CONFIG_FILE or $CONFIG_FILE eq q{} ) {
-    $CONFIG_FILE = $confdir . "/daemon.conf";
-}
+$CONFIG_FILE = $confdir . "/daemon.conf" unless $CONFIG_FILE;
 
 # The configuration directory gets passed to the modules so that relative paths
 # defined in their configurations can be resolved.
-$confdir = dirname($CONFIG_FILE);
-if ( !( $confdir =~ /^\// ) ) {
-    $confdir = getcwd . "/" . $confdir;
-}
+$confdir = dirname( $CONFIG_FILE );
+$confdir = getcwd . "/" . $confdir unless $confdir =~ /^\//;
 
 # Read in configuration information
 my $config = new Config::General( $CONFIG_FILE );
@@ -183,8 +178,8 @@ my %conf   = $config->getall;
 #
 # Check/open the PID file while we're still running as root
 #
-if ( not defined $PIDDIR or $PIDDIR eq q{} ) {
-    if ( defined $conf{"pid_dir"} and $conf{"pid_dir"} ne q{} ) {
+unless ( $PIDDIR ) {
+    if ( exists $conf{"pid_dir"} and $conf{"pid_dir"} ) {
         $PIDDIR = $conf{"pid_dir"};
     }
     else {
@@ -192,8 +187,8 @@ if ( not defined $PIDDIR or $PIDDIR eq q{} ) {
     }
 }
 
-if ( not defined $PIDFILE or $PIDFILE eq q{} ) {
-    if ( defined $conf{"pid_file"} and $conf{"pid_file"} ne q{} ) {
+unless ( $PIDFILE ) {
+    if ( exists $conf{"pid_file"} and $conf{"pid_file"} ) {
         $PIDFILE = $conf{"pid_file"};
     }
     else {
@@ -205,16 +200,12 @@ my $pidfile = lockPIDFile( $PIDDIR, $PIDFILE );
 
 # Check if the daemon should run as a specific user/group and then switch to
 # that user/group.
-if ( not $RUNAS_GROUP ) {
-    if ( $conf{"group"} ) {
-        $RUNAS_GROUP = $conf{"group"};
-    }
+unless ( $RUNAS_GROUP ) {
+    $RUNAS_GROUP = $conf{"group"} if exists $conf{"group"} and $conf{"group"};
 }
 
-if ( not $RUNAS_USER ) {
-    if ( $conf{"user"} ) {
-        $RUNAS_USER = $conf{"user"};
-    }
+unless ( $RUNAS_USER ) {
+    $RUNAS_USER = $conf{"user"} if exists $conf{"user"} and $conf{"user"};
 }
 
 if ( $RUNAS_USER and $RUNAS_GROUP ) {
@@ -237,18 +228,13 @@ if ( not defined $LOGGER_CONF or $LOGGER_CONF eq q{} ) {
     use Log::Log4perl qw(:easy);
 
     my $output_level = $INFO;
-    if ( $DEBUGFLAG ) {
-        $output_level = $DEBUG;
-    }
+    $output_level = $DEBUG if $DEBUGFLAG;
 
     my %logger_opts = (
         level  => $output_level,
         layout => '%d (%P) %p> %F{1}:%L %M - %m%n',
     );
-
-    if ( defined $LOGOUTPUT and $LOGOUTPUT ne q{} ) {
-        $logger_opts{file} = $LOGOUTPUT;
-    }
+    $logger_opts{file} = $LOGOUTPUT if $LOGOUTPUT;
 
     Log::Log4perl->easy_init( \%logger_opts );
     $logger = get_logger( "perfSONAR_PS" );
@@ -257,26 +243,24 @@ else {
     use Log::Log4perl qw(get_logger :levels);
 
     my $output_level;
-    if ( $DEBUGFLAG ) {
-        $output_level = $DEBUG;
-    }
+    $output_level = $DEBUG if $DEBUGFLAG;
 
     Log::Log4perl->init( $LOGGER_CONF );
     $logger = get_logger( "perfSONAR_PS" );
     $logger->level( $output_level ) if $output_level;
 }
 
-if ( not defined $conf{"max_worker_lifetime"} or $conf{"max_worker_lifetime"} eq q{} ) {
+unless ( exists $conf{"max_worker_lifetime"} and $conf{"max_worker_lifetime"} ) {
     $logger->warn( "Setting maximum worker lifetime at 60 seconds" );
     $conf{"max_worker_lifetime"} = 60;
 }
 
-if ( not defined $conf{"max_worker_processes"} or $conf{"max_worker_processes"} eq q{} ) {
+unless ( exists $conf{"max_worker_processes"} and $conf{"max_worker_processes"} ) {
     $logger->warn( "Setting maximum worker processes at 32" );
     $conf{"max_worker_processes"} = 32;
 }
 
-if ( not defined $conf{"ls_registration_interval"} or $conf{"ls_registration_interval"} eq q{} ) {
+unless ( exists $conf{"ls_registration_interval"} and $conf{"ls_registration_interval"} ) {
     $logger->warn( "Setting LS registration interval at 60 minutes" );
     $conf{"ls_registration_interval"} = 60;
 }
@@ -284,12 +268,12 @@ if ( not defined $conf{"ls_registration_interval"} or $conf{"ls_registration_int
 # turn the interval from minutes to seconds
 $conf{"ls_registration_interval"} *= 60;
 
-if ( not defined $conf{"disable_echo"} or $conf{"disable_echo"} eq q{} ) {
+unless ( exists $conf{"disable_echo"} and $conf{"disable_echo"} ) {
     $logger->warn( "Enabling echo service for each endpoint unless specified otherwise" );
     $conf{"disable_echo"} = 0;
 }
 
-if ( not defined $conf{"reaper_interval"} or $conf{"reaper_interval"} eq q{} ) {
+unless ( exists $conf{"reaper_interval"} and $conf{"reaper_interval"} ) {
     $logger->warn( "Setting reaper interval to 20 seconds" );
     $conf{"reaper_interval"} = 20;
 }
@@ -298,7 +282,6 @@ $logger->debug( "Starting perfSONAR-PS daemon as '" . $PROCESS_ID . "'" );
 
 my @ls_services;
 my @maintenance;
-
 my %loaded_modules = ();
 my $echo_module    = "perfSONAR_PS::Services::Echo";
 
@@ -308,7 +291,7 @@ my %modules_loaded  = ();
 my %port_configs    = ();
 my %service_configs = ();
 
-if ( not defined $conf{"port"} ) {
+unless ( exists $conf{"port"} and $conf{"port"} ) {
     $logger->error( "No ports defined" );
     exit( -1 );
 }
@@ -318,11 +301,11 @@ $modules_loaded{$echo_module} = 1;
 foreach my $port ( keys %{ $conf{"port"} } ) {
     my %port_conf = %{ mergeConfig( \%conf, $conf{"port"}->{$port} ) };
 
-    next if ( defined $port_conf{"disabled"} and $port_conf{"disabled"} == 1 );
+    next if exists $port_conf{"disabled"} and $port_conf{"disabled"} == 1;
 
     $service_configs{$port} = \%port_conf;
 
-    if ( not defined $conf{"port"}->{$port}->{"endpoint"} ) {
+    unless ( exists $conf{"port"}->{$port}->{"endpoint"} and $conf{"port"}->{$port}->{"endpoint"} ) {
         $logger->warn( "No endpoints specified for port $port" );
         next;
     }
@@ -337,29 +320,26 @@ foreach my $port ( keys %{ $conf{"port"} } ) {
         exit( -1 );
     }
 
-    $listeners{$port} = $listener;
-
-    $handlers{$port} = ();
-
+    $listeners{$port}                     = $listener;
+    $handlers{$port}                      = ();
     $service_configs{$port}->{"endpoint"} = ();
 
     my $num_endpoints = 0;
-
     foreach my $key ( keys %{ $conf{"port"}->{$port}->{"endpoint"} } ) {
         my $fixed_endpoint = $key;
-        $fixed_endpoint = "/" . $key if ( $key =~ /^[^\/]/ );
+        $fixed_endpoint = "/" . $key if $key =~ /^[^\/]/;
 
         my %endpoint_conf = %{ mergeConfig( \%port_conf, $conf{"port"}->{$port}->{"endpoint"}->{$key} ) };
 
         $service_configs{$port}->{"endpoint"}->{$fixed_endpoint} = \%endpoint_conf;
 
-        next if ( defined $endpoint_conf{"disabled"} and $endpoint_conf{"disabled"} == 1 );
+        next if exists $endpoint_conf{"disabled"} and $endpoint_conf{"disabled"} == 1;
 
         $logger->debug( "Adding endpoint $fixed_endpoint to $port" );
 
         $handlers{$port}->{$fixed_endpoint} = perfSONAR_PS::RequestHandler->new();
 
-        if ( not defined $endpoint_conf{"module"} or $endpoint_conf{"module"} eq q{} ) {
+        unless ( exists $endpoint_conf{"module"} and $endpoint_conf{"module"} ) {
             $logger->error( "No module specified for $port:$fixed_endpoint" );
             exit( -1 );
         }
@@ -378,9 +358,7 @@ foreach my $port ( keys %{ $conf{"port"} } ) {
         if ( not $endpoint_conf{"disable_echo"} and not $conf{"disable_echo"} ) {
             my $do_load = 1;
             foreach my $curr_module ( @endpoint_modules ) {
-                if ( $curr_module eq $echo_module ) {
-                    $do_load = 0;
-                }
+                $do_load = 0 if $curr_module eq $echo_module;
             }
 
             if ( $do_load ) {
@@ -389,7 +367,7 @@ foreach my $port ( keys %{ $conf{"port"} } ) {
         }
 
         foreach my $module ( @endpoint_modules ) {
-            if ( not defined $modules_loaded{$module} ) {
+            unless ( exists $modules_loaded{$module} and $modules_loaded{$module} ) {
                 load $module;
                 $modules_loaded{$module} = 1;
             }
@@ -445,7 +423,7 @@ if ( not $DEBUGFLAG ) {
 
 $SIG{CHLD} = \&REAPER;
 
-$PROGRAM_NAME = "perfsonar.pl ($PROCESS_ID)";
+$PROGRAM_NAME = "perfsonar-daemon.pl ($PROCESS_ID)";
 
 foreach my $port ( keys %listeners ) {
     my $pid = fork();
@@ -490,7 +468,7 @@ foreach my $ls_args ( @ls_services ) {
         exit( 0 );
     }
     elsif ( $ls_pid < 0 ) {
-        $logger->error( "Couldn't spawn LS" );
+        $logger->error( "Couldn't spawn LS Registration" );
         killChildren();
         exit( -1 );
     }
@@ -504,11 +482,13 @@ foreach my $pid ( keys %child_pids ) {
 }
 
 =head2 psService
-This function will wait for requests using the specified listener. It
-will then select the appropriate endpoint request handler, spawn a new
-process to handle the request and pass the request to the request handler.
-The function also tracks the processes spawned and kills them if they
-go on for too long, responding to the request with an error.
+
+This function will wait for requests using the specified listener. It will then
+select the appropriate endpoint request handler, spawn a new process to handle
+the request and pass the request to the request handler.  The function also
+tracks the processes spawned and kills them if they go on for too long,
+responding to the request with an error.
+
 =cut
 
 sub psService {
@@ -524,9 +504,7 @@ sub psService {
             while ( %child_pids and scalar( keys %child_pids ) >= $max_worker_processes ) {
                 $logger->debug( "Waiting for a slot to open" );
                 my $kid = waitpid( -1, 0 );
-                if ( $kid > 0 ) {
-                    delete $child_pids{$kid};
-                }
+                delete $child_pids{$kid} if $kid > 0;
             }
         }
 
@@ -572,7 +550,7 @@ sub psService {
                 $PROGRAM_NAME .= " - " . $handle->peerhost();
 
                 my $http_request = $handle->get_request;
-                if ( not defined $http_request ) {
+                unless ( $http_request ) {
                     my $msg = "No HTTP Request received from host:\t" . $handle->peerhost();
                     $logger->error( $msg );
                     $handle->close;
@@ -580,7 +558,7 @@ sub psService {
                 }
 
                 my $request = perfSONAR_PS::Request->new( $handle, $http_request );
-                if ( not defined $handlers->{ $request->getEndpoint() } ) {
+                if ( not exists $handlers->{ $request->getEndpoint() } ) {
                     my $msg = "Received message with has invalid endpoint: " . $request->getEndpoint();
                     $request->setResponse( getErrorResponseMessage( eventType => "error.common.transport", description => $msg ) );
                     $request->finish();
@@ -609,9 +587,10 @@ sub psService {
 }
 
 =head2 registerLS($args)
-    The registerLS function is called in a separate process or thread and
-    is responsible for calling the specified service's 'registerLS'
-    function regularly.
+
+The registerLS function is called in a separate process or thread and is
+responsible for calling the specified service's 'registerLS' function regularly.
+
 =cut
 
 sub registerLS {
@@ -621,13 +600,13 @@ sub registerLS {
     $logger->debug( "Starting '" . $PROCESS_ID . "' for LS registration" );
 
     my $sleep_time = q{};
-    if ( $args->{"conf"}->{"ls_registration_interval"} ) {
+    if ( exists $args->{"conf"}->{"ls_registration_interval"} and $args->{"conf"}->{"ls_registration_interval"} ) {
         $sleep_time = $args->{"conf"}->{"ls_registration_interval"};
     }
-    elsif ( $args->{"conf"}->{"ls"}->{"ls_registration_interval"} ) {
+    elsif ( exists $args->{"conf"}->{"ls"}->{"ls_registration_interval"} and $args->{"conf"}->{"ls"}->{"ls_registration_interval"} ) {
         $sleep_time = $args->{"conf"}->{"ls"}->{"ls_registration_interval"};
     }
-    elsif ( $args->{"conf"}->{"gls"}->{"ls_registration_interval"} ) {
+    elsif ( exists $args->{"conf"}->{"gls"}->{"ls_registration_interval"} and $args->{"conf"}->{"gls"}->{"ls_registration_interval"} ) {
         $sleep_time = $args->{"conf"}->{"gls"}->{"ls_registration_interval"};
     }
     else {
@@ -640,10 +619,7 @@ sub registerLS {
     }
 
     while ( 1 ) {
-        if ( not $sleep_time ) {
-            $sleep_time = $args->{"conf"}->{"ls_registration_interval"};
-        }
-
+        $sleep_time = $args->{"conf"}->{"ls_registration_interval"} unless $sleep_time;
         eval { $service->registerLS( \$sleep_time ); };
         if ( $EVAL_ERROR ) {
             $logger->error( "Problem running register LS: " . $EVAL_ERROR );
@@ -655,8 +631,10 @@ sub registerLS {
 }
 
 =head2 maintenance($args)
-    The maintenanceLS function is used (currently only by the LS) to perform
-    routine tasks.
+
+The maintenanceLS function is used (currently only by the LS) to perform routine
+tasks.
+
 =cut
 
 sub maintenance {
@@ -665,10 +643,10 @@ sub maintenance {
     my $sleep_time = q{};
     my $error      = q{};
 
-    if ( exists $args->{"conf"}->{"gls"}->{"maintenance_interval"} ) {
+    if ( exists $args->{"conf"}->{"gls"}->{"maintenance_interval"} and $args->{"conf"}->{"gls"}->{"maintenance_interval"} ) {
         $sleep_time = $args->{"conf"}->{"gls"}->{"maintenance_interval"};
     }
-    elsif ( exists $args->{"conf"}->{"ls"}->{"maintenance_interval"} ) {
+    elsif ( exists $args->{"conf"}->{"ls"}->{"maintenance_interval"} and $args->{"conf"}->{"ls"}->{"maintenance_interval"} ) {
         $sleep_time = $args->{"conf"}->{"ls"}->{"maintenance_interval"};
     }
     else {
@@ -684,9 +662,7 @@ sub maintenance {
         my $cleanStatus = 0;
         my $sumStatus   = 0;
         eval {
-            unless ( $CLEANFLAG ) {
-                $cleanStatus = $service->cleanLS( { error => \$error } ) if $service->can( "cleanLS" );
-            }
+            $cleanStatus = $service->cleanLS( { error => \$error } ) if $service->can( "cleanLS" ) unless $CLEANFLAG;
             $sumStatus = $service->summarizeLS( { error => \$error } ) if $service->can( "summarizeLS" );
         };
         if ( my $e = catch std::exception ) {
@@ -696,21 +672,19 @@ sub maintenance {
             $logger->error( "Problem running service maintenance: " . $EVAL_ERROR );
         }
 
-        if ( $cleanStatus == -1 or $sumStatus == -1 ) {
-            $logger->error( "Error returned: $error" );
-        }
-
+        $logger->error( "Error returned: $error" ) if $cleanStatus == -1 or $sumStatus == -1;
         $logger->debug( "Sleeping for $sleep_time" );
         sleep( $sleep_time );
     }
-
     return 0;
 }
 
 =head2 handleRequest($handler, $request, $endpoint_conf);
-This function is a wrapper around the handler's handleRequest function.
-It's purpose is to ensure that if a crash occurs or a perfSONAR_PS::Error_compat
+
+This function is a wrapper around the handler's handleRequest function.  It's
+purpose is to ensure that if a crash occurs or a perfSONAR_PS::Error_compat
 message is thrown, the client receives a proper response.
+
 =cut
 
 sub handleRequest {
@@ -719,7 +693,6 @@ sub handleRequest {
     my $messageId = q{};
     try {
         my $error = q{};
-
         if ( $request->getRawRequest->method ne "POST" ) {
             my $msg = "Received message with an invalid HTTP request, are you using a web browser?";
             $logger->error( $msg );
@@ -762,7 +735,9 @@ sub handleRequest {
 }
 
 =head2 daemonize
+
 Sends the program to the background by eliminating ties to the calling terminal.
+
 =cut
 
 sub daemonize {
@@ -778,20 +753,23 @@ sub daemonize {
 }
 
 =head2 lockPIDFile($piddir, $pidfile);
-The lockPIDFile function checks for the existence of the specified file in
-the specified directory. If found, it checks to see if the process in the
-file still exists. If there is no running process, it returns the filehandle for the open pidfile that has been flock(LOCK_EX).
+
+The lockPIDFile function checks for the existence of the specified file in the
+specified directory. If found, it checks to see if the process in the file still
+exists. If there is no running process, it returns the filehandle for the open
+pidfile that has been flock(LOCK_EX).
+
 =cut
 
 sub lockPIDFile {
     my ( $piddir, $pidfile ) = @_;
     croak "Can't write pidfile: $piddir/$pidfile\n" unless -w $piddir;
     $pidfile = $piddir . "/" . $pidfile;
-    sysopen( PIDFILE, $pidfile, O_RDWR | O_CREAT ) or croak("Couldn't open pidfile");
-    flock( PIDFILE, LOCK_EX ) or croak("Couldn't lock pidfile");
+    sysopen( PIDFILE, $pidfile, O_RDWR | O_CREAT ) or croak( "Couldn't open pidfile" );
+    flock( PIDFILE, LOCK_EX ) or croak( "Couldn't lock pidfile" );
     my $p_id = <PIDFILE>;
-    chomp( $p_id ) if ( defined $p_id );
-    if ( defined $p_id and $p_id ne q{} ) {
+    chomp( $p_id ) if $p_id;
+    if ( $p_id ) {
         open( PSVIEW, "ps -p " . $p_id . " |" );
         my @output = <PSVIEW>;
         close( PSVIEW );
@@ -804,8 +782,10 @@ sub lockPIDFile {
 }
 
 =head2 unlockPIDFile
+
 This file writes the pid of the call process to the filehandle passed in,
 unlocks the file and closes it.
+
 =cut
 
 sub unlockPIDFile {
@@ -823,21 +803,23 @@ sub unlockPIDFile {
 }
 
 =head2 killChildren
-Kills all the children for this process off. It uses global variables
-because this function is used by the signal handler to kill off all
-child processes.
+
+Kills all the children for this process off. It uses global variables because
+this function is used by the signal handler to kill off all child processes.
+
 =cut
 
 sub killChildren {
     foreach my $pid ( keys %child_pids ) {
         kill( "SIGINT", $pid );
     }
-
     return;
 }
 
 =head2 signalHandler
+
 Kills all the children for the process and then exits
+
 =cut
 
 sub signalHandler {
@@ -856,11 +838,14 @@ sub REAPER {
     # may as well reuse it to clean up the exiting children as well.
 
     $SIG{CHLD} = \&REAPER;
+    return;
 }
 
 =head2 setids
+
 Sets the user/group for the daemon to run as. Returns 0 on success and -1 on
 failure.
+
 =cut
 
 sub setids {
@@ -868,18 +853,15 @@ sub setids {
     my ( $uid,  $gid );
     my ( $unam, $gnam );
 
-    $uid = $args{'USER'}  if ( defined $args{'USER'} );
-    $gid = $args{'GROUP'} if ( defined $args{'GROUP'} );
-
-    if ( not $uid ) {
-        return -1;
-    }
+    $uid = $args{'USER'}  if exists $args{'USER'}  and $args{'USER'};
+    $gid = $args{'GROUP'} if exists $args{'GROUP'} and $args{'GROUP'};
+    return -1 unless $uid;
 
     # Don't do anything if we are not running as root.
     return if ( $EFFECTIVE_USER_ID != 0 );
 
     # set GID first to ensure we still have permissions to.
-    if ( defined $gid ) {
+    if ( $gid ) {
         if ( $gid =~ /\D/ ) {
 
             # If there are any non-digits, it is a groupname.
@@ -925,25 +907,26 @@ sub setids {
     return 0;
 }
 
+__END__
+
 =head1 SEE ALSO
 
-L<warnings>, L<strict>, L<Getopt::Long>, L<Time::HiRes>, L<POSIX>,
-L<File::Basename>, L<Fcntl>, L<POSIX>, L<Cwd>, L<Config::General>,
-L<Module::Load>, L<HTTP::Daemon>, L<English>, L<Carp>, L<perfSONAR_PS::Common>,
-L<perfSONAR_PS::Messages>, L<perfSONAR_PS::Request>,
+L<Getopt::Long>, L<Time::HiRes>, L<POSIX>, L<File::Basename>, L<Fcntl>, L<Cwd>,
+L<Config::General>, L<Module::Load>, L<HTTP::Daemon>, L<English>, L<Carp>,
+L<perfSONAR_PS::Common>, L<perfSONAR_PS::Messages>, L<perfSONAR_PS::Request>,
 L<perfSONAR_PS::RequestHandler>, L<perfSONAR_PS::Error_compat>,
-L<perfSONAR_PS::Error>
+L<perfSONAR_PS::Error>, L<perfSONAR_PS::Services::Echo>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -958,12 +941,13 @@ Jason Zurawski, zurawski@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 
