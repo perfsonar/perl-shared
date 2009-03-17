@@ -92,6 +92,9 @@ foreach my $et ( ( "netutil", "neterr", "netdisc" ) ) {
         elsif ( $et eq "netdisc" ) {
             print $fileHandle "    <netdisc:subject xmlns:netdisc=\"http://ggf.org/ns/nmwg/characteristic/discards/2.0/\" id=\"s-" . $dir . "-" . $et . "-1\">\n";
         }
+        else {
+            print $fileHandle "    <nmwg:subject id=\"s-" . $dir . "-" . $et . "-1\">\n";
+        }
         print $fileHandle "      <nmwgt:interface xmlns:nmwgt=\"http://ggf.org/ns/nmwg/topology/2.0/\">\n";
         print $fileHandle "        <nmwgt:ifAddress type=\"ipv4\">127.0.0.1</nmwgt:ifAddress>\n";
         print $fileHandle "        <nmwgt:hostName>localhost</nmwgt:hostName>\n";
@@ -103,16 +106,36 @@ foreach my $et ( ( "netutil", "neterr", "netdisc" ) ) {
 
         if ( $et eq "netutil" ) {
             print $fileHandle "    </netutil:subject>\n";
+            print $fileHandle "    <nmwg:parameters id=\"p-" . $dir . "-" . $et . "-1\">\n";
+            print $fileHandle "      <nmwg:parameter name=\"supportedEventType\">http://ggf.org/ns/nmwg/characteristic/utilization/2.0</nmwg:parameter>\n";
+            print $fileHandle "      <nmwg:parameter name=\"supportedEventType\">http://ggf.org/ns/nmwg/tools/snmp/2.0</nmwg:parameter>\n";
+            print $fileHandle "    </nmwg:parameters>\n";
             print $fileHandle "    <nmwg:eventType>http://ggf.org/ns/nmwg/characteristic/utilization/2.0</nmwg:eventType>\n";
         }
         elsif ( $et eq "neterr" ) {
             print $fileHandle "    </neterr:subject>\n";
+            print $fileHandle "    <nmwg:parameters id=\"p-" . $dir . "-" . $et . "-1\">\n";
+            print $fileHandle "      <nmwg:parameter name=\"supportedEventType\">http://ggf.org/ns/nmwg/characteristic/errors/2.0</nmwg:parameter>\n";
+            print $fileHandle "      <nmwg:parameter name=\"supportedEventType\">http://ggf.org/ns/nmwg/tools/snmp/2.0</nmwg:parameter>\n";
+            print $fileHandle "    </nmwg:parameters>\n";
             print $fileHandle "    <nmwg:eventType>http://ggf.org/ns/nmwg/characteristic/errors/2.0</nmwg:eventType>\n";
         }
         elsif ( $et eq "netdisc" ) {
             print $fileHandle "    </netdisc:subject>\n";
+            print $fileHandle "    <nmwg:parameters id=\"p-" . $dir . "-" . $et . "-1\">\n";
+            print $fileHandle "      <nmwg:parameter name=\"supportedEventType\">http://ggf.org/ns/nmwg/characteristic/discards/2.0</nmwg:parameter>\n";
+            print $fileHandle "      <nmwg:parameter name=\"supportedEventType\">http://ggf.org/ns/nmwg/tools/snmp/2.0</nmwg:parameter>\n";
+            print $fileHandle "    </nmwg:parameters>\n";
             print $fileHandle "    <nmwg:eventType>http://ggf.org/ns/nmwg/characteristic/discards/2.0</nmwg:eventType>\n";
         }
+        else {
+            print $fileHandle "    </nmwg:subject>\n";
+            print $fileHandle "    <nmwg:parameters id=\"p-" . $dir . "-" . $et . "-1\">\n";
+            print $fileHandle "      <nmwg:parameter name=\"supportedEventType\">http://ggf.org/ns/nmwg/tools/snmp/2.0</nmwg:parameter>\n";
+            print $fileHandle "    </nmwg:parameters>\n";
+            print $fileHandle "    <nmwg:eventType>http://ggf.org/ns/nmwg/characteristic/discards/2.0</nmwg:eventType>\n";
+        }
+
         print $fileHandle "    <nmwg:eventType>http://ggf.org/ns/nmwg/tools/snmp/2.0</nmwg:eventType>\n";
         print $fileHandle "  </nmwg:metadata>\n\n";
 
