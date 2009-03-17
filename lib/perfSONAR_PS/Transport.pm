@@ -2,26 +2,27 @@ package perfSONAR_PS::Transport;
 
 use strict;
 use warnings;
-use Exporter;
 
-our $VERSION = 0.10;
-
-use base 'Exporter';
-our @EXPORT = ();
+our $VERSION = 3.1;
 
 use fields 'CONTACT_HOST', 'CONTACT_PORT', 'CONTACT_ENDPOINT';
 
 =head1 NAME
 
-perfSONAR_PS::Transport - A module that provides methods for listening and contacting 
-SOAP endpoints as well as performing other 'transportation' needs for communication in
-the perfSONAR-PS framework.
+perfSONAR_PS::Transport
 
 =head1 DESCRIPTION
 
-This module is to be treated a single object, capable of interacting with a given
-service (specified by information at creation time). 
+A module that provides methods for listening and contacting SOAP endpoints as
+well as performing other 'transportation' needs for communication in the
+perfSONAR-PS framework.  This module is to be treated a single object, capable
+of interacting with a given service (specified by information at creation time). 
+
 =cut
+
+use Exporter;
+use base 'Exporter';
+our @EXPORT_OK = ();
 
 use LWP::UserAgent;
 use Log::Log4perl qw(get_logger :nowarn);
@@ -122,9 +123,8 @@ sub splitURI {
     $endpoint = substr $chunk[$len], length $port, length $chunk[$len];
 
     if ( $port =~ m/^\d+$/ ) {
-
         # the fun part ... If its all numbers, it COULD be the port
-        $chunk[$len] = "";
+        $chunk[$len] = q{};
         unless ( $chunk[ $len - 1 ] =~ m/\]$/ ) {
 
             # the last chunk is really what we thought was the port.
@@ -137,13 +137,13 @@ sub splitURI {
         #  in ].  The last item in the array is not a port, but part of the
         #  address, so set the port to nil.
         $chunk[$len] =~ s/\/.*$//;
-        $port = "";
+        $port = q{};
     }
 
     # not ipv6
     if ( $len == 0 ) {
         $host = $port;
-        $port = "";
+        $port = q{};
     }
 
     # combine the chunks back together
@@ -181,12 +181,12 @@ sub getHttpURI {
     my ( $host, $port, $endpoint ) = @_;
     my $logger = get_logger( "perfSONAR_PS::Transport" );
     $endpoint = "/" . $endpoint if ( $endpoint =~ /^[^\/]/ );
-	if ($host =~ /:/) {
-	    $host = "[".$host."]";
-	}
+    if ( $host =~ /:/ ) {
+        $host = "[" . $host . "]";
+    }
     my $uri = 'http://' . $host . ':' . $port . $endpoint;
-    $logger->debug( "Created URI: $uri");
-	return $uri;
+    $logger->debug( "Created URI: $uri" );
+    return $uri;
 }
 
 =head2 setContactEndPoint($self, $contactEndPoint)  
@@ -218,6 +218,9 @@ that message. If not, it is filled with "".
 
 sub sendReceive {
     my ( $self, $envelope, $timeout, $error ) = @_;
+
+        # XXX 3/17 - JZ
+        #    Should be configurable.
     $timeout = 30 unless $timeout;
     my $logger       = get_logger( "perfSONAR_PS::Transport" );
     my $method_uri   = "http://ggf.org/ns/nmwg/base/2.0/message/";
@@ -241,18 +244,18 @@ sub sendReceive {
     if ( $EVAL_ERROR ) {
         $logger->error( "Connection to \"" . $httpEndpoint . "\" terminiated due to alarm after \"" . $timeout . "\" seconds." ) unless $EVAL_ERROR eq "alarm\n";
         $$error = "Connection to \"" . $httpEndpoint . "\" terminiated due to alarm after \"" . $timeout . "\" seconds.";
-        return "";
+        return;
     }
     else {
         unless ( $httpResponse->is_success ) {
             $logger->debug( "Send to \"" . $httpEndpoint . "\" failed: " . $httpResponse->status_line );
             $$error = $httpResponse->status_line if defined $error;
-            return "";
+            return;
         }
         my $responseCode    = $httpResponse->code();
         my $responseContent = $httpResponse->content();
         $logger->debug( "Response returned: " . $responseContent );
-        $$error = "" if defined $error;
+        $$error = q{} if defined $error;
         return $responseContent;
     }
 }
@@ -263,21 +266,21 @@ __END__
 
 =head1 SEE ALSO
 
-L<LWP::UserAgent>, L<Log::Log4perl>, L<perfSONAR_PS::Common>,
+L<LWP::UserAgent>, L<Log::Log4perl>, L<English>, L<perfSONAR_PS::Common>,
 L<perfSONAR_PS::Messages>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-    https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-    https://svn.internet2.edu/svn/perfSONAR-PS 
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
-    http://code.google.com/p/perfsonar-ps/issues/list
+  http://code.google.com/p/perfsonar-ps/issues/list
 
 =head1 VERSION
 
@@ -289,12 +292,13 @@ Jason Zurawski, zurawski@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along 
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 
