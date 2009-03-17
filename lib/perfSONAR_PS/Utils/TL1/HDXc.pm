@@ -767,15 +767,15 @@ sub login {
                 inhibitMessages => { type => SCALAR, optional => 1, default => 1 },
             });
  
-    my ($status, $lines) = $self->waitMessage({ type => "other" });
-    if ($status != 0 or not defined $lines) {
-        $self->{LOGGER}->debug("login failed");
-        return -1;
-    }
+#    my ($status, $lines) = $self->waitMessage({ type => "other" });
+#    if ($status != 0 or not defined $lines) {
+#        $self->{LOGGER}->debug("login failed");
+#        return -1;
+#    }
 
     $self->{LOGGER}->debug("PASSWORD: $self->{PASSWORD}\n");
 
-    ($status, $lines) = $self->send_cmd("ACT-USER::".$self->{USERNAME}.":".$self->{CTAG}."::".$self->{PASSWORD}.";");
+    my ($status, $lines) = $self->send_cmd("ACT-USER::".$self->{USERNAME}.":".$self->{CTAG}."::".$self->{PASSWORD}.";");
 
     if ($status != 1) {
         return 0;

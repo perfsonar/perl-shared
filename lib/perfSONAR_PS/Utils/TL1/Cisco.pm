@@ -21,61 +21,11 @@ sub initialize {
             cache_time => 1,
             });
 
-    $parameters->{"type"} = "ome";
+    $parameters->{"type"} = "cisco";
     $parameters->{"prompt"} = ";" if (not $parameters->{"prompt"});
     $parameters->{"port"} = "3083" if (not $parameters->{"port"});
 
     return $self->SUPER::initialize($parameters);
-}
-
-sub getVCG {
-    my ($self, $name) = @_;
-
-    return;
-}
-
-sub getSNC {
-    my ($self, $name) = @_;
-
-    return;
-}
-
-sub getETH {
-    my ($self, $aid) = @_;
-
-    return;
-}
-
-sub getOCN {
-    my ($self, $aid) = @_;
-
-    return;
-}
-
-sub getOCH {
-    return;
-}
-
-sub getGTP {
-    my ($self, $name) = @_;
-
-    return;
-}
-
-sub getSect {
-    return;
-}
-
-sub getLineByName {
-    return;
-}
-
-sub getLine {
-    return;
-}
-
-sub getCrossconnect {
-    return;
 }
 
 sub getAlarms {
@@ -94,7 +44,7 @@ sub getAlarms {
     }
 
     if (not $self->{ALARMS}) {
-        return undef;
+        return (-1, "No alarms");
     }
 
     my @ret_alarms = ();
@@ -114,33 +64,15 @@ sub getAlarms {
         }
     }
 
-    return \@ret_alarms;
-}
-
-sub getETH_PM {
-    return;
-}
-
-sub getSTS_PM {
-    return;
-}
-
-sub getOCN_PM {
-    return;
+    return (0, \@ret_alarms);
 }
 
 sub readStats {
     my ($self) = @_;
 
-    $self->connect();
-    $self->login();
-
     if ($self->{READ_ALARMS}) {
         $self->readAlarms();
     }
-
-    $self->{CACHE_TIME} = time;
-    $self->disconnect();
 
     return;
 }
@@ -199,22 +131,6 @@ sub readAlarms {
     }
 
     $self->{ALARMS} = \@alarms;
-}
-
-sub login {
-    my ($self) = @_;
-
-    $self->{LOGGER}->debug("PASSWORD: $self->{PASSWORD}\n");
-
-    my ($status, $lines) = $self->send_cmd("ACT-USER::".$self->{USERNAME}.":".$self->{CTAG}."::".$self->{PASSWORD}.";");
-
-    if ($status != 1) {
-        return -1;
-    }
-
-    $self->send_cmd("INH-MSG-ALL:::".$self->{CTAG}.";");
-
-    return 0;
 }
 
 1;

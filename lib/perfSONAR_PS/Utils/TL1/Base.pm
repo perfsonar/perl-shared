@@ -160,7 +160,7 @@ sub connect {
                 inhibitMessages => { type => SCALAR, optional => 1, default => 1 },
             });
  
-    $self->{LOGGER}->debug(Dumper($self->{ADDRESS}));
+    $self->{LOGGER}->info("Connecting to ".$self->{ADDRESS}.":".$self->{PORT});
 
     if (not $self->{TELNET} = Net::Telnet->new(Host => $self->{ADDRESS}, Port => $self->{PORT}, Timeout => 15, Errmode => "return")) {
         $self->{TELNET} = undef;
@@ -168,6 +168,8 @@ sub connect {
     }
 
     $self->{STATUS} = "LOGGING_IN";
+
+    $self->{LOGGER}->info("Logging into ".$self->{ADDRESS});
 
     if (not $self->login({ inhibitMessages => $parameters->{inhibitMessages} })) {
         $self->{TELNET} = undef;
@@ -182,6 +184,8 @@ sub connect {
 
 sub disconnect {
     my ($self) = @_;
+
+    $self->{LOGGER}->info("Disconnecting from ".$self->{ADDRESS});
 
     $self->logout();
 

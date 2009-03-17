@@ -526,7 +526,7 @@ sub handleChangeTopologyRequest {
         throw perfSONAR_PS::Error_compat("error.topology.query.topology_not_found", $msg);
     }
 
-    ($status, $res) = topologyNormalize($topology);
+    ($status, $res) = normalizeTopology($topology);
     if ($status != 0) {
         $self->{LOGGER}->error("Couldn't normalize topology");
         throw perfSONAR_PS::Error_compat("error.topology.invalid_topology", $res);

@@ -28,56 +28,6 @@ sub initialize {
     return $self->SUPER::initialize($parameters);
 }
 
-sub getVCG {
-    my ($self, $name) = @_;
-
-    return;
-}
-
-sub getSNC {
-    my ($self, $name) = @_;
-
-    return;
-}
-
-sub getETH {
-    my ($self, $aid) = @_;
-
-    return;
-}
-
-sub getOCN {
-    my ($self, $aid) = @_;
-
-    return;
-}
-
-sub getOCH {
-    return;
-}
-
-sub getGTP {
-    my ($self, $name) = @_;
-
-    return;
-}
-
-sub getSect {
-    return;
-}
-
-sub getLineByName {
-    return;
-}
-
-sub getLine {
-    return;
-}
-
-sub getCrossconnect {
-    return;
-}
-
 sub getAlarms {
     my ($self) = shift;
     my %args = @_;
@@ -94,7 +44,7 @@ sub getAlarms {
     }
 
     if (not $self->{ALARMS}) {
-        return undef;
+        return (-1, "No alarms");
     }
 
     my @ret_alarms = ();
@@ -114,19 +64,7 @@ sub getAlarms {
         }
     }
 
-    return \@ret_alarms;
-}
-
-sub getETH_PM {
-    return;
-}
-
-sub getSTS_PM {
-    return;
-}
-
-sub getOCN_PM {
-    return;
+    return (0, \@ret_alarms);
 }
 
 sub readStats {
