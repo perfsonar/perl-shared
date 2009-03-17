@@ -1,11 +1,11 @@
 package perfSONAR_PS::Client::LS;
 
-use fields 'INSTANCE', 'LOGGER', 'ALIVE';
-
 use strict;
 use warnings;
 
-our $VERSION = 0.10;
+our $VERSION = 3.1;
+
+use fields 'INSTANCE', 'LOGGER', 'ALIVE';
 
 =head1 NAME
 
@@ -40,15 +40,15 @@ sub new {
     my ( $package, @args ) = @_;
     my $parameters = validateParams( @args, { instance => 0 } );
 
-    my $self = fields::new($package);
+    my $self = fields::new( $package );
     $self->{ALIVE}  = 0;
-    $self->{LOGGER} = get_logger("perfSONAR_PS::Client::LS");
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::LS" );
     if ( exists $parameters->{"instance"} and $parameters->{"instance"} ) {
         if ( $parameters->{"instance"} =~ m/^http:\/\// ) {
             $self->{INSTANCE} = $parameters->{"instance"};
         }
         else {
-            $self->{LOGGER}->error("Instance must be of the form http://ADDRESS.");
+            $self->{LOGGER}->error( "Instance must be of the form http://ADDRESS." );
         }
     }
     return $self;
@@ -69,7 +69,7 @@ sub setInstance {
         $self->{INSTANCE} = $parameters->{"instance"};
     }
     else {
-        $self->{LOGGER}->error("Instance must be of the form http://ADDRESS.");
+        $self->{LOGGER}->error( "Instance must be of the form http://ADDRESS." );
     }
     return;
 }
@@ -85,7 +85,7 @@ sub callLS {
     my $parameters = validateParams( @args, { message => 1 } );
 
     unless ( $self->{INSTANCE} ) {
-        $self->{LOGGER}->error("Instance not defined.");
+        $self->{LOGGER}->error( "Instance not defined." );
         return;
     }
 
@@ -105,29 +105,29 @@ sub callLS {
     }
 
     my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint );
-    unless ($sender) {
-        $self->{LOGGER}->error("LS \"" . $self->{INSTANCE} . "\" could not be contaced.");
+    unless ( $sender ) {
+        $self->{LOGGER}->error( "LS \"" . $self->{INSTANCE} . "\" could not be contaced." );
         return;
     }
-    
+
     my $error = q{};
     my $responseContent = $sender->sendReceive( makeEnvelope( $parameters->{message} ), q{}, \$error );
-    if ($error) {
+    if ( $error ) {
         $self->{ALIVE} = 0;
-        $self->{LOGGER}->error("sendReceive failed to LS \"" . $self->{INSTANCE} . "\": $error");
+        $self->{LOGGER}->error( "sendReceive failed to LS \"" . $self->{INSTANCE} . "\": $error" );
         return;
     }
-    
+
     my $msg    = q{};
     my $parser = XML::LibXML->new();
     if ( $responseContent and ( not $responseContent =~ m/^\d+/xm ) ) {
         my $doc = q{};
-        eval { $doc = $parser->parse_string($responseContent); };
-        if ($EVAL_ERROR) {
+        eval { $doc = $parser->parse_string( $responseContent ); };
+        if ( $EVAL_ERROR ) {
             $self->{LOGGER}->error( "Parser failed for LS \"" . $self->{INSTANCE} . "\": " . $EVAL_ERROR );
         }
         else {
-            $msg = $doc->getDocumentElement->getElementsByTagNameNS( "http://ggf.org/ns/nmwg/base/2.0/", "message" )->get_node(1);
+            $msg = $doc->getDocumentElement->getElementsByTagNameNS( "http://ggf.org/ns/nmwg/base/2.0/", "message" )->get_node( 1 );
         }
     }
     else {
@@ -163,7 +163,7 @@ sub registerRequestLS {
         $metadata .= $parameters->{servicexml};
     }
     else {
-        $self->{LOGGER}->error("Some type of service required to send message.");
+        $self->{LOGGER}->error( "Some type of service required to send message." );
         return;
     }
 
@@ -180,14 +180,14 @@ sub registerRequestLS {
     }
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSRegisterRequest", ns => \%ns, metadata => $metadata, data => $parameters->{data} } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my %result = ();
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
-    if ($eventType) {
+    if ( $eventType ) {
         $result{"eventType"} = $eventType;
         $result{"response"} = extract( find( $msg, "./nmwg:data/nmwg:datum", 1 ), 0 );
         unless ( $result{"response"} ) {
@@ -225,14 +225,14 @@ sub registerUpdateRequestLS {
     }
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSRegisterRequest", ns => \%ns, metadata => $metadata, data => $parameters->{data} } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my %result = ();
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
-    if ($eventType) {
+    if ( $eventType ) {
         $result{"eventType"} = $eventType;
         $result{"response"} = extract( find( $msg, "./nmwg:data/nmwg:datum", 1 ), 0 );
         unless ( $result{"response"} ) {
@@ -274,7 +274,7 @@ sub registerClobberRequestLS {
         $metadata .= $parameters->{servicexml};
     }
     else {
-        $self->{LOGGER}->error("Some type of service required to send message.");
+        $self->{LOGGER}->error( "Some type of service required to send message." );
         return;
     }
 
@@ -291,14 +291,14 @@ sub registerClobberRequestLS {
     }
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSRegisterRequest", ns => \%ns, metadata => $metadata, data => $parameters->{data} } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my %result = ();
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
-    if ($eventType) {
+    if ( $eventType ) {
         $result{"eventType"} = $eventType;
         $result{"response"} = extract( find( $msg, "./nmwg:data/nmwg:datum", 1 ), 0 );
         unless ( $result{"response"} ) {
@@ -330,14 +330,14 @@ sub deregisterRequestLS {
     }
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSDeregisterRequest", metadata => $metadata, data => $parameters->{data} } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my %result = ();
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
-    if ($eventType) {
+    if ( $eventType ) {
         $result{"eventType"} = $eventType;
         $result{"response"} = extract( find( $msg, "./nmwg:data/nmwg:datum", 1 ), 0 );
         unless ( $result{"response"} ) {
@@ -365,14 +365,14 @@ sub keepaliveRequestLS {
     }
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSKeepaliveRequest", metadata => $metadata } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my %result = ();
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
-    if ($eventType) {
+    if ( $eventType ) {
         $result{"eventType"} = $eventType;
         $result{"response"} = extract( find( $msg, "./nmwg:data/nmwg:datum", 1 ), 0 );
         unless ( $result{"response"} ) {
@@ -413,14 +413,14 @@ sub keyRequestLS {
     }
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSKeyRequest", ns => \%ns, metadata => $metadata } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my %result = ();
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
-    if ($eventType) {
+    if ( $eventType ) {
         $result{"eventType"} = $eventType;
         if ( $eventType =~ m/^success/mx ) {
             $result{"key"} = extract( find( $msg, "./nmwg:data/nmwg:key/nmwg:parameters/nmwg:parameter[\@name=\"lsKey\"]", 1 ), 0 );
@@ -454,7 +454,7 @@ sub queryRequestLS {
     my $metadata = q{};
     my %ns       = ();
     if ( ( exists $parameters->{query} and $parameters->{query} ) and ( exists $parameters->{subject} and $parameters->{subject} ) ) {
-        $self->{LOGGER}->error("Choose either 'query' XOR 'subject' parameter.");
+        $self->{LOGGER}->error( "Choose either 'query' XOR 'subject' parameter." );
         return;
     }
     elsif ( exists $parameters->{subject} and $parameters->{subject} ) {
@@ -494,13 +494,13 @@ sub queryRequestLS {
         }
     }
     else {
-        $self->{LOGGER}->error("Choose either 'query' XOR 'subject' parameter.");
+        $self->{LOGGER}->error( "Choose either 'query' XOR 'subject' parameter." );
         return;
     }
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
@@ -510,14 +510,14 @@ sub queryRequestLS {
 
     my %result = ();
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
-    if ($eventType) {
+    if ( $eventType ) {
         $result{"eventType"} = $eventType;
         if ( $eventType =~ m/^success/mx ) {
-            my $datum = find($msg, './*[local-name()="data"]/*[local-name()="datum"]', 1);
+            my $datum = find( $msg, './*[local-name()="data"]/*[local-name()="datum"]', 1 );
             $result{"response"} = $datum->toString;
         }
         elsif ( $eventType eq "http://ogf.org/ns/nmwg/tools/org/perfsonar/service/lookup/discovery/summary/2.0" ) {
-            my $data = find($msg, "./*[local-name()='data']", 0);
+            my $data = find( $msg, "./*[local-name()='data']", 0 );
 
             $result{"response"} = "<nmwgr:datum xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\" xmlns:nmwgr=\"http://ggf.org/ns/nmwg/result/2.0/\">";
             foreach my $d ( $data->get_nodelist ) {
@@ -533,7 +533,7 @@ sub queryRequestLS {
         }
     }
     else {
-        my $datum = find($msg, './*[local-name()="data"]/*[local-name()="datum"]', 1);
+        my $datum = find( $msg, './*[local-name()="data"]/*[local-name()="datum"]', 1 );
         $result{"response"} = unescapeString( $datum->toString );
     }
     return \%result;
@@ -808,16 +808,16 @@ L<Log::Log4perl>, L<Params::Validate>, L<English>, L<perfSONAR_PS::Common>,
 L<perfSONAR_PS::Transport>, L<perfSONAR_PS::Client::Echo>,
 L<perfSONAR_PS::Utils::ParameterValidation>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -836,7 +836,7 @@ with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 

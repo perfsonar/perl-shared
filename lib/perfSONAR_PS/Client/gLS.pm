@@ -1,21 +1,22 @@
 package perfSONAR_PS::Client::gLS;
 
-use fields 'ROOTS', 'HINTS', 'LOGGER', 'FILE';
-
 use strict;
 use warnings;
 
-our $VERSION = 0.10;
+our $VERSION = 3.1;
+
+use fields 'ROOTS', 'HINTS', 'LOGGER', 'FILE';
 
 =head1 NAME
 
-perfSONAR_PS::Client::gLS - API for interacting with the gLS and hLS instances
-to take some of the mystery out of queries.  
+perfSONAR_PS::Client::gLS  
 
 =head1 DESCRIPTION
 
-The API identifies several common functions that will be of use to clients and
-services in the perfSONAR framework for extracting information from the gLS.
+API for interacting with the gLS and hLS instances to take some of the mystery
+out of queries.  The API identifies several common functions that will be of use
+to clients and services in the perfSONAR framework for extracting information
+from the gLS.
 
 =cut
 
@@ -48,11 +49,11 @@ sub new {
         }
     );
 
-    my $self = fields::new($package);
+    my $self = fields::new( $package );
     my @temp = ();
-    $self->{ROOTS} = \@temp;
+    $self->{ROOTS}  = \@temp;
     $self->{HINTS}  = ();
-    $self->{LOGGER} = get_logger("perfSONAR_PS::Client::gLS");
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::gLS" );
     if ( exists $parameters->{"url"} and $parameters->{"url"} ) {
         if ( ref( $parameters->{"url"} ) eq "ARRAY" ) {
             my $complete = 0;
@@ -62,7 +63,7 @@ sub new {
                     $complete++;
                 }
                 else {
-                    $self->{LOGGER}->error("URL must be of the form http://ADDRESS.");
+                    $self->{LOGGER}->error( "URL must be of the form http://ADDRESS." );
                 }
             }
             $self->init() if $complete;
@@ -73,7 +74,7 @@ sub new {
                 $self->init();
             }
             else {
-                $self->{LOGGER}->error("URL must be of the form http://ADDRESS.");
+                $self->{LOGGER}->error( "URL must be of the form http://ADDRESS." );
             }
         }
     }
@@ -117,7 +118,7 @@ sub addURL {
                 $complete++;
             }
             else {
-                $self->{LOGGER}->error("URL must be of the form http://ADDRESS.");
+                $self->{LOGGER}->error( "URL must be of the form http://ADDRESS." );
             }
         }
         $self->init() if $complete;
@@ -128,7 +129,7 @@ sub addURL {
             $self->init();
         }
         else {
-            $self->{LOGGER}->error("URL must be of the form http://ADDRESS.");
+            $self->{LOGGER}->error( "URL must be of the form http://ADDRESS." );
         }
     }
     return 0;
@@ -149,7 +150,7 @@ sub setFile {
         $self->init();
     }
     else {
-        $self->{LOGGER}->error("File does not exist.");
+        $self->{LOGGER}->error( "File does not exist." );
         return -1;
     }
     return 0;
@@ -167,7 +168,7 @@ sub init {
     my $parameters = validateParams( @args, {} );
 
     unless ( exists $self->{HINTS} or exists $self->{FILE} ) {
-        $self->{LOGGER}->error("Cannot call init without setting hints URL or file.");
+        $self->{LOGGER}->error( "Cannot call init without setting hints URL or file." );
         return -1;
     }
 
@@ -176,7 +177,7 @@ sub init {
         my $complete = 0;
         foreach my $url ( @{ $self->{HINTS} } ) {
             my $content = get $url;
-            if ($content) {
+            if ( $content ) {
                 @roots = split( /\n/, $content );
                 $complete++;
                 last;
@@ -185,8 +186,8 @@ sub init {
                 $self->{LOGGER}->error( "There was an error accessing " . $self->{HINTS} . "." );
             }
         }
-        unless ($complete) {
-            $self->{LOGGER}->error("There was an error accessing the hints file(s), exiting.");
+        unless ( $complete ) {
+            $self->{LOGGER}->error( "There was an error accessing the hints file(s), exiting." );
             return -1;
         }
     }
@@ -194,11 +195,11 @@ sub init {
     if ( exists $self->{FILE} and $self->{FILE} ) {
         if ( -f $self->{FILE} ) {
             open( HINTS, $self->{FILE} );
-            while (<HINTS>) {
+            while ( <HINTS> ) {
                 $_ =~ s/\n$//;
                 push @roots, $_ if $_;
             }
-            close(HINTS);
+            close( HINTS );
         }
         else {
             $self->{LOGGER}->error( "There was an error accessing " . $self->{FILE} . "." );
@@ -240,14 +241,14 @@ sub orderRoots {
     my %list = ();
     my $ping = Net::Ping->new();
     $ping->hires();
-    foreach my $root (@roots) {
+    foreach my $root ( @roots ) {
         $root =~ s/\s+//g;
         unless ( $self->verifyURL( { url => $root } ) == -1 ) {
             my $host = $root;
             if ( $host =~ /^http/ ) {
                 $host =~ s/^http:\/\///;
-                my ($unt_host) = $host =~ /^(.+):/;
-                my ( $ret, $duration, $ip ) = $ping->ping($unt_host);
+                my ( $unt_host ) = $host =~ /^(.+):/;
+                my ( $ret, $duration, $ip ) = $ping->ping( $unt_host );
                 $list{$duration} = $root if $ret or $duration;
             }
         }
@@ -287,7 +288,7 @@ sub addRoot {
         }
     }
     else {
-        $self->{LOGGER}->error("Root must be of the form http://ADDRESS.");
+        $self->{LOGGER}->error( "Root must be of the form http://ADDRESS." );
     }
     return -1;
 }
@@ -308,7 +309,7 @@ sub verifyURL {
         return 0 if $status > -1;
     }
     else {
-        $self->{LOGGER}->error("URL must be of the form http://ADDRESS.");
+        $self->{LOGGER}->error( "URL must be of the form http://ADDRESS." );
     }
     return -1;
 }
@@ -327,7 +328,7 @@ sub getRoot {
     my $flag = 0;
     while ( $flag <= 1 ) {
         foreach my $root ( @{ $self->{ROOTS} } ) {
-            my $echo_service = perfSONAR_PS::Client::Echo->new($root);
+            my $echo_service = perfSONAR_PS::Client::Echo->new( $root );
             my ( $status, $res ) = $echo_service->ping();
             return $root if $status != -1;
         }
@@ -358,7 +359,7 @@ sub createSummaryMetadata {
 
     my $subject = "    <summary:subject id=\"subject." . genuid() . "\" xmlns:summary=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/summarization/2.0/\">\n";
     foreach my $addr ( @{ $parameters->{addresses} } ) {
-        if ( ref($addr) eq "ARRAY" ) {
+        if ( ref( $addr ) eq "ARRAY" ) {
             if ( $addr->[0] and $addr->[1] ) {
                 $subject .= "      <nmtb:address xmlns:nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\" type=\"" . $addr->[1] . "\">" . $addr->[0] . "</nmtb:address>\n";
             }
@@ -432,7 +433,7 @@ sub summaryToXQuery {
         my $eflag = 0;
         $query .= "(";
         foreach my $eT ( @{ $parameters->{eventTypes} } ) {
-            if ($eflag) {
+            if ( $eflag ) {
                 $query .= " and (.//nmwg:eventType[text()=\"" . $eT . "\"] or .//nmwg:parameter[(\@name=\"eventType\" or \@name=\"supportedEventType\") and (\@value=\"" . $eT . "\" or text()=\"" . $eT . "\")])";
             }
             else {
@@ -446,14 +447,14 @@ sub summaryToXQuery {
 
     if ( $#{ $parameters->{keywords} } > -1 ) {
         my $kflag = 0;
-        if ($qflag) {
+        if ( $qflag ) {
             $query .= " and (";
         }
         else {
             $query .= "(";
         }
         foreach my $k ( @{ $parameters->{keywords} } ) {
-            if ($kflag) {
+            if ( $kflag ) {
                 $query .= " and (.//nmwg:parameter[\@name=\"keyword\" and (\@value=\"" . $k . "\" or text()=\"" . $k . "\")])";
             }
             else {
@@ -467,14 +468,14 @@ sub summaryToXQuery {
 
     if ( $#{ $parameters->{domains} } > -1 ) {
         my $dflag = 0;
-        if ($qflag) {
+        if ( $qflag ) {
             $query .= " and (";
         }
         else {
             $query .= "(";
         }
         foreach my $d ( @{ $parameters->{domains} } ) {
-            if ($dflag) {
+            if ( $dflag ) {
                 $query
                     .= " and (.//*[local-name()=\"hostName\" and fn:matches(text(), \"" 
                     . $d
@@ -502,16 +503,16 @@ sub summaryToXQuery {
 
     if ( $#{ $parameters->{addresses} } > -1 ) {
         my $aflag = 0;
-        if ($qflag) {
+        if ( $qflag ) {
             $query .= " and (";
         }
         else {
             $query .= "(";
         }
         foreach my $addr ( @{ $parameters->{addresses} } ) {
-            if ( ref($addr) eq "ARRAY" ) {
+            if ( ref( $addr ) eq "ARRAY" ) {
                 if ( $addr->[0] and $addr->[1] and $addr->[1] =~ m/ipv6/i ) {
-                    if ($aflag) {
+                    if ( $aflag ) {
                         $query
                             .= " and (.//*[(local-name()=\"endPoint\" and local-name()=\"endPointPair\" and local-name()=\"address\" or local-name()=\"ipAddress\" or local-name()=\"ifAddress\" or local-name()=\"name\" or local-name()=\"src\" or local-name()=\"dst\") and (\@type=\"ipv6\" or \@type=\"IPv6\") and (text()=\""
                             . $addr->[0]
@@ -528,7 +529,7 @@ sub summaryToXQuery {
                     }
                 }
                 else {
-                    if ($aflag) {
+                    if ( $aflag ) {
                         $query
                             .= " and (.//*[(local-name()=\"endPoint\" and local-name()=\"endPointPair\" and local-name()=\"address\" or local-name()=\"ipAddress\" or local-name()=\"ifAddress\" or local-name()=\"name\" or local-name()=\"src\" or local-name()=\"dst\") and (\@type=\"ipv4\" or \@type=\"IPv4\") and (text()=\""
                             . $addr->[0]
@@ -546,7 +547,7 @@ sub summaryToXQuery {
                 }
             }
             else {
-                if ($aflag) {
+                if ( $aflag ) {
                     $query
                         .= " and (.//*[(local-name()=\"endPoint\" and local-name()=\"endPointPair\" and local-name()=\"address\" or local-name()=\"ipAddress\" or local-name()=\"ifAddress\" or local-name()=\"name\" or local-name()=\"src\" or local-name()=\"dst\") and (\@type=\"ipv4\" or \@type=\"IPv4\") and (text()=\""
                         . $a
@@ -604,8 +605,8 @@ sub getLSDiscoverRaw {
     }
     else {
         my $ls_instance = $self->getRoot();
-        unless ($ls_instance) {
-            $self->{LOGGER}->error("gLS Root servers could not be contacted.");
+        unless ( $ls_instance ) {
+            $self->{LOGGER}->error( "gLS Root servers could not be contacted." );
             return;
         }
         $ls->setInstance( { instance => $ls_instance } );
@@ -630,8 +631,8 @@ sub getLSQueryRaw {
     my $parameters = validateParams(
         @args,
         {
-            ls     => { type => Params::Validate::SCALAR },
-            xquery => { type => Params::Validate::SCALAR },
+            ls        => { type => Params::Validate::SCALAR },
+            xquery    => { type => Params::Validate::SCALAR },
             eventType => 0
         }
     );
@@ -646,7 +647,7 @@ sub getLSQueryRaw {
         $ls->setInstance( { instance => $parameters->{ls} } );
     }
     else {
-        $self->{LOGGER}->error("LS myst be of the form http://ADDRESS.");
+        $self->{LOGGER}->error( "LS myst be of the form http://ADDRESS." );
         return $result;
     }
 
@@ -654,7 +655,7 @@ sub getLSQueryRaw {
     if ( exists $parameters->{eventType} and ( $parameters->{eventType} eq "http://ogf.org/ns/nmwg/tools/org/perfsonar/service/lookup/query/xquery/2.0" or $parameters->{eventType} eq "http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0" ) ) {
         $eventType = $parameters->{eventType};
     }
-    
+
     $result = $ls->queryRequestLS( { query => $parameters->{xquery}, format => 1, eventType => $eventType } );
     return $result;
 }
@@ -720,8 +721,8 @@ sub getLSDiscovery {
     }
     else {
         my $ls_instance = $self->getRoot();
-        unless ($ls_instance) {
-            $self->{LOGGER}->error("gLS Root servers could not be contacted.");
+        unless ( $ls_instance ) {
+            $self->{LOGGER}->error( "gLS Root servers could not be contacted." );
             return;
         }
         $ls->setInstance( { instance => $ls_instance } );
@@ -751,22 +752,22 @@ sub getLSDiscovery {
                     my $value = q{};
                     if ( $element =~ m/:/ ) {
                         $value = extract( find( $s, "./" . $element . "[text()=\"" . $parameters->{service}->{$element} . "\" or value=\"" . $parameters->{service}->{$element} . "\"]", 1 ), 0 );
-                        unless ($value) {
+                        unless ( $value ) {
                             $flag = 0;
                             last;
                         }
                     }
                     else {
                         $value = extract( find( $s, "./*[local-name()='" . $element . "' and (text()=\"" . $parameters->{service}->{$element} . "\" or value=\"" . $parameters->{service}->{$element} . "\")]", 1 ), 0 );
-                        unless ($value) {
+                        unless ( $value ) {
                             $flag = 0;
                             last;
                         }
                     }
                 }
-                if ($flag) {
+                if ( $flag ) {
                     my $value = extract( find( $s, "./psservice:accessPoint", 1 ), 0 );
-                    my $vh = md5_hex($value);
+                    my $vh = md5_hex( $value );
                     push @urls, $value if $value and ( not exists $list{$vh} );
                     $list{$vh}++;
                 }
@@ -819,7 +820,7 @@ sub getLSQueryLocation {
         $ls->setInstance( { instance => $parameters->{ls} } );
     }
     else {
-        $self->{LOGGER}->error("LS myst be of the form http://ADDRESS.");
+        $self->{LOGGER}->error( "LS myst be of the form http://ADDRESS." );
         return \@service;
     }
 
@@ -846,22 +847,22 @@ sub getLSQueryLocation {
                     my $value = q{};
                     if ( $element =~ m/:/ ) {
                         $value = extract( find( $s, "./" . $element . "[text()=\"" . $parameters->{service}->{$element} . "\" or value=\"" . $parameters->{service}->{$element} . "\"]", 1 ), 0 );
-                        unless ($value) {
+                        unless ( $value ) {
                             $flag = 0;
                             last;
                         }
                     }
                     else {
                         $value = extract( find( $s, "./*[local-name()='" . $element . "' and (text()=\"" . $parameters->{service}->{$element} . "\" or value=\"" . $parameters->{service}->{$element} . "\")]", 1 ), 0 );
-                        unless ($value) {
+                        unless ( $value ) {
                             $flag = 0;
                             last;
                         }
                     }
                 }
-                if ($flag) {
+                if ( $flag ) {
                     my $value = $s->toString;
-                    my $vh    = md5_hex($value);
+                    my $vh    = md5_hex( $value );
                     push @service, $value if $value and ( not exists $list{$vh} );
                     $list{$vh}++;
                 }
@@ -914,7 +915,7 @@ sub getLSQueryContent {
         $ls->setInstance( { instance => $parameters->{ls} } );
     }
     else {
-        $self->{LOGGER}->error("LS myst be of the form http://ADDRESS.");
+        $self->{LOGGER}->error( "LS myst be of the form http://ADDRESS." );
         return \@metadata;
     }
 
@@ -939,7 +940,7 @@ sub getLSQueryContent {
             my $metadata = find( $doc->getDocumentElement, ".//nmwg:metadata", 0 );
             foreach my $m ( $metadata->get_nodelist ) {
                 my $value = $m->toString;
-                my $vh    = md5_hex($value);
+                my $vh    = md5_hex( $value );
                 push @metadata, $value if $value and ( not exists $list{$vh} );
                 $list{$vh}++;
             }
@@ -1011,8 +1012,8 @@ sub getLSLocation {
     }
     else {
         my $ls_instance = $self->getRoot();
-        unless ($ls_instance) {
-            $self->{LOGGER}->error("gLS Root servers could not be contacted.");
+        unless ( $ls_instance ) {
+            $self->{LOGGER}->error( "gLS Root servers could not be contacted." );
             return;
         }
         $ls->setInstance( { instance => $ls_instance } );
@@ -1088,8 +1089,8 @@ sub getLSContent {
     }
     else {
         my $ls_instance = $self->getRoot();
-        unless ($ls_instance) {
-            $self->{LOGGER}->error("gLS Root servers could not be contacted.");
+        unless ( $ls_instance ) {
+            $self->{LOGGER}->error( "gLS Root servers could not be contacted." );
             return;
         }
         $ls->setInstance( { instance => $ls_instance } );
@@ -1189,21 +1190,21 @@ __END__
 
 =head1 SEE ALSO
 
-L<Log::Log4perl>, L<Params::Validate>, L<English>, L<LWP::Simple>,
-L<Net::Ping>, L<XML::LibXML>, L<Digest::MD5>,
-L<perfSONAR_PS::Utils::ParameterValidation>, L<perfSONAR_PS::Client::Echo>,
-L<perfSONAR_PS::Client::LS>, L<perfSONAR_PS::Common>
+L<Log::Log4perl>, L<Params::Validate>, L<English>, L<LWP::Simple>, L<Net::Ping>,
+L<XML::LibXML>, L<Digest::MD5>, L<perfSONAR_PS::Utils::ParameterValidation>,
+L<perfSONAR_PS::Client::Echo>, L<perfSONAR_PS::Client::LS>,
+L<perfSONAR_PS::Common>
  
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -1222,7 +1223,7 @@ with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 

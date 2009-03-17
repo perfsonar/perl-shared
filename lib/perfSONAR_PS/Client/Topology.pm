@@ -1,70 +1,128 @@
-package perfSONAR_PS::Client::Topology::MA;
+package perfSONAR_PS::Client::Topology;
 
 use strict;
 use warnings;
+
+our $VERSION = 3.1;
+
+use fields 'URI_STRING', 'LOGGER';
+
+=head1 NAME
+
+perfSONAR_PS::Client::Topology::MA
+
+=head1 DESCRIPTION
+
+A module that provides methods for interacting with Topology MA servers.  This
+modules allows one to interact with the Topology MA via its Web Services
+interface. The API provided is identical to the API for interacting with the
+topology database directly. Thus, a client written to read from or update a
+Topology MA can be easily modified to interact directly with its underlying
+database allowing more efficient interactions if required.
+
+The module is to be treated as an object, where each instance of the object
+represents a connection to a single database. Each method may then be invoked on
+the object for the specific database.  
+
+=cut
+
 use Log::Log4perl qw(get_logger);
 use perfSONAR_PS::Common;
 use perfSONAR_PS::Transport;
 
-use fields 'URI_STRING', 'LOGGER';
+=head2 new($package, $uri_string)
 
-our $VERSION = 0.09;
+The new function takes a URI connection string as its first argument. This
+specifies which MA to interact with.
+
+=cut
 
 sub new {
-    my ($package, $uri_string) = @_;
+    my ( $package, $uri_string ) = @_;
 
-    my $self = fields::new($package);
+    my $self = fields::new( $package );
 
-    $self->{LOGGER} = get_logger("perfSONAR_PS::Client::Topology::MA");
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::Topology::MA" );
 
-    if (defined $uri_string and $uri_string ne "") { 
+    if ( defined $uri_string and $uri_string ) {
         $self->{"URI_STRING"} = $uri_string;
-
     }
-
     return $self;
 }
 
-sub open {
-    my ($self) = @_;
+=head2 open($self)
 
-    return (0, "");
+The open function could be used to open a persistent connection to the MA.
+However, currently, it is simply a stub function.
+
+=cut
+
+sub open {
+    my ( $self ) = @_;
+    return ( 0, q{} );
 }
 
-sub close {
-    my ($self) = @_;
+=head2 close($self)
 
+The close function could close a persistent connection to the MA. However,
+currently, it is simply a stub function.
+
+=cut
+
+sub close {
+    my ( $self ) = @_;
     return 0;
 }
 
+=head2 setURIString($self, $uri_string)
+
+The setURIString function changes the MA that the instance uses.
+
+=cut
+
 sub setURIString {
-    my ($self, $uri_string) = @_;
-
+    my ( $self, $uri_string ) = @_;
     $self->{URI_STRING} = $uri_string;
-
     return;
 }
+
+=head2 dbIsOpen($self)
+
+This function is a stub function that always returns 1.
+
+=cut
 
 sub dbIsOpen {
     return 1;
 }
 
-sub getURIString {
-    my ($self) = @_;
+=head2 getURIString($)
 
+The getURIString function returns the current URI string
+
+=cut
+
+sub getURIString {
+    my ( $self ) = @_;
     return $self->{URI_STRING};
 }
 
-sub buildQueryRequest {
-    my ($xquery) = shift;
+=head2 buildQueryRequest($xquery)
 
-    my $request = "";
+TBD
+
+=cut
+
+sub buildQueryRequest {
+    my ( $xquery ) = shift;
+
+    my $request = q{};
 
     $request .= "<nmwg:message type=\"QueryRequest\" xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\">\n";
-    if ($xquery) {
-    $request .= "  <xquery:subject id=\"sub1\" xmlns:xquery=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0/\">\n";
-    $request .= $xquery;
-    $request .= "  </xquery:subject>\n";
+    if ( defined $xquery and $xquery ) {
+        $request .= "  <xquery:subject id=\"sub1\" xmlns:xquery=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0/\">\n";
+        $request .= $xquery;
+        $request .= "  </xquery:subject>\n";
     }
     $request .= "<nmwg:metadata id=\"meta0\">\n";
     $request .= "  <nmwg:eventType>http://ggf.org/ns/nmwg/topology/20070809</nmwg:eventType>\n";
@@ -72,29 +130,37 @@ sub buildQueryRequest {
     $request .= "<nmwg:data id=\"data0\" metadataIdRef=\"meta0\" />\n";
     $request .= "</nmwg:message>\n";
 
-    return ("", $request);
+    return ( q{}, $request );
 }
 
+=head2 buildChangeRequest($type, $topology)
+
+TBD
+
+=cut
+
 sub buildChangeRequest {
-    my ($type, $topology) = @_;
+    my ( $type, $topology ) = @_;
     my $msgType;
 
-    if ($type eq "add") {
+    if ( defined $type and $type eq "add" ) {
         $msgType = "TSAddRequest";
-    } elsif ($type eq "update") {
+    }
+    elsif ( defined $type and $type eq "update" ) {
         $msgType = "TSUpdateRequest";
-    } elsif ($type eq "replace") {
+    }
+    elsif ( defined $type and $type eq "replace" ) {
         $msgType = "TSReplaceRequest";
     }
 
-    my $request = "";
+    my $request = q{};
 
-	$request .= "<nmwg:message type=\"$msgType\" xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\">\n";
-	$request .= "<nmwg:metadata id=\"meta0\">\n";
+    $request .= "<nmwg:message type=\"$msgType\" xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\">\n";
+    $request .= "<nmwg:metadata id=\"meta0\">\n";
     $request .= "  <nmwg:eventType>http://ggf.org/ns/nmwg/topology/20070809</nmwg:eventType>\n";
     $request .= "</nmwg:metadata>\n";
     $request .= "<nmwg:data id=\"data0\" metadataIdRef=\"meta0\">\n";
-    my $elm = $topology->cloneNode(1);
+    my $elm = $topology->cloneNode( 1 );
     $elm->unbindNode();
 
     $request .= $elm->toString;
@@ -104,256 +170,216 @@ sub buildChangeRequest {
     return $request;
 }
 
+=head2 xQuery($self, $xquery)
+
+The xQuery function performs an xquery on the specified MA. It returns the
+results as a string.
+
+=cut
+
 sub xQuery {
-    my ($self, $xquery) = @_;
-    my $localContent = "";
+    my ( $self, $xquery ) = @_;
+    my $localContent = q{};
     my $error;
-    my ($status, $res, $request);
+    my ( $status, $res, $request );
 
-    ($status, $request) = buildQueryRequest($xquery);
+    ( $status, $request ) = buildQueryRequest( $xquery );
 
-    my ($host, $port, $endpoint) = &perfSONAR_PS::Transport::splitURI( $self->{URI_STRING} );
-    if (not defined $host and not defined $port and not defined $endpoint) {
+    my ( $host, $port, $endpoint ) = &perfSONAR_PS::Transport::splitURI( $self->{URI_STRING} );
+    if ( not defined $host and not defined $port and not defined $endpoint ) {
         my $msg = "Specified argument is not a URI";
-        $self->{LOGGER}->error($msg);
-        return (-1, $msg);
+        $self->{LOGGER}->error( $msg );
+        return ( -1, $msg );
     }
 
-    ($status, $res) = consultArchive($host, $port, $endpoint, $request);
-    if ($status != 0) {
+    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request );
+    if ( $status != 0 ) {
         my $msg = "Error consulting archive: $res";
-        $self->{LOGGER}->error($msg);
-        return (-1, $msg);
+        $self->{LOGGER}->error( $msg );
+        return ( -1, $msg );
     }
 
     my $topo_msg = $res;
 
-    my $data_elms = find($topo_msg, './*[local-name()="data"]', 0);
-    if ($data_elms) {
-    foreach my $data ($data_elms->get_nodelist) {
-        my $metadata_elms = find($topo_msg, './*[local-name()="metadata"]', 0);
-        if ($metadata_elms) {
-        foreach my $metadata ($metadata_elms->get_nodelist) {
-            if ($data->getAttribute("metadataIdRef") eq $metadata->getAttribute("id")) {
-                my $topology = find($data, './*[local-name()="topology"]', 1);
-                if (defined $topology) {
-                    return (0, $topology->toString);
-                } 
+    my $data_elms = find( $topo_msg, './*[local-name()="data"]', 0 );
+    if ( $data_elms ) {
+        foreach my $data ( $data_elms->get_nodelist ) {
+            my $metadata_elms = find( $topo_msg, './*[local-name()="metadata"]', 0 );
+            if ( $metadata_elms ) {
+                foreach my $metadata ( $metadata_elms->get_nodelist ) {
+                    if ( $data->getAttribute( "metadataIdRef" ) eq $metadata->getAttribute( "id" ) ) {
+                        my $topology = find( $data, './*[local-name()="topology"]', 1 );
+                        if ( $topology ) {
+                            return ( 0, $topology->toString );
+                        }
+                    }
+                }
             }
         }
-        }
-    }
     }
 
     my $msg = "Response does not contain a topology";
-    $self->{LOGGER}->error($msg);
-    return (-1, $msg);
+    $self->{LOGGER}->error( $msg );
+    return ( -1, $msg );
 }
+
+=head2 getAll($self)
+
+The getAll function gets the full contents of the MA. It returns the results as
+a ref to a LibXML element pointing to the <nmtopo:topology> structure containing
+the contents of the MA's database. 
+
+=cut
 
 sub getAll {
-    my($self) = @_;
+    my ( $self ) = @_;
     my @results;
     my $error;
-    my ($status, $res);
+    my ( $status, $res );
 
-    my $request = buildQueryRequest("");
+    my $request = buildQueryRequest( q{} );
 
-    my ($host, $port, $endpoint) = &perfSONAR_PS::Transport::splitURI( $self->{URI_STRING} );
-    if (not defined $host and not defined $port and not defined $endpoint) {
+    my ( $host, $port, $endpoint ) = &perfSONAR_PS::Transport::splitURI( $self->{URI_STRING} );
+    if ( not defined $host and not defined $port and not defined $endpoint ) {
         my $msg = "Specified argument is not a URI";
-        $self->{LOGGER}->error($msg);
-        return (-1, $msg);
+        $self->{LOGGER}->error( $msg );
+        return ( -1, $msg );
     }
 
-    ($status, $res) = consultArchive($host, $port, $endpoint, $request);
-    if ($status != 0) {
+    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request );
+    if ( $status != 0 ) {
         my $msg = "Error consulting archive: $res";
-        $self->{LOGGER}->error($msg);
-        return (-1, $msg);
+        $self->{LOGGER}->error( $msg );
+        return ( -1, $msg );
     }
 
     my $topo_msg = $res;
 
-    my $data_elms = find($topo_msg, './*[local-name()="data"]', 0);
-    if ($data_elms) {
-    foreach my $data ($data_elms->get_nodelist) {
+    my $data_elms = find( $topo_msg, './*[local-name()="data"]', 0 );
+    if ( $data_elms ) {
+        foreach my $data ( $data_elms->get_nodelist ) {
 
-        my $metadata_elms = find($topo_msg, './*[local-name()="metadata"]', 0);
-        if ($metadata_elms) {
-        foreach my $metadata ($metadata_elms->get_nodelist) {
-            if ($data->getAttribute("metadataIdRef") eq $metadata->getAttribute("id")) {
-                my $topology = find($data, './nmtopo:topology', 1);
-                if (defined $topology) {
-                    return (0, $topology);
-                } 
+            my $metadata_elms = find( $topo_msg, './*[local-name()="metadata"]', 0 );
+            if ( $metadata_elms ) {
+                foreach my $metadata ( $metadata_elms->get_nodelist ) {
+                    if ( $data->getAttribute( "metadataIdRef" ) eq $metadata->getAttribute( "id" ) ) {
+                        my $topology = find( $data, './nmtopo:topology', 1 );
+                        if ( $topology ) {
+                            return ( 0, $topology );
+                        }
+                    }
+                }
             }
         }
-	}
-    }
     }
 
     my $msg = "Response does not contain a topology";
-    $self->{LOGGER}->error($msg);
-    return (-1, $msg);
+    $self->{LOGGER}->error( $msg );
+    return ( -1, $msg );
 }
 
+=head2 changeTopology($self, $type, $topology)
+
+TBD
+
+=cut
+
 sub changeTopology {
-    my ($self, $type, $topology) = @_;
+    my ( $self, $type, $topology ) = @_;
     my @results;
     my $error;
-    my ($status, $res);
+    my ( $status, $res );
 
-    my $request = buildChangeRequest($type, $topology);
+    my $request = buildChangeRequest( $type, $topology );
 
-    $self->{LOGGER}->debug("Change Request: ".$request);
+    $self->{LOGGER}->debug( "Change Request: " . $request );
 
-    my ($host, $port, $endpoint) = &perfSONAR_PS::Transport::splitURI( $self->{URI_STRING} );
-    if (not defined $host and not defined $port and not defined $endpoint) {
+    my ( $host, $port, $endpoint ) = &perfSONAR_PS::Transport::splitURI( $self->{URI_STRING} );
+    if ( not defined $host and not defined $port and not defined $endpoint ) {
         my $msg = "Specified argument is not a URI";
-        $self->{LOGGER}->error($msg);
-        return (-1, $msg);
+        $self->{LOGGER}->error( $msg );
+        return ( -1, $msg );
     }
 
-    ($status, $res) = consultArchive($host, $port, $endpoint, $request);
-    if ($status != 0) {
+    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request );
+    if ( $status != 0 ) {
         my $msg = "Error consulting archive: $res";
-        $self->{LOGGER}->error($msg);
-        return (-1, $msg);
+        $self->{LOGGER}->error( $msg );
+        return ( -1, $msg );
     }
 
     my $topo_msg = $res;
 
-    $self->{LOGGER}->debug("Change Response: ".$topo_msg->toString);
+    $self->{LOGGER}->debug( "Change Response: " . $topo_msg->toString );
 
     my $find_res;
 
-    $find_res = find($res, "./nmwg:data", 0);
-    if ($find_res) {
-        foreach my $data ($find_res->get_nodelist) {
-            my $metadata = find($res, "./nmwg:metadata[\@id='".$data->getAttribute("metadataIdRef")."']", 1);
-            if (not defined $metadata) {
-                return (-1, "No metadata in response");
+    $find_res = find( $res, "./nmwg:data", 0 );
+    if ( $find_res ) {
+        foreach my $data ( $find_res->get_nodelist ) {
+            my $metadata = find( $res, "./nmwg:metadata[\@id='" . $data->getAttribute( "metadataIdRef" ) . "']", 1 );
+            if ( not defined $metadata ) {
+                return ( -1, "No metadata in response" );
             }
 
-            my $eventType = findvalue($metadata, "nmwg:eventType");
-            if (defined $eventType and $eventType =~ /^error\./x) {
-                my $error_msg = findvalue($data, "./nmwgr:datum");
-                $error_msg = "Unknown error" if (not defined $error_msg or $error_msg eq "");
-                return (-1, $error_msg);
-            } elsif (defined $eventType and $eventType =~ /^success\./x) {
-                return (0, "Success");
+            my $eventType = findvalue( $metadata, "nmwg:eventType" );
+            if ( $eventType and $eventType =~ /^error\./x ) {
+                my $error_msg = findvalue( $data, "./nmwgr:datum" );
+                $error_msg = "Unknown error" if ( not defined $error_msg or $error_msg eq q{} );
+                return ( -1, $error_msg );
+            }
+            elsif ( $eventType and $eventType =~ /^success\./x ) {
+                return ( 0, "Success" );
             }
         }
     }
 
     my $msg = "Response does not contain status";
-    $self->{LOGGER}->error($msg);
-    return (-1, $msg);
+    $self->{LOGGER}->error( $msg );
+    return ( -1, $msg );
 }
 
 1;
 
 __END__
 
-=head1 NAME
+=head1 SEE ALSO
 
-perfSONAR_PS::Client::Topology::MA - A module that provides methods for
-interacting with Topology MA servers.
+L<Log::Log4perl>, L<perfSONAR_PS::Common>, L<perfSONAR_PS::Transport>, 
 
-=head1 DESCRIPTION
+To join the 'perfSONAR Users' mailing list, please visit:
 
-This modules allows one to interact with the Topology MA via its Web Services
-interface. The API provided is identical to the API for interacting with the
-topology database directly. Thus, a client written to read from or update a
-Topology MA can be easily modified to interact directly with its underlying
-database allowing more efficient interactions if required.
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
-The module is to be treated as an object, where each instance of the object
-represents a connection to a single database. Each method may then be invoked
-on the object for the specific database.  
+The perfSONAR-PS subversion repository is located at:
 
-=head1 SYNOPSIS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-=head1 DETAILS
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
-=head1 API
+  http://code.google.com/p/perfsonar-ps/issues/list 
 
-The API for perfSONAR_PS::Client::Topology::MA is rather simple and greatly
-resembles the messages types received by the server. It is also identical to
-the perfSONAR_PS::Client::Topology::SQL API allowing easy construction of
-programs that can interface via the MA server or directly with the database.
+=head1 VERSION
 
-=head2 new($package, $uri_string)
+$Id$
 
-    The new function takes a URI connection string as its first argument. This
-    specifies which MA to interact with.
+=head1 AUTHOR
 
-=head2 open($self)
+Aaron Brown, aaron@internet2.edu
 
-    The open function could be used to open a persistent connection to the MA.
-    However, currently, it is simply a stub function.
+=head1 LICENSE
 
-=head2 close($self)
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
-    The close function could close a persistent connection to the MA. However,
-    currently, it is simply a stub function.
+=head1 COPYRIGHT
 
-=head2 setURIString($self, $uri_string)
+Copyright (c) 2008-2009, Internet2
 
-    The setURIString function changes the MA that the instance uses.
+All rights reserved.
 
-=head2 dbIsOpen($self)
-
-    This function is a stub function that always returns 1.
-
-=head2 getURIString($)
-
-    The getURIString function returns the current URI string
-
-=head2 getAll($self)
-
-    The getAll function gets the full contents of the MA. It returns the results as
-    a ref to a LibXML element pointing to the <nmtopo:topology> structure
-    containing the contents of the MA's database. 
-
-=head2 xQuery($self, $xquery)
-
-    The xQuery function performs an xquery on the specified MA. It returns the
-    results as a string.
-
-    =head1 SEE ALSO
-
-    L<perfSONAR_PS::Client::Topology::XMLDB>, L<Log::Log4perl>
-
-    To join the 'perfSONAR-PS' mailing list, please visit:
-
-    https://mail.internet2.edu/wws/info/i2-perfsonar
-
-    The perfSONAR-PS subversion repository is located at:
-
-    https://svn.internet2.edu/svn/perfSONAR-PS 
-
-    Questions and comments can be directed to the author, or the mailing list. 
-
-    =head1 VERSION
-
-    $Id$
-
-    =head1 AUTHOR
-
-    Aaron Brown, aaron@internet2.edu
-
-    =head1 LICENSE
-
-    You should have received a copy of the Internet2 Intellectual Property Framework along
-    with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
-
-    =head1 COPYRIGHT
-
-    Copyright (c) 2004-2007, Internet2 and the University of Delaware
-
-    All rights reserved.
-
-    =cut
+=cut
 
 # vim: expandtab shiftwidth=4 tabstop=4

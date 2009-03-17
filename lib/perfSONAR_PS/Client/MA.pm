@@ -1,20 +1,20 @@
 package perfSONAR_PS::Client::MA;
 
-use fields 'INSTANCE', 'LOGGER', 'ALIVE';
-
 use strict;
 use warnings;
 
-our $VERSION = 0.10;
+our $VERSION = 3.1;
+
+use fields 'INSTANCE', 'LOGGER', 'ALIVE';
 
 =head1 NAME
 
-perfSONAR_PS::Client::MA - API for calling an MA from a client or another
-service.
+perfSONAR_PS::Client::MA
 
 =head1 DESCRIPTION
 
-Module with a very basic API to some common MA functions.
+API for calling an MA from a client or another service. Module with a very basic
+API to some common MA functions.
 
 =cut
 
@@ -38,9 +38,9 @@ sub new {
     my ( $package, @args ) = @_;
     my $parameters = validateParams( @args, { instance => 0 } );
 
-    my $self = fields::new($package);
+    my $self = fields::new( $package );
     $self->{ALIVE}  = 0;
-    $self->{LOGGER} = get_logger("perfSONAR_PS::Client::MA");
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::MA" );
     if ( exists $parameters->{"instance"} and $parameters->{"instance"} ) {
         $self->{INSTANCE} = $parameters->{"instance"};
     }
@@ -73,7 +73,7 @@ sub callMA {
     my $parameters = validateParams( @args, { message => 1, timeout => 0 } );
 
     unless ( $self->{INSTANCE} ) {
-        $self->{LOGGER}->error("Instance not defined.");
+        $self->{LOGGER}->error( "Instance not defined." );
         return;
     }
 
@@ -93,16 +93,16 @@ sub callMA {
     }
 
     my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint );
-    unless ($sender) {
-        $self->{LOGGER}->error("LS could not be contaced.");
+    unless ( $sender ) {
+        $self->{LOGGER}->error( "LS could not be contaced." );
         return;
     }
 
     my $error = q{};
-    my $responseContent = $sender->sendReceive( makeEnvelope( $parameters->{message} ), $parameters->{timeout} , \$error );
-    if ($error) {
+    my $responseContent = $sender->sendReceive( makeEnvelope( $parameters->{message} ), $parameters->{timeout}, \$error );
+    if ( $error ) {
         $self->{ALIVE} = 0;
-        $self->{LOGGER}->error("sendReceive failed: $error");
+        $self->{LOGGER}->error( "sendReceive failed: $error" );
         return;
     }
 
@@ -110,12 +110,12 @@ sub callMA {
     my $parser = XML::LibXML->new();
     if ( defined $responseContent and $responseContent and ( not $responseContent =~ m/^\d+/xm ) ) {
         my $doc = q{};
-        eval { $doc = $parser->parse_string($responseContent); };
-        if ($EVAL_ERROR) {
+        eval { $doc = $parser->parse_string( $responseContent ); };
+        if ( $EVAL_ERROR ) {
             $self->{LOGGER}->error( "Parser failed: " . $EVAL_ERROR );
         }
         else {
-            $msg = $doc->getDocumentElement->getElementsByTagNameNS( "http://ggf.org/ns/nmwg/base/2.0/", "message" )->get_node(1);
+            $msg = $doc->getDocumentElement->getElementsByTagNameNS( "http://ggf.org/ns/nmwg/base/2.0/", "message" )->get_node( 1 );
         }
     }
     else {
@@ -134,77 +134,78 @@ sub metadataKeyRequest {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { subject => 1, eventTypes => 1, parameters => 0, start => 0, end => 0, resolution => 0, consolidationFunction => 0 } );
 
-    my $mdId = "metadata." . genuid();
-    my $dId = "data." . genuid();
-    my $content = "  <nmwg:metadata xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\" id=\"".$mdId."\">\n";
+    my $mdId    = "metadata." . genuid();
+    my $dId     = "data." . genuid();
+    my $content = "  <nmwg:metadata xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\" id=\"" . $mdId . "\">\n";
 
-    if ( exists $parameters->{"subject"} and $parameters->{"subject"} ) {    
+    if ( exists $parameters->{"subject"} and $parameters->{"subject"} ) {
         $content .= $parameters->{"subject"};
     }
 
     foreach my $et ( @{ $parameters->{"eventTypes"} } ) {
-        $content .= "    <nmwg:eventType>".$et."</nmwg:eventType>\n";
+        $content .= "    <nmwg:eventType>" . $et . "</nmwg:eventType>\n";
     }
     if ( exists $parameters->{"parameters"} and $parameters->{"parameters"} ) {
-        $content .= "    <nmwg:parameters id=\"parameters.".genuid()."\">\n";
+        $content .= "    <nmwg:parameters id=\"parameters." . genuid() . "\">\n";
         foreach my $p ( keys %{ $parameters->{"parameters"} } ) {
-            $content .= "      <nmwg:parameter name=\"".$p."\">".$parameters->{"parameters"}->{$p}."</nmwg:parameter>\n";
+            $content .= "      <nmwg:parameter name=\"" . $p . "\">" . $parameters->{"parameters"}->{$p} . "</nmwg:parameter>\n";
         }
         $content .= "    </nmwg:parameters>\n";
     }
     $content .= "  </nmwg:metadata>\n";
-    
-    if ( ( exists $parameters->{"start"} and $parameters->{"start"} ) or 
-         ( exists $parameters->{"end"} and $parameters->{"end"} ) or 
-         ( exists $parameters->{"resolution"} and $parameters->{"resolution"} ) or 
-         ( exists $parameters->{"consolidationFunction"} and $parameters->{"consolidationFunction"} ) ) {
-        $content .= "  <nmwg:metadata id=\"".$mdId.".chain\" xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\">\n";
-        $content .= "    <select:subject id=\"subject.".genuid()."\" metadataIdRef=\"".$mdId."\" xmlns:select=\"http://ggf.org/ns/nmwg/ops/select/2.0/\"/>\n";
-        $content .= "    <select:parameters id=\"parameters.".genuid()."\" xmlns:select=\"http://ggf.org/ns/nmwg/ops/select/2.0/\">\n";
+
+    if (   ( exists $parameters->{"start"} and $parameters->{"start"} )
+        or ( exists $parameters->{"end"}                   and $parameters->{"end"} )
+        or ( exists $parameters->{"resolution"}            and $parameters->{"resolution"} )
+        or ( exists $parameters->{"consolidationFunction"} and $parameters->{"consolidationFunction"} ) )
+    {
+        $content .= "  <nmwg:metadata id=\"" . $mdId . ".chain\" xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\">\n";
+        $content .= "    <select:subject id=\"subject." . genuid() . "\" metadataIdRef=\"" . $mdId . "\" xmlns:select=\"http://ggf.org/ns/nmwg/ops/select/2.0/\"/>\n";
+        $content .= "    <select:parameters id=\"parameters." . genuid() . "\" xmlns:select=\"http://ggf.org/ns/nmwg/ops/select/2.0/\">\n";
         if ( exists $parameters->{"start"} and $parameters->{"start"} ) {
-            $content .= "      <nmwg:parameter name=\"startTime\">".$parameters->{"start"}."</nmwg:parameter>\n";
+            $content .= "      <nmwg:parameter name=\"startTime\">" . $parameters->{"start"} . "</nmwg:parameter>\n";
         }
         if ( exists $parameters->{"end"} and $parameters->{"end"} ) {
-            $content .= "      <nmwg:parameter name=\"endTime\">".$parameters->{"end"}."</nmwg:parameter>\n";
+            $content .= "      <nmwg:parameter name=\"endTime\">" . $parameters->{"end"} . "</nmwg:parameter>\n";
         }
         if ( exists $parameters->{"resolution"} and $parameters->{"resolution"} ) {
-            $content .= "      <nmwg:parameter name=\"resolution\">".$parameters->{"resolution"}."</nmwg:parameter>\n";
+            $content .= "      <nmwg:parameter name=\"resolution\">" . $parameters->{"resolution"} . "</nmwg:parameter>\n";
         }
         if ( exists $parameters->{"consolidationFunction"} and $parameters->{"consolidationFunction"} ) {
-            $content .= "      <nmwg:parameter name=\"consolidationFunction\">".$parameters->{"consolidationFunction"}."</nmwg:parameter>\n";
+            $content .= "      <nmwg:parameter name=\"consolidationFunction\">" . $parameters->{"consolidationFunction"} . "</nmwg:parameter>\n";
         }
         $content .= "    </select:parameters>\n";
         $content .= "    <nmwg:eventType>http://ggf.org/ns/nmwg/ops/select/2.0</nmwg:eventType> \n";
         $content .= "  </nmwg:metadata>\n";
-        $content .= "  <nmwg:data id=\"".$dId."\" metadataIdRef=\"".$mdId.".chain\"/>\n";
+        $content .= "  <nmwg:data id=\"" . $dId . "\" metadataIdRef=\"" . $mdId . ".chain\"/>\n";
     }
     else {
-        $content .= "  <nmwg:data id=\"".$dId."\" metadataIdRef=\"".$mdId."\"/>\n";
+        $content .= "  <nmwg:data id=\"" . $dId . "\" metadataIdRef=\"" . $mdId . "\"/>\n";
     }
 
     my $msg = $self->callMA( { timeout => 30, message => $self->createMAMessage( { type => "MetadataKeyRequest", content => $content } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my %result = ();
-    my $list = find( $msg, "./nmwg:metadata", 0 );
+    my $list   = find( $msg, "./nmwg:metadata", 0 );
     my @mdList = ();
     foreach my $md ( $list->get_nodelist ) {
-        $md->setNamespace( "http://ggf.org/ns/nmwg/base/2.0/" , "nmwg", 0 );
+        $md->setNamespace( "http://ggf.org/ns/nmwg/base/2.0/", "nmwg", 0 );
         push @mdList, $md->toString;
-    } 
+    }
 
     $list = find( $msg, "./nmwg:data", 0 );
     my @dList = ();
     foreach my $d ( $list->get_nodelist ) {
-        $d->setNamespace( "http://ggf.org/ns/nmwg/base/2.0/" , "nmwg", 0 );
+        $d->setNamespace( "http://ggf.org/ns/nmwg/base/2.0/", "nmwg", 0 );
         push @dList, $d->toString;
-    } 
+    }
 
     $result{"metadata"} = \@mdList;
-    $result{"data"} = \@dList;
+    $result{"data"}     = \@dList;
 
     return \%result;
 }
@@ -219,55 +220,54 @@ sub dataInfoRequest {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { subject => 1, eventTypes => 1, parameters => 0 } );
 
-    my $mdId = "metadata." . genuid();
-    my $dId = "data." . genuid();
-    my $content = "  <nmwg:metadata xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\" id=\"".$mdId."\">\n";
+    my $mdId    = "metadata." . genuid();
+    my $dId     = "data." . genuid();
+    my $content = "  <nmwg:metadata xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\" id=\"" . $mdId . "\">\n";
 
-    if ( exists $parameters->{"subject"} and $parameters->{"subject"} ) {    
+    if ( exists $parameters->{"subject"} and $parameters->{"subject"} ) {
         $content .= $parameters->{"subject"};
     }
 
     foreach my $et ( @{ $parameters->{"eventTypes"} } ) {
-        $content .= "    <nmwg:eventType>".$et."</nmwg:eventType>\n";
+        $content .= "    <nmwg:eventType>" . $et . "</nmwg:eventType>\n";
     }
     if ( exists $parameters->{"parameters"} and $parameters->{"parameters"} ) {
-        $content .= "    <nmwg:parameters id=\"parameters.".genuid()."\">\n";
+        $content .= "    <nmwg:parameters id=\"parameters." . genuid() . "\">\n";
         foreach my $p ( keys %{ $parameters->{"parameters"} } ) {
-            $content .= "      <nmwg:parameter name=\"".$p."\">".$parameters->{"parameters"}->{$p}."</nmwg:parameter>\n";
+            $content .= "      <nmwg:parameter name=\"" . $p . "\">" . $parameters->{"parameters"}->{$p} . "</nmwg:parameter>\n";
         }
         $content .= "    </nmwg:parameters>\n";
     }
     $content .= "  </nmwg:metadata>\n";
-    
-    $content .= "  <nmwg:data id=\"".$dId."\" metadataIdRef=\"".$mdId."\"/>\n";
-    
+
+    $content .= "  <nmwg:data id=\"" . $dId . "\" metadataIdRef=\"" . $mdId . "\"/>\n";
+
     my $msg = $self->callMA( { timeout => 30, message => $self->createMAMessage( { type => "DataInfoRequest", content => $content } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my %result = ();
-    my $list = find( $msg, "./nmwg:metadata", 0 );
+    my $list   = find( $msg, "./nmwg:metadata", 0 );
     my @mdList = ();
     foreach my $md ( $list->get_nodelist ) {
-        $md->setNamespace( "http://ggf.org/ns/nmwg/base/2.0/" , "nmwg", 0 );
+        $md->setNamespace( "http://ggf.org/ns/nmwg/base/2.0/", "nmwg", 0 );
         push @mdList, $md->toString;
-    } 
+    }
 
     $list = find( $msg, "./nmwg:data", 0 );
     my @dList = ();
     foreach my $d ( $list->get_nodelist ) {
-        $d->setNamespace( "http://ggf.org/ns/nmwg/base/2.0/" , "nmwg", 0 );
+        $d->setNamespace( "http://ggf.org/ns/nmwg/base/2.0/", "nmwg", 0 );
         push @dList, $d->toString;
-    } 
+    }
 
     $result{"metadata"} = \@mdList;
-    $result{"data"} = \@dList;
+    $result{"data"}     = \@dList;
 
     return \%result;
 }
-
 
 =head2 setupDataRequest($self, { subject, eventTypes, parameters, start, end, resolution, consolidationFunction })
 
@@ -279,82 +279,83 @@ sub setupDataRequest {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { subject => 0, eventTypes => 1, parameterblock => 0, parameters => 0, start => 0, end => 0, resolution => 0, consolidationFunction => 0 } );
 
-    my $mdId = "metadata." . genuid();
-    my $dId = "data." . genuid();
-    my $content = "  <nmwg:metadata xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\" id=\"".$mdId."\">\n";
+    my $mdId    = "metadata." . genuid();
+    my $dId     = "data." . genuid();
+    my $content = "  <nmwg:metadata xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\" id=\"" . $mdId . "\">\n";
 
-    if ( exists $parameters->{"subject"} and $parameters->{"subject"} ) {    
+    if ( exists $parameters->{"subject"} and $parameters->{"subject"} ) {
         $content .= $parameters->{"subject"};
     }
-    
+
     foreach my $et ( @{ $parameters->{"eventTypes"} } ) {
-        $content .= "    <nmwg:eventType>".$et."</nmwg:eventType>\n";
+        $content .= "    <nmwg:eventType>" . $et . "</nmwg:eventType>\n";
     }
 
-    if ( exists $parameters->{"parameterblock"} and $parameters->{"parameterblock"} ) {    
+    if ( exists $parameters->{"parameterblock"} and $parameters->{"parameterblock"} ) {
         $content .= $parameters->{"parameterblock"};
     }
     elsif ( exists $parameters->{"parameters"} and $parameters->{"parameters"} ) {
-        $content .= "    <nmwg:parameters id=\"parameters.".genuid()."\">\n";
+        $content .= "    <nmwg:parameters id=\"parameters." . genuid() . "\">\n";
         foreach my $p ( keys %{ $parameters->{"parameters"} } ) {
-            $content .= "      <nmwg:parameter name=\"".$p."\">".$parameters->{"parameters"}->{$p}."</nmwg:parameter>\n";
+            $content .= "      <nmwg:parameter name=\"" . $p . "\">" . $parameters->{"parameters"}->{$p} . "</nmwg:parameter>\n";
         }
         $content .= "    </nmwg:parameters>\n";
     }
-    
+
     $content .= "  </nmwg:metadata>\n";
-    
-    if ( ( exists $parameters->{"start"} and $parameters->{"start"} ) or 
-         ( exists $parameters->{"end"} and $parameters->{"end"} ) or 
-         ( exists $parameters->{"resolution"} and $parameters->{"resolution"} ) or 
-         ( exists $parameters->{"consolidationFunction"} and $parameters->{"consolidationFunction"} ) ) {
-        $content .= "  <nmwg:metadata id=\"".$mdId.".chain\" xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\">\n";
-        $content .= "    <select:subject id=\"subject.".genuid()."\" metadataIdRef=\"".$mdId."\" xmlns:select=\"http://ggf.org/ns/nmwg/ops/select/2.0/\"/>\n";
-        $content .= "    <select:parameters id=\"parameters.".genuid()."\" xmlns:select=\"http://ggf.org/ns/nmwg/ops/select/2.0/\">\n";
+
+    if (   ( exists $parameters->{"start"} and $parameters->{"start"} )
+        or ( exists $parameters->{"end"}                   and $parameters->{"end"} )
+        or ( exists $parameters->{"resolution"}            and $parameters->{"resolution"} )
+        or ( exists $parameters->{"consolidationFunction"} and $parameters->{"consolidationFunction"} ) )
+    {
+        $content .= "  <nmwg:metadata id=\"" . $mdId . ".chain\" xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\">\n";
+        $content .= "    <select:subject id=\"subject." . genuid() . "\" metadataIdRef=\"" . $mdId . "\" xmlns:select=\"http://ggf.org/ns/nmwg/ops/select/2.0/\"/>\n";
+        $content .= "    <select:parameters id=\"parameters." . genuid() . "\" xmlns:select=\"http://ggf.org/ns/nmwg/ops/select/2.0/\">\n";
         if ( exists $parameters->{"start"} and $parameters->{"start"} ) {
-            $content .= "      <nmwg:parameter name=\"startTime\">".$parameters->{"start"}."</nmwg:parameter>\n";
+            $content .= "      <nmwg:parameter name=\"startTime\">" . $parameters->{"start"} . "</nmwg:parameter>\n";
         }
         if ( exists $parameters->{"end"} and $parameters->{"end"} ) {
-            $content .= "      <nmwg:parameter name=\"endTime\">".$parameters->{"end"}."</nmwg:parameter>\n";
+            $content .= "      <nmwg:parameter name=\"endTime\">" . $parameters->{"end"} . "</nmwg:parameter>\n";
         }
         if ( exists $parameters->{"resolution"} and $parameters->{"resolution"} ) {
-            $content .= "      <nmwg:parameter name=\"resolution\">".$parameters->{"resolution"}."</nmwg:parameter>\n";
+            $content .= "      <nmwg:parameter name=\"resolution\">" . $parameters->{"resolution"} . "</nmwg:parameter>\n";
         }
         if ( exists $parameters->{"consolidationFunction"} and $parameters->{"consolidationFunction"} ) {
-            $content .= "      <nmwg:parameter name=\"consolidationFunction\">".$parameters->{"consolidationFunction"}."</nmwg:parameter>\n";
+            $content .= "      <nmwg:parameter name=\"consolidationFunction\">" . $parameters->{"consolidationFunction"} . "</nmwg:parameter>\n";
         }
         $content .= "    </select:parameters>\n";
         $content .= "    <nmwg:eventType>http://ggf.org/ns/nmwg/ops/select/2.0</nmwg:eventType> \n";
         $content .= "  </nmwg:metadata>\n";
-        $content .= "  <nmwg:data id=\"".$dId."\" metadataIdRef=\"".$mdId.".chain\"/>\n";
+        $content .= "  <nmwg:data id=\"" . $dId . "\" metadataIdRef=\"" . $mdId . ".chain\"/>\n";
     }
     else {
-        $content .= "  <nmwg:data id=\"".$dId."\" metadataIdRef=\"".$mdId."\"/>\n";
+        $content .= "  <nmwg:data id=\"" . $dId . "\" metadataIdRef=\"" . $mdId . "\"/>\n";
     }
-    
+
     my $msg = $self->callMA( { timeout => 30, message => $self->createMAMessage( { type => "SetupDataRequest", content => $content } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my %result = ();
-    my $list = find( $msg, "./nmwg:metadata", 0 );
+    my $list   = find( $msg, "./nmwg:metadata", 0 );
     my @mdList = ();
     foreach my $md ( $list->get_nodelist ) {
-        $md->setNamespace( "http://ggf.org/ns/nmwg/base/2.0/" , "nmwg", 0 );
+        $md->setNamespace( "http://ggf.org/ns/nmwg/base/2.0/", "nmwg", 0 );
         push @mdList, $md->toString;
-    } 
+    }
 
     $list = find( $msg, "./nmwg:data", 0 );
     my @dList = ();
     foreach my $d ( $list->get_nodelist ) {
-        $d->setNamespace( "http://ggf.org/ns/nmwg/base/2.0/" , "nmwg", 0 );
+        $d->setNamespace( "http://ggf.org/ns/nmwg/base/2.0/", "nmwg", 0 );
         push @dList, $d->toString;
-    } 
+    }
 
     $result{"metadata"} = \@mdList;
-    $result{"data"} = \@dList;
+    $result{"data"}     = \@dList;
 
     return \%result;
 }
@@ -441,18 +442,19 @@ __END__
 =head1 SEE ALSO
 
 L<Log::Log4perl>, L<Params::Validate>, L<English>, L<perfSONAR_PS::Common>,
-L<perfSONAR_PS::Transport>, L<perfSONAR_PS::Client::Echo>
+L<perfSONAR_PS::Transport>, L<perfSONAR_PS::Client::Echo>,
+L<perfSONAR_PS::Utils::ParameterValidation>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -466,12 +468,13 @@ Jason Zurawski, zurawski@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 

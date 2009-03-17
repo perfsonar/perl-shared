@@ -1,21 +1,21 @@
 package perfSONAR_PS::Client::DCN;
 
-use base 'perfSONAR_PS::Client::LS';
-
-use fields 'CONF', 'LS_KEY';
-
 use strict;
 use warnings;
 
-our $VERSION = 0.10;
+our $VERSION = 3.1;
+
+use fields 'CONF', 'LS_KEY';
+
+use base 'perfSONAR_PS::Client::LS';
 
 =head1 NAME
 
-perfSONAR_PS::Client::DCN - Simple library to implement some perfSONAR calls
-that DCN tools will require.
+perfSONAR_PS::Client::DCN
 
 =head1 DESCRIPTION
 
+Simple library to implement some perfSONAR calls that DCN tools will require.
 The goal of this module is to provide some simple library calls that DCN
 software may implement to receive information from perfSONAR deployments.
 
@@ -42,14 +42,14 @@ sub new {
     my ( $package, @args ) = @_;
     my $parameters = validateParams( @args, { instance => 0 } );
 
-    my $self = fields::new($package);
+    my $self = fields::new( $package );
 
     $self->{ALIVE}               = 0;
     $self->{CONF}                = ();
     $self->{CONF}->{serviceType} = "LS";
     $self->{CONF}->{serviceName} = "DCN LS";
 
-    $self->{LOGGER} = get_logger("perfSONAR_PS::Client::DCN");
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::DCN" );
     if ( exists $parameters->{"instance"} and $parameters->{"instance"} ) {
         if ( $parameters->{"instance"} =~ m/^http:\/\// ) {
             $self->{INSTANCE}            = $parameters->{"instance"};
@@ -57,7 +57,7 @@ sub new {
             $self->{LS_KEY}              = $self->getLSKey;
         }
         else {
-            $self->{LOGGER}->error("Instance must be of the form http://ADDRESS.");
+            $self->{LOGGER}->error( "Instance must be of the form http://ADDRESS." );
         }
     }
     return $self;
@@ -80,7 +80,7 @@ sub setInstance {
         $self->{LS_KEY}              = $self->getLSKey;
     }
     else {
-        $self->{LOGGER}->error("Instance must be of the form http://ADDRESS.");
+        $self->{LOGGER}->error( "Instance must be of the form http://ADDRESS." );
     }
     return;
 }
@@ -97,11 +97,11 @@ sub getLSKey {
     my $parameters = validateParams( @args, {} );
 
     my $result = $self->keyRequestLS( { service => \%{ $self->{CONF} } } );
-    if ( $result and $result->{key} ) {
+    if ( $result and exists $result->{key} and $result->{key} ) {
         return $result->{key};
     }
     else {
-        $self->{LOGGER}->error("Error in LSKeyRequest");
+        $self->{LOGGER}->error( "Error in LSKeyRequest" );
         return;
     }
 }
@@ -125,27 +125,27 @@ sub nameToId {
     $metadata .= $self->queryWrapper( { query => $q } );
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
     if ( $eventType and $eventType =~ m/^success/mx ) {
-        my $links = find( $msg->getChildrenByLocalName("data")->get_node(1)->getChildrenByLocalName("datum")->get_node(1), ".//nmtb:node/nmtb:relation[\@type=\"connectionLink\"]/nmtb:linkIdRef", 0 );
-        if ($links) {
+        my $links = find( $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 ), ".//nmtb:node/nmtb:relation[\@type=\"connectionLink\"]/nmtb:linkIdRef", 0 );
+        if ( $links ) {
             foreach my $l ( $links->get_nodelist ) {
                 my $value = extract( $l, 0 );
                 push @ids, $value if $value;
             }
         }
         else {
-            $self->{LOGGER}->error( "No link elements found in return: " . $msg->getChildrenByLocalName("data")->get_node(1)->getChildrenByLocalName("datum")->get_node(1)->toString );
+            $self->{LOGGER}->error( "No link elements found in return: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
             return;
         }
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName("data")->get_node(1)->getChildrenByLocalName("datum")->get_node(1)->toString );
+        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
     }
     return \@ids;
 }
@@ -169,27 +169,27 @@ sub idToName {
     $metadata .= $self->queryWrapper( { query => $q } );
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
     if ( $eventType and $eventType =~ m/^success/mx ) {
-        my $hostnames = find( $msg->getChildrenByLocalName("data")->get_node(1)->getChildrenByLocalName("datum")->get_node(1), ".//nmtb:node/nmtb:address[\@type=\"hostname\"]", 0 );
-        if ($hostnames) {
+        my $hostnames = find( $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 ), ".//nmtb:node/nmtb:address[\@type=\"hostname\"]", 0 );
+        if ( $hostnames ) {
             foreach my $hn ( $hostnames->get_nodelist ) {
                 my $value = extract( $hn, 0 );
                 push @names, $value if $value;
             }
         }
         else {
-            $self->{LOGGER}->error( "No link elements found in return: " . $msg->getChildrenByLocalName("data")->get_node(1)->getChildrenByLocalName("datum")->get_node(1)->toString );
+            $self->{LOGGER}->error( "No link elements found in return: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
             return;
         }
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName("data")->get_node(1)->getChildrenByLocalName("datum")->get_node(1)->toString );
+        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
     }
     return \@names;
 }
@@ -216,7 +216,7 @@ sub insert {
     );
 
     my $metadata = q{};
-    if ( $self->{LS_KEY} ) {
+    if ( exists $self->{LS_KEY} and $self->{LS_KEY} ) {
         $metadata = $self->createKey( { key => $self->{LS_KEY} } );
     }
     else {
@@ -226,16 +226,16 @@ sub insert {
     my @data = ();
     $data[0] = $self->createNode( { id => $parameters->{id}, name => $parameters->{name} } );
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSRegisterRequest", ns => \%ns, metadata => $metadata, data => \@data } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return -1;
     }
 
     my $code  = extract( find( $msg, "./nmwg:metadata/nmwg:eventType",        1 ), 0 );
     my $datum = extract( find( $msg, "./nmwg:data/*[local-name()=\"datum\"]", 1 ), 0 );
-    if ( defined $code and $code =~ m/success/xm ) {
-        $self->{LOGGER}->info($datum) if $datum;
-        if ( $datum =~ m/^\s*\[\d+\] Data elements/m ) {
+    if ( $code and $code =~ m/success/xm ) {
+        $self->{LOGGER}->info( $datum ) if $datum;
+        if ( $datum and $datum =~ m/^\s*\[\d+\] Data elements/m ) {
             my $num = $datum;
             $num =~ s/^\[//xm;
             $num =~ s/\].*//xm;
@@ -245,7 +245,7 @@ sub insert {
         }
         return -1;
     }
-    $self->{LOGGER}->error($datum) if $datum;
+    $self->{LOGGER}->error( $datum ) if $datum;
     return -1;
 }
 
@@ -260,13 +260,13 @@ sub remove {
     my $parameters = validateParams( @args, { id => 0, name => 0 } );
 
     unless ( $parameters->{id} or $parameters->{name} ) {
-        $self->{LOGGER}->error("Must supply either a name or id.");
+        $self->{LOGGER}->error( "Must supply either a name or id." );
         return -1;
     }
     unless ( $self->{LS_KEY} ) {
         $self->{LS_KEY} = $self->getLSKey;
     }
-    if ( $self->{LS_KEY} ) {
+    if ( exists $self->{LS_KEY} and $self->{LS_KEY} ) {
         my %ns = (
             dcn  => "http://ggf.org/ns/nmwg/tools/dcn/2.0/",
             nmtb => "http://ogf.org/schema/network/topology/base/20070828/"
@@ -275,15 +275,15 @@ sub remove {
         $data[0] = $self->createNode( { id => $parameters->{id}, name => $parameters->{name} } );
         my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSDeregisterRequest", metadata => $self->createKey( { key => $self->{LS_KEY} } ), data => \@data } ) } );
 
-        unless ($msg) {
-            $self->{LOGGER}->error("Message element not found in return.");
+        unless ( $msg ) {
+            $self->{LOGGER}->error( "Message element not found in return." );
             return -1;
         }
         my $code  = extract( find( $msg, "./nmwg:metadata/nmwg:eventType",        1 ), 0 );
         my $datum = extract( find( $msg, "./nmwg:data/*[local-name()=\"datum\"]", 1 ), 0 );
-        if ( defined $code and $code =~ m/success/xm ) {
-            $self->{LOGGER}->info($datum) if $datum;
-            if ( $datum =~ m/^Removed/xm ) {
+        if ( $code and $code =~ m/success/xm ) {
+            $self->{LOGGER}->info( $datum ) if $datum;
+            if ( $datum and $datum =~ m/^Removed/xm ) {
                 my $num = $datum;
                 $num =~ s/^Removed\s{1}\[//xm;
                 $num =~ s/\].*//xm;
@@ -294,7 +294,7 @@ sub remove {
             return -1;
         }
         else {
-            $self->{LOGGER}->error($datum) if $datum;
+            $self->{LOGGER}->error( $datum ) if $datum;
             return -1;
         }
     }
@@ -315,21 +315,21 @@ sub getMappings {
     my %ns = ( xquery => "http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0/" );
 
     my $q = "declare namespace nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\";\n";
-    $q        .= "declare namespace nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\";\n";
-    $q        .= "/nmwg:store[\@type=\"LSStore\"]/nmwg:data/nmwg:metadata/*[local-name()='subject']/nmtb:node\n";
+    $q .= "declare namespace nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\";\n";
+    $q .= "/nmwg:store[\@type=\"LSStore\"]/nmwg:data/nmwg:metadata/*[local-name()='subject']/nmtb:node\n";
     my $metadata = $self->queryWrapper( { query => $q } );
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
     if ( $eventType and $eventType =~ m/^success/mx ) {
-        my $datum = find( $msg, ".//*[local-name()='datum']", 0 )->get_node(1);
-        unless ($datum) {
-            $self->{LOGGER}->error("No name elements found in return.");
+        my $datum = find( $msg, ".//*[local-name()='datum']", 0 )->get_node( 1 );
+        unless ( $datum ) {
+            $self->{LOGGER}->error( "No name elements found in return." );
             return;
         }
 
@@ -340,7 +340,7 @@ sub getMappings {
         }
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName("data")->get_node(1)->getChildrenByLocalName("datum")->get_node(1)->toString );
+        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
     }
     return \@lookup;
 }
@@ -356,7 +356,7 @@ sub createNode {
     my $parameters = validateParams( @args, { id => 0, name => 0 } );
 
     unless ( $parameters->{id} or $parameters->{name} ) {
-        $self->{LOGGER}->error("Must supply either a name or id.");
+        $self->{LOGGER}->error( "Must supply either a name or id." );
         return -1;
     }
 
@@ -364,8 +364,8 @@ sub createNode {
     my $node = "  <nmwg:metadata xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\" id=\"metadata." . $id . "\">\n";
     $node .= "      <dcn:subject xmlns:dcn=\"http://ggf.org/ns/nmwg/tools/dcn/2.0/\" id=\"subject." . $id . "\">\n";
     $node .= "        <nmtb:node xmlns:nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\" id=\"node." . $id . "\">\n";
-    $node .= "          <nmtb:address type=\"hostname\">" . $parameters->{name} . "</nmtb:address>\n" if ( $parameters->{name} );
-    if ( $parameters->{id} ) {
+    $node .= "          <nmtb:address type=\"hostname\">" . $parameters->{name} . "</nmtb:address>\n" if exists $parameters->{name} and $parameters->{name};
+    if ( exists $parameters->{id} and $parameters->{id} ) {
         $node .= "          <nmtb:relation type=\"connectionLink\">\n";
         $node .= "            <nmtb:linkIdRef>" . $parameters->{id} . "</nmtb:linkIdRef>\n";
         $node .= "          </nmtb:relation>\n";
@@ -397,10 +397,10 @@ sub getTopologyKey {
     $service{serviceDescription} = $parameters->{serviceDescription} if $parameters->{serviceDescription};
 
     my $result = $self->keyRequestLS( { service => \%service } );
-    if ( $result and $result->{key} ) {
+    if ( $result and exists $result->{key} and $result->{key} ) {
         return $result->{key};
     }
-    $self->{LOGGER}->error("Key not found.");
+    $self->{LOGGER}->error( "Key not found." );
     return;
 }
 
@@ -417,19 +417,19 @@ sub getDomainKey {
 
     my %ns = ( xquery => "http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0/" );
     my $q = "declare namespace nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\";\n";
-    $q        .= "declare namespace perfsonar=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/\";\n";
-    $q        .= "declare namespace psservice=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/1.0/\";\n";
-    $q        .= "declare namespace nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\";\n";
-    $q        .= "for \$metadata in /nmwg:store[\@type=\"LSStore\"]/nmwg:metadata\n";
-    $q        .= "  let \$metadata_id := \$metadata/\@id\n";
-    $q        .= "  let \$data := /nmwg:store[\@type=\"LSStore\"]/nmwg:data[\@metadataIdRef=\$metadata_id]\n";
-    $q        .= "  where \$metadata_id=\"" . $parameters->{key} . "\"\n";
-    $q        .= "  return \$data/nmwg:metadata/*[local-name()='subject']/nmtb:domain\n\n";
+    $q .= "declare namespace perfsonar=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/\";\n";
+    $q .= "declare namespace psservice=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/1.0/\";\n";
+    $q .= "declare namespace nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\";\n";
+    $q .= "for \$metadata in /nmwg:store[\@type=\"LSStore\"]/nmwg:metadata\n";
+    $q .= "  let \$metadata_id := \$metadata/\@id\n";
+    $q .= "  let \$data := /nmwg:store[\@type=\"LSStore\"]/nmwg:data[\@metadataIdRef=\$metadata_id]\n";
+    $q .= "  where \$metadata_id=\"" . $parameters->{key} . "\"\n";
+    $q .= "  return \$data/nmwg:metadata/*[local-name()='subject']/nmtb:domain\n\n";
     my $metadata = $self->queryWrapper( { query => $q } );
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
@@ -437,20 +437,20 @@ sub getDomainKey {
     if ( $eventType and $eventType =~ m/^success/mx ) {
 
         my $ds = find( $msg, "./nmwg:data/*[local-name()='datum']/nmtb:domain", 0 );
-        if ($ds) {
+        if ( $ds ) {
             foreach my $d ( $ds->get_nodelist ) {
-                my $value = $d->getAttribute("id");
+                my $value = $d->getAttribute( "id" );
                 $value =~ s/urn:ogf:network:domain=//xm;
                 push @domains, $value if $value;
             }
         }
         else {
-            $self->{LOGGER}->error("No domain elements found in return.");
+            $self->{LOGGER}->error( "No domain elements found in return." );
             return;
         }
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName("data")->get_node(1)->getChildrenByLocalName("datum")->get_node(1)->toString );
+        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
     }
     return \@domains;
 }
@@ -475,38 +475,38 @@ sub getDomainService {
     $q .= "  let \$metadata_id := \$metadata/\@id\n";
     $q .= "  let \$data := /nmwg:store[\@type=\"LSStore\"]/nmwg:data[\@metadataIdRef=\$metadata_id]\n";
     $q .= "  where \$metadata/*[local-name()='subject']/*[local-name()='service']/*[local-name()='accessPoint' and text()=\"" . $parameters->{accessPoint} . "\"]\n";
-    if ( $parameters->{serviceType} ) {
+    if ( exits $parameters->{serviceType} and $parameters->{serviceType} ) {
         $q .= "        and \$metadata/*[local-name()='subject']/*[local-name()='service']/*[local-name()='serviceType' and text()=\"" . $parameters->{serviceType} . "\"]\n";
     }
-    if ( $parameters->{serviceName} ) {
+    if ( exists $parameters->{serviceName} and $parameters->{serviceName} ) {
         $q .= "        and \$metadata/*[local-name()='subject']/*[local-name()='service']/*[local-name()='serviceName' and text()=\"" . $parameters->{serviceName} . "\"]\n";
     }
     $q .= "  return \$data/nmwg:metadata/*[local-name()='subject']/nmtb:domain\n\n";
     my $metadata = $self->queryWrapper( { query => $q } );
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
     if ( $eventType and $eventType =~ m/^success/mx ) {
         my $ds = find( $msg, "./nmwg:data/psservice:datum/nmtb:domain", 0 );
-        if ($ds) {
+        if ( $ds ) {
             foreach my $d ( $ds->get_nodelist ) {
-                my $value = $d->getAttribute("id");
+                my $value = $d->getAttribute( "id" );
                 $value =~ s/urn:ogf:network:domain=//xm;
                 push @domains, $value if $value;
             }
         }
         else {
-            $self->{LOGGER}->error("No domain elements found in return.");
+            $self->{LOGGER}->error( "No domain elements found in return." );
             return;
         }
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName("data")->get_node(1)->getChildrenByLocalName("datum")->get_node(1)->toString );
+        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
     }
     return \@domains;
 }
@@ -529,30 +529,30 @@ sub getTopologyServices {
     $q .= "declare namespace perfsonar=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/\";\n";
     $q .= "declare namespace psservice=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/1.0/\";\n";
     $q .= "declare namespace nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\";\n";
-    if ( $parameters->{domain} ) {
+    if ( exists $parameters->{domain} and $parameters->{domain} ) {
         $q .= "for \$data in /nmwg:store[\@type=\"LSStore\"]/nmwg:data[./nmwg:metadata/*[local-name()='subject']/nmtb:domain[\@id=\"urn:ogf:network:domain=" . $parameters->{domain} . "\"]]\n";
     }
     else {
         $q .= "for \$data in /nmwg:store[\@type=\"LSStore\"]/nmwg:data[./nmwg:metadata/*[local-name()='subject']/nmtb:domain]\n";
     }
-    $q        .= " let \$metadataidref := \$data/\@metadataIdRef\n";
-    $q        .= " let \$metadata := /nmwg:store[\@type=\"LSStore\"]/nmwg:metadata[\@id=\$metadataidref]\n";
-    $q        .= " return \$metadata/*[local-name()='subject']/*[local-name()='service']\n\n";
+    $q .= " let \$metadataidref := \$data/\@metadataIdRef\n";
+    $q .= " let \$metadata := /nmwg:store[\@type=\"LSStore\"]/nmwg:metadata[\@id=\$metadataidref]\n";
+    $q .= " return \$metadata/*[local-name()='subject']/*[local-name()='service']\n\n";
     my $metadata = $self->queryWrapper( { query => $q } );
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
     if ( $eventType and $eventType =~ m/^success/mx ) {
         my $ss = find( $msg, "./nmwg:data/psservice:datum/*[local-name()='service']", 0 );
-        if ($ss) {
+        if ( $ss ) {
             foreach my $s ( $ss->get_nodelist ) {
                 my $t1 = extract( find( $s, "./*[local-name()='accessPoint']", 1 ), 0 );
-                if ($t1) {
+                if ( $t1 ) {
                     my %temp = ();
                     my $t2   = extract( find( $s, "./*[local-name()='serviceType']", 1 ), 0 );
                     my $t3   = extract( find( $s, "./*[local-name()='serviceName']", 1 ), 0 );
@@ -565,12 +565,12 @@ sub getTopologyServices {
             }
         }
         else {
-            $self->{LOGGER}->error("No domain elements found in return.");
+            $self->{LOGGER}->error( "No domain elements found in return." );
             return;
         }
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName("data")->get_node(1)->getChildrenByLocalName("datum")->get_node(1)->toString );
+        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
     }
     return \%services;
 }
@@ -595,46 +595,47 @@ sub queryTS {
     }
 
     my ( $host, $port, $endpoint ) = perfSONAR_PS::Transport::splitURI( $parameters->{topology} );
-    unless ( defined $host and defined $port and defined $endpoint ) {
+    unless ( $host and $port and $endpoint ) {
+        $self->{LOGGER}->error( "Topology URI: \"" . $parameters->{topology} . "\" is malformed." );
         return;
     }
     my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint );
-    unless ($sender) {
-        $self->{LOGGER}->error("TS could not be contaced.");
+    unless ( $sender ) {
+        $self->{LOGGER}->error( "TS could not be contaced." );
         return;
     }
 
     my $error = q{};
     my $responseContent = $sender->sendReceive( makeEnvelope( $self->createLSMessage( { type => "SetupDataRequest", metadata => "<nmwg:eventType>http://ggf.org/ns/nmwg/topology/query/all/20070809</nmwg:eventType>\n" } ) ), q{}, \$error );
-    if ($error) {
-        $self->{LOGGER}->error("sendReceive failed: $error");
+    if ( $error ) {
+        $self->{LOGGER}->error( "sendReceive failed: $error" );
         return;
     }
 
     my $msg    = q{};
     my $parser = XML::LibXML->new();
-    if ( defined $responseContent and $responseContent and ( not $responseContent =~ m/^\d+/xm ) ) {
+    if ( $responseContent and ( not $responseContent =~ m/^\d+/xm ) ) {
         my $doc = q{};
-        eval { $doc = $parser->parse_string($responseContent); };
-        if ($EVAL_ERROR) {
+        eval { $doc = $parser->parse_string( $responseContent ); };
+        if ( $EVAL_ERROR ) {
             $self->{LOGGER}->error( "Parser failed: " . $EVAL_ERROR );
         }
         else {
-            $msg = $doc->getDocumentElement->getElementsByTagNameNS( "http://ggf.org/ns/nmwg/base/2.0/", "message" )->get_node(1);
+            $msg = $doc->getDocumentElement->getElementsByTagNameNS( "http://ggf.org/ns/nmwg/base/2.0/", "message" )->get_node( 1 );
         }
     }
 
-    unless ($msg) {
-        $self->{LOGGER}->error("Message element not found in return.");
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
 
     my %result = ();
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
-    if ($eventType) {
+    if ( $eventType ) {
         $result{"eventType"} = $eventType;
-        if ( $eventType eq "http://ggf.org/ns/nmwg/topology/query/all/20070809" ) {
-            $result{"response"} = $msg->getChildrenByLocalName("data")->get_node(1)->getChildrenByLocalName("topology")->get_node(1)->toString;
+        if ( $eventType and $eventType eq "http://ggf.org/ns/nmwg/topology/query/all/20070809" ) {
+            $result{"response"} = $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "topology" )->get_node( 1 )->toString;
         }
         else {
             $result{"response"} = extract( find( $msg, "./nmwg:data/nmwgr:datum", 1 ), 0 );
@@ -776,19 +777,19 @@ __END__
 =head1 SEE ALSO
 
 L<Log::Log4perl>, L<Params::Validate>, L<Digest::MD5>, L<English>,
-L<XML::LibXML>, L<perfSONAR_PS::Common>, L<perfSONAR_PS::Utils::ParameterValidation>,
-L<perfSONAR_PS::Client::LS>
+L<XML::LibXML>, L<perfSONAR_PS::Common>,
+L<perfSONAR_PS::Utils::ParameterValidation>, L<perfSONAR_PS::Client::LS>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -802,12 +803,13 @@ Jason Zurawski, zurawski@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 
