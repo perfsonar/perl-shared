@@ -1,6 +1,3 @@
-use Statistics::Descriptive;
-use Log::Log4perl qw(get_logger);
-
 package IEPM::PingER::Statistics;
 
 =head1 NAME
@@ -13,9 +10,16 @@ Dummy package to satisfy any dependencies that may exist.
 
 =cut
 
+use Statistics::Descriptive;
+use Log::Log4perl qw(get_logger);
+
+
 #######################################################################
 
 package IEPM::PingER::Statistics::RTT;
+use strict;
+use warnings;
+use Data::Dumper;
 
 =head1 NAME
 
@@ -23,19 +27,17 @@ IEPM::PingER::Statistics::RTT
 
 =head1 DESCRIPTION
 
-TBD
+round trip time calculation package, does not export anything. Implements single function - calculate()
 
 =cut
 
 our $logger = Log::Log4perl::get_logger( "IEPM::PingER::Statistics::RTT" );
 
-use strict;
-use warnings;
-use Data::Dumper;
+=head1 IEPM::PingER::Statistics::RTT::calculate()
 
-=head1 IEPM::PingER::Statistics::RTT::calculate
-
-add rtt values to the Statistics::Descriptive::Full object
+calculates min, max, mean, median rtt values
+accepts single ref to array with RTTs, 
+returns  list with (min, max, mean, median) rtt values
 
 =cut
 
@@ -59,6 +61,10 @@ sub calculate {
 #######################################################################
 
 package IEPM::PingER::Statistics::IPD;
+use strict;
+use warnings;
+use Data::Dumper;
+
 
 =head1 NAME
 
@@ -66,19 +72,22 @@ IEPM::PingER::Statistics::IPD
 
 =head1 DESCRIPTION
 
-TBD
+inter-packet delay time calculation package, does not export anything. Implements single function -
+  calculate()
+ 
 
 =cut
 
 our $logger = Log::Log4perl::get_logger( "IEPM::PingER::Statistics::IPD" );
 
-use strict;
-use warnings;
-use Data::Dumper;
 
-=head1 IEPM::PingER::Statistics::IPD::calculate
 
-add interpacket delay values to the Statistics::Descriptive::Full object
+=head1 IEPM::PingER::Statistics::IPD::calculate()
+
+calculates min, max, mean, median inter-packet delay values
+accepts single ref to array with   inter-packet delay values
+returns  list with (min, max, mean, median)   inter-packet delay values
+ 
 
 =cut
 
@@ -113,25 +122,35 @@ sub calculate {
 
 package IEPM::PingER::Statistics::Other;
 
+use strict;
+use warnings;
+use Data::Dumper;
+
 =head1 NAME
 
 IEPM::PingER::Statistics::Other
 
 =head1 DESCRIPTION
 
-TBD
+ duplicates and out-of-order packets calculation package, does not export anything. Implements single function -
+  calculate()
+ 
 
 =cut
 
-use strict;
-use warnings;
-use Data::Dumper;
 
 our $logger = Log::Log4perl::get_logger( "IEPM::PingER::Statistics::Other" );
 
 =head1 IEPM::PingER::Statistics::Other::calculate
 
-return dups, out of order packets 
+accepts:
+     ref to array with sent packets
+     ref to array with recieved packets
+     ref to array with sequential numbers of the sent packets
+         
+return list with two values where each value is enumerated string of 'false' or 'true'-
+      And first member of the list is for  duplicates and another one for out of order packets
+       
 
 =cut
 
@@ -166,7 +185,7 @@ sub calculate {
     for ( my $i = 1; $i < $size; $i++ ) {
         return ( undef, undef ) if ( $seqs->[$i] > $sent );
         $logger->debug( " Looking at " . $seqs->[$i] );
-        unless ( $seqs->[$i] >= $seqs->[ $i - 1 ] ) {    # note => means that dups are not counted as out of order
+        if( $seqs->[$i] < $seqs->[ $i - 1 ] ) {    # note < means that dups are not counted as out of order
             $logger->debug( " Found duplicate at $i / $seqs->[$i]" );
             $ooo++;
         }
@@ -189,23 +208,30 @@ sub calculate {
 
 package IEPM::PingER::Statistics::Loss;
 
+use strict;
+use warnings;
+use Data::Dumper;
+
 =head1 NAME
 
 IEPM::PingER::Statistics::Loss
 
 =head1 DESCRIPTION
 
-TBD
+ lost packets percentage calculation package, does not export anything. Implements single function -
+  calculate()
+
 
 =cut
 
-use strict;
-use warnings;
-use Data::Dumper;
 
 =head1 IEPM::PingER::Statistics::Loss::calculate
 
-return packet loss percentage
+accepts:  
+        ref to array with sent packets
+        ref to array with recieved packets
+	
+return packet loss percentage as float value
 
 =cut
 
@@ -234,6 +260,10 @@ sub calculate {
 
 package IEPM::PingER::Statistics::Loss::CLP;
 
+use strict;
+use warnings;
+use Data::Dumper;
+
 =head1 NAME
 
 IEPM::PingER::Statistics::Loss::CLP
@@ -246,14 +276,13 @@ Networks, vol 2, no. 3 pp 305-323 December 1993.
 
 See: http://citeseer.ist.psu.edu/bolot93characterizing.html
 
-=cut
-
-use strict;
-use warnings;
-use Data::Dumper;
-
 =head1 IEPM::PingER::Statistics::CLP::calculate
 
+accepts:
+     ref to array with sent packets
+     ref to array with recieved packets
+     ref to array with sequential numbers of the sent packets
+        
 return conditional packet loss  
 
 =cut
@@ -268,7 +297,7 @@ sub calculate {
     ### check if $seqs a reference to array
     if ( !$seqs || ref( $seqs ) ne 'ARRAY' || @$seqs < 1 ) {
         $logger->debug( "Input should be list of sequence numbers. - ", sub { Dumper( $seqs ) } );
-        return undef;
+        return;
     }
 
     my $stringified_arr = join ",", @$seqs;
@@ -278,7 +307,7 @@ sub calculate {
 
     if ( $pktRcvd != $size ) {
         $logger->debug( "pkts recvd ($pktRcvd) is not equal to size $size of array $stringified_arr " );
-        return undef;
+        return;
     }
     ### lookup hash with sequence numbers as keys and sequence numbers + 1 as values
     ###  ( to get defined value for the first packet
@@ -334,6 +363,7 @@ $Id$
 
 =head1 AUTHOR
 
+Maxim Grigoriev maxim_at_fnal_dot_gov
 Yee-Ting Li <ytl@slac.stanford.edu>
 
 =head1 LICENSE
@@ -344,7 +374,7 @@ along with this software.  If not, see
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2009, Internet2 and SLAC National Accelerator Laboratory
+Copyright (c) 2007-2009, Internet2 , SLAC National Accelerator Laboratory, Fermitools
 
 All rights reserved.
 
