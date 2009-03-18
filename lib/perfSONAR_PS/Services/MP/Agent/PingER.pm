@@ -3,7 +3,7 @@ package perfSONAR_PS::Services::MP::Agent::PingER;
 use strict;
 use warnings;
 use version; our $VERSION = 3.1;
- 
+
 =head1 NAME
 
 perfSONAR_PS::Services::MP::Agent::Ping - A module that will run a ping and
@@ -46,10 +46,10 @@ be executed. This class extends the features of the ping class to enable:
 head1 API
 
 =cut
- 
+
 use aliased 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmtl4::Message::Metadata::Subject::EndPointPair';
 use aliased 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmtl4::Message::Metadata::Subject::EndPointPair::EndPoint';
-use aliased 'perfSONAR_PS::PINGER_DATATYPES::v2_0::pinger::Message::Metadata::Subject' => 'PingerSubj';
+use aliased 'perfSONAR_PS::PINGER_DATATYPES::v2_0::pinger::Message::Metadata::Subject'    => 'PingerSubj';
 use aliased 'perfSONAR_PS::PINGER_DATATYPES::v2_0::pinger::Message::Metadata::Parameters' => 'PingerParams';
 use aliased 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwg::Message::Metadata::Parameters::Parameter';
 use aliased 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwg::Message::Metadata';
@@ -59,36 +59,34 @@ use aliased 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwg::Message::Data::CommonTi
 use aliased 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::EndPointPair::EndPoint::Interface';
 use aliased 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::EndPointPair::EndPoint::Interface::IpAddress';
 
-
 # to get the event types
 use perfSONAR_PS::Datatypes::EventTypes;
 
 # stats calcs
-use  perfSONAR_PS::Utils::PingStats;
+use perfSONAR_PS::Utils::PingStats;
 use Data::Dumper;
 
 use perfSONAR_PS::Common;
 
 # derive from teh base agent class
 use perfSONAR_PS::Services::MP::Agent::Ping;
-use base  'perfSONAR_PS::Services::MP::Agent::Ping';
- 
+use base 'perfSONAR_PS::Services::MP::Agent::Ping';
+
 use Log::Log4perl qw(get_logger);
-our $logger =  get_logger( 'perfSONAR_PS::Services::MP::Agent::Pinger' );
+our $logger = get_logger( 'perfSONAR_PS::Services::MP::Agent::Pinger' );
 
 # command line
 our $default_command = $perfSONAR_PS::Services::MP::Agent::Ping::default_command;
- 
+
 =head2 pingPriming
 
 accessor/mutator class to determine whether we are conducting ping priming or not
 
 =cut
 
-sub pingPriming{	
+sub pingPriming {
     return 1;
 }
-
 
 =head2 deadline
 
@@ -98,10 +96,9 @@ deadline is not supported in pinger
 
 sub deadline {
     my $self = shift;
-    $logger->logdie( "Deadline is not supported in PingER");
+    $logger->logdie( "Deadline is not supported in PingER" );
     return;
 }
-
 
 =head2 collectMeasurements( )
 
@@ -128,40 +125,42 @@ sub collectMeasurements {
     # set the up the appropiate destinations
     # if we have an ip address, use this as the destination
     my $cmd = $self->command();
+
     #$logger->debug( "DEST: " . $self->destination() . " / " . $self->destinationIp() );
     if ( $self->destinationIp() ) {
-    	    $logger->debug( "using destination ip '" . $self->destinationIp() 
-    			    . "' instead of '" . $self->destination() . "'");
-    	    $cmd =~ s/\%destination\%/\%destinationIp\%/g;
-    } elsif ( ! defined $self->destination() ) {
-    	    $logger->fatal( "No destination defined!");
-    	    return -1;
+        $logger->debug( "using destination ip '" . $self->destinationIp() . "' instead of '" . $self->destination() . "'" );
+        $cmd =~ s/\%destination\%/\%destinationIp\%/xg;
+    }
+    elsif ( !defined $self->destination() ) {
+        $logger->fatal( "No destination defined!" );
+        return -1;
     }
 
     # set it back
     $self->command( $cmd );
 
     if ( $self->pingPriming() ) {
-    	    # prime a single packet
-    	    $self->count( 1 );
-    	    
-    	    $logger->debug( "Priming caches by running singleton ping..." );
 
-    	    # we don't care about the results, so don't bother
-    	    # TODO: this parses the unwanted variables tho...
-    	    $self->SUPER::collectMeasurements();
+        # prime a single packet
+        $self->count( 1 );
 
-    	    # don't forget to reset the countesr
-    	    delete $self->{RESULTS};
-    	    $self->{RESULTS} = {};
-    	    
-    	    $logger->debug( "Continuing test..." )
+        $logger->debug( "Priming caches by running singleton ping..." );
+
+        # we don't care about the results, so don't bother
+        # TODO: this parses the unwanted variables tho...
+        $self->SUPER::collectMeasurements();
+
+        # don't forget to reset the countesr
+        delete $self->{RESULTS};
+        $self->{RESULTS} = {};
+
+        $logger->debug( "Continuing test..." )
 
     }
 
     $self->count( $count );
 
-    return $self->SUPER::collectMeasurements( );
+    return $self->SUPER::collectMeasurements();
 }
 
 =head2 parse()
@@ -170,74 +169,82 @@ parses the output from a command line measurement of pings. we must take care to
 that we ignore the first ping if we are doing ping priming.
 
 =cut
-sub parse
-{
-	my $self = shift;
-	my $cmdOutput = shift;
-	
-	# use this as indication of the start of the test in epoch secs
-	my $time = shift;
-	my $endtime = shift;
 
-	my $cmdRan = shift;
+sub parse {
+    my $self      = shift;
+    my $cmdOutput = shift;
 
-	$logger->debug( "Parsing output:\n@$cmdOutput" );
+    # use this as indication of the start of the test in epoch secs
+    my $time    = shift;
+    my $endtime = shift;
 
-	# run the normal ping parsing
-	$self->SUPER::parse( $cmdOutput, $time, $endtime, $cmdRan );
-        my $stats = perfSONAR_PS::Utils::PingStats->new({ rtts => \@{$self->results()->{'rtts'}}, 
-	                                                  sent => $self->results()->{'sent'}, 
-							  received => $self->results()->{'recv'} || '0.0',
-							  seqs => \@{$self->results()->{'seqs'}}
-							  });
-	my @results  =  @{$stats->rtt_stats()};
-	if(@results) {
-	    $self->results()->{'minRtt'} ||=   $results[0];
-	    $self->results()->{'maxRtt'} ||=   $results[1];
-	    $self->results()->{'meanRtt'} ||=  $results[2];	 
-	    $self->results()->{'medianRtt'} ||=  $results[3];
+    my $cmdRan = shift;
+
+    $logger->debug( "Parsing output:\n@$cmdOutput" );
+
+    # run the normal ping parsing
+    $self->SUPER::parse( $cmdOutput, $time, $endtime, $cmdRan );
+    my $stats = perfSONAR_PS::Utils::PingStats->new(
+        {
+            rtts     => \@{ $self->results()->{'rtts'} },
+            sent     => $self->results()->{'sent'},
+            received => $self->results()->{'recv'} || '0.0',
+            seqs     => \@{ $self->results()->{'seqs'} }
         }
-	# ipd
-	@results =  @{$stats->ipdv_stats()};
-        if(@results) {                            
-	    $self->results()->{'minIpd'}  ||=  $results[0];
-	    $self->results()->{'maxIpd'}  ||=  $results[1];
-	    $self->results()->{'meanIpd'} ||=  $results[2];
-	    $self->results()->{'iqrIpd'}   ||=   $results[3];
-	    # loss
-	    $self->results()->{'lossPercent'} =  $stats->loss();
-	    $self->results()->{'clp'} ||=  $stats->clp();
-        }
-	# duplicates
-	my $dups =  $stats->dups();
-	if($dups && ref $dups eq 'ARRAY') {
-	    $self->results()->{'duplicates'} = $dups->[0];
-	    $self->results()->{'outOfOrder'} = $dups->[1];
-        }
-	# if loss is 100%, nothing is certain
-	# normalise data
-	if ( ! exists $self->results()->{'lossPercent'} 
-		|| $self->results()->{'lossPercent'} == 100 ) {
-		$self->results()->{'minRtt'} = undef;
-		$self->results()->{'maxRtt'} = undef;
-		$self->results()->{'meanRtt'} = undef;
-		$self->results()->{'minIpd'} = undef;
-		$self->results()->{'maxIpd'} = undef;
-		$self->results()->{'meanIpd'} = undef;
-		$self->results()->{'iqrIpd'} = undef;
-		$self->results()->{'medianRtt'} = undef;
- 		$self->results()->{'duplicates'} = undef;
-		$self->results()->{'outOfOrder'} = undef;
-		$self->results()->{'rtts'} = undef;
-		$self->results()->{'seqs'} = undef;
-	}
-        $logger->debug( "  Results: ", sub {Dumper $self->results()});
-	$self->results()->{'startTime'} = $time;
-	$self->results()->{'endTime'} = $endtime;
+    );
+    my @results = @{ $stats->rtt_stats() };
+    if ( @results ) {
+        $self->results()->{'minRtt'}    ||= $results[0];
+        $self->results()->{'maxRtt'}    ||= $results[1];
+        $self->results()->{'meanRtt'}   ||= $results[2];
+        $self->results()->{'medianRtt'} ||= $results[3];
+    }
 
-	undef @results;
+    # ipd
+    @results = @{ $stats->ipdv_stats() };
+    if ( @results ) {
+        $self->results()->{'minIpd'}  ||= $results[0];
+        $self->results()->{'maxIpd'}  ||= $results[1];
+        $self->results()->{'meanIpd'} ||= $results[2];
+        $self->results()->{'iqrIpd'}  ||= $results[3];
 
-	return 0;
+        # loss
+        $self->results()->{'lossPercent'} = $stats->loss();
+        $self->results()->{'clp'} ||= $stats->clp();
+    }
+
+    # duplicates
+    my $dups = $stats->dups();
+    if ( $dups && ref $dups eq 'ARRAY' ) {
+        $self->results()->{'duplicates'} = $dups->[0];
+        $self->results()->{'outOfOrder'} = $dups->[1];
+    }
+
+    # if loss is 100%, nothing is certain
+    # normalise data
+    if ( !exists $self->results()->{'lossPercent'}
+        || $self->results()->{'lossPercent'} == 100 )
+    {
+        $self->results()->{'minRtt'}     = undef;
+        $self->results()->{'maxRtt'}     = undef;
+        $self->results()->{'meanRtt'}    = undef;
+        $self->results()->{'minIpd'}     = undef;
+        $self->results()->{'maxIpd'}     = undef;
+        $self->results()->{'meanIpd'}    = undef;
+        $self->results()->{'iqrIpd'}     = undef;
+        $self->results()->{'medianRtt'}  = undef;
+        $self->results()->{'duplicates'} = undef;
+        $self->results()->{'outOfOrder'} = undef;
+        $self->results()->{'rtts'}       = undef;
+        $self->results()->{'seqs'}       = undef;
+    }
+    $logger->debug( "  Results: ", sub { Dumper $self->results() } );
+    $self->results()->{'startTime'} = $time;
+    $self->results()->{'endTime'}   = $endtime;
+
+    undef @results;
+
+    return 0;
 }
 
 =head2 toAPI
@@ -246,94 +253,102 @@ casts the data (results()) into api to easy casting etc.
 
 =cut
 
-sub toAPI
-{
-	my $self = shift;
-	my $metadataId = shift;
-	my $dataId = shift;
-	
-	$metadataId = "metadata.". perfSONAR_PS::Common::genuid() if ( ! defined $metadataId );
-        $dataId = "data.". perfSONAR_PS::Common::genuid() if ( ! defined $dataId );
-	
-	# create the metadata element
-	# create the subject
-	# nmtl3 interface
-	my $src = $self->_createInterface( 'src', $self->source(), $self->sourceIp() );
-	my $dst = $self->_createInterface( 'dst', $self->destination(), $self->destinationIp() );
+sub toAPI {
+    my $self       = shift;
+    my $metadataId = shift;
+    my $dataId     = shift;
 
-	my $endpoints =  EndPointPair->new({endPoint => [$src, $dst]});	 
-	my $subject = PingerSubj->new({endPointPair => $endpoints});
-	 
-	# setup parameters  
-	my @params = ();
-	#no strict 'refs';
-	foreach my $p ( qw/count packetSize interval ttl/ ) {
-	    my $param =  Parameter->new({ 'name' => $p, text =>  $self->$p});
-	    push @params, $param;
-	}
-	#use strict 'refs';
-	my $parameters =  PingerParams->new({parameter => \@params});	
-		
-	# finally set metadata
-	my $metadata =  Metadata->new({ 'id' => $metadataId, subject => $subject, parameters => $parameters});
-	 
-	# add event type
-	my $eventType = perfSONAR_PS::Datatypes::EventTypes->new();
-	$metadata->set_eventType( $eventType->tools->pinger );
-	
-	# create the data element
-	my $data =  Data->new({ 'metadataIdRef' => $metadataId, 'id' =>  $dataId });
-	  
-	# raw data
-	my @singletons = ();
-	foreach my $singleton ( @{$self->results()->{'singletons'}} ) {
-	    # remap some values
-	    $singleton->{'timeType'} = 'unix';
-	    $singleton->{'valueUnits'} = $singleton->{'units'};
-	    push @singletons, PingerDatum->new( $singleton );
-	}
-	
-	# set the internal results
-	#use Data::Dumper;
-	#$logger->debug( 'RESULTS: ' . Dumper $self->results() );
-	#$logger->debug( 'END: ' . $self->results()->{'endTime'} . ' STARt: '. $self->results()->{'startTime'} );
-	my $duration = $self->results()->{'endTime'} - $self->results()->{'startTime'};
-	
-	my $commonTime  =   CommonTime->new({
-					       'value' =>  $self->results()->{'startTime'},
-					       'duration' =>  $duration,
-					       'type' =>  'unix', 
-					    });
-	# add the datums to the commonTime
-	$commonTime->set_datum( \@singletons );
-	$commonTime->addDatum( $self->_datumAPI('minRtt') );	
-	$commonTime->addDatum( $self->_datumAPI('meanRtt') );
-	$commonTime->addDatum( $self->_datumAPI('maxRtt') );
-	$commonTime->addDatum( $self->_datumAPI('minIpd') );	
-	$commonTime->addDatum( $self->_datumAPI('meanIpd') );
-	$commonTime->addDatum( $self->_datumAPI('maxIpd') );	
-	$commonTime->addDatum( $self->_datumAPI('iqrIpd') );
-	$commonTime->addDatum( $self->_datumAPI('lossPercent') );
-	$commonTime->addDatum( $self->_datumAPI('clp') );
-	$commonTime->addDatum( $self->_datumAPI('outOfOrder') );
-	$commonTime->addDatum( $self->_datumAPI('duplicates') );
-	
-	#$logger->fatal("TIME: " . $commonTime->asString() );
-	
-	# add commontime to teh data 
-	$data->set_commonTime( [$commonTime] );
-	#$logger->fatal("DATA: " . $data->asString() );
-	
-	# create the message
-	my $message = perfSONAR_PS::Datatypes::Message->new({	'type' =>  'Store',
-							        'id' =>  'message.' .  perfSONAR_PS::Common::genuid() , 
-								metadata => [$metadata],
-								data => [$data],
-							    });
-	 
-	return $message;
+    $metadataId = "metadata." . perfSONAR_PS::Common::genuid() if ( !defined $metadataId );
+    $dataId     = "data." . perfSONAR_PS::Common::genuid()     if ( !defined $dataId );
+
+    # create the metadata element
+    # create the subject
+    # nmtl3 interface
+    my $src = $self->_createInterface( 'src', $self->source(),      $self->sourceIp() );
+    my $dst = $self->_createInterface( 'dst', $self->destination(), $self->destinationIp() );
+
+    my $endpoints = EndPointPair->new( { endPoint => [ $src, $dst ] } );
+    my $subject = PingerSubj->new( { endPointPair => $endpoints } );
+
+    # setup parameters
+    my @params = ();
+
+    #no strict 'refs';
+    foreach my $p ( qw/count packetSize interval ttl/ ) {
+        my $param = Parameter->new( { 'name' => $p, text => $self->$p } );
+        push @params, $param;
+    }
+
+    #use strict 'refs';
+    my $parameters = PingerParams->new( { parameter => \@params } );
+
+    # finally set metadata
+    my $metadata = Metadata->new( { 'id' => $metadataId, subject => $subject, parameters => $parameters } );
+
+    # add event type
+    my $eventType = perfSONAR_PS::Datatypes::EventTypes->new();
+    $metadata->set_eventType( $eventType->tools->pinger );
+
+    # create the data element
+    my $data = Data->new( { 'metadataIdRef' => $metadataId, 'id' => $dataId } );
+
+    # raw data
+    my @singletons = ();
+    foreach my $singleton ( @{ $self->results()->{'singletons'} } ) {
+
+        # remap some values
+        $singleton->{'timeType'}   = 'unix';
+        $singleton->{'valueUnits'} = $singleton->{'units'};
+        push @singletons, PingerDatum->new( $singleton );
+    }
+
+    # set the internal results
+    #use Data::Dumper;
+    #$logger->debug( 'RESULTS: ' . Dumper $self->results() );
+    #$logger->debug( 'END: ' . $self->results()->{'endTime'} . ' STARt: '. $self->results()->{'startTime'} );
+    my $duration = $self->results()->{'endTime'} - $self->results()->{'startTime'};
+
+    my $commonTime = CommonTime->new(
+        {
+            'value'    => $self->results()->{'startTime'},
+            'duration' => $duration,
+            'type'     => 'unix',
+        }
+    );
+
+    # add the datums to the commonTime
+    $commonTime->set_datum( \@singletons );
+    $commonTime->addDatum( $self->_datumAPI( 'minRtt' ) );
+    $commonTime->addDatum( $self->_datumAPI( 'meanRtt' ) );
+    $commonTime->addDatum( $self->_datumAPI( 'maxRtt' ) );
+    $commonTime->addDatum( $self->_datumAPI( 'minIpd' ) );
+    $commonTime->addDatum( $self->_datumAPI( 'meanIpd' ) );
+    $commonTime->addDatum( $self->_datumAPI( 'maxIpd' ) );
+    $commonTime->addDatum( $self->_datumAPI( 'iqrIpd' ) );
+    $commonTime->addDatum( $self->_datumAPI( 'lossPercent' ) );
+    $commonTime->addDatum( $self->_datumAPI( 'clp' ) );
+    $commonTime->addDatum( $self->_datumAPI( 'outOfOrder' ) );
+    $commonTime->addDatum( $self->_datumAPI( 'duplicates' ) );
+
+    #$logger->fatal("TIME: " . $commonTime->asString() );
+
+    # add commontime to teh data
+    $data->set_commonTime( [$commonTime] );
+
+    #$logger->fatal("DATA: " . $data->asString() );
+
+    # create the message
+    my $message = perfSONAR_PS::Datatypes::Message->new(
+        {
+            'type'   => 'Store',
+            'id'     => 'message.' . perfSONAR_PS::Common::genuid(),
+            metadata => [$metadata],
+            data     => [$data],
+        }
+    );
+
+    return $message;
 }
-
 
 =head2 toDOM()
 
@@ -342,46 +357,44 @@ returns the object as a LibXML dom
 =cut
 
 sub toDOM {
-	my $self = shift;
-	my $message = $self->toAPI();
-	$logger->debug("ALL TO DOM: " . $message->asString() );	
-	return $message->getDOM();
+    my $self    = shift;
+    my $message = $self->toAPI();
+    $logger->debug( "ALL TO DOM: " . $message->asString() );
+    return $message->getDOM();
 }
 
+sub _createInterface {
+    my $self = shift;
+    my $role = shift;
+    my $dns  = shift;
+    my $ip   = shift;
 
-sub _createInterface
-{
-	my $self = shift;
-	my $role = shift;
-	my $dns = shift;
-	my $ip = shift;
-	
-	my $ipInt = IpAddress->new({
-			     	     'value' =>  $ip,
-			     	     'type'  =>  'IPv4', 
-			      	  });
+    my $ipInt = IpAddress->new(
+        {
+            'value' => $ip,
+            'type'  => 'IPv4',
+        }
+    );
 
-	my $interface = Interface->new({ipAddress =>  $ipInt, ifHostName => $dns});
-		
-	my $src = EndPoint->new({
-				'protocol' =>  'ICMP',
-				'role' =>  $role,
-				interface => $interface,
-				});
-	return $src;
+    my $interface = Interface->new( { ipAddress => $ipInt, ifHostName => $dns } );
+
+    my $src = EndPoint->new(
+        {
+            'protocol' => 'ICMP',
+            'role'     => $role,
+            interface  => $interface,
+        }
+    );
+    return $src;
 }
 
+sub _datumAPI {
+    my $self = shift;
+    my $name = shift;
 
-sub _datumAPI
-{
-	my $self = shift;
-	my $name = shift;
-	
-	return undef
-		if ( $name eq 'clp' && ! defined $self->results()->{$name} );	
-	return PingerDatum->new({ 'name' => $name, 'value' =>  $self->results()->{$name},}); 
+    return if ( $name eq 'clp' && !defined $self->results()->{$name} );
+    return PingerDatum->new( { 'name' => $name, 'value' => $self->results()->{$name}, } );
 }
-
 
 1;
 
