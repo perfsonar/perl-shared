@@ -71,7 +71,7 @@ use fields qw(nsmap idmap LOGGER metadataIdRef id commonTime datum key );
 =head2 new({})
 
  creates   object, accepts DOM with element's tree or hashref to the list of
- keyd parameters:
+ keyed parameters:
 
          metadataIdRef   => undef,
          id   => undef,
@@ -91,7 +91,7 @@ sub new {
     my ($that, $param) = @_;
     my $class = ref($that) || $that;
     my $self =  fields::new($class );
-    $self->set_LOGGER(get_logger( $CLASSPATH ));
+    $self->set_LOGGER(get_logger($CLASSPATH));
     $self->set_nsmap(perfSONAR_PS::SONAR_DATATYPES::v2_0::NSMap->new());
     $self->get_nsmap->mapname($LOCALNAME, 'nmwg');
 
@@ -118,7 +118,6 @@ sub new {
             return  $self->fromDOM($dom);
         }
         $self->get_LOGGER->debug("Parsing parameters: " . (join ' : ', keys %{$param}));
-
 
         foreach my $param_key (keys %{$param}) {
             $self->{$param_key} = $param->{$param_key} if $self->can("get_$param_key");
@@ -434,7 +433,6 @@ sub set_key {
 
 
 
-
 =head2  addCommonTime()
 
  if any of subelements can be an array then this method will provide
@@ -450,7 +448,8 @@ sub set_key {
 sub addCommonTime {
     my ($self,$new) = @_;
 
-    $self->get_commonTime && ref($self->get_commonTime) eq 'ARRAY'?push @{$self->get_commonTime}, $new:$self->set_commonTime([$new]);
+    $self->get_commonTime && ref($self->get_commonTime) eq 'ARRAY'?push @{$self->get_commonTime}, $new:
+                                                                 $self->set_commonTime([$new]);
     $self->get_LOGGER->debug("Added new to commonTime");
     $self->buildIdMap; ## rebuild index map
     return $self->get_commonTime;
@@ -468,7 +467,8 @@ sub addCommonTime {
 
 sub removeCommonTimeById {
     my ($self, $id) = @_;
-    if(ref($self->get_commonTime) eq 'ARRAY' && $self->get_idmap->{commonTime} &&  exists $self->get_idmap->{commonTime}{$id}) {
+    if(ref($self->get_commonTime) eq 'ARRAY' && $self->get_idmap->{commonTime} &&  
+       exists $self->get_idmap->{commonTime}{$id}) {
         undef $self->get_commonTime->[$self->get_idmap->{commonTime}{$id}];
         my @tmp =  grep { defined $_ } @{$self->get_commonTime};
         $self->set_commonTime([@tmp]);
@@ -494,7 +494,8 @@ sub removeCommonTimeById {
 sub getCommonTimeById {
     my ($self, $id) = @_;
 
-    if(ref($self->get_commonTime) eq 'ARRAY' && $self->get_idmap->{commonTime} && exists $self->get_idmap->{commonTime}{$id} ) {
+    if(ref($self->get_commonTime) eq 'ARRAY' && $self->get_idmap->{commonTime} && 
+       exists $self->get_idmap->{commonTime}{$id} ) {
         return $self->get_commonTime->[$self->get_idmap->{commonTime}{$id}];
     } elsif(!ref($self->get_commonTime) || ref($self->get_commonTime) ne 'ARRAY')  {
         return $self->get_commonTime;
@@ -503,7 +504,6 @@ sub getCommonTimeById {
     return;
 }
             
-
 
 
 =head2  addDatum()
@@ -521,7 +521,8 @@ sub getCommonTimeById {
 sub addDatum {
     my ($self,$new) = @_;
 
-    $self->get_datum && ref($self->get_datum) eq 'ARRAY'?push @{$self->get_datum}, $new:$self->set_datum([$new]);
+    $self->get_datum && ref($self->get_datum) eq 'ARRAY'?push @{$self->get_datum}, $new:
+                                                                 $self->set_datum([$new]);
     $self->get_LOGGER->debug("Added new to datum");
     $self->buildIdMap; ## rebuild index map
     return $self->get_datum;
@@ -539,7 +540,8 @@ sub addDatum {
 
 sub removeDatumById {
     my ($self, $id) = @_;
-    if(ref($self->get_datum) eq 'ARRAY' && $self->get_idmap->{datum} &&  exists $self->get_idmap->{datum}{$id}) {
+    if(ref($self->get_datum) eq 'ARRAY' && $self->get_idmap->{datum} &&  
+       exists $self->get_idmap->{datum}{$id}) {
         undef $self->get_datum->[$self->get_idmap->{datum}{$id}];
         my @tmp =  grep { defined $_ } @{$self->get_datum};
         $self->set_datum([@tmp]);
@@ -565,7 +567,8 @@ sub removeDatumById {
 sub getDatumById {
     my ($self, $id) = @_;
 
-    if(ref($self->get_datum) eq 'ARRAY' && $self->get_idmap->{datum} && exists $self->get_idmap->{datum}{$id} ) {
+    if(ref($self->get_datum) eq 'ARRAY' && $self->get_idmap->{datum} && 
+       exists $self->get_idmap->{datum}{$id} ) {
         return $self->get_datum->[$self->get_idmap->{datum}{$id}];
     } elsif(!ref($self->get_datum) || ref($self->get_datum) ne 'ARRAY')  {
         return $self->get_datum;
@@ -583,8 +586,7 @@ sub getDatumById {
  
  Accepts one optional parameter - query hashref, it will fill this hashref
  
- will return:
-    
+ will return:    
     { <table_name1> =>  {<field name1> => <value>, ...},...}
 
 =cut
@@ -609,7 +611,6 @@ sub  querySQL {
          
     return $query;
 }
-
 
 
 =head2  buildIdMap()
@@ -662,7 +663,6 @@ sub asString {
 
 sub registerNamespaces {
     my ($self, $nsids) = @_;
-
     my $local_nss = {reverse %{$self->get_nsmap->mapname}};
     unless($nsids) {
         $nsids = $local_nss;
@@ -700,10 +700,10 @@ sub fromDOM {
 
     $self->set_metadataIdRef($dom->getAttribute('metadataIdRef')) if($dom->getAttribute('metadataIdRef'));
 
-    $self->get_LOGGER->debug(" Attribute metadataIdRef= ". $self->get_metadataIdRef) if $self->get_metadataIdRef;
+    $self->get_LOGGER->debug("Attribute metadataIdRef= ". $self->get_metadataIdRef) if $self->get_metadataIdRef;
     $self->set_id($dom->getAttribute('id')) if($dom->getAttribute('id'));
 
-    $self->get_LOGGER->debug(" Attribute id= ". $self->get_id) if $self->get_id;
+    $self->get_LOGGER->debug("Attribute id= ". $self->get_id) if $self->get_id;
     foreach my $childnode ($dom->childNodes) {
         my  $getname  = $childnode->getName;
         my ($nsid, $tagname) = split $COLUMN_SEPARATOR, $getname;
@@ -778,7 +778,19 @@ __END__
 
 =head1  SEE ALSO
 
-Automatically generated by L<XML::RelaxNG::Compact::PXB> 
+To join the 'perfSONAR Users' mailing list, please visit:
+
+   https://mail.internet2.edu/wws/info/perfsonar-user
+
+The perfSONAR-PS subversion repository is located at:
+
+   http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+   http://code.google.com/p/perfsonar-ps/issues/list
+   
 
 =head1 AUTHOR
 

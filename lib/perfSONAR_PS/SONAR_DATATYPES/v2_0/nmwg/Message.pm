@@ -82,7 +82,7 @@ use fields qw(nsmap idmap LOGGER type id parameters metadata data );
 =head2 new({})
 
  creates   object, accepts DOM with element's tree or hashref to the list of
- keyd parameters:
+ keyed parameters:
 
          type   => undef,
          id   => undef,
@@ -102,7 +102,7 @@ sub new {
     my ($that, $param) = @_;
     my $class = ref($that) || $that;
     my $self =  fields::new($class );
-    $self->set_LOGGER(get_logger( $CLASSPATH ));
+    $self->set_LOGGER(get_logger($CLASSPATH));
     $self->set_nsmap(perfSONAR_PS::SONAR_DATATYPES::v2_0::NSMap->new());
     $self->get_nsmap->mapname($LOCALNAME, 'nmwg');
 
@@ -129,7 +129,6 @@ sub new {
             return  $self->fromDOM($dom);
         }
         $self->get_LOGGER->debug("Parsing parameters: " . (join ' : ', keys %{$param}));
-
 
         foreach my $param_key (keys %{$param}) {
             $self->{$param_key} = $param->{$param_key} if $self->can("get_$param_key");
@@ -449,7 +448,6 @@ sub set_data {
 
 
 
-
 =head2  addParameters()
 
  if any of subelements can be an array then this method will provide
@@ -465,7 +463,8 @@ sub set_data {
 sub addParameters {
     my ($self,$new) = @_;
 
-    $self->get_parameters && ref($self->get_parameters) eq 'ARRAY'?push @{$self->get_parameters}, $new:$self->set_parameters([$new]);
+    $self->get_parameters && ref($self->get_parameters) eq 'ARRAY'?push @{$self->get_parameters}, $new:
+                                                                 $self->set_parameters([$new]);
     $self->get_LOGGER->debug("Added new to parameters");
     $self->buildIdMap; ## rebuild index map
     return $self->get_parameters;
@@ -483,7 +482,8 @@ sub addParameters {
 
 sub removeParametersById {
     my ($self, $id) = @_;
-    if(ref($self->get_parameters) eq 'ARRAY' && $self->get_idmap->{parameters} &&  exists $self->get_idmap->{parameters}{$id}) {
+    if(ref($self->get_parameters) eq 'ARRAY' && $self->get_idmap->{parameters} &&  
+       exists $self->get_idmap->{parameters}{$id}) {
         undef $self->get_parameters->[$self->get_idmap->{parameters}{$id}];
         my @tmp =  grep { defined $_ } @{$self->get_parameters};
         $self->set_parameters([@tmp]);
@@ -509,7 +509,8 @@ sub removeParametersById {
 sub getParametersById {
     my ($self, $id) = @_;
 
-    if(ref($self->get_parameters) eq 'ARRAY' && $self->get_idmap->{parameters} && exists $self->get_idmap->{parameters}{$id} ) {
+    if(ref($self->get_parameters) eq 'ARRAY' && $self->get_idmap->{parameters} && 
+       exists $self->get_idmap->{parameters}{$id} ) {
         return $self->get_parameters->[$self->get_idmap->{parameters}{$id}];
     } elsif(!ref($self->get_parameters) || ref($self->get_parameters) ne 'ARRAY')  {
         return $self->get_parameters;
@@ -518,7 +519,6 @@ sub getParametersById {
     return;
 }
             
-
 
 
 =head2  addMetadata()
@@ -536,7 +536,8 @@ sub getParametersById {
 sub addMetadata {
     my ($self,$new) = @_;
 
-    $self->get_metadata && ref($self->get_metadata) eq 'ARRAY'?push @{$self->get_metadata}, $new:$self->set_metadata([$new]);
+    $self->get_metadata && ref($self->get_metadata) eq 'ARRAY'?push @{$self->get_metadata}, $new:
+                                                                 $self->set_metadata([$new]);
     $self->get_LOGGER->debug("Added new to metadata");
     $self->buildIdMap; ## rebuild index map
     return $self->get_metadata;
@@ -554,7 +555,8 @@ sub addMetadata {
 
 sub removeMetadataById {
     my ($self, $id) = @_;
-    if(ref($self->get_metadata) eq 'ARRAY' && $self->get_idmap->{metadata} &&  exists $self->get_idmap->{metadata}{$id}) {
+    if(ref($self->get_metadata) eq 'ARRAY' && $self->get_idmap->{metadata} &&  
+       exists $self->get_idmap->{metadata}{$id}) {
         undef $self->get_metadata->[$self->get_idmap->{metadata}{$id}];
         my @tmp =  grep { defined $_ } @{$self->get_metadata};
         $self->set_metadata([@tmp]);
@@ -580,7 +582,8 @@ sub removeMetadataById {
 sub getMetadataById {
     my ($self, $id) = @_;
 
-    if(ref($self->get_metadata) eq 'ARRAY' && $self->get_idmap->{metadata} && exists $self->get_idmap->{metadata}{$id} ) {
+    if(ref($self->get_metadata) eq 'ARRAY' && $self->get_idmap->{metadata} && 
+       exists $self->get_idmap->{metadata}{$id} ) {
         return $self->get_metadata->[$self->get_idmap->{metadata}{$id}];
     } elsif(!ref($self->get_metadata) || ref($self->get_metadata) ne 'ARRAY')  {
         return $self->get_metadata;
@@ -589,7 +592,6 @@ sub getMetadataById {
     return;
 }
             
-
 
 
 =head2  addData()
@@ -607,7 +609,8 @@ sub getMetadataById {
 sub addData {
     my ($self,$new) = @_;
 
-    $self->get_data && ref($self->get_data) eq 'ARRAY'?push @{$self->get_data}, $new:$self->set_data([$new]);
+    $self->get_data && ref($self->get_data) eq 'ARRAY'?push @{$self->get_data}, $new:
+                                                                 $self->set_data([$new]);
     $self->get_LOGGER->debug("Added new to data");
     $self->buildIdMap; ## rebuild index map
     return $self->get_data;
@@ -625,7 +628,8 @@ sub addData {
 
 sub removeDataById {
     my ($self, $id) = @_;
-    if(ref($self->get_data) eq 'ARRAY' && $self->get_idmap->{data} &&  exists $self->get_idmap->{data}{$id}) {
+    if(ref($self->get_data) eq 'ARRAY' && $self->get_idmap->{data} &&  
+       exists $self->get_idmap->{data}{$id}) {
         undef $self->get_data->[$self->get_idmap->{data}{$id}];
         my @tmp =  grep { defined $_ } @{$self->get_data};
         $self->set_data([@tmp]);
@@ -651,7 +655,8 @@ sub removeDataById {
 sub getDataById {
     my ($self, $id) = @_;
 
-    if(ref($self->get_data) eq 'ARRAY' && $self->get_idmap->{data} && exists $self->get_idmap->{data}{$id} ) {
+    if(ref($self->get_data) eq 'ARRAY' && $self->get_idmap->{data} && 
+       exists $self->get_idmap->{data}{$id} ) {
         return $self->get_data->[$self->get_idmap->{data}{$id}];
     } elsif(!ref($self->get_data) || ref($self->get_data) ne 'ARRAY')  {
         return $self->get_data;
@@ -669,8 +674,7 @@ sub getDataById {
  
  Accepts one optional parameter - query hashref, it will fill this hashref
  
- will return:
-    
+ will return:    
     { <table_name1> =>  {<field name1> => <value>, ...},...}
 
 =cut
@@ -695,7 +699,6 @@ sub  querySQL {
          
     return $query;
 }
-
 
 
 =head2  buildIdMap()
@@ -748,7 +751,6 @@ sub asString {
 
 sub registerNamespaces {
     my ($self, $nsids) = @_;
-
     my $local_nss = {reverse %{$self->get_nsmap->mapname}};
     unless($nsids) {
         $nsids = $local_nss;
@@ -786,10 +788,10 @@ sub fromDOM {
 
     $self->set_type($dom->getAttribute('type')) if($dom->getAttribute('type'));
 
-    $self->get_LOGGER->debug(" Attribute type= ". $self->get_type) if $self->get_type;
+    $self->get_LOGGER->debug("Attribute type= ". $self->get_type) if $self->get_type;
     $self->set_id($dom->getAttribute('id')) if($dom->getAttribute('id'));
 
-    $self->get_LOGGER->debug(" Attribute id= ". $self->get_id) if $self->get_id;
+    $self->get_LOGGER->debug("Attribute id= ". $self->get_id) if $self->get_id;
     foreach my $childnode ($dom->childNodes) {
         my  $getname  = $childnode->getName;
         my ($nsid, $tagname) = split $COLUMN_SEPARATOR, $getname;
@@ -986,7 +988,19 @@ __END__
 
 =head1  SEE ALSO
 
-Automatically generated by L<XML::RelaxNG::Compact::PXB> 
+To join the 'perfSONAR Users' mailing list, please visit:
+
+   https://mail.internet2.edu/wws/info/perfsonar-user
+
+The perfSONAR-PS subversion repository is located at:
+
+   http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+   http://code.google.com/p/perfsonar-ps/issues/list
+   
 
 =head1 AUTHOR
 

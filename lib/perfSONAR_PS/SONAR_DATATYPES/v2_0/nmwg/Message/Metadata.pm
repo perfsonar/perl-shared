@@ -97,7 +97,7 @@ use fields qw(nsmap idmap LOGGER metadataIdRef id subject parameters key eventTy
 =head2 new({})
 
  creates   object, accepts DOM with element's tree or hashref to the list of
- keyd parameters:
+ keyed parameters:
 
          metadataIdRef   => undef,
          id   => undef,
@@ -117,7 +117,7 @@ sub new {
     my ($that, $param) = @_;
     my $class = ref($that) || $that;
     my $self =  fields::new($class );
-    $self->set_LOGGER(get_logger( $CLASSPATH ));
+    $self->set_LOGGER(get_logger($CLASSPATH));
     $self->set_nsmap(perfSONAR_PS::SONAR_DATATYPES::v2_0::NSMap->new());
     $self->get_nsmap->mapname($LOCALNAME, 'nmwg');
 
@@ -144,7 +144,6 @@ sub new {
             return  $self->fromDOM($dom);
         }
         $self->get_LOGGER->debug("Parsing parameters: " . (join ' : ', keys %{$param}));
-
 
         foreach my $param_key (keys %{$param}) {
             $self->{$param_key} = $param->{$param_key} if $self->can("get_$param_key");
@@ -216,9 +215,10 @@ sub getDOM {
             my  $domtext  =  getElement({name => $textnode,
                                           parent => $metadata,
                                           ns => [$self->get_nsmap->mapname($LOCALNAME)],
-                                         text => $self->{$textnode},
+                                          text => $self->{$textnode},
                               });
-           $domtext?$metadata->appendChild($domtext):$self->get_LOGGER->logdie("Failed to append new text element $textnode  to  metadata");
+           $domtext?$metadata->appendChild($domtext):
+	             $self->get_LOGGER->logdie("Failed to append new text element $textnode to metadata");
         }
     }
         
@@ -496,7 +496,6 @@ sub set_eventType {
 
 
 
-
 =head2  addSubject()
 
  if any of subelements can be an array then this method will provide
@@ -512,7 +511,8 @@ sub set_eventType {
 sub addSubject {
     my ($self,$new) = @_;
 
-    $self->get_subject && ref($self->get_subject) eq 'ARRAY'?push @{$self->get_subject}, $new:$self->set_subject([$new]);
+    $self->get_subject && ref($self->get_subject) eq 'ARRAY'?push @{$self->get_subject}, $new:
+                                                                 $self->set_subject([$new]);
     $self->get_LOGGER->debug("Added new to subject");
     $self->buildIdMap; ## rebuild index map
     return $self->get_subject;
@@ -530,7 +530,8 @@ sub addSubject {
 
 sub removeSubjectById {
     my ($self, $id) = @_;
-    if(ref($self->get_subject) eq 'ARRAY' && $self->get_idmap->{subject} &&  exists $self->get_idmap->{subject}{$id}) {
+    if(ref($self->get_subject) eq 'ARRAY' && $self->get_idmap->{subject} &&  
+       exists $self->get_idmap->{subject}{$id}) {
         undef $self->get_subject->[$self->get_idmap->{subject}{$id}];
         my @tmp =  grep { defined $_ } @{$self->get_subject};
         $self->set_subject([@tmp]);
@@ -556,7 +557,8 @@ sub removeSubjectById {
 sub getSubjectById {
     my ($self, $id) = @_;
 
-    if(ref($self->get_subject) eq 'ARRAY' && $self->get_idmap->{subject} && exists $self->get_idmap->{subject}{$id} ) {
+    if(ref($self->get_subject) eq 'ARRAY' && $self->get_idmap->{subject} && 
+       exists $self->get_idmap->{subject}{$id} ) {
         return $self->get_subject->[$self->get_idmap->{subject}{$id}];
     } elsif(!ref($self->get_subject) || ref($self->get_subject) ne 'ARRAY')  {
         return $self->get_subject;
@@ -565,7 +567,6 @@ sub getSubjectById {
     return;
 }
             
-
 
 
 =head2  addParameters()
@@ -583,7 +584,8 @@ sub getSubjectById {
 sub addParameters {
     my ($self,$new) = @_;
 
-    $self->get_parameters && ref($self->get_parameters) eq 'ARRAY'?push @{$self->get_parameters}, $new:$self->set_parameters([$new]);
+    $self->get_parameters && ref($self->get_parameters) eq 'ARRAY'?push @{$self->get_parameters}, $new:
+                                                                 $self->set_parameters([$new]);
     $self->get_LOGGER->debug("Added new to parameters");
     $self->buildIdMap; ## rebuild index map
     return $self->get_parameters;
@@ -601,7 +603,8 @@ sub addParameters {
 
 sub removeParametersById {
     my ($self, $id) = @_;
-    if(ref($self->get_parameters) eq 'ARRAY' && $self->get_idmap->{parameters} &&  exists $self->get_idmap->{parameters}{$id}) {
+    if(ref($self->get_parameters) eq 'ARRAY' && $self->get_idmap->{parameters} &&  
+       exists $self->get_idmap->{parameters}{$id}) {
         undef $self->get_parameters->[$self->get_idmap->{parameters}{$id}];
         my @tmp =  grep { defined $_ } @{$self->get_parameters};
         $self->set_parameters([@tmp]);
@@ -627,7 +630,8 @@ sub removeParametersById {
 sub getParametersById {
     my ($self, $id) = @_;
 
-    if(ref($self->get_parameters) eq 'ARRAY' && $self->get_idmap->{parameters} && exists $self->get_idmap->{parameters}{$id} ) {
+    if(ref($self->get_parameters) eq 'ARRAY' && $self->get_idmap->{parameters} && 
+       exists $self->get_idmap->{parameters}{$id} ) {
         return $self->get_parameters->[$self->get_idmap->{parameters}{$id}];
     } elsif(!ref($self->get_parameters) || ref($self->get_parameters) ne 'ARRAY')  {
         return $self->get_parameters;
@@ -645,8 +649,7 @@ sub getParametersById {
  
  Accepts one optional parameter - query hashref, it will fill this hashref
  
- will return:
-    
+ will return:    
     { <table_name1> =>  {<field name1> => <value>, ...},...}
 
 =cut
@@ -671,7 +674,6 @@ sub  querySQL {
          
     return $query;
 }
-
 
 
 =head2  buildIdMap()
@@ -724,7 +726,6 @@ sub asString {
 
 sub registerNamespaces {
     my ($self, $nsids) = @_;
-
     my $local_nss = {reverse %{$self->get_nsmap->mapname}};
     unless($nsids) {
         $nsids = $local_nss;
@@ -762,10 +763,10 @@ sub fromDOM {
 
     $self->set_metadataIdRef($dom->getAttribute('metadataIdRef')) if($dom->getAttribute('metadataIdRef'));
 
-    $self->get_LOGGER->debug(" Attribute metadataIdRef= ". $self->get_metadataIdRef) if $self->get_metadataIdRef;
+    $self->get_LOGGER->debug("Attribute metadataIdRef= ". $self->get_metadataIdRef) if $self->get_metadataIdRef;
     $self->set_id($dom->getAttribute('id')) if($dom->getAttribute('id'));
 
-    $self->get_LOGGER->debug(" Attribute id= ". $self->get_id) if $self->get_id;
+    $self->get_LOGGER->debug("Attribute id= ". $self->get_id) if $self->get_id;
     foreach my $childnode ($dom->childNodes) {
         my  $getname  = $childnode->getName;
         my ($nsid, $tagname) = split $COLUMN_SEPARATOR, $getname;
@@ -1103,7 +1104,19 @@ __END__
 
 =head1  SEE ALSO
 
-Automatically generated by L<XML::RelaxNG::Compact::PXB> 
+To join the 'perfSONAR Users' mailing list, please visit:
+
+   https://mail.internet2.edu/wws/info/perfsonar-user
+
+The perfSONAR-PS subversion repository is located at:
+
+   http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+   http://code.google.com/p/perfsonar-ps/issues/list
+   
 
 =head1 AUTHOR
 
