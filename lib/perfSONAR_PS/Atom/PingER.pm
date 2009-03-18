@@ -232,7 +232,7 @@ along with this software.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008, Fermi Research Alliance (FRA)
+Copyright (c) 2008-2009, Fermi Research Alliance (FRA)
 
 All rights reserved.
 
