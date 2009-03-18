@@ -1,45 +1,24 @@
 package perfSONAR_PS::Datatypes::PingER;
 
+use strict;
+use warnings;
+
+use version;
+our $VERSION = 3.1;
+
 =head1 NAME
 
- perfSONAR_PS::Datatypes::PingER  -  this is a pinger message  handler object
-
+perfSONAR_PS::Datatypes::PingER
 
 =head1 DESCRIPTION
 
-   it inherits everything from perfSONAR_PS::Datatypes::Message and only implements  request handlers with pinger specifics 
-    
-=head1 SYNOPSIS
-             
-  
-    use perfSONAR_PS::Datatypes::PingER ;
-  
-    
-    my ($DOM) = $requestMessage->getElementsByTag('message');
-   
-    my $message = new perfSONAR_PS::Datatypes::PingER($DOM);
-    $message = new perfSONAR_PS::Datatypes::PingER({id => '2345', 
-  		  type = 'SetupdataResponse',
-  		  metadata => {'id1' =>   <obj>},
-  		  data=> {'id1' => <obj>}}); 
+This is a pinger message handler object.  It inherits everything from
+perfSONAR_PS::Datatypes::Message and only implements  request handlers with
+pinger specifics 
 
-   #######   add data element, namespaces will be added from this object to Message object namespace declaration
-             $message->addPartById('id1', 'data', new perfSONAR_PS::Datatypes::PingER::data({id=> 'id1', metadataIdRef => 'metaid1' }));
-        
-   ########add metadata element, namespaces will be added from this object to Message object namespace declaration
-    $message->addPartById('id1', 'metadata',  new perfSONAR_PS::Datatypes::PingER::metadata({id=> 'id1' });
+=head1 Methods
     
-    my $dom = $message->getDOM(); # get as DOM 
-    print $message->asString();  # print the whole message
-    
-    
-=head1   METHODS
-
 =cut
-
-use strict;
-use warnings;
-use version; our $VERSION = '0.09';
 
 use English qw( -no_match_vars);
 use Log::Log4perl qw(get_logger);
@@ -84,15 +63,18 @@ our $_sizeLimit = '1000000';
 
 =head2 new( )
    
-      creates message object, accepts parameter in form of:
-      
-      DOM with nmwg:message element tree or hashref to the list of
-        type => <string>, id => <string> , namespace => {}, metadata => {}, ...,   data   => { }  ,
+Creates message object, accepts parameter in form of:
+
+  DOM with nmwg:message element tree or hashref to the list of
+    type => <string>, id => <string> , namespace => {}, metadata => {}, ...,   
+    data   => { }  ,
  
-     or DOM object or hashref with single key { xml => <xmlString>}
-    it extends:
-     use perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwg::Message 
-     All parameters will be passed first to superclass
+  or DOM object or hashref with single key { xml => <xmlString>}
+
+it extends:
+  use perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwg::Message 
+
+All parameters will be passed first to superclass
   
 =cut
 
@@ -110,8 +92,8 @@ sub new {
 
 =head2 handle 
 
-   dispatch method. accepts type of request,response object and MA config hashref as parameters, returns fully built response object,
-   sets query size limit  
+Dispatch method. accepts type of request,response object and MA config hashref
+as parameters, returns fully built response object, sets query size limit  
 
 =cut
 
@@ -126,11 +108,11 @@ sub handle {
             no strict 'refs';
             $_sizeLimit = $maconfig->{query_size_limit} if $maconfig && ref( $maconfig ) eq 'HASH' && $maconfig->{query_size_limit};
             $self->get_LOGGER->debug( " Size limit set to:  $_sizeLimit " );
-	    return $type->( $self, $response );
-	};
-	if ($EVAL_ERROR) {
-	   $self->get_LOGGER->error( " Handler for $type failed: $EVAL_ERROR" );
-	}
+            return $type->( $self, $response );
+        };
+        if ( $EVAL_ERROR ) {
+            $self->get_LOGGER->error( " Handler for $type failed: $EVAL_ERROR" );
+        }
     }
     $self->get_LOGGER->error( " Handler for $type Not supported" );
     return;
@@ -138,10 +120,10 @@ sub handle {
 
 =head2   MetadataKeyRequest
 
-      method for MetadataKey request,  works per event ( single pre-merged md  and data pair)
-      returns filled response message object 
+Method for MetadataKey request,  works per event ( single pre-merged md  and
+data pair) returns filled response message object 
 
-  ###############################  From Jason's SNMP MA code ################################### 
+  ##################  From Jason's SNMP MA code ##################
   # MA MetadataKeyRequest Steps
   # ---------------------
   # Is there a key?
@@ -217,36 +199,17 @@ sub MetadataKeyRequest {
     else {
         $response->addResultResponse( { md => $requestmd, message => ' no metadata found ', eventType => $self->eventTypes->status->failure } );
     }
-
     return 0;
 }
 
 =head2   SetupDataRequest
 
-   SetupData request,    works per event ( single pre-merged md  and data pair)
-      returns filled response message object 
-      returns filled response  
-  ###############################  From Jason's SNMP MA code ################################### 
+SetupData request, works per event ( single pre-merged md  and data pair)
+returns filled response message object.  returns filled response  
+
+  ##################  From Jason's SNMP MA code ##################
   # MA SetupdataRequest Steps
   # ---------------------
-  # Is there a key?
-  #   Y: key in db?
-  #     Y: Original MD in db?
-  #       Y: add it, extract data
-  #       N: use sent md, extract data
-  #     N: error out
-  #   N: Is it a select?
-  #     Y: Is there a matching MD?
-  #       Y: Is there a key in the matching md?
-  #         Y: Original MD in db?
-  #           Y: add it, extract data
-  #           N: use sent md, extract data
-  #         N: extract md (for correct md), extract data
-  #       N: Error out
-  #     N: extract md, extract data
-  #----------------------------------
-  #     Updated from Jason e-mail, 11/27/07
-  #
   #   Is there a key?
   #     Y: key in db?
   #         Y: chain metadata      
@@ -264,9 +227,7 @@ sub MetadataKeyRequest {
   #             N: Error out
   #        N: chain metadata
   #           extract data 
-  #
-  # 
-  
+
 =cut
 
 sub SetupDataRequest {
@@ -434,8 +395,9 @@ sub _mdSetLimit {
 
 =head2 ressurectMd
   
-   accepts SQL row or metaID and will create md element   and returns it as object
-   params: { metaId => <>, md_row => <> }
+accepts SQL row or metaID and will create md element   and returns it as object
+
+params: { metaId => <>, md_row => <> }
    
 =cut
 
@@ -490,12 +452,12 @@ sub ressurectMd {
     return $md;
 }
 
-#  auxiliary private  function
-#
-#  _createTimeSelect
-#
-#  creates time range select metadata and store it for reuse in timeselects hashref
-#
+=head2 _createTimeSelect
+  
+auxiliary private function, creates time range select metadata and store it for reuse in timeselects hashref
+   
+=cut
+
 sub _createTimeSelect {
     my ( $self, $params ) = @_;
     unless ( $params->{timequery} && ( ref $params->{timequery} eq 'HASH' ) && $params->{response} && $params->{timeselects} ) {
@@ -526,14 +488,19 @@ sub _createTimeSelect {
     return 'Malformed request - missing time range';
 }
 
-#
-#  auxiliary private  function
-#
-#  this one will find time range from md, find proper list of data tables and will query data tables by metaID key
-#  parameters - hashref to { md => $metadata_obj, datas => $iterators_attayref, key => $metaKey, timequery => $timequery_hashref, tables => $tables_hashref, response => response}
-#  return 0 if everything OK, result will be added as data objects arrayref to the {datas} arrayref
-#  return 1 if something is wrong
-#
+=head2 _createTimeSelect
+  
+auxiliary private function, this one will find time range from md, find proper
+list of data tables and will query data tables by metaID key
+
+parameters - hashref to { md => $metadata_obj, datas => $iterators_attayref, key => $metaKey, timequery => $timequery_hashref, tables => $tables_hashref, response => response} 
+
+return 0 if everything OK, result will be added as data objects arrayref to the
+  {datas} arrayref
+return 1 if something is wrong
+   
+=cut
+
 sub _retrieveDataByKey {
     my ( $self, $params ) = @_;
     unless ( $params
@@ -573,10 +540,42 @@ sub _retrieveDataByKey {
 
 }
 
-=head1 AUTHORS
+1;
 
-   Maxim Grigoriev (FNAL)   2007-2008
+__END__
+
+=head1 SEE ALSO
+
+To join the 'perfSONAR Users' mailing list, please visit:
+
+  https://mail.internet2.edu/wws/info/perfsonar-user
+
+The perfSONAR-PS subversion repository is located at:
+
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+  http://code.google.com/p/perfsonar-ps/issues/list
+
+=head1 VERSION
+
+$Id$
+
+=head1 AUTHOR
+
+Maxim Grigoriev, maxim@fnal.gov
+
+=head1 LICENSE
+
+You should have received a copy of the Fermitools license
+along with this software. 
+
+=head1 COPYRIGHT
+
+Copyright (c) 2008-2009, Fermi Research Alliance (FRA)
+
+All rights reserved.
 
 =cut
-
-1;
