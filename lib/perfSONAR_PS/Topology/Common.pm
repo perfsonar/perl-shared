@@ -1,32 +1,31 @@
 package perfSONAR_PS::Topology::Common;
 
+use strict;
+use warnings;
+
+our $VERSION = 3.1;
+
 =head1 NAME
 
-perfSONAR_PS::Topology::Common - A module that provides various utility functions for Topology structures.
+perfSONAR_PS::Topology::Common
 
 =head1 DESCRIPTION
 
-This module contains a set of utility functions that are used to interact with
+A module that provides various utility functions for Topology structures.  This
+module contains a set of utility functions that are used to interact with
 Topology structures.
 
-=head1 SYNOPSIS
-
-=head1 DETAILS
-
 =head1 API
+
 =cut
 
-use strict;
-use warnings;
 use Log::Log4perl qw(get_logger :levels);
 use base 'Exporter';
 
 use perfSONAR_PS::Topology::ID;
 use perfSONAR_PS::Common;
 
-our $VERSION = 0.09;
-
-our @EXPORT = ( 'normalizeTopology', 'validateDomain', 'validateNode', 'validatePort', 'validateLink', 'getTopologyNamespaces', 'mergeNodes_general' );
+our @EXPORT_OK = qw( normalizeTopology, validateDomain, validateNode, validatePort, validateLink, getTopologyNamespaces, mergeNodes_general );
 
 my %topology_namespaces = (
     ctrlplane => "http://ogf.org/schema/network/topology/ctrlPlane/20070828/",
@@ -43,7 +42,9 @@ my %topology_namespaces = (
 );
 
 =head2 getTopologyNamespaces()
+
 Returns the set of prefix/uri mappings for Topology in a hash table.
+
 =cut
 
 sub getTopologyNamespaces {
@@ -51,10 +52,12 @@ sub getTopologyNamespaces {
 }
 
 =head2 replaceChild ($parent, $type, $new_child, $fqid) 
+
 This internal function is used to replace an idRef'd child with the actual
 child. The $parent is the XML DOM element representing the parent. $type is the
 type of the child (e.g. 'path', 'link'). The $new_child is the DOM
 representation of the child, and $fqid is the identifier for the child.
+
 =cut
 
 sub replaceChild {
@@ -63,7 +66,7 @@ sub replaceChild {
 
     foreach my $child ( $parent->getChildrenByTagNameNS( "*", $type ) ) {
         my $id = $child->getAttribute( $type . "IdRef" );
-        next if ( not defined $id or $id eq "" );
+        next unless $id;
 
         $logger->debug( "comparing $id to $fqid" );
         if ( $id eq $fqid ) {
@@ -77,11 +80,13 @@ sub replaceChild {
 }
 
 =head2 normalizeTopology_links($root, $topology, $parent_id, $top_level)
+
 Takes a topology structure and normalizes the links into
 "domain/node/port/link" form. $root is the XML topology representation to
 normalize, $topology is a hash that is filled in with pointers to the elements,
 $parent_id is the identifier for the parent of the element, $top_level is a
 pointer to the top-level XML topology element.
+
 =cut
 
 sub normalizeTopology_links {
@@ -213,15 +218,17 @@ sub normalizeTopology_links {
         }
     }
 
-    return ( 0, "" );
+    return ( 0, q{} );
 }
 
 =head2 normalizeTopology_ports($root, $topology, $parent_id, $top_level)
+
 Takes a topology structure and normalizes the ports into "domain/node/port"
 form. $root is the XML topology representation to normalize, $topology is a
 hash that is filled in with pointers to the elements, $parent_id is the
 identifier for the parent of the element, $top_level is a pointer to the
 top-level XML topology element.
+
 =cut
 
 sub normalizeTopology_ports {
@@ -275,7 +282,7 @@ sub normalizeTopology_ports {
 
             my $n = idIsFQ( $id, "port" );
             if ( $n == 0 ) {
-                if ( $uri eq "" ) {
+                if ( $uri eq q{} ) {
                     my $msg = "Port $id has no parent and is not fully qualified";
                     $logger->error( $msg );
                     return ( -1, $msg );
@@ -297,7 +304,7 @@ sub normalizeTopology_ports {
             else {
                 $fqid = $id;
 
-                my $node_id = idRemoveLevel( $fqid, "" );
+                my $node_id = idRemoveLevel( $fqid, q{} );
                 my $node = $topology->{"nodes"}->{$node_id};
 
                 if ( not defined $node ) {
@@ -320,15 +327,17 @@ sub normalizeTopology_ports {
         }
     }
 
-    return ( 0, "" );
+    return ( 0, q{} );
 }
 
 =head2 normalizeTopology_nodes($root, $topology, $parent_id, $top_level)
+
 Takes a topology structure and normalizes the nodes into "domain/node"
 form. $root is the XML topology representation to normalize, $topology is a
 hash that is filled in with pointers to the elements, $parent_id is the
 identifier for the parent of the element, $top_level is a pointer to the
 top-level XML topology element.
+
 =cut
 
 sub normalizeTopology_nodes {
@@ -372,7 +381,7 @@ sub normalizeTopology_nodes {
 
             my $n = idIsFQ( $id, "node" );
             if ( $n == 0 ) {
-                if ( $uri eq "" ) {
+                if ( $uri eq q{} ) {
                     my $msg = "Node $id has no parent and is not fully qualified";
                     $logger->error( $msg );
                     return ( -1, $msg );
@@ -394,7 +403,7 @@ sub normalizeTopology_nodes {
             else {
                 $fqid = $id;
 
-                my $domain_id = idRemoveLevel( $fqid, "" );
+                my $domain_id = idRemoveLevel( $fqid, q{} );
                 my $domain = $topology->{"domains"}->{$domain_id};
 
                 if ( not defined $domain ) {
@@ -421,15 +430,17 @@ sub normalizeTopology_nodes {
         }
     }
 
-    return ( 0, "" );
+    return ( 0, q{} );
 }
 
 =head2 normalizeTopology_paths($root, $topology, $parent_id, $top_level)
+
 Takes a topology structure and normalizes the paths into "domain/path"
 form. $root is the XML topology representation to normalize, $topology is a
 hash that is filled in with pointers to the elements, $parent_id is the
 identifier for the parent of the element, $top_level is a pointer to the
 top-level XML topology element.
+
 =cut
 
 sub normalizeTopology_paths {
@@ -473,7 +484,7 @@ sub normalizeTopology_paths {
 
             my $n = idIsFQ( $id, "path" );
             if ( $n == 0 ) {
-                if ( $parent_id eq "" ) {
+                if ( $parent_id eq q{} ) {
                     my $msg = "Path $id has no parent and is not fully qualified";
                     $logger->error( $msg );
                     return ( -1, $msg );
@@ -495,10 +506,10 @@ sub normalizeTopology_paths {
             else {
                 $fqid = $id;
 
-                my $domain_id = idRemoveLevel( $fqid, "" );
+                my $domain_id = idRemoveLevel( $fqid, q{} );
                 my $domain = $topology->{"domains"}->{$domain_id};
-                if ( $domain_id eq "" or not defined $domain ) {
-                    if ( $domain_id ne "" ) {
+                if ( $domain_id eq q{} or not defined $domain ) {
+                    if ( $domain_id ne q{} ) {
                         my $msg = "Path $fqid references non-existent domain $domain_id, moving to top-level";
                         $logger->debug( $msg );
                     }
@@ -523,15 +534,17 @@ sub normalizeTopology_paths {
         }
     }
 
-    return ( 0, "" );
+    return ( 0, q{} );
 }
 
 =head2 normalizeTopology_networks($root, $topology, $parent_id, $top_level)
+
 Takes a topology structure and normalizes the networks into "domain/network"
 form. $root is the XML topology representation to normalize, $topology is a
 hash that is filled in with pointers to the elements, $parent_id is the
 identifier for the parent of the element, $top_level is a pointer to the
 top-level XML topology element.
+
 =cut
 
 sub normalizeTopology_networks {
@@ -575,7 +588,7 @@ sub normalizeTopology_networks {
 
             my $n = idIsFQ( $id, "network" );
             if ( $n == 0 ) {
-                if ( $parent_id eq "" ) {
+                if ( $parent_id eq q{} ) {
                     my $msg = "Network $id has no parent and is not fully qualified";
                     $logger->error( $msg );
                     return ( -1, $msg );
@@ -597,10 +610,10 @@ sub normalizeTopology_networks {
             else {
                 $fqid = $id;
 
-                my $domain_id = idRemoveLevel( $fqid, "" );
+                my $domain_id = idRemoveLevel( $fqid, q{} );
                 my $domain = $topology->{"domains"}->{$domain_id};
-                if ( $domain_id eq "" or not defined $domain ) {
-                    if ( $domain_id ne "" ) {
+                if ( $domain_id eq q{} or not defined $domain ) {
+                    if ( $domain_id ne q{} ) {
                         my $msg = "Network $fqid references non-existent domain $domain_id, moving to top-level";
                         $logger->debug( $msg );
                     }
@@ -625,13 +638,15 @@ sub normalizeTopology_networks {
         }
     }
 
-    return ( 0, "" );
+    return ( 0, q{} );
 }
 
 =head2 normalizeTopology_domains($root, $topology)
+
 Takes a topology structure and normalizes the domains into "domain/node/port/link"
 scheme. $root is the XML topology representation, and $topology is a hash that
 is filled in with pointers to the elements.
+
 =cut
 
 sub normalizeTopology_domains {
@@ -661,7 +676,7 @@ sub normalizeTopology_domains {
                 return ( -1, $msg );
             }
             elsif ( $n == 0 ) {
-                $id = idConstruct( "domain", $id, "", "", "", "", "", "" );
+                $id = idConstruct( "domain", $id, q{}, q{}, q{}, q{}, q{}, q{} );
 
                 $domain->setAttribute( "id", $id );
             }
@@ -672,13 +687,15 @@ sub normalizeTopology_domains {
         }
     }
 
-    return ( 0, "" );
+    return ( 0, q{} );
 }
 
 =head2 normalizeTopology($topology)
+
 Takes a topology structure and normalizes it into "domain/node/port/link"
 scheme. If a stray node/port/link is found, it is moved up to the top-level if
 it's not already there.
+
 =cut
 
 sub normalizeTopology {
@@ -706,38 +723,40 @@ sub normalizeTopology {
         return ( $status, $res );
     }
 
-    ( $status, $res ) = normalizeTopology_paths( $root, \%topology, "", $root );
+    ( $status, $res ) = normalizeTopology_paths( $root, \%topology, q{}, $root );
     if ( $status != 0 ) {
         return ( $status, $res );
     }
 
-    ( $status, $res ) = normalizeTopology_networks( $root, \%topology, "", $root );
+    ( $status, $res ) = normalizeTopology_networks( $root, \%topology, q{}, $root );
     if ( $status != 0 ) {
         return ( $status, $res );
     }
 
-    ( $status, $res ) = normalizeTopology_nodes( $root, \%topology, "", $root );
+    ( $status, $res ) = normalizeTopology_nodes( $root, \%topology, q{}, $root );
     if ( $status != 0 ) {
         return ( $status, $res );
     }
 
-    ( $status, $res ) = normalizeTopology_ports( $root, \%topology, "", $root );
+    ( $status, $res ) = normalizeTopology_ports( $root, \%topology, q{}, $root );
     if ( $status != 0 ) {
         return ( $status, $res );
     }
 
-    ( $status, $res ) = normalizeTopology_links( $root, \%topology, "", $root );
+    ( $status, $res ) = normalizeTopology_links( $root, \%topology, q{}, $root );
     if ( $status != 0 ) {
         return ( $status, $res );
     }
 
-    return ( 0, "" );
+    return ( 0, q{} );
 }
 
 =head2 validateDomain($domain, $domain_ids)
+
 Does some basic validation of the specified domain.$domain_ids is a pointer to
 a hash containing the set of domain ids. The function will add an entry for
 this domain to the hash. 
+
 =cut
 
 sub validateDomain {
@@ -747,7 +766,7 @@ sub validateDomain {
     $logger->debug( "Validating domain" );
 
     my $id = $domain->getAttribute( "id" );
-    if ( not defined $id or $id eq "" ) {
+    if ( not defined $id or $id eq q{} ) {
         my $msg = "Domain has no id";
         $logger->error( $msg );
         return ( -1, $msg );
@@ -765,7 +784,7 @@ sub validateDomain {
         return ( -1, $msg );
     }
 
-    $domain_ids->{$id} = "";
+    $domain_ids->{$id} = q{};
 
     my %node_ids = ();
     my $find_res;
@@ -786,14 +805,16 @@ sub validateDomain {
         return ( -1, $msg );
     }
 
-    return ( 0, "" );
+    return ( 0, q{} );
 }
 
 =head2 validateNode($node, $node_ids, $parent)
+
 Does some basic validation of the specified node. $node_ids is a pointer to a
 hash containing the set of node ids. The function will add an entry for this
 node to the hash. $parent is the FQ ID of the parent of this element. If the
 element has no parent, it is simply "".
+
 =cut
 
 sub validateNode {
@@ -803,7 +824,7 @@ sub validateNode {
     $logger->debug( "Validating node" );
 
     my $id = $node->getAttribute( "id" );
-    if ( not defined $id or $id eq "" ) {
+    if ( not defined $id or $id eq q{} ) {
         my $msg = "Node has no id";
         $logger->error( $msg );
         return ( -1, $msg );
@@ -815,7 +836,7 @@ sub validateNode {
         return ( -1, $msg );
     }
 
-    if ( $parent_id ne "" ) {
+    if ( $parent_id ne q{} ) {
         my ( $status, $res ) = idCompare( $parent_id, $id, "domain" );
         if ( $status != 0 ) {
             my $msg = "Node $id does not belong in domain $parent_id: $res";
@@ -829,7 +850,7 @@ sub validateNode {
         return ( -1, $msg );
     }
 
-    $node_ids->{$id} = "";
+    $node_ids->{$id} = q{};
 
     my %port_ids = ();
 
@@ -890,14 +911,16 @@ sub validateNode {
         }
     }
 
-    return ( 0, "" );
+    return ( 0, q{} );
 }
 
 =head2 validatePort($port, $port_ids, $parent)
+
 Does some basic validation of the specified port. $port_ids is a pointer to a
 hash containing the set of port ids. The function will add an entry for this
 port to the hash. $parent is the FQ ID of the parent of this element. If the
 element has no parent, it is simply "".
+
 =cut
 
 sub validatePort {
@@ -907,7 +930,7 @@ sub validatePort {
     $logger->debug( "Validating port" );
 
     my $id = $port->getAttribute( "id" );
-    if ( not defined $id or $id eq "" ) {
+    if ( not defined $id or $id eq q{} ) {
         my $msg = "Port has no id";
         $logger->error( $msg );
         return ( -1, $msg );
@@ -919,7 +942,7 @@ sub validatePort {
         return ( -1, $msg );
     }
 
-    if ( $parent_id ne "" ) {
+    if ( $parent_id ne q{} ) {
         my ( $status, $res ) = idCompare( $parent_id, $id, "node" );
         if ( $status != 0 ) {
             my $msg = "Port $id does not belong in node $parent_id: $res";
@@ -934,7 +957,7 @@ sub validatePort {
         return ( -1, $msg );
     }
 
-    $port_ids->{$id} = "";
+    $port_ids->{$id} = q{};
 
     my %link_ids = ();
 
@@ -995,14 +1018,16 @@ sub validatePort {
         }
     }
 
-    return ( 0, "" );
+    return ( 0, q{} );
 }
 
 =head2 validateLink($link, $link_ids, $parent)
+
 Does some basic validation of the specified link. $link_ids is a pointer to a
 hash containing the set of link ids. The function will add an entry for this
 link to the hash. $parent is the FQ ID of the parent of this element. If the
 element has no parent, it is simply "".
+
 =cut
 
 sub validateLink {
@@ -1012,7 +1037,7 @@ sub validateLink {
     $logger->debug( "Validating link" );
 
     my $id = $link->getAttribute( "id" );
-    if ( not defined $id or $id eq "" ) {
+    if ( not defined $id or $id eq q{} ) {
         my $msg = "Link has no id";
         $logger->error( $msg );
         return ( -1, $msg );
@@ -1024,7 +1049,7 @@ sub validateLink {
         return ( -1, $msg );
     }
 
-    if ( $parent_id ne "" ) {
+    if ( $parent_id ne q{} ) {
         my ( $status, $res ) = idCompare( $parent_id, $id, "port" );
         if ( $status != 0 ) {
             my $msg = "Link $id does not belong in port $parent_id: $res";
@@ -1038,7 +1063,7 @@ sub validateLink {
         return ( -1, $msg );
     }
 
-    $link_ids->{$id} = "";
+    $link_ids->{$id} = q{};
 
     my $find_res;
 
@@ -1087,7 +1112,7 @@ sub validateLink {
         }
     }
 
-    return ( 0, "" );
+    return ( 0, q{} );
 }
 
 1;
@@ -1098,15 +1123,18 @@ __END__
 L<Log::Log4perl>, L<Exporter>, L<perfSONAR_PS::Topology::ID>,
 L<perfSONAR_PS::Common>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
 Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+  http://code.google.com/p/perfsonar-ps/issues/list
 
 =head1 VERSION
 
@@ -1114,18 +1142,20 @@ $Id$
 
 =head1 AUTHOR
 
-Aaron Brown, E<lt>aaron@internet2.eduE<gt>
+Aaron Brown, aaron@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2007, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 
 =cut
+
 # vim: expandtab shiftwidth=4 tabstop=4

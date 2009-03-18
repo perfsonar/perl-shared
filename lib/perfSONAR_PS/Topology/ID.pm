@@ -2,37 +2,70 @@ package perfSONAR_PS::Topology::ID;
 
 use strict;
 use warnings;
+
+our $VERSION = 3.1;
+
+=head1 NAME
+
+perfSONAR_PS::Topology::ID
+
+=head1 DESCRIPTION
+
+A module that provides various utility functions for Topology IDs.  This module
+contains a set of utility functions that are used to interact with Topology IDs.
+
+=head1 API
+
+=cut
+
 use base 'Exporter';
 
-our $VERSION = 0.09;
+our @EXPORT_OK = qw( idConstruct, idIsFQ, idAddLevel, idRemoveLevel, idBaseLevel, idEncode, idDecode, idSplit, idCompare, idMatch, idIsAmbiguous );
 
-our @EXPORT = ( 'idConstruct', 'idIsFQ', 'idAddLevel', 'idRemoveLevel', 'idBaseLevel', 'idEncode', 'idDecode', 'idSplit', 'idCompare', 'idMatch', 'idIsAmbiguous' );
+=head2 idConstruct($type1, $field1, $type2, $field2, $type3, $field3, $type4, $field4)
+
+Constructs an a fully-qualified id based on the specified fields. No
+sanity checking is performed to verify that the created ID makes sense.
+The $type parameters are values like 'domain', 'node', etc whereas the
+$field parameter is the ID for that element like "I2" or "HOPI". All
+values past the first blank ("") type or field are ignored.
+
+=cut
 
 sub idConstruct {
     my ( $type1, $field1, $type2, $field2, $type3, $field3, $type4, $field4 ) = @_;
 
-    my $id = "";
+    my $id = q{};
 
     $id .= "urn:ogf:network";
 
-    return $id if ( $type1 eq "" or $field1 eq "" );
+    return $id if ( $type1 eq q{} or $field1 eq q{} );
 
     $id .= ":" . $type1 . "=" . idEncode( $field1 );
 
-    return $id if ( $type2 eq "" or $field2 eq "" );
+    return $id if ( $type2 eq q{} or $field2 eq q{} );
 
     $id .= ":" . $type2 . "=" . idEncode( $field2 );
 
-    return $id if ( $type3 eq "" or $field3 eq "" );
+    return $id if ( $type3 eq q{} or $field3 eq q{} );
 
     $id .= ":" . $type3 . "=" . idEncode( $field3 );
 
-    return $id if ( $type4 eq "" or $field4 eq "" );
+    return $id if ( $type4 eq q{} or $field4 eq q{} );
 
     $id .= ":" . $type4 . "=" . idEncode( $field4 );
 
     return $id;
 }
+
+=head2 idIsFQ($id, $type)
+
+Checks if the specified ID is a fully-qualified ID of the specified
+type. If it is not a fully-qualified id, the function returns 0. If it
+is an incorrect fully-qualified id(e.g. too many elements), it returns
+-1. If it is a correctly specified fully-qualified id, it returns 1.
+
+=cut
 
 sub idIsFQ {
     my ( $id, $type ) = @_;
@@ -41,7 +74,7 @@ sub idIsFQ {
 
     return 0 if ( !( $id =~ /^urn:ogf:network:(.*)$/ ) );
 
-    return 1 if ( $type eq "" );
+    return 1 if ( $type eq q{} );
 
     my @fields = split( ':', $id );
 
@@ -145,6 +178,14 @@ sub idIsFQ {
     }
 }
 
+=head2 idAddLevel($id, $new_type, $new_level)
+
+Takes a fully-qualified id and adds a new level onto it. No sanity
+checking is done, it simply returns the ID created from the values
+requested.
+
+=cut
+
 sub idAddLevel {
     my ( $id, $new_type, $new_level ) = @_;
 
@@ -160,6 +201,19 @@ sub idAddLevel {
     return $id;
 }
 
+=head2 idRemoveLevel($id, $ret_type)
+
+Takes a fully-qualified id and returns the parent level for the id. If
+you'd like to know the type of the parent, you can add a reference to a
+variable for $ret_type and the function will fill it in with the type
+of the returned id.
+
+e.g. urn:ogf:network:domain=hopi:node=losa would return
+'urn:ogf:network:domain=hopi' and $ret_type would be filled in with
+'domain'
+
+=cut
+
 sub idRemoveLevel {
     my ( $id, $ret_type ) = @_;
 
@@ -167,7 +221,7 @@ sub idRemoveLevel {
 
     if ( $id =~ /(^urn:ogf:network.*):[^:]+$/ ) {
         if ( $1 eq "urn:ogf:network" ) {
-            $ret_id = "";
+            $ret_id = q{};
         }
         else {
             $ret_id = $1;
@@ -177,8 +231,8 @@ sub idRemoveLevel {
         $ret_id = $id;
     }
 
-    if ( defined $ret_type and $ret_type ne "" ) {
-        if ( $ret_id ne "" ) {
+    if ( defined $ret_type and $ret_type ) {
+        if ( $ret_id ne q{} ) {
             my $type;
 
             my $value = idBaseLevel( $ret_id, \$type );
@@ -186,26 +240,38 @@ sub idRemoveLevel {
             $$ret_type = $type;
         }
         else {
-            $$ret_type = "";
+            $$ret_type = q{};
         }
     }
 
     return $ret_id;
 }
 
+=head2 idBaseLevel($id, $ret_type)
+
+Returns the base level of the specified id. If you want to be informed
+fo the type of the base element, you can add a reference to a variable
+for $ret_type and the function will fill it in with the type of the
+element.
+
+e.g. urn:ogf:network:domain=hopi:node=losa would return 'losa' and
+$ret_type would be filled in with 'node'
+
+=cut
+
 sub idBaseLevel {
     my ( $id, $ret_type ) = @_;
 
     my $ret_id;
 
-    if ( !( $id =~ /^urn:ogf:network/ ) ) {
-        $$ret_type = "" if ( defined $ret_type and $ret_type ne "" );
+    unless ( $id =~ /^urn:ogf:network/ ) {
+        $$ret_type = q{} if ( defined $ret_type and $ret_type );
         return $id;
     }
 
     if ( $id =~ /^urn:ogf:network$/ ) {
-        $$ret_type = "" if ( defined $ret_type and $ret_type ne "" );
-        return "";
+        $$ret_type = "" if ( defined $ret_type and $ret_type  );
+        return q{};
     }
 
     if ( $id =~ /^urn:ogf:network.*:([^:]+)$/ ) {
@@ -214,12 +280,19 @@ sub idBaseLevel {
 
     my ( $type, $value ) = split( '=', $ret_id );
 
-    if ( defined $ret_type and $ret_type ne "" ) {
+    if ( defined $ret_type and $ret_type ne q{} ) {
         $$ret_type = $type;
     }
 
     return idDecode( $value );
 }
+
+=head2 idEncode($element)
+
+Performs any necessary encoding of the specified element for inclusion
+in a fully-qualified id.
+
+=cut
 
 sub idEncode {
     my ( $id ) = @_;
@@ -233,6 +306,12 @@ sub idEncode {
     return $id;
 }
 
+=head2 idDecode($element)
+
+Decodes the specified element from a fully-qualified id.
+
+=cut
+
 sub idDecode {
     my ( $id ) = @_;
 
@@ -244,6 +323,16 @@ sub idDecode {
 
     return $id;
 }
+
+=head2 idCompare($id1, $id2, $compare_to)
+
+Compares the given ids to see if they match up to the specified field.
+$compare_to can be any ID element type that the IDs have in common. It
+returns an array containing two values. The first is either 0 or -1 and
+tells whether the function failed or succeeded. If the function failed,
+the next element in the array is the error message.
+
+=cut
 
 sub idCompare {
     my ( $id1, $id2, $compare_to ) = @_;
@@ -269,17 +358,29 @@ sub idCompare {
             return ( -1, $results_id1[$i] . "=" . $results_id1[ $i + 1 ] . " != " . $results_id2[$i] . "=" . $results_id2[ $i + 1 ] );
         }
 
-        return ( 0, "" ) if ( $results_id1[$i] eq $compare_to );
+        return ( 0, q{} ) if ( $results_id1[$i] eq $compare_to );
     }
 
     return ( -1, "ID element $compare_to not found" );
 }
+
+=head2 idIsAmbiguous( $id )
+
+TBD
+
+=cut
 
 sub idIsAmbiguous {
     my ( $id ) = @_;
 
     return ( $id =~ /(=\*:|:\*$|=\*$)/ );
 }
+
+=head2 idMatch( $ids, $idExp )
+
+TBD
+
+=cut
 
 sub idMatch {
     my ( $ids, $idExp ) = @_;
@@ -347,10 +448,23 @@ sub idMatch {
     return \@matchingIds;
 }
 
+=head2 idSplit($id, $fq, $top_down)
+
+Splits the specified fully-qualified id into its component elements. If
+$fq is 1, the returns components are all fully-qualified. The components are returned in an array. The
+first value of the array is the 0 or -1 specifying whether the function
+succeeded or failed. The next element is a string for the type of the
+ID. Each subsequent pair of elements corresponds to the type of the
+element followed by the element itself. If $top_down is 0, the order is
+the most specific element to least specific element. If $top_down is 1,
+however, the order is reversed.
+
+=cut
+
 sub idSplit {
     my ( $id, $fq, $top_down ) = @_;
 
-    if ( idIsFQ( $id, "" ) == 0 ) {
+    if ( idIsFQ( $id, q{} ) == 0 ) {
         my $msg = "ID \"$id\" is not fully qualified";
         return ( -1, $msg );
     }
@@ -411,7 +525,7 @@ sub idSplit {
         }
     }
     else {
-        $id_type = "";
+        $id_type = q{};
     }
 
     if ( $fq ) {
@@ -458,102 +572,20 @@ sub idSplit {
 
 __END__
 
-=head1 NAME
-
-perfSONAR_PS::Topology::ID - A module that provides various utility functions for Topology IDs.
-
-=head1 DESCRIPTION
-
-This module contains a set of utility functions that are used to interact with
-Topology IDs.
-
-=head1 SYNOPSIS
-
-=head1 DETAILS
-
-=head1 API
-
-=head2 idConstruct($type1, $field1, $type2, $field2, $type3, $field3, $type4, $field4)
-
-    Constructs an a fully-qualified id based on the specified fields. No
-    sanity checking is performed to verify that the created ID makes sense.
-    The $type parameters are values like 'domain', 'node', etc whereas the
-    $field parameter is the ID for that element like "I2" or "HOPI". All
-    values past the first blank ("") type or field are ignored.
-
-=head2 idIsFQ($id, $type)
-
-    Checks if the specified ID is a fully-qualified ID of the specified
-    type. If it is not a fully-qualified id, the function returns 0. If it
-    is an incorrect fully-qualified id(e.g. too many elements), it returns
-    -1. If it is a correctly specified fully-qualified id, it returns 1.
-
-=head2 idAddLevel($id, $new_type, $new_level)
-
-    Takes a fully-qualified id and adds a new level onto it. No sanity
-    checking is done, it simply returns the ID created from the values
-    requested.
-
-=head2 idRemoveLevel($id, $ret_type)
-
-    Takes a fully-qualified id and returns the parent level for the id. If
-    you'd like to know the type of the parent, you can add a reference to a
-    variable for $ret_type and the function will fill it in with the type
-    of the returned id.
-
-    e.g. urn:ogf:network:domain=hopi:node=losa would return
-    'urn:ogf:network:domain=hopi' and $ret_type would be filled in with
-    'domain'
-
-=head2 idBaseLevel($id, $ret_type)
-
-    Returns the base level of the specified id. If you want to be informed
-    fo the type of the base element, you can add a reference to a variable
-    for $ret_type and the function will fill it in with the type of the
-    element.
-
-    e.g. urn:ogf:network:domain=hopi:node=losa would return 'losa' and
-    $ret_type would be filled in with 'node'
-
-=head2 idEncode($element)
-
-    Performs any necessary encoding of the specified element for inclusion
-    in a fully-qualified id.
-
-=head2 idDecode($element)
-
-    Decodes the specified element from a fully-qualified id.
-
-=head2 idCompare($id1, $id2, $compare_to)
-
-    Compares the given ids to see if they match up to the specified field.
-    $compare_to can be any ID element type that the IDs have in common. It
-    returns an array containing two values. The first is either 0 or -1 and
-    tells whether the function failed or succeeded. If the function failed,
-    the next element in the array is the error message.
-
-=head2 idSplit($id, $fq, $top_down)
-
-    Splits the specified fully-qualified id into its component elements. If
-    $fq is 1, the returns components are all fully-qualified. The components are returned in an array. The
-    first value of the array is the 0 or -1 specifying whether the function
-    succeeded or failed. The next element is a string for the type of the
-    ID. Each subsequent pair of elements corresponds to the type of the
-    element followed by the element itself. If $top_down is 0, the order is
-    the most specific element to least specific element. If $top_down is 1,
-    however, the order is reversed.
-
 =head1 SEE ALSO
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
 Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+  http://code.google.com/p/perfsonar-ps/issues/list
 
 =head1 VERSION
 
@@ -561,18 +593,20 @@ $Id$
 
 =head1 AUTHOR
 
-Aaron Brown, E<lt>aaron@internet2.eduE<gt>
+Aaron Brown, aaron@internet2.edu
 
 =head1 LICENSE
  
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
  
-Copyright (c) 2004-2007, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 
 =cut
+
 # vim: expandtab shiftwidth=4 tabstop=4
