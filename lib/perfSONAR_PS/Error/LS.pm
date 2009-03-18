@@ -1,30 +1,28 @@
 use perfSONAR_PS::Error;
 
-our $VERSION = 0.09;
+use strict;
+use warnings;
+
+our $VERSION = 3.1;
 
 =head1 NAME
 
-perfSONAR_PS::Error::LS - A module that provides the Lookup Service exceptions
-framework for perfSONAR PS
+perfSONAR_PS::Error::LS
 
 =head1 DESCRIPTION
 
+A module that provides the Lookup Service exceptions framework for perfSONAR PS.
 This module provides the Lookup Service exception objects.
-
-=head1 API
 
 =cut
 
-
 package perfSONAR_PS::Error::LS;
 use base "perfSONAR_PS::Error";
-
 
 # general
 
 package perfSONAR_PS::Error::LS::NoStorage;
 use base "perfSONAR_PS::Error::LS";
-
 
 # errors for registration (storage into LS)
 
@@ -46,13 +44,10 @@ use base "perfSONAR_PS::Error::LS";
 package perfSONAR_PS::Error::LS::NoKey;
 use base "perfSONAR_PS::Error::LS";
 
-
 # not sure about this one; it was from the EU project
 
 package perfSONAR_PS::Error::LS::NoScheduler;
 use base "perfSONAR_PS::Error::LS";
-
-
 
 ## queries
 
@@ -68,7 +63,6 @@ use base "perfSONAR_PS::Error::LS";
 package perfSONAR_PS::Error::LS::NoDataTrigger;
 use base "perfSONAR_PS::Error::LS";
 
-
 # inserts/updates
 
 package perfSONAR_PS::Error::LS::CannotReplaceData;
@@ -83,24 +77,24 @@ use base "perfSONAR_PS::Error::LS";
 package perfSONAR_PS::Error::LS::Update::KeyNotFound;
 use base "perfSONAR_PS::Error::LS::Update";
 
-
 1;
 
-
+__END__
 
 =head1 SEE ALSO
 
-L<Exporter>, L<Error::Simple>
+To join the 'perfSONAR Users' mailing list, please visit:
 
-To join the 'perfSONAR-PS' mailing list, please visit:
-
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
 Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+  http://code.google.com/p/perfsonar-ps/issues/list
 
 =head1 VERSION
 
@@ -112,16 +106,14 @@ Yee-Ting Li <ytl@slac.stanford.edu>
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2007, Internet2 and the University of Delaware
+Copyright (c) 2007-2009, Internet2 and SLAC National Accelerator Laboratory
 
 All rights reserved.
 
 =cut
-
-
-
