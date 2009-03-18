@@ -1,8 +1,6 @@
 use warnings;
 use strict;
-
-our $VERSION = 3.1;
-
+ 
 =head1 NAME 
              
 ps_schemaPXB.pl - example of the data model definitions and API building script
@@ -23,7 +21,7 @@ perfSONAR-PS webservices.
 =cut
 
 use English qw( -no_match_vars);
-use XML::RelaxNG::Compact::PXB 3.1;
+use XML::RelaxNG::Compact::PXB 0.14;
 use POD::Credentials;
 use Data::Dumper;
 use FindBin qw($Bin);
@@ -155,30 +153,40 @@ foreach my $type ( keys %MODELS ) {
     no strict 'refs';
     eval {
         my $class = $MODELS{$type}->{element};
-        $class =~ s/\:\:\w+$//;
-        eval "require $class";
-        if ( $EVAL_ERROR ) {
-            $logger->logdie( " Building API failed " . $EVAL_ERROR );
-        }
-        my $api_builder = XML::RelaxNG::Compact::PXB->new(
-            {
-                top_dir        => $TOP_DIR,
-                nsregistry     => $NSS{$type},
-                project_root   => 'perfSONAR_PS',
-                datatypes_root => $type,
-                schema_version => ${"$class\:\:VERSION"},
-                test_dir       => 't',
-                DEBUG          => 0,
-                footer         => POD::Credentials->new(
-                    {
-                        author    => 'Maxim Grigoriev, maxim@fnal.gov',
-                        license   => 'You should have received a copy of the Fermitool license along with this software.',
-                        copyright => 'Copyright (c) 2008-2009, Fermi Research Alliance (FRA)'
-                    }
-                )
-            }
-        );
-        $api_builder->buildAPI( { name => $MODELS{$type}->{name}, element => ${ $MODELS{$type}->{element} } } );
+	$class =~ s/\:\:\w+$//;
+	eval "require $class";
+	if($EVAL_ERROR) {
+           $logger->logdie(" Building API failed " .  $EVAL_ERROR);
+        }  
+        my $api_builder =   XML::RelaxNG::Compact::PXB->new({
+                                     	       top_dir =>    $TOP_DIR ,
+                                     	       nsregistry =>  $NSS{$type},
+					       project_root =>   'perfSONAR_PS',
+                                     	       datatypes_root =>   $type,
+                                     	       schema_version =>  ${"$class\:\:VERSION"},
+                                     	       test_dir =>   't',
+					       DEBUG => 0,
+				     	       footer => POD::Credentials->new({see_also => 
+qq{
+
+To join the 'perfSONAR Users' mailing list, please visit:
+
+   https://mail.internet2.edu/wws/info/perfsonar-user
+
+The perfSONAR-PS subversion repository is located at:
+
+   http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+   http://code.google.com/p/perfsonar-ps/issues/list
+   },
+					                                        author=> 'Maxim Grigoriev', 
+				     						license=> 'You should have received a copy of the Fermitool license along with this software.',
+									        copyright => 'Copyright (c) 2008, Fermi Research Alliance (FRA)'})
+						             });
+        $api_builder->buildAPI({ name =>  $MODELS{$type}->{name}, element  =>  ${$MODELS{$type}->{element}} })
     };
     if ( $EVAL_ERROR ) {
         $logger->logdie( " Building API failed " . $EVAL_ERROR );
