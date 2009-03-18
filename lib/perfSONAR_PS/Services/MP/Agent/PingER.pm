@@ -65,6 +65,7 @@ use perfSONAR_PS::Datatypes::EventTypes;
 
 # stats calcs
 use  perfSONAR_PS::Utils::PingStats;
+use Data::Dumper;
 
 use perfSONAR_PS::Common;
 
@@ -73,7 +74,7 @@ use perfSONAR_PS::Services::MP::Agent::Ping;
 use base  'perfSONAR_PS::Services::MP::Agent::Ping';
  
 use Log::Log4perl qw(get_logger);
-our $logger = Log::Log4perl::get_logger( 'perfSONAR_PS::Services::MP::Agent::Pinger' );
+our $logger =  get_logger( 'perfSONAR_PS::Services::MP::Agent::Pinger' );
 
 # command line
 our $default_command = $perfSONAR_PS::Services::MP::Agent::Ping::default_command;
@@ -202,21 +203,20 @@ sub parse
 	    $self->results()->{'minIpd'}  ||=  $results[0];
 	    $self->results()->{'maxIpd'}  ||=  $results[1];
 	    $self->results()->{'meanIpd'} ||=  $results[2];
-	    $self->results()->{'medianIpd'} ||=  $results[3];
-	    $self->results()->{'iqrIpd'}   ||=   $results[4];
+	    $self->results()->{'iqrIpd'}   ||=   $results[3];
 	    # loss
 	    $self->results()->{'lossPercent'} =  $stats->loss();
 	    $self->results()->{'clp'} ||=  $stats->clp();
         }
 	# duplicates
-	@results =  @{$stats->dups()};
-	if(@results) {
-	    $self->results()->{'duplicates'} = $results[0];
-	    $self->results()->{'outOfOrder'} = $results[1];
+	my $dups =  $stats->dups();
+	if($dups && ref $dups eq 'ARRAY') {
+	    $self->results()->{'duplicates'} = $dups->[0];
+	    $self->results()->{'outOfOrder'} = $dups->[1];
         }
 	# if loss is 100%, nothing is certain
 	# normalise data
-	if ( ! defined $self->results()->{'lossPercent'} 
+	if ( ! exists $self->results()->{'lossPercent'} 
 		|| $self->results()->{'lossPercent'} == 100 ) {
 		$self->results()->{'minRtt'} = undef;
 		$self->results()->{'maxRtt'} = undef;
@@ -231,7 +231,7 @@ sub parse
 		$self->results()->{'rtts'} = undef;
 		$self->results()->{'seqs'} = undef;
 	}
-
+        $logger->debug( "  Results: ", sub {Dumper $self->results()});
 	$self->results()->{'startTime'} = $time;
 	$self->results()->{'endTime'} = $endtime;
 

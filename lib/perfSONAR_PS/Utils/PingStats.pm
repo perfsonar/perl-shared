@@ -63,9 +63,9 @@ package  perfSONAR_PS::Utils::PingStats;
 
 =head2 ipdv_stats()
 
-calculates min, max, mean, median inter-packet delay values
+calculates min, max, mean, iqr inter-packet delay values
 
-returns  arrayref to the list with (min, max, mean, median, IQR)   inter-packet delay values and interpacketquantile
+returns  arrayref to the list with (min, max, mean,   IQR)   inter-packet delay values and interpacketquantile
 
 
 =head2  dups()
@@ -184,14 +184,18 @@ sub _rtt_stats {
     for ( my $i = 0; $i < $size; $i++ ) {
         $stat->add_data( $self->{rtts}[$i] );
     }
-    push @{$self->{rtt_stats}},  ( $stat->min(), $stat->max(), $stat->mean(), $stat->median() );
+    push @{$self->{rtt_stats}},  ( sprintf( "%0.3f", $stat->min() || '0.0'), 
+                                   sprintf( "%0.3f", $stat->max() || '0.0'),  
+				   sprintf( "%0.3f", $stat->mean() || '0.0'), 
+				   sprintf( "%0.3f", $stat->median() || '0.0')
+				 );
     return $self->{rtt_stats};
 }
 
 # _ipdv_stats()
 #
-#calculates min, max, mean, median inter-packet delay values
-#returns arrayref to the  list with (min, max, mean, median, IQR)   inter-packet delay values and interpacketquantile
+#calculates min, max, mean, iqr inter-packet delay values
+#returns arrayref to the  list with (min, max, mean, IQR)   inter-packet delay values and interpacketquantile
 #
 
 sub _ipdv_stats {
@@ -204,14 +208,20 @@ sub _ipdv_stats {
         $ipd = abs( $ipd );
         $logger->debug( " adding $ipd" );
         $stat->add_data( $ipd );
+    } 
+    my $iqr;
+    if($stat->count) {
+        my $seventyfifth = $stat->percentile( 75 );
+        my $twentyfifth  = $stat->percentile( 25 );
+        if ( defined $seventyfifth && defined $twentyfifth ) {
+            $iqr = $seventyfifth - $twentyfifth;
+        }
     }
-    my $seventyfifth = $stat->percentile( 75 );
-    my $twentyfifth  = $stat->percentile( 25 );
-    my $iqr          = undef;
-    if ( defined $seventyfifth && defined $twentyfifth ) {
-        $iqr = $seventyfifth - $twentyfifth;
-    }
-    push @{$self->{ipdv_stats}}, ( $stat->min(), $stat->max(),  $stat->mean(), $stat->median(), $iqr );
+    push @{$self->{ipdv_stats}}, ( sprintf( "%0.3f", $stat->min() || '0.0'), 
+                                   sprintf( "%0.3f", $stat->max() || '0.0'),  
+				   sprintf( "%0.3f", $stat->mean() || '0.0'),
+				   sprintf( "%0.3f",  $iqr|| '0.0')
+				 );
     return $self->{ipdv_stats};
 }
  
@@ -274,7 +284,7 @@ sub _loss {
         }
         $self->{loss} = -1;
     }
-    $self->{loss} = 100. - 100. * ( $self->{received} / $self->{sent} );
+    $self->{loss} = sprintf( "%0.3f",  100. - 100. * ( $self->{received} / $self->{sent} ));
     return $self->{loss};
 }
 
@@ -313,7 +323,7 @@ sub _clp  {
     $logger->debug( "Determining Conditional Loss Probability where lost_packets=$lost_packets" );
     my $clp;
     if ( $lost_packets > 1 ) {
-        $self->{clp} = $consecutive_packet_loss * 100 / ( $lost_packets - 1 );
+        $self->{clp} = sprintf( "%0.3f",  $consecutive_packet_loss * 100 / ( $lost_packets - 1 ));
     }
     return $self->{clp};
 }
