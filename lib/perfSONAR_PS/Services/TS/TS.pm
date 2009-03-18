@@ -29,7 +29,7 @@ use Params::Validate qw(:all);
 
 use perfSONAR_PS::Common;
 use perfSONAR_PS::Messages;
-use perfSONAR_PS::Topology::Common;
+use perfSONAR_PS::Topology::Common qw( normalizeTopology, validateDomain, validateNode, validatePort, validateLink, getTopologyNamespaces );
 use perfSONAR_PS::DB::TopologyXMLDB;
 use perfSONAR_PS::Client::LS::Remote;
 use perfSONAR_PS::Utils::ParameterValidation;
