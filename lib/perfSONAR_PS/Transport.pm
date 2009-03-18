@@ -22,7 +22,7 @@ of interacting with a given service (specified by information at creation time).
 
 use Exporter;
 use base 'Exporter';
-our @EXPORT_OK = ();
+our @EXPORT = ();
 
 use LWP::UserAgent;
 use Log::Log4perl qw(get_logger :nowarn);

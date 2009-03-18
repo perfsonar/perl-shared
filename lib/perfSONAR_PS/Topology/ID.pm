@@ -20,7 +20,7 @@ contains a set of utility functions that are used to interact with Topology IDs.
 
 use base 'Exporter';
 
-our @EXPORT_OK = qw( idConstruct, idIsFQ, idAddLevel, idRemoveLevel, idBaseLevel, idEncode, idDecode, idSplit, idCompare, idMatch, idIsAmbiguous );
+our @EXPORT = qw( idConstruct, idIsFQ, idAddLevel, idRemoveLevel, idBaseLevel, idEncode, idDecode, idSplit, idCompare, idMatch, idIsAmbiguous );
 
 =head2 idConstruct($type1, $field1, $type2, $field2, $type3, $field3, $type4, $field4)
 

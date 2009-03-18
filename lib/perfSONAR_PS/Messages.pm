@@ -28,7 +28,7 @@ use perfSONAR_PS::Utils::ParameterValidation;
 
 use base 'Exporter';
 
-our @EXPORT_OK = qw(
+our @EXPORT = qw(
     startMessage,          endMessage,        startMetadata, endMetadata,   startData,      endData,    startParameters, endParameters, addParameter, getResultCodeMessage,
     getResultCodeMetadata, getResultCodeData, statusReport,  createMessage, createMetadata, createData, getErrorResponseMessage );
 

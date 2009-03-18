@@ -23,6 +23,7 @@ use Carp;
 require Exporter;
 our @ISA = qw(Exporter);
 
+our @EXPORT = qw(build_select build_where_clause);
 our @EXPORT_OK = qw(build_select build_where_clause);
 
 use constant PRIVATE_PREFIX     => '__xrdbopriv';
