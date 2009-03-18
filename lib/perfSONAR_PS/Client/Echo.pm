@@ -122,7 +122,7 @@ sub ping {
     my ( $self ) = @_;
     my $logger = get_logger( "perfSONAR_PS::Client::Echo" );
 
-    if ( not defined $self->{URI} ) {
+    unless ( exists $self->{URI} ) {
         return ( -1, "Invalid URI specified \"\"" );
     }
 
@@ -161,7 +161,6 @@ sub ping {
             }
         }
     }
-
     return ( -1, "No successful return for \"" . $self->{URI} . "\"." );
 }
 

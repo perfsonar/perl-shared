@@ -353,7 +353,7 @@ sub getKey {
     my ( $self ) = @_;
     return $self->{LS_KEY} if $self->{LS_KEY};
     $self->sendKey();
-    if ( $self->{LS_KEY} ) {
+    if ( exists $self->{LS_KEY} and $self->{LS_KEY} ) {
         return $self->{LS_KEY};
     }
     else {
@@ -400,10 +400,10 @@ sub createService {
     my $logger   = get_logger( "perfSONAR_PS::Client::LS::Remote" );
     my $service  = "    <perfsonar:subject xmlns:perfsonar=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/\" id=\"subject." . genuid() . "\">\n";
     $service = $service . "      <psservice:service xmlns:psservice=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/1.0/\">\n";
-    $service = $service . "        <psservice:serviceName>" . $self->{CONF}->{"SERVICE_NAME"} . "</psservice:serviceName>\n" if exists $self->{CONF}->{"SERVICE_NAME"};
-    $service = $service . "        <psservice:accessPoint>" . $self->{CONF}->{"SERVICE_ACCESSPOINT"} . "</psservice:accessPoint>\n" if exists $self->{CONF}->{"SERVICE_ACCESSPOINT"};
-    $service = $service . "        <psservice:serviceType>" . $self->{CONF}->{"SERVICE_TYPE"} . "</psservice:serviceType>\n" if exists $self->{CONF}->{"SERVICE_TYPE"};
-    $service = $service . "        <psservice:serviceDescription>" . $self->{CONF}->{"SERVICE_DESCRIPTION"} . "</psservice:serviceDescription>\n" if exists $self->{CONF}->{"SERVICE_DESCRIPTION"};
+    $service = $service . "        <psservice:serviceName>" . $self->{CONF}->{"SERVICE_NAME"} . "</psservice:serviceName>\n" if exists $self->{CONF}->{"SERVICE_NAME"} and $self->{CONF}->{"SERVICE_NAME"};
+    $service = $service . "        <psservice:accessPoint>" . $self->{CONF}->{"SERVICE_ACCESSPOINT"} . "</psservice:accessPoint>\n" if exists $self->{CONF}->{"SERVICE_ACCESSPOINT"} and $self->{CONF}->{"SERVICE_ACCESSPOINT"};
+    $service = $service . "        <psservice:serviceType>" . $self->{CONF}->{"SERVICE_TYPE"} . "</psservice:serviceType>\n" if exists $self->{CONF}->{"SERVICE_TYPE"} and $self->{CONF}->{"SERVICE_TYPE"};
+    $service = $service . "        <psservice:serviceDescription>" . $self->{CONF}->{"SERVICE_DESCRIPTION"} . "</psservice:serviceDescription>\n" if exists $self->{CONF}->{"SERVICE_DESCRIPTION"} and $self->{CONF}->{"SERVICE_DESCRIPTION"};
     $service = $service . "      </psservice:service>\n";
     $service = $service . "    </perfsonar:subject>\n";
     return $service;

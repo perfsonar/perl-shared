@@ -318,7 +318,7 @@ sub changeTopology {
     if ( $find_res ) {
         foreach my $data ( $find_res->get_nodelist ) {
             my $metadata = find( $res, "./nmwg:metadata[\@id='" . $data->getAttribute( "metadataIdRef" ) . "']", 1 );
-            if ( not defined $metadata ) {
+            unless ( $metadata ) {
                 return ( -1, "No metadata in response" );
             }
 
