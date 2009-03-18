@@ -27,7 +27,7 @@ use XML::LibXML;
 use English qw( -no_match_vars );
 
 use base 'Exporter';
-our @EXPORT_OK = qw/readXML defaultMergeMetadata countRefs genuid extract reMap consultArchive find findvalue escapeString unescapeString makeEnvelope mapNamespaces mergeConfig mergeHash mergeNodes_general/;
+our @EXPORT = qw( readXML defaultMergeMetadata countRefs genuid extract reMap consultArchive find findvalue escapeString unescapeString makeEnvelope mapNamespaces mergeConfig mergeHash mergeNodes_general );
  
 =head2 find($node, $query, $return_first)
 
