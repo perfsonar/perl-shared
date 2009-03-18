@@ -1,28 +1,31 @@
 package perfSONAR_PS::DB::Cricket;
 
-use fields 'LOGGER', 'FILE', 'STORE', 'RRDTOOL', 'CRICKET_HOME', 'CRICKET_INSTALL', 'CRICKET_DATA', 'CRICKET_CONFIG', 'CRICKET_HINTS';
-
 use strict;
 use warnings;
 
-our $VERSION = 0.10;
+our $VERSION = 3.1;
+
+use fields 'LOGGER', 'FILE', 'STORE', 'RRDTOOL', 'CRICKET_HOME', 'CRICKET_INSTALL', 'CRICKET_DATA', 'CRICKET_CONFIG', 'CRICKET_HINTS';
+
+=head1 NAME
+
+perfSONAR_PS::DB::Cricket
+
+=head1 DESCRIPTION
+
+Module used to interact with the cricket network monitoring system.  This
+module acts as a conduit between the format installed via cricket, and the
+required perfSONAR specification.  The overall flow is to find the cricket
+environment, read the necessary configuration files, and finally generate a
+store file that may be used by the SNMP MA.
+
+=cut
 
 use Log::Log4perl qw(get_logger);
 use Params::Validate qw(:all);
 use English qw( -no_match_vars );
 
 use perfSONAR_PS::Utils::ParameterValidation;
-
-=head1 NAME
-
-Cricket.pm - Module used to interact with the cricket network monitoring system.
-
-=head1 DESCRIPTION
-
-This module acts as a conduit between the format installed via cricket, and the required perfSONAR 
-specification.  The overall flow is to find the cricket environment, read the necessary 
-configuration files, and finally generate a store file that may be used by the SNMP MA.
-
 
 =head2 new($package, { file })
 
@@ -52,13 +55,13 @@ sub new {
         close( HINTS );
         $self->{CRICKET_HINTS} = ();
         foreach my $h ( @hints ) {
-            my @line = split(/:/, $h);
+            my @line = split( /:/, $h );
             my $counter = -1;
             foreach my $l ( @line ) {
                 $counter++;
                 next if $counter < 2;
                 $l =~ s/(\n|\s)+//;
-                push @{ $self->{CRICKET_HINTS}{$line[0]}{$line[1]} }, $l;
+                push @{ $self->{CRICKET_HINTS}{ $line[0] }{ $line[1] } }, $l;
             }
         }
     }
@@ -98,8 +101,8 @@ sub new {
     # Finally set some other values, note that avoiding 'use' is really a pain
     #  in this case
     $Common::global::gInstallRoot ||= $self->{CRICKET_INSTALL};
-    $Common::global::gConfigRoot    = q{};
-    $Common::global::gConfigRoot  ||= $self->{CRICKET_CONFIG};
+    $Common::global::gConfigRoot = q{};
+    $Common::global::gConfigRoot ||= $self->{CRICKET_CONFIG};
     require ConfigTree::Cache;
 
     return $self;
@@ -158,7 +161,7 @@ sub openDB {
             foreach my $entry ( keys %{ $gCT->{$branch} } ) {
                 if ( $entry =~ m/^d:/mx and not( $entry =~ m/chassis/mx ) and not( $entry =~ m/device-traffic/mx ) ) {
                     my @line = split( /:/, $entry );
-                    if ( -f $dataDir.$line[1].".rrd" ) {
+                    if ( -f $dataDir . $line[1] . ".rrd" ) {
                         $master{ $dataDir . $line[1] }->{ $line[4] } = $gCT->{$branch}->{$entry};
                     }
                 }
@@ -174,24 +177,24 @@ sub openDB {
 
     foreach my $item ( keys %master ) {
 
-        my @temp = split(/\// , $item);
+        my @temp = split( /\//, $item );
         my @address = ();
-        push @address, $temp[$#temp-1];
+        push @address, $temp[ $#temp - 1 ];
         push @address, $temp[$#temp];
 
-        if ( not ( $temp[$#temp-1] =~ m/.*\.\w+\.\w+$/ ) ) {
+        if ( not( $temp[ $#temp - 1 ] =~ m/.*\.\w+\.\w+$/ ) ) {
             @address = ();
             push @address, $temp[$#temp];
             push @address, $temp[$#temp];
-            if ( not ( $temp[$#temp] =~ m/.*\.\w+\.\w+$/ ) ) {
+            if ( not( $temp[$#temp] =~ m/.*\.\w+\.\w+$/ ) ) {
                 next;
-            }            
+            }
         }
-            
+
         # XXX jz 1/23/09 - Should use an html cleanser
-        my $okChar = '-a-zA-Z0-9_.@\s';            
-        my $des = q{};
-        my $des2 = q{};
+        my $okChar = '-a-zA-Z0-9_.@\s';
+        my $des    = q{};
+        my $des2   = q{};
 
         if ( exists $master{$item}->{"long-desc"} and $master{$item}->{"long-desc"} ) {
             ( $des = $master{$item}->{"long-desc"} ) =~ s/<BR>/ /g;
@@ -202,7 +205,7 @@ sub openDB {
             $des =~ s/"/&quot;/g;
             $des =~ s/[^$okChar]/ /go;
         }
-            
+
         if ( exists $master{$item}->{"short-desc"} and $master{$item}->{"short-desc"} ) {
             ( $des2 = $master{$item}->{"short-desc"} ) =~ s/<BR>/ /g;
             $des2 =~ s/&/&amp;/g;
@@ -213,20 +216,36 @@ sub openDB {
             $des2 =~ s/[^$okChar]/ /go;
         }
 
-        if ( exists $self->{CRICKET_HINTS} and exists $self->{CRICKET_HINTS}{$temp[$#temp-1]}{"ds"} ) {
+        if ( exists $self->{CRICKET_HINTS} and exists $self->{CRICKET_HINTS}{ $temp[ $#temp - 1 ] }{"ds"} ) {
             my $dsc = 0;
-            foreach my $ds ( @{ $self->{CRICKET_HINTS}{$temp[$#temp-1]}{"ds"} } ) {
-                $master{$item}->{"interface-name"} = $ds."_".$dsc;
-                $self->{STORE} .= $self->printInterface( { ipAddress => $master{$item}->{"ip"}, rrddb => $rrd, id => $counter."-".$dsc, hostName => $address[0], ifName => $master{$item}->{"interface-name"}, capacity => $master{$item}->{"rrd-max"}, des => $des." - ".$ds, des2 => $des2." - ".$ds, file => $item, ds => "ds".$dsc, direction => $ds } );
+            foreach my $ds ( @{ $self->{CRICKET_HINTS}{ $temp[ $#temp - 1 ] }{"ds"} } ) {
+                $master{$item}->{"interface-name"} = $ds . "_" . $dsc;
+                $self->{STORE} .= $self->printInterface(
+                    {
+                        ipAddress => $master{$item}->{"ip"},
+                        rrddb     => $rrd,
+                        id        => $counter . "-" . $dsc,
+                        hostName  => $address[0],
+                        ifName    => $master{$item}->{"interface-name"},
+                        capacity  => $master{$item}->{"rrd-max"},
+                        des       => $des . " - " . $ds,
+                        des2      => $des2 . " - " . $ds,
+                        file      => $item,
+                        ds        => "ds" . $dsc,
+                        direction => $ds
+                    }
+                );
                 $dsc++;
             }
         }
         else {
-            $self->{STORE} .= $self->printInterface( { ipAddress => $master{$item}->{"ip"}, rrddb => $rrd, id => $counter, hostName => $address[0], ifName => $master{$item}->{"interface-name"}, direction => "in", capacity => $master{$item}->{"rrd-max"}, des => $des, des2 => $des2, file => $item, ds => "ds0" } );
-            $self->{STORE} .= $self->printInterface( { ipAddress => $master{$item}->{"ip"}, rrddb => $rrd, id => $counter, hostName => $address[0], ifName => $master{$item}->{"interface-name"}, direction => "out", capacity => $master{$item}->{"rrd-max"}, des => $des, des2 => $des2, file => $item, ds => "ds1" } );
+            $self->{STORE} .= $self->printInterface(
+                { ipAddress => $master{$item}->{"ip"}, rrddb => $rrd, id => $counter, hostName => $address[0], ifName => $master{$item}->{"interface-name"}, direction => "in", capacity => $master{$item}->{"rrd-max"}, des => $des, des2 => $des2, file => $item, ds => "ds0" } );
+            $self->{STORE} .= $self->printInterface(
+                { ipAddress => $master{$item}->{"ip"}, rrddb => $rrd, id => $counter, hostName => $address[0], ifName => $master{$item}->{"interface-name"}, direction => "out", capacity => $master{$item}->{"rrd-max"}, des => $des, des2 => $des2, file => $item, ds => "ds1" } );
         }
         $counter++;
-                    
+
     }
     $self->{STORE} .= $self->printFooter();
     $rrd->closeDB;
@@ -293,7 +312,7 @@ sub printInterface {
         $output .= "        <nmwgt:description>" . $parameters->{des2} . "</nmwgt:description>\n";
         $output .= "        <nmwgt:ifDescription>" . $parameters->{des2} . "</nmwgt:ifDescription>\n";
     }
-    
+
     $output .= "      </nmwgt:interface>\n";
     $output .= "    </netutil:subject>\n";
     $output .= "    <nmwg:eventType>http://ggf.org/ns/nmwg/tools/snmp/2.0</nmwg:eventType>\n";
@@ -316,22 +335,22 @@ sub printInterface {
 
     if ( exists $parameters->{rrddb} ) {
         $parameters->{rrddb}->setFile( { file => $parameters->{file} . ".rrd" } );
-        my $first = $parameters->{rrddb}->firstValue();
+        my $first      = $parameters->{rrddb}->firstValue();
         my $rrd_result = $parameters->{rrddb}->info();
         unless ( $parameters->{rrddb}->getErrorMessage ) {
             my %lookup = ();
             foreach my $rra ( sort keys %{ $rrd_result->{"rra"} } ) {
                 push @{ $lookup{ $rrd_result->{"rra"}->{$rra}->{"cf"} } }, ( $rrd_result->{"rra"}->{$rra}->{"pdp_per_row"} * $rrd_result->{"step"} );
             }
-            
+
             foreach my $cf ( keys %lookup ) {
                 $output .= "        <nmwg:parameter name=\"consolidationFunction\" value=\"" . $cf . "\">\n";
                 foreach my $res ( @{ $lookup{$cf} } ) {
                     $output .= "          <nmwg:parameter name=\"resolution\">" . $res . "</nmwg:parameter>\n";
                 }
-                $output .= "        </nmwg:parameter>\n";                
+                $output .= "        </nmwg:parameter>\n";
             }
-        } 
+        }
         $output .= "        <nmwg:parameter name=\"lastTime\">" . $rrd_result->{"last_update"} . "</nmwg:parameter>\n" if $rrd_result->{"last_update"};
         $output .= "        <nmwg:parameter name=\"firstTime\">" . $first . "</nmwg:parameter>\n" if $first;
     }
@@ -397,26 +416,23 @@ sub closeDB {
 
 __END__
 
-=head1 SYNOPSIS
-
-    use perfSONAR_PS::DB::Cricket;
-    
 =head1 SEE ALSO
 
-L<Log::Log4perl>, L<Params::Validate>
+L<Log::Log4perl>, L<Params::Validate>, L<English>,
+L<perfSONAR_PS::Utils::ParameterValidation>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS 
-  
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-  https://bugs.internet2.edu/jira/browse/PSPS
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+  http://code.google.com/p/perfsonar-ps/issues/list
 
 =head1 VERSION
 
@@ -428,12 +444,13 @@ Jason Zurawski, zurawski@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along 
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008, Internet2
+Copyright (c) 2008-2009, Internet2
 
 All rights reserved.
 

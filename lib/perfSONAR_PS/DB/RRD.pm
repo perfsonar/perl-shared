@@ -1,11 +1,11 @@
 package perfSONAR_PS::DB::RRD;
 
-use fields 'LOGGER', 'PATH', 'NAME', 'DATASOURCES', 'COMMIT';
-
 use strict;
 use warnings;
 
-our $VERSION = 0.09;
+our $VERSION = 3.1;
+
+use fields 'LOGGER', 'PATH', 'NAME', 'DATASOURCES', 'COMMIT';
 
 =head1 NAME
 
@@ -18,7 +18,7 @@ This module builds on the simple offerings of RRDp (simple a series of pipes to
 communicate with rrd files) to offer some common functionality that is present
 in the other DB modules of perfSONAR_PS.
 
-=cut    
+=cut
 
 use RRDp;
 use Log::Log4perl qw(get_logger);
@@ -44,8 +44,8 @@ sub new {
     my ( $package, @args ) = @_;
     my $parameters = validateParams( @args, { path => 0, name => 0, dss => 0, error => 0 } );
 
-    my $self = fields::new($package);
-    $self->{LOGGER} = get_logger("perfSONAR_PS::DB::RRD");
+    my $self = fields::new( $package );
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::DB::RRD" );
     if ( exists $parameters->{path} and $parameters->{path} ) {
         $self->{PATH} = $parameters->{path};
     }
@@ -58,11 +58,11 @@ sub new {
     if ( exists $parameters->{error} and $parameters->{error} ) {
         if ( $parameters->{error} == 1 ) {
             $RRDp::error_mode = 'catch';
-            $self->{LOGGER}->debug("Setting error mode.");
+            $self->{LOGGER}->debug( "Setting error mode." );
         }
         else {
             undef $RRDp::error_mode;
-            $self->{LOGGER}->debug("Unsetting error mode.");
+            $self->{LOGGER}->debug( "Unsetting error mode." );
         }
     }
     return $self;
@@ -83,7 +83,7 @@ sub setFile {
         return 0;
     }
     else {
-        $self->{LOGGER}->error("Cannot set filename.");
+        $self->{LOGGER}->error( "Cannot set filename." );
         return -1;
     }
 }
@@ -103,7 +103,7 @@ sub setPath {
         return 0;
     }
     else {
-        $self->{LOGGER}->error("Cannot set path.");
+        $self->{LOGGER}->error( "Cannot set path." );
         return -1;
     }
 }
@@ -148,11 +148,11 @@ sub setError {
 
     if ( $parameters->{error} == 1 ) {
         $RRDp::error_mode = 'catch';
-        $self->{LOGGER}->debug("Setting error mode.");
+        $self->{LOGGER}->debug( "Setting error mode." );
     }
     else {
         undef $RRDp::error_mode;
-        $self->{LOGGER}->debug("Unsetting error mode.");
+        $self->{LOGGER}->debug( "Unsetting error mode." );
     }
     return 0;
 }
@@ -167,7 +167,7 @@ sub getErrorMessage {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, {} );
 
-    if ($RRDp::error) {
+    if ( $RRDp::error ) {
         return $RRDp::error;
     }
     return;
@@ -188,7 +188,7 @@ sub openDB {
         return 0;
     }
     else {
-        $self->{LOGGER}->error("Missing path or name in object.");
+        $self->{LOGGER}->error( "Missing path or name in object." );
         return -1;
     }
 }
@@ -205,14 +205,14 @@ sub closeDB {
 
     if ( exists $self->{PATH} and exists $self->{NAME} ) {
         my $status = RRDp::end;
-        if ($status) {
+        if ( $status ) {
             $self->{LOGGER}->error( $self->{PATH} . " has returned status \"" . $status . "\" on closing." );
             return -1;
         }
         return 0;
     }
     else {
-        $self->{LOGGER}->error("RRD file not open.");
+        $self->{LOGGER}->error( "RRD file not open." );
         return -1;
     }
 }
@@ -225,15 +225,15 @@ Get the RRD info from a given rrd file.
 
 sub info {
     my ( $self, @args ) = @_;
-    my $parameters = validateParams( @args, { } );
+    my $parameters = validateParams( @args, {} );
 
-    my %rrd_result   = ();
-    my $cmd = "info " . $self->{NAME};
+    my %rrd_result = ();
+    my $cmd        = "info " . $self->{NAME};
 
     $self->{LOGGER}->debug( "Calling rrdtool with command: " . $cmd );
     RRDp::cmd $cmd;
     my $answer = RRDp::read;
-    if ($RRDp::error) {
+    if ( $RRDp::error ) {
         $self->{LOGGER}->error( "Database error \"" . $RRDp::error . "\"." );
         %rrd_result = ();
         $rrd_result{ANSWER} = $RRDp::error;
@@ -250,20 +250,21 @@ sub info {
             my @line = split( /\s=\s/mx, $array[$x] );
             if ( $line[0] =~ m/^rra/ ) {
                 my @key = split( /\./mx, $line[0] );
-                if ( $#{@key} == 1) {
-                  $key[0] =~ s/^.*\[//;
-                  $key[0] =~ s/\]$//;
-                  $key[1] =~ s/\[.*$//;
-                  $line[1] =~ s/\"//g;
-                  $lookup{$key[0]}{$key[1]} = $line[1]; 
+                if ( $#{@key} == 1 ) {
+                    $key[0]  =~ s/^.*\[//;
+                    $key[0]  =~ s/\]$//;
+                    $key[1]  =~ s/\[.*$//;
+                    $line[1] =~ s/\"//g;
+                    $lookup{ $key[0] }{ $key[1] } = $line[1];
                 }
             }
             elsif ( $line[0] =~ m/^ds/ ) {
+
                 # no use for these right now...
             }
             else {
-                $rrd_result{$line[0]} = $line[1];
-            }  
+                $rrd_result{ $line[0] } = $line[1];
+            }
         }
         $rrd_result{"rra"} = \%lookup;
     }
@@ -283,7 +284,7 @@ sub query {
     my %rrd_result   = ();
     my @rrd_headings = ();
     unless ( $parameters->{cf} ) {
-        $self->{LOGGER}->error("Consolidation function invalid.");
+        $self->{LOGGER}->error( "Consolidation function invalid." );
     }
 
     my $cmd = "fetch " . $self->{NAME} . " " . $parameters->{cf};
@@ -300,7 +301,7 @@ sub query {
     $self->{LOGGER}->debug( "Calling rrdtool with command: " . $cmd );
     RRDp::cmd $cmd;
     my $answer = RRDp::read;
-    if ($RRDp::error) {
+    if ( $RRDp::error ) {
         $self->{LOGGER}->error( "Database error \"" . $RRDp::error . "\"." );
         %rrd_result = ();
         $rrd_result{ANSWER} = $RRDp::error;
@@ -377,7 +378,7 @@ sub insertCommit {
         }
 
         unless ( $template and $values ) {
-            $self->{LOGGER}->error("RRDTool cannot update when datasource values are not specified.");
+            $self->{LOGGER}->error( "RRDTool cannot update when datasource values are not specified." );
             next;
         }
 
@@ -385,7 +386,7 @@ sub insertCommit {
         $cmd = $cmd . $template . " " . $values;
         RRDp::cmd $cmd;
         $answer = RRDp::read;
-        unless ($RRDp::error) {
+        unless ( $RRDp::error ) {
             push @result, $$answer;
         }
     }
@@ -404,8 +405,8 @@ sub firstValue {
 
     RRDp::cmd "first " . $self->{NAME};
     my $answer = RRDp::read;
-    unless ($RRDp::error) {
-        chomp($$answer);
+    unless ( $RRDp::error ) {
+        chomp( $$answer );
         return $$answer;
     }
     return;
@@ -423,8 +424,8 @@ sub lastValue {
 
     RRDp::cmd "last " . $self->{NAME};
     my $answer = RRDp::read;
-    unless ($RRDp::error) {
-        chomp($$answer);
+    unless ( $RRDp::error ) {
+        chomp( $$answer );
         return $$answer;
     }
     return;
@@ -444,7 +445,7 @@ sub lastTime {
     my $answer = RRDp::read;
     my @result = split( /\n/mx, $$answer );
     my @time   = split( /:/mx, $result[-1] );
-    unless ($RRDp::error) {
+    unless ( $RRDp::error ) {
         return $time[0];
     }
     return;
@@ -538,18 +539,18 @@ __END__
 
 L<RRDp>, L<Log::Log4perl>, L<Params::Validate>, L<perfSONAR_PS::Common>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS 
-  
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-  https://bugs.internet2.edu/jira/browse/PSPS
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+  http://code.google.com/p/perfsonar-ps/issues/list
 
 =head1 VERSION
 
@@ -561,14 +562,16 @@ Jason Zurawski, zurawski@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along 
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 
 =cut
+
 # vim: expandtab shiftwidth=4 tabstop=4

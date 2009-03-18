@@ -1,23 +1,23 @@
 package perfSONAR_PS::DB::SQL;
 
-use fields 'NAME', 'USER', 'PASS', 'SCHEMA', 'HANDLE', 'LOGGER';
-
 use strict;
 use warnings;
 
-our $VERSION = 0.09;
+our $VERSION = 3.1;
+
+use fields 'NAME', 'USER', 'PASS', 'SCHEMA', 'HANDLE', 'LOGGER';
 
 =head1 NAME
 
-perfSONAR_PS::DB::SQL - A module that provides methods for dealing with common
-SQL databases.
+perfSONAR_PS::DB::SQL
 
 =head1 DESCRIPTION
 
-This module creates common use cases with the help of the DBI module.  The
-module is to be treated as an object, where each instance of the object
-represents a direct connection to a single database and collection.  Each
-method may then be invoked on the object for the specific database.  
+A module that provides methods for dealing with common SQL databases.  This
+module creates common use cases with the help of the DBI module.  The module is
+to be treated as an object, where each instance of the object represents a
+direct connection to a single database and collection.  Each method may then be
+invoked on the object for the specific database.  
 
 =cut
 
@@ -46,8 +46,8 @@ sub new {
     my ( $package, @args ) = @_;
     my $parameters = validateParams( @args, { name => 0, user => 0, pass => 0, schema => 0 } );
 
-    my $self = fields::new($package);
-    $self->{LOGGER} = get_logger("perfSONAR_PS::DB::SQL");
+    my $self = fields::new( $package );
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::DB::SQL" );
     if ( exists $parameters->{name} and $parameters->{name} ) {
         $self->{NAME} = $parameters->{name};
     }
@@ -78,8 +78,8 @@ sub setName {
         return 0;
     }
     else {
-        $self->{LOGGER}->error("Cannot set name.");
-        return -1
+        $self->{LOGGER}->error( "Cannot set name." );
+        return -1;
     }
 }
 
@@ -98,7 +98,7 @@ sub setUser {
         return 0;
     }
     else {
-        $self->{LOGGER}->error("Cannot set username.");
+        $self->{LOGGER}->error( "Cannot set username." );
         return -1;
     }
 }
@@ -118,7 +118,7 @@ sub setPass {
         return 0;
     }
     else {
-        $self->{LOGGER}->error("Cannot set password.");
+        $self->{LOGGER}->error( "Cannot set password." );
         return -1;
     }
 }
@@ -138,7 +138,7 @@ sub setSchema {
         return 0;
     }
     else {
-        $self->{LOGGER}->error("Cannot set schema array.");
+        $self->{LOGGER}->error( "Cannot set schema array." );
         return -1;
     }
 }
@@ -157,7 +157,7 @@ sub openDB {
         my %attr = ( RaiseError => 1, );
         $self->{HANDLE} = DBI->connect( $self->{NAME}, $self->{USER}, $self->{PASS}, \%attr ) or $self->{LOGGER}->error( "Database \"" . $self->{NAME} . "\" unavailable with user \"" . $self->{NAME} . "\" and password \"" . $self->{PASS} . "\"." );
     };
-    if ($EVAL_ERROR) {
+    if ( $EVAL_ERROR ) {
         $self->{LOGGER}->error( "Open error \"" . $EVAL_ERROR . "\"." );
         return -1;
     }
@@ -174,10 +174,8 @@ sub closeDB {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, {} );
 
-    eval { 
-        $self->{HANDLE}->disconnect;
-    };
-    if ($EVAL_ERROR) {
+    eval { $self->{HANDLE}->disconnect; };
+    if ( $EVAL_ERROR ) {
         $self->{LOGGER}->error( "Close error \"" . $EVAL_ERROR . "\"." );
         return -1;
     }
@@ -201,16 +199,16 @@ sub query {
             my $sth = $self->{HANDLE}->prepare( $parameters->{query} );
             $sth->execute() or $self->{LOGGER}->error( "Query error on statement \"" . $parameters->{query} . "\"." );
             $results = $sth->fetchall_arrayref;
-            
+
         };
-        if ($EVAL_ERROR) {
+        if ( $EVAL_ERROR ) {
             $self->{LOGGER}->error( "Query error \"" . $EVAL_ERROR . "\" on statement \"" . $parameters->{query} . "\"." );
             return -1;
         }
     }
     else {
-      $self->{LOGGER}->error("Query not found.");
-      return -1;
+        $self->{LOGGER}->error( "Query not found." );
+        return -1;
     }
     return $results;
 }
@@ -233,13 +231,13 @@ sub count {
             $sth->execute() or $self->{LOGGER}->error( "Query error on statement \"" . $parameters->{query} . "\"." );
             $results = $sth->fetchall_arrayref;
         };
-        if ($EVAL_ERROR) {
+        if ( $EVAL_ERROR ) {
             $self->{LOGGER}->error( "Query error \"" . $EVAL_ERROR . "\" on statement \"" . $parameters->{query} . "\"." );
             return -1;
         }
     }
     else {
-        $self->{LOGGER}->error("Query not found.");
+        $self->{LOGGER}->error( "Query not found." );
         return -1;
     }
     return $#{$results} + 1;
@@ -259,13 +257,13 @@ sub insert {
         my %values = %{ $parameters->{argvalues} };
         my $insert = "insert into " . $parameters->{table} . " (";
 
-        if (not $self->{SCHEMA}) {
+        if ( not $self->{SCHEMA} ) {
             my $x;
 
             $x = 0;
-            foreach my $name (sort keys %values) {
-                if ($x != 0) {
-                    $insert .= ", "; 
+            foreach my $name ( sort keys %values ) {
+                if ( $x != 0 ) {
+                    $insert .= ", ";
                 }
 
                 $insert .= $name;
@@ -275,16 +273,17 @@ sub insert {
             $insert .= ") values (";
 
             $x = 0;
-            foreach my $name (sort keys %values) {
-                if ($x != 0) {
-                    $insert .= ", "; 
+            foreach my $name ( sort keys %values ) {
+                if ( $x != 0 ) {
+                    $insert .= ", ";
                 }
 
                 $insert .= "?";
                 $x++;
             }
             $insert = $insert . ")";
-        } else {
+        }
+        else {
             my $len = $#{ $self->{SCHEMA} };
             for my $x ( 0 .. $len ) {
                 if ( $x == 0 ) {
@@ -308,14 +307,15 @@ sub insert {
         }
         $self->{LOGGER}->debug( "Insert \"" . $insert . "\" prepared." );
         eval {
-            my $sth  = $self->{HANDLE}->prepare($insert);
-            if (not $self->{SCHEMA}) {
+            my $sth = $self->{HANDLE}->prepare( $insert );
+            if ( not $self->{SCHEMA} ) {
                 my $x = 0;
-                foreach my $name (sort keys %values) {
-                    $sth->bind_param($x + 1, $values{$name});
+                foreach my $name ( sort keys %values ) {
+                    $sth->bind_param( $x + 1, $values{$name} );
                     $x++;
                 }
-            } else {
+            }
+            else {
                 my $len2 = $#{ $self->{SCHEMA} };
                 for my $x ( 0 .. $len2 ) {
                     $sth->bind_param( $x + 1, $values{ $self->{SCHEMA}->[$x] } );
@@ -323,13 +323,13 @@ sub insert {
             }
             $sth->execute() or $self->{LOGGER}->error( "Insert error on statement \"" . $insert . "\"." );
         };
-        if ($EVAL_ERROR) {
+        if ( $EVAL_ERROR ) {
             $self->{LOGGER}->error( "Insert error \"" . $EVAL_ERROR . "\" on statement \"" . $insert . "\"." );
             return -1;
         }
     }
     else {
-        $self->{LOGGER}->error("Missing argument.");
+        $self->{LOGGER}->error( "Missing argument." );
         return -1;
     }
     return 0;
@@ -346,40 +346,40 @@ sub update {
     my $parameters = validateParams( @args, { table => 1, wherevalues => 1, updatevalues => 1 } );
 
     if ( $parameters->{table} and $parameters->{wherevalues} and $parameters->{updatevalues} ) {
-        my $first = "";
+        my $first = q{};
         my %w     = %{ $parameters->{wherevalues} };
         my %v     = %{ $parameters->{updatevalues} };
 
-        my $where = "";
+        my $where = q{};
         foreach my $var ( keys %w ) {
-            $where .= " and " if ($where);
+            $where .= " and " if ( $where );
             $where .= $var . " = " . $w{$var};
         }
 
-        my $values = "";
+        my $values = q{};
         foreach my $var ( sort keys %v ) {
-            $values .= ", " if ($values);
+            $values .= ", " if ( $values );
             $values .= $var . " = ?";
         }
 
         my $sql = "update " . $parameters->{table} . " set " . $values . " where " . $where;
         $self->{LOGGER}->debug( "Update \"" . $sql . "\" prepared." );
         eval {
-            my $sth = $self->{HANDLE}->prepare($sql);
-            my $x = 0;
-            foreach my $name (sort keys %v) {
-                $sth->bind_param($x + 1, $v{$name});
+            my $sth = $self->{HANDLE}->prepare( $sql );
+            my $x   = 0;
+            foreach my $name ( sort keys %v ) {
+                $sth->bind_param( $x + 1, $v{$name} );
                 $x++;
             }
             $sth->execute() or $self->{LOGGER}->error( "Update error on statement \"" . $sql . "\"." );
         };
-        if ($EVAL_ERROR) {
+        if ( $EVAL_ERROR ) {
             $self->{LOGGER}->error( "Update error \"" . $EVAL_ERROR . "\" on statement \"" . $sql . "\"." );
             return -1;
         }
     }
     else {
-        $self->{LOGGER}->error("Missing argument.");
+        $self->{LOGGER}->error( "Missing argument." );
         return -1;
     }
     return 0;
@@ -401,13 +401,13 @@ sub remove {
             my $sth = $self->{HANDLE}->prepare( $parameters->{delete} );
             $sth->execute() or $self->{LOGGER}->error( "Remove error on statement \"" . $parameters->{delete} . "\"." );
         };
-        if ($EVAL_ERROR) {
+        if ( $EVAL_ERROR ) {
             $self->{LOGGER}->error( "Remove error \"" . $EVAL_ERROR . "\" on statement \"" . $parameters->{delete} . "\"." );
             return -1;
         }
     }
     else {
-        $self->{LOGGER}->error("Missing argument.");
+        $self->{LOGGER}->error( "Missing argument." );
         return -1;
     }
     return 0;
@@ -490,14 +490,19 @@ __END__
 L<DBI>, L<Log::Log4perl>, L<English>, L<Params::Validate>,
 L<perfSONAR_PS::Common>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS 
-  
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+  http://code.google.com/p/perfsonar-ps/issues/list
+
 Questions and comments can be directed to the author, or the mailing list. 
 
 =head1 VERSION
@@ -510,14 +515,16 @@ Jason Zurawski, zurawski@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along 
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 
 =cut
+
 # vim: expandtab shiftwidth=4 tabstop=4

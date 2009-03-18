@@ -1,25 +1,25 @@
 package perfSONAR_PS::DB::File;
 
-use fields 'FILE', 'XML', 'LOGGER';
-
 use strict;
 use warnings;
 
-our $VERSION = 0.09;
+our $VERSION = 3.1;
+
+use fields 'FILE', 'XML', 'LOGGER';
 
 =head1 NAME
 
-perfSONAR_PS::DB::File - A module that provides methods for adding 'database
-like' functions to files that contain XML markup.
+perfSONAR_PS::DB::File
 
 =head1 DESCRIPTION
 
-This purpose of this module is to ease the burden for someone who simply wishes
-to use a flat file as an XML database.  It should be known that this is not
-recommended as performance will no doubt suffer, but the ability to do so can
-be valuable.  The module is to be treated as an object, where each instance of
-the object represents a direct connection to a file.  Each method may then be
-invoked on the object for the specific database.  
+A module that provides methods for adding 'database like' functions to files
+that contain XML markup.  This purpose of this module is to ease the burden for
+someone who simply wishes to use a flat file as an XML database.  It should be
+known that this is not recommended as performance will no doubt suffer, but the
+ability to do so can be valuable.  The module is to be treated as an object,
+where each instance of the object represents a direct connection to a file.
+Each method may then be invoked on the object for the specific database.  
 
 =cut
 
@@ -34,14 +34,14 @@ use perfSONAR_PS::Utils::ParameterValidation;
 
 The only argument is a string representing the file to be opened.
 
-=cut 
+=cut
 
 sub new {
     my ( $package, @args ) = @_;
     my $parameters = validateParams( @args, { file => 0 } );
 
-    my $self = fields::new($package);
-    $self->{LOGGER} = get_logger("perfSONAR_PS::DB::File");
+    my $self = fields::new( $package );
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::DB::File" );
     if ( defined $parameters->{file} and $parameters->{file} ) {
         $self->{FILE} = $parameters->{file};
     }
@@ -52,7 +52,7 @@ sub new {
 
 (Re-)Sets the name of the file to be used.
 
-=cut 
+=cut
 
 sub setFile {
     my ( $self, @args ) = @_;
@@ -63,7 +63,7 @@ sub setFile {
         return 0;
     }
     else {
-        $self->{LOGGER}->error("Cannot set filename.");
+        $self->{LOGGER}->error( "Cannot set filename." );
         return -1;
     }
 }
@@ -72,7 +72,7 @@ sub setFile {
 
 Opens the database, will return status of operation.
 
-=cut 
+=cut
 
 sub openDB {
     my ( $self, @args ) = @_;
@@ -86,7 +86,7 @@ sub openDB {
     }
     else {
         my $msg = "Cannot open database, missing filename.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if ( defined $parameters->{error} );
         return -1;
     }
@@ -96,7 +96,7 @@ sub openDB {
 
 Close the database, will return status of operation.
 
-=cut 
+=cut
 
 sub closeDB {
     my ( $self, @args ) = @_;
@@ -105,28 +105,28 @@ sub closeDB {
     if ( defined $self->{XML} and $self->{XML} ) {
         if ( defined open( my $FILE, ">", $self->{FILE} ) ) {
             print $FILE $self->{XML}->toString;
-            my $status = close($FILE);
-            if ( $status  ) {
+            my $status = close( $FILE );
+            if ( $status ) {
                 ${ $parameters->{error} } = q{} if ( defined $parameters->{error} );
                 return 0;
             }
             else {
                 my $msg = "File close failed.";
-                $self->{LOGGER}->error($msg);
+                $self->{LOGGER}->error( $msg );
                 ${ $parameters->{error} } = $msg if ( defined $parameters->{error} );
                 return -1;
             }
         }
         else {
             my $msg = "Couldn't open output file \"" . $self->{FILE} . "\"";
-            $self->{LOGGER}->error($msg);
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if ( defined $parameters->{error} );
             return -1;
         }
     }
     else {
         my $msg = "LibXML DOM structure not defined.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if ( defined $parameters->{error} );
         return -1;
     }
@@ -136,7 +136,7 @@ sub closeDB {
 
 Given a query, returns the results or nothing.
 
-=cut 
+=cut
 
 sub query {
     my ( $self, @args ) = @_;
@@ -155,14 +155,14 @@ sub query {
         }
         else {
             my $msg = "LibXML DOM structure not defined.";
-            $self->{LOGGER}->error($msg);
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if ( defined $parameters->{error} );
             return -1;
         }
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if ( defined $parameters->{error} );
         return -1;
     }
@@ -172,7 +172,7 @@ sub query {
 
 Given a query, returns the results (as a nodeset) or nothing.  
 
-=cut 
+=cut
 
 sub querySet {
     my ( $self, @args ) = @_;
@@ -186,14 +186,14 @@ sub querySet {
         }
         else {
             my $msg = "LibXML DOM structure not defined.";
-            $self->{LOGGER}->error($msg);
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if ( defined $parameters->{error} );
             return -1;
         }
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if ( defined $parameters->{error} );
         return -1;
     }
@@ -203,7 +203,7 @@ sub querySet {
 
 Counts the results of a query. 
 
-=cut 
+=cut
 
 sub count {
     my ( $self, @args ) = @_;
@@ -218,14 +218,14 @@ sub count {
         }
         else {
             my $msg = "LibXML DOM structure not defined.";
-            $self->{LOGGER}->error($msg);
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if ( defined $parameters->{error} );
             return -1;
         }
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if ( defined $parameters->{error} );
         return -1;
     }
@@ -235,7 +235,7 @@ sub count {
 
 Returns the internal XML::LibXML DOM object. Will return "" on error.  
 
-=cut 
+=cut
 
 sub getDOM {
     my ( $self, @args ) = @_;
@@ -247,7 +247,7 @@ sub getDOM {
     }
     else {
         my $msg = "LibXML DOM structure not defined.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if ( defined $parameters->{error} );
         return -1;
     }
@@ -270,7 +270,7 @@ sub setDOM {
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if ( defined $parameters->{error} );
         return -1;
     }
@@ -316,20 +316,21 @@ __END__
     
 =head1 SEE ALSO
 
-L<XML::LibXML>, L<Log::Log4perl>, L<Params::Validate>, L<perfSONAR_PS::Common>
+L<XML::LibXML>, L<Log::Log4perl>, L<Params::Validate>, L<perfSONAR_PS::Common>,
+L<perfSONAR_PS::Utils::ParameterValidation>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS 
-  
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+
 Questions and comments can be directed to the author, or the mailing list.
 Bugs, feature requests, and improvements can be directed here:
 
-  https://bugs.internet2.edu/jira/browse/PSPS
+  http://code.google.com/p/perfsonar-ps/issues/list
 
 =head1 VERSION
 
@@ -347,7 +348,7 @@ along with this software.  If not, see
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 

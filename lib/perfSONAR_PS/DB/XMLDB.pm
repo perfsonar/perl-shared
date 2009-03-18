@@ -1,24 +1,24 @@
 package perfSONAR_PS::DB::XMLDB;
 
-use fields 'ENVIRONMENT', 'CONTAINERFILE', 'NAMESPACES', 'ENV', 'MANAGER', 'CONTAINER', 'INDEX', 'LOGGER';
-
 use strict;
 use warnings;
 
-our $VERSION = 0.09;
+our $VERSION = 3.1;
+
+use fields 'ENVIRONMENT', 'CONTAINERFILE', 'NAMESPACES', 'ENV', 'MANAGER', 'CONTAINER', 'INDEX', 'LOGGER';
 
 =head1 NAME
 
-perfSONAR_PS::DB::XMLDB - A module that provides methods for dealing with the
-Sleepycat [Oracle] XML database.
+perfSONAR_PS::DB::XMLDB
 
 =head1 DESCRIPTION
 
-This module wraps methods and techniques from the Sleepycat::DbXml API for
-interacting with the Sleepycat [Oracle] XML database.  The module is to be
-treated as an object, where each instance of the object represents a direct
-connection to a single database and collection. Each method may then be
-invoked on the object for the specific database.  
+A module that provides methods for dealing with the Sleepycat [Oracle] XML
+database.  This module wraps methods and techniques from the Sleepycat::DbXml
+API for interacting with the Sleepycat [Oracle] XML database.  The module is to
+be treated as an object, where each instance of the object represents a direct
+connection to a single database and collection. Each method may then be invoked
+on the object for the specific database.  
 
 =cut
 
@@ -47,8 +47,8 @@ sub new {
     my ( $package, @args ) = @_;
     my $parameters = validateParams( @args, { env => 0, cont => 0, ns => 0 } );
 
-    my $self = fields::new($package);
-    $self->{LOGGER} = get_logger("perfSONAR_PS::DB::XMLDB");
+    my $self = fields::new( $package );
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::DB::XMLDB" );
     if ( exists $parameters->{env} and $parameters->{env} ) {
         $self->{ENVIRONMENT} = $parameters->{env};
     }
@@ -77,7 +77,7 @@ sub setEnvironment {
         $self->{ENVIRONMENT} = $parameters->{env};
         return 0;
     }
-    $self->{LOGGER}->error("Cannot set environment.");
+    $self->{LOGGER}->error( "Cannot set environment." );
     return -1;
 }
 
@@ -96,7 +96,7 @@ sub setContainer {
         $self->{CONTAINERFILE} = $parameters->{cont};
         return 0;
     }
-    $self->{LOGGER}->error("Cannot set container.");
+    $self->{LOGGER}->error( "Cannot set container." );
     return -1;
 }
 
@@ -116,7 +116,7 @@ sub setNamespaces {
         $self->{NAMESPACES} = \%{ $parameters->{ns} };
         return 0;
     }
-    $self->{LOGGER}->error("Cannot set namespaces hash.");
+    $self->{LOGGER}->error( "Cannot set namespaces hash." );
     return -1;
 }
 
@@ -142,11 +142,11 @@ sub prep {
     }
 
     eval {
-        $self->{ENV} = new DbEnv(0);
+        $self->{ENV} = new DbEnv( 0 );
 
         # XXX: JZ 11/7 - Old options
         # Db::DB_CREATE | Db::DB_RECOVER | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL | Db::DB_INIT_TXN | Db::DB_JOINENV | Db::DB_REGISTER
-        $self->{ENV}->open( $self->{ENVIRONMENT},  Db::DB_CREATE | Db::DB_RECOVER | Db::DB_JOINENV | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL | Db::DB_INIT_TXN );
+        $self->{ENV}->open( $self->{ENVIRONMENT}, Db::DB_CREATE | Db::DB_RECOVER | Db::DB_JOINENV | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL | Db::DB_INIT_TXN );
 
         # XXX: JZ 11/7 - Old options
         # DbXml::DBXML_ALLOW_EXTERNAL_ACCESS | DbXml::DBXML_ALLOW_AUTO_OPEN
@@ -158,11 +158,11 @@ sub prep {
         #  Db::DB_CREATE | Db::DB_DIRTY_READ | DbXml::DBXML_TRANSACTIONAL
         $self->{CONTAINER} = $self->{MANAGER}->openContainer( $dbTr, $self->{CONTAINERFILE}, Db::DB_CREATE | DbXml::DBXML_TRANSACTIONAL );
 
-# XXX: JZ 11/7 - Disable index for now
-#        unless ( $self->{CONTAINER}->getIndexNodes ) {
-#            my $dbUC = $self->{MANAGER}->createUpdateContext();
-#            $self->{INDEX} = $self->{CONTAINER}->addIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
-#        }
+        # XXX: JZ 11/7 - Disable index for now
+        #        unless ( $self->{CONTAINER}->getIndexNodes ) {
+        #            my $dbUC = $self->{MANAGER}->createUpdateContext();
+        #            $self->{INDEX} = $self->{CONTAINER}->addIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
+        #        }
 
         if ( $atomic ) {
             $dbTr->commit;
@@ -172,24 +172,24 @@ sub prep {
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $e = catch DbException ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $EVAL_ERROR ) {
         my $msg = "Error \"" . $EVAL_ERROR . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
@@ -217,11 +217,11 @@ sub openDB {
     }
 
     eval {
-        $self->{ENV} = new DbEnv(0);
+        $self->{ENV} = new DbEnv( 0 );
 
         # XXX: JZ 11/7 - Old options
         # Db::DB_JOINENV | Db::DB_INIT_MPOOL | Db::DB_CREATE | Db::DB_INIT_LOCK | Db::DB_INIT_LOG | Db::DB_INIT_TXN
-        $self->{ENV}->open( $self->{ENVIRONMENT},  Db::DB_CREATE | Db::DB_JOINENV | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL | Db::DB_INIT_TXN );
+        $self->{ENV}->open( $self->{ENVIRONMENT}, Db::DB_CREATE | Db::DB_JOINENV | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL | Db::DB_INIT_TXN );
 
         # XXX: JZ 11/7 - Old options
         # DbXml::DBXML_ALLOW_EXTERNAL_ACCESS | DbXml::DBXML_ALLOW_AUTO_OPEN
@@ -233,11 +233,11 @@ sub openDB {
         #  Db::DB_CREATE | Db::DB_DIRTY_READ | DbXml::DBXML_TRANSACTIONAL
         $self->{CONTAINER} = $self->{MANAGER}->openContainer( $dbTr, $self->{CONTAINERFILE}, Db::DB_CREATE | DbXml::DBXML_TRANSACTIONAL );
 
-# XXX: JZ 11/7 - Disable index for now
-#        unless ( $self->{CONTAINER}->getIndexNodes ) {
-#            my $dbUC = $self->{MANAGER}->createUpdateContext();
-#            $self->{INDEX} = $self->{CONTAINER}->addIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
-#        }
+        # XXX: JZ 11/7 - Disable index for now
+        #        unless ( $self->{CONTAINER}->getIndexNodes ) {
+        #            my $dbUC = $self->{MANAGER}->createUpdateContext();
+        #            $self->{INDEX} = $self->{CONTAINER}->addIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
+        #        }
 
         if ( $atomic ) {
             $dbTr->commit;
@@ -247,24 +247,24 @@ sub openDB {
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $e = catch DbException ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $EVAL_ERROR ) {
         my $msg = "Error \"" . $EVAL_ERROR . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
@@ -292,7 +292,8 @@ sub indexDB {
     }
 
     eval {
-        unless ( $self->{CONTAINER}->getIndexNodes and $self->{INDEX} ) {
+        unless ( $self->{CONTAINER}->getIndexNodes and $self->{INDEX} )
+        {
             my $dbUC = $self->{MANAGER}->createUpdateContext();
             $self->{INDEX} = $self->{CONTAINER}->addIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
         }
@@ -304,24 +305,24 @@ sub indexDB {
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $e = catch DbException ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $EVAL_ERROR ) {
         my $msg = "Error \"" . $EVAL_ERROR . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
@@ -362,24 +363,24 @@ sub deIndexDB {
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $e = catch DbException ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $EVAL_ERROR ) {
         my $msg = "Error \"" . $EVAL_ERROR . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
@@ -399,31 +400,32 @@ sub getTransaction {
 
     my $dbTr = q{};
     eval {
-        if ( exists $self->{MANAGER} and $self->{MANAGER} ) {
+        if ( exists $self->{MANAGER} and $self->{MANAGER} )
+        {
             $dbTr = $self->{MANAGER}->createTransaction();
         }
     };
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return;
     }
     elsif ( $e = catch DbException ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return;
     }
     elsif ( $EVAL_ERROR ) {
         my $msg = "Error \"" . $EVAL_ERROR . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return;
     }
@@ -441,31 +443,31 @@ sub commitTransaction {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { txn => 0, error => 0 } );
 
-    eval { 
-        $parameters->{txn}->commit() if exists $parameters->{txn}; 
+    eval {
+        $parameters->{txn}->commit() if exists $parameters->{txn};
         undef $parameters->{txn};
     };
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $e = catch DbException ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $EVAL_ERROR ) {
         my $msg = "Error \"" . $EVAL_ERROR . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
@@ -483,31 +485,31 @@ sub abortTransaction {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { txn => 0, error => 0 } );
 
-    eval { 
-        $parameters->{txn}->abort() if exists $parameters->{txn}; 
+    eval {
+        $parameters->{txn}->abort() if exists $parameters->{txn};
         undef $parameters->{txn};
     };
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $e = catch DbException ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $EVAL_ERROR ) {
         my $msg = "Error \"" . $EVAL_ERROR . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
@@ -524,35 +526,33 @@ Create a logging checkpoint.
 sub checkpoint {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { error => 0 } );
-    $self->{LOGGER}->debug("Checkpoint started.");
-    eval { 
-         $self->{ENV}->txn_checkpoint(0,0,Db::DB_FORCE);
-    };
+    $self->{LOGGER}->debug( "Checkpoint started." );
+    eval { $self->{ENV}->txn_checkpoint( 0, 0, Db::DB_FORCE ); };
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $e = catch DbException ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
     elsif ( $EVAL_ERROR ) {
         my $msg = "Error \"" . $EVAL_ERROR . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
-        $msg = escapeString($msg);
-        $self->{LOGGER}->error($msg);
+        $msg = escapeString( $msg );
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
-    $self->{LOGGER}->debug("Checkpoint complete.");
+    $self->{LOGGER}->debug( "Checkpoint complete." );
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
     return 0;
 }
@@ -598,6 +598,7 @@ sub query {
             my $contName = $self->{CONTAINER}->getName();
 
             unless ( exists $parameters->{internal} and $parameters->{internal} ) {
+
                 # make sure the query is clean
                 $parameters->{query} =~ s/&/&amp;/gmx;
                 $parameters->{query} =~ s/</&lt;/gmx;
@@ -621,7 +622,7 @@ sub query {
 
             $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
             $results = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
-            while ( $results->next($value) ) {
+            while ( $results->next( $value ) ) {
                 push @resString, $value;
                 undef $value;
             }
@@ -633,31 +634,31 @@ sub query {
         if ( my $e = catch std::exception ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
         elsif ( $e = catch DbException ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
         elsif ( $EVAL_ERROR ) {
             my $msg = "Error \"" . $EVAL_ERROR . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error("Missing argument");
+        $self->{LOGGER}->error( "Missing argument" );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return;
     }
@@ -716,8 +717,8 @@ sub querySet {
             $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
             $results = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
             my $parser = XML::LibXML->new();
-            while ( $results->next($value) ) {
-                my $node = $parser->parse_string($value);
+            while ( $results->next( $value ) ) {
+                my $node = $parser->parse_string( $value );
                 $res->push( $node->getDocumentElement );
                 undef $value;
                 undef $node;
@@ -730,31 +731,31 @@ sub querySet {
         if ( my $e = catch std::exception ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
         elsif ( $e = catch DbException ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
         elsif ( $EVAL_ERROR ) {
             my $msg = "Error \"" . $EVAL_ERROR . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error("Missing argument");
+        $self->{LOGGER}->error( "Missing argument" );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return;
     }
@@ -813,7 +814,7 @@ sub queryForName {
             $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
             $results = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
             $doc = $self->{MANAGER}->createDocument();
-            while ( $results->next($doc) ) {
+            while ( $results->next( $doc ) ) {
                 push @resString, $doc->getName;
             }
             undef $doc;
@@ -826,31 +827,31 @@ sub queryForName {
         if ( my $e = catch std::exception ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
         elsif ( $e = catch DbException ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
         elsif ( $EVAL_ERROR ) {
             my $msg = "Error \"" . $EVAL_ERROR . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error("Missing argument");
+        $self->{LOGGER}->error( "Missing argument" );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return;
     }
@@ -885,7 +886,7 @@ sub queryByName {
             $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
             my $document = $self->{CONTAINER}->getDocument( $dbTr, $parameters->{name} );
             $content = $document->getName;
-            $self->{LOGGER}->debug("Document found.");
+            $self->{LOGGER}->debug( "Document found." );
             if ( $atomic ) {
                 $dbTr->commit;
                 undef $dbTr;
@@ -893,13 +894,13 @@ sub queryByName {
         };
         if ( my $e = catch std::exception ) {
             if ( $e->getExceptionCode() == 11 ) {
-                $self->{LOGGER}->debug("Document not found.");
+                $self->{LOGGER}->debug( "Document not found." );
             }
             else {
                 my $msg = "Error \"" . $e->what() . "\".";
                 $msg =~ s/(\n+|\s+)/ /gmx;
-                $msg = escapeString($msg);
-                $self->{LOGGER}->error($msg);
+                $msg = escapeString( $msg );
+                $self->{LOGGER}->error( $msg );
                 ${ $parameters->{error} } = $msg if exists $parameters->{error};
                 return;
             }
@@ -907,23 +908,23 @@ sub queryByName {
         elsif ( $e = catch DbException ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
         elsif ( $EVAL_ERROR ) {
             my $msg = "Error \"" . $EVAL_ERROR . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return;
     }
@@ -958,7 +959,7 @@ sub getDocumentByName {
             $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
             my $document = $self->{CONTAINER}->getDocument( $dbTr, $parameters->{name} );
             $content = $document->getContent;
-            $self->{LOGGER}->debug("Document found.");
+            $self->{LOGGER}->debug( "Document found." );
             if ( $atomic ) {
                 $dbTr->commit;
                 undef $dbTr;
@@ -967,15 +968,15 @@ sub getDocumentByName {
         if ( my $e = catch std::exception ) {
             if ( $e->getExceptionCode() == 11 ) {
                 my $msg = "Document not found";
-                $self->{LOGGER}->debug($msg);
+                $self->{LOGGER}->debug( $msg );
                 ${ $parameters->{error} } = $msg if exists $parameters->{error};
                 return;
             }
             else {
                 my $msg = "Error \"" . $e->what() . "\".";
                 $msg =~ s/(\n+|\s+)/ /gmx;
-                $msg = escapeString($msg);
-                $self->{LOGGER}->error($msg);
+                $msg = escapeString( $msg );
+                $self->{LOGGER}->error( $msg );
                 ${ $parameters->{error} } = $msg if exists $parameters->{error};
                 return;
             }
@@ -983,23 +984,23 @@ sub getDocumentByName {
         elsif ( $e = catch DbException ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
         elsif ( $EVAL_ERROR ) {
             my $msg = "Error \"" . $EVAL_ERROR . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
     }
     else {
         my $msg = "Missing argument";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return;
     }
@@ -1044,31 +1045,31 @@ sub updateByName {
         if ( my $e = catch std::exception ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return -1;
         }
         elsif ( $e = catch DbException ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return -1;
         }
         elsif ( $EVAL_ERROR ) {
             my $msg = "Error \"" . $EVAL_ERROR . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return -1;
         }
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error("Missing argument");
+        $self->{LOGGER}->error( "Missing argument" );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
@@ -1126,31 +1127,31 @@ sub count {
         if ( my $e = catch std::exception ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
         elsif ( $e = catch DbException ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
         elsif ( $EVAL_ERROR ) {
             my $msg = "Error \"" . $EVAL_ERROR . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return;
         }
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return;
     }
@@ -1194,15 +1195,15 @@ sub insertIntoContainer {
         };
         if ( my $e = catch std::exception ) {
             if ( $e->getExceptionCode() == 19 ) {
-                $self->{LOGGER}->debug("Object exists, skipping insertion.");
+                $self->{LOGGER}->debug( "Object exists, skipping insertion." );
                 ${ $parameters->{error} } = q{} if exists $parameters->{error};
                 return -1;
             }
             else {
                 my $msg = "Error \"" . $e->what() . "\".";
                 $msg =~ s/(\n+|\s+)/ /gmx;
-                $msg = escapeString($msg);
-                $self->{LOGGER}->error($msg);
+                $msg = escapeString( $msg );
+                $self->{LOGGER}->error( $msg );
                 ${ $parameters->{error} } = $msg if exists $parameters->{error};
                 return -1;
             }
@@ -1210,23 +1211,23 @@ sub insertIntoContainer {
         elsif ( $e = catch DbException ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return -1;
         }
         elsif ( $EVAL_ERROR ) {
             my $msg = "Error \"" . $EVAL_ERROR . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return -1;
         }
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
@@ -1277,31 +1278,31 @@ sub insertElement {
         if ( my $e = catch std::exception ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return -1;
         }
         elsif ( $e = catch DbException ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return -1;
         }
         elsif ( $EVAL_ERROR ) {
             my $msg = "Error \"" . $EVAL_ERROR . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return -1;
         }
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
@@ -1342,31 +1343,31 @@ sub remove {
         if ( my $e = catch std::exception ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return -1;
         }
         elsif ( $e = catch DbException ) {
             my $msg = "Error \"" . $e->what() . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return -1;
         }
         elsif ( $EVAL_ERROR ) {
             my $msg = "Error \"" . $EVAL_ERROR . "\".";
             $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString($msg);
-            $self->{LOGGER}->error($msg);
+            $msg = escapeString( $msg );
+            $self->{LOGGER}->error( $msg );
             ${ $parameters->{error} } = $msg if exists $parameters->{error};
             return -1;
         }
     }
     else {
         my $msg = "Missing argument.";
-        $self->{LOGGER}->error($msg);
+        $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
         return -1;
     }
@@ -1378,7 +1379,7 @@ sub remove {
 
 Frees local elements for object destruction.  
 
-=cut 
+=cut
 
 sub closeDB {
     my ( $self, @args ) = @_;
@@ -1495,20 +1496,21 @@ __END__
 =head1 SEE ALSO
 
 L<Sleepycat::DbXml>, L<Log::Log4perl>, L<XML::LibXML>, L<English>,
-L<Params::Validate>, L<perfSONAR_PS::Common>
+L<Params::Validate>, L<perfSONAR_PS::Common>,
+L<perfSONAR_PS::Utils::ParameterValidation>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS 
-  
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+
 Questions and comments can be directed to the author, or the mailing list.
 Bugs, feature requests, and improvements can be directed here:
 
-  https://bugs.internet2.edu/jira/browse/PSPS
+  http://code.google.com/p/perfsonar-ps/issues/list
 
 =head1 VERSION
 
@@ -1526,9 +1528,10 @@ Framework along with this software.  If not, see
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 
 =cut
+
 # vim: expandtab shiftwidth=4 tabstop=4
