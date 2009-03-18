@@ -362,10 +362,8 @@ sub getErrorResponseMessage {
     my $eventType     = $args->{eventType};
     my $description   = $args->{description};
 
-    if ( not defined $args->{id} ) {
-        $id = "message." . genuid();
-    }
-    $output = new perfSONAR_PS::XML::Document() unless exists $args->{output} and $args->{output};
+    $id = "message." . genuid() unless exists $args->{id};
+    $output = new perfSONAR_PS::XML::Document() unless exists $args->{output};
 
     my $n = getResultCodeMessage( $output, $id, $messageIdRef, $metadataIdRef, "ErrorResponse", $eventType, $description, undef, 0 );
 

@@ -68,7 +68,7 @@ function.
 sub registerMergeHandler {
     my ( $self, $messageType, $eventTypes, $service ) = validateParamsPos( @_, 1, { type => SCALAR }, { type => ARRAYREF }, { can => 'mergeMetadata' }, );
 
-    if ( not exists $self->{MERGE_HANDLERS}->{$messageType} ) {
+    unless ( exists $self->{MERGE_HANDLERS}->{$messageType} ) {
         $self->{MERGE_HANDLERS}->{$messageType} = ();
     }
 
@@ -90,7 +90,7 @@ be merged.
 sub registerEventEquivalence {
     my ( $self, $messageType, $eventType1, $eventType2 ) = @_;
 
-    unless ( exists $self->{EVENTEQUIVALENCECHECKERS}->{$messageType} and $self->{EVENTEQUIVALENCECHECKERS}->{$messageType} ) {
+    unless ( exists $self->{EVENTEQUIVALENCECHECKERS}->{$messageType} ) {
         $self->{EVENTEQUIVALENCECHECKERS}->{$messageType} = perfSONAR_PS::EventTypeEquivalenceHandler->new();
     }
 
@@ -167,7 +167,7 @@ sub registerEventHandler {
     my ( $self, $messageType, $eventType, $service ) = validateParamsPos( @_, 1, { type => SCALAR }, { type => SCALAR }, { can => ['handleEvent'] } );
 
     $self->{LOGGER}->debug( "Adding event handler for events of type $eventType on messages of $messageType" );
-    $self->{EV_HANDLERS}->{$messageType} = () unless exists $self->{EV_HANDLERS}->{$messageType} and $self->{EV_HANDLERS}->{$messageType};
+    $self->{EV_HANDLERS}->{$messageType} = () unless exists $self->{EV_HANDLERS}->{$messageType};
 
     if ( exists $self->{EV_HANDLERS}->{$messageType}->{$eventType} and $self->{EV_HANDLERS}->{$messageType}->{$eventType} ) {
         $self->{LOGGER}->error( "There already exists a handler for events of type $eventType on messages of type $messageType" );
@@ -194,7 +194,7 @@ sub registerEventHandler_Regex {
 
     $self->{LOGGER}->debug( "Adding event handler for events matching $eventRegex on messages of $messageType" );
 
-    unless ( exists $self->{EV_REGEX_HANDLERS}->{$messageType} and $self->{EV_REGEX_HANDLERS}->{$messageType} ) {
+    unless ( exists $self->{EV_REGEX_HANDLERS}->{$messageType} ) {
         $self->{EV_REGEX_HANDLERS}->{$messageType} = ();
     }
 
@@ -265,7 +265,7 @@ sub __handleMessageBegin {
 
     my $messageType = $args->{"messageType"};
 
-    unless ( exists $self->{MSG_HANDLERS}->{$messageType} and $self->{MSG_HANDLERS}->{$messageType} ) {
+    unless ( exists $self->{MSG_HANDLERS}->{$messageType} ) {
         return ( 0, undef, undef );
     }
 
@@ -294,7 +294,7 @@ sub __handleMessageEnd {
 
     my $messageType = $args->{"messageType"};
 
-    unless ( exists $self->{MSG_HANDLERS}->{$messageType} and $self->{MSG_HANDLERS}->{$messageType} ) {
+    unless ( exists $self->{MSG_HANDLERS}->{$messageType} ) {
         return 0;
     }
 
@@ -344,7 +344,7 @@ sub __handleEvent {
         return $self->{EV_HANDLERS}->{$messageType}->{$eventType}->handleEvent( $args );
     }
 
-    if ( exists $self->{EV_REGEX_HANDLERS}->{$messageType} ) {
+    if ( exists $self->{EV_REGEX_HANDLERS}->{$messageType} and $self->{EV_REGEX_HANDLERS}->{$messageType} ) {
         $self->{LOGGER}->debug( "There exists regex's for this message type" );
         foreach my $regex ( keys %{ $self->{EV_REGEX_HANDLERS}->{$messageType} } ) {
             $self->{LOGGER}->debug( "Checking $eventType against $regex" );
@@ -354,7 +354,7 @@ sub __handleEvent {
         }
     }
 
-    if ( exists $self->{MSG_HANDLERS}->{$messageType} ) {
+    if ( exists $self->{MSG_HANDLERS}->{$messageType} and $self->{MSG_HANDLERS}->{$messageType} ) {
         return $self->{MSG_HANDLERS}->{$messageType}->handleEvent( $args );
     }
 
@@ -522,7 +522,7 @@ sub handleMessage {
             # "Response" on the end of the type.
             my $retMessageType = $messageType;
             $retMessageType =~ s/Request/Response/;
-            if ( !( $retMessageType =~ /Response/ ) ) {
+            unless ( $retMessageType =~ /Response/ ) {
                 $retMessageType .= "Response";
             }
 
@@ -531,7 +531,6 @@ sub handleMessage {
 
             $raw_request->setResponse( $ret_message->getValue() );
         }
-
         return;
     }
 
@@ -568,7 +567,7 @@ sub handleMessage {
 
     $outputMessageType = $messageType;
     $outputMessageType =~ s/Request/Response/;
-    if ( !( $outputMessageType =~ /Response/ ) ) {
+    unless ( $outputMessageType =~ /Response/ ) {
         $outputMessageType .= "Response";
     }
 
@@ -654,7 +653,7 @@ sub handleMessage {
                 }
             }
 
-            if ( not $eventType ) {
+            unless ( $eventType ) {
                 my $eventTypes = find( $md, "./*[local-name()='eventType' and namespace-uri()='http://ggf.org/ns/nmwg/base/2.0/']", 0 );
                 foreach my $e ( $eventTypes->get_nodelist ) {
                     $found_event_type = 1;
@@ -847,7 +846,7 @@ sub parseChains {
         }
     }
 
-    if ( not $found_pair ) {
+    unless ( $found_pair ) {
         throw perfSONAR_PS::Error_compat( "error.common.no_metadata_data_pair", "There were no metadata/data pairs found in the message" );
     }
 

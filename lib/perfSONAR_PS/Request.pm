@@ -92,7 +92,6 @@ sub getEndpoint {
     my $endpoint = $self->{REQUEST}->uri;
 
     $endpoint =~ s/\/\//\//;
-
     return $endpoint;
 }
 
@@ -107,7 +106,7 @@ sub parse {
     my ( $self, $namespace_map, $error ) = @_;
     my $logger = get_logger( "perfSONAR_PS::Request" );
 
-    unless ( exists $self->{REQUEST} and $self->{REQUEST} ) {
+    unless ( exists $self->{REQUEST} ) {
         my $msg = "No request to parse";
         $logger->error( $msg );
         $$error = $msg;
@@ -196,7 +195,7 @@ Returns the URI for the specified request.
 sub getURI {
     my ( $self ) = @_;
     my $logger = get_logger( "perfSONAR_PS::Request" );
-    unless ( exists $self->{REQUEST} and $self->{REQUEST} ) {
+    unless ( exists $self->{REQUEST} ) {
         $logger->error( "Tried to get URI with no request" );
         return;
     }

@@ -59,7 +59,7 @@ sub find {
         return;
     }
 
-    return $res->get_node( 1 ) if $return_first == 1;
+    return $res->get_node( 1 ) if $return_first and $return_first == 1;
     return $res;
 }
 
@@ -121,7 +121,7 @@ sub readXML {
         if ( $XML ) {
             my $xmlstring = q{};
             while ( <$XML> ) {
-                if ( not( $_ =~ m/^<\?xml.*/ ) ) {
+                unless ( $_ =~ m/^<\?xml.*/ ) {
                     $xmlstring .= $_;
                 }
             }
@@ -196,7 +196,7 @@ sub chainMetadata {
             $changes = 0;
             foreach my $md ( $dom->getElementsByTagNameNS( "http://ggf.org/ns/nmwg/base/2.0/", "metadata" ) ) {
                 if ( $md->getAttribute( "metadataIdRef" ) ) {
-                    if ( not $mdChains{ $md->getAttribute( "metadataIdRef" ) } ) {
+                    unless ( $mdChains{ $md->getAttribute( "metadataIdRef" ) } ) {
                         $mdChains{ $md->getAttribute( "metadataIdRef" ) } = 0;
                     }
                     if ( $mdChains{ $md->getAttribute( "id" ) } != $mdChains{ $md->getAttribute( "metadataIdRef" ) } + 1 ) {
@@ -352,7 +352,7 @@ sub defaultMergeMetadata {
                     }
                 }
 
-                if ( not $in_common ) {
+                unless ( $in_common ) {
                     throw perfSONAR_PS::Error_compat( "error.common.merge", "Metadata " . $child->getAttribute( "id" ) . " and " . $parent->getAttribute( "id" ) . " have no eventTypes in common" );
                 }
             }
@@ -426,11 +426,11 @@ sub defaultMergeParameters {
 
         $logger->debug( "Found parameter $name in namespace $ns in parent" );
 
-        if ( not $name ) {
+        unless ( $name ) {
             throw perfSONAR_PS::Error_compat( "error.common.merge", "Attempting to merge a parameter with a missing 'name' attribute" );
         }
 
-        $params{$ns} = () unless exists $params{$ns} and $params{$ns};
+        $params{$ns} = () unless exists $params{$ns};
         $params{$ns}->{$name} = $param;
     }
 
@@ -442,14 +442,14 @@ sub defaultMergeParameters {
 
         $logger->debug( "Found parameter $name in namespace $ns in child" );
 
-        if ( not $name ) {
+        unless ( $name ) {
             throw perfSONAR_PS::Error_compat( "error.common.merge", "Attempting to merge a parameter with a missing 'name' attribute" );
         }
 
         if ( exists $params{$ns}->{$name} and $params{$ns}->{$name} ) {
             $logger->debug( "Merging parameter $name in namespace $ns with parameter in parent" );
 
-            $params{$ns} = () unless exists $params{$ns} and $params{$ns};
+            $params{$ns} = () unless exists $params{$ns};
             my $new_param = mergeNodes_general( $params{$ns}{$name}, $param );
             $param->replaceNode( $new_param );
             delete $params{$ns}->{$name};
@@ -557,7 +557,7 @@ sub mergeNodes_general {
 
                 $logger->debug( "Comparison attributes: " . Dumper( $comparison_attrs->{ $elem->localname } ) );
 
-                unless ( exists $comparison_attrs->{ $elem->localname }->{'*'} and $comparison_attrs->{ $elem->localname }->{'*'} ) {
+                unless ( exists $comparison_attrs->{ $elem->localname }->{'*'} ) {
                     foreach my $attr ( keys %{ $comparison_attrs->{ $elem->localname } } ) {
                         my $old_attr = $tmp_elem->getAttributes( $attr );
                         my $new_attr = $elem->getAttributes( $attr );
@@ -698,7 +698,7 @@ sub mapNamespaces {
     my $uri    = $node->namespaceURI();
     my $prefix = $node->prefix();
     if ( $prefix and $uri ) {
-        unless ( exists $namespaces->{$uri} and $namespaces->{$uri} ) {
+        unless ( exists $namespaces->{$uri} ) {
             $namespaces->{$uri} = $prefix;
             $node->ownerDocument->getDocumentElement->setNamespace( $uri, $prefix, 0 );
         }
@@ -729,14 +729,14 @@ sub reMap {
     my $logger = get_logger( "perfSONAR_PS::Common" );
 
     if ( $node->prefix and $node->namespaceURI() ) {
-        if ( !$requestNamespaces->{ $node->namespaceURI() } ) {
+        unless ( $requestNamespaces->{ $node->namespaceURI() } ) {
             $requestNamespaces->{ $node->namespaceURI() } = $node->prefix;
             if ( $set_owner_prefix ) {
                 $node->ownerDocument->getDocumentElement->setNamespace( $node->namespaceURI(), $node->prefix, 0 );
             }
             $logger->debug( "Setting namespace \"" . $node->namespaceURI() . "\" with prefix \"" . $node->prefix . "\"." );
         }
-        if ( !( $namespaces->{ $node->prefix } ) ) {
+        unless ( $namespaces->{ $node->prefix } ) {
             foreach my $ns ( keys %{$namespaces} ) {
                 if ( $namespaces->{$ns} eq $node->namespaceURI() ) {
                     $node->setNamespace( $namespaces->{$ns}, $ns, 1 );
@@ -767,7 +767,7 @@ sub reMap {
                 $logger->debug( "No prefix for namespace " . $node->namespaceURI() . ": generating one" );
                 do {
                     $new_prefix = "pref" . ( genuid() % 1000 );
-                } while ( exists $namespaces->{$new_prefix} and $namespaces->{$new_prefix} );
+                } while ( exists $namespaces->{$new_prefix} );
             }
 
             $node->setNamespace( $node->namespaceURI(), $new_prefix, 1 );
@@ -821,7 +821,7 @@ sub consultArchive {
         return ( -1, $msg );
     }
 
-    if ( not defined $response or $response eq "" ) {
+    if ( not defined $response or $response eq q{} ) {
         my $msg = "No response received from status service";
         $logger->error( $msg );
         return ( -1, $msg );
