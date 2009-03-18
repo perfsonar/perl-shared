@@ -22,8 +22,8 @@ Topology structures.
 use Log::Log4perl qw(get_logger :levels);
 use base 'Exporter';
 
-use perfSONAR_PS::Topology::ID;
 use perfSONAR_PS::Common;
+use perfSONAR_PS::Topology::ID qw( idConstruct, idIsFQ, idAddLevel, idRemoveLevel, idBaseLevel, idEncode, idDecode, idSplit, idCompare, idMatch, idIsAmbiguous );
 
 our @EXPORT_OK = qw( normalizeTopology, validateDomain, validateNode, validatePort, validateLink, getTopologyNamespaces, mergeNodes_general );
 
