@@ -2,7 +2,7 @@ package perfSONAR_PS::Services::MP::Agent::PingER;
 
 use strict;
 use warnings;
-use version; our $VERSION = 0.09;
+use version; our $VERSION = 3.1;
  
 =head1 NAME
 
@@ -64,7 +64,7 @@ use aliased 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmtl3::Message::Metadata::Sub
 use perfSONAR_PS::Datatypes::EventTypes;
 
 # stats calcs
-use IEPM::PingER::Statistics;
+use  perfSONAR_PS::Utils::PingStats;
 
 use perfSONAR_PS::Common;
 
@@ -77,21 +77,15 @@ our $logger = Log::Log4perl::get_logger( 'perfSONAR_PS::Services::MP::Agent::Pin
 
 # command line
 our $default_command = $perfSONAR_PS::Services::MP::Agent::Ping::default_command;
-  
  
-
-
 =head2 pingPriming
 
 accessor/mutator class to determine whether we are conducting ping priming or not
 
 =cut
 
-sub pingPriming
-{
-	my $self = shift;
-	
-	return 1;
+sub pingPriming{	
+    return 1;
 }
 
 
@@ -190,38 +184,32 @@ sub parse
 
 	# run the normal ping parsing
 	$self->SUPER::parse( $cmdOutput, $time, $endtime, $cmdRan );
-
-	my @results  = &IEPM::PingER::Statistics::RTT::calculate( \@{$self->results()->{'rtts'}} );
+        my $stats = perfSONAR_PS::Utils::PingStats->new({ rtts => \@{$self->results()->{'rtts'}}, 
+	                                                  sent => $self->results()->{'sent'}, 
+							  received => $self->results()->{'recv'} || '0.0',
+							  seqs => \@{$self->results()->{'seqs'}}
+							  });
+	my @results  =  @{$stats->rtt_stats()};
 	if(@results) {
-	    $self->results()->{'minRtt'} = sprintf( "%0.3f", $results[0] || '0.0' )
-		    if ! defined $self->results()->{'minRtt'};
-	    $self->results()->{'meanRtt'} = sprintf( "%0.3f", $results[1]|| '0.0'  )
-		    if ! defined $self->results()->{'meanRtt'};
-	    $self->results()->{'maxRtt'} = sprintf( "%0.3f", $results[2] || '0.0' )
-		    if ! defined $self->results()->{'maxRtt'};
-	    $self->results()->{'medianRtt'} = sprintf( "%0.3f", $results[3]|| '0.0'  )
-		    if ! defined $self->results()->{'medianRtt'};
+	    $self->results()->{'minRtt'} ||=   $results[0];
+	    $self->results()->{'maxRtt'} ||=   $results[1];
+	    $self->results()->{'meanRtt'} ||=  $results[2];	 
+	    $self->results()->{'medianRtt'} ||=  $results[3];
         }
 	# ipd
-	@results = &IEPM::PingER::Statistics::IPD::calculate( \@{$self->results()->{'rtts'}} );
-        if(@results) {
-	    $self->results()->{'minIpd'} = sprintf( "%0.3f", $results[0] || '0.0' ); 	
-	    $self->results()->{'meanIpd'} = sprintf( "%0.3f", $results[1] || '0.0' ); 	
-	    $self->results()->{'maxIpd'} = sprintf( "%0.3f", $results[2] || '0.0' ); 	
-	    $self->results()->{'iqrIpd'} = sprintf( "%0.3f", $results[3] || '0.0' ); 	
-
+	@results =  @{$stats->ipdv_stats()};
+        if(@results) {                            
+	    $self->results()->{'minIpd'}  ||=  $results[0];
+	    $self->results()->{'maxIpd'}  ||=  $results[1];
+	    $self->results()->{'meanIpd'} ||=  $results[2];
+	    $self->results()->{'medianIpd'} ||=  $results[3];
+	    $self->results()->{'iqrIpd'}   ||=   $results[4];
 	    # loss
-	    $self->results()->{'lossPercent'} = sprintf( "%0.3f", &IEPM::PingER::Statistics::Loss::calculate( 
-				    $self->results()->{'sent'}, $self->results()->{'recv'} ) || '0.0' );
-
-	    $self->results()->{'clp'} = &IEPM::PingER::Statistics::Loss::CLP::calculate( 
-				    $self->results()->{'sent'}, $self->results()->{'recv'}, \@{$self->results()->{'seqs'}} );
-	    $self->results()->{'clp'} = sprintf( "%0.3f",$self->results()->{'clp'} )
-		    if defined $self->results()->{'clp'} && $self->results()->{'clp'} > 0;
+	    $self->results()->{'lossPercent'} =  $stats->loss();
+	    $self->results()->{'clp'} ||=  $stats->clp();
         }
 	# duplicates
-	@results =  &IEPM::PingER::Statistics::Other::calculate( 
-			$self->results()->{'sent'}, $self->results()->{'recv'}, \@{$self->results()->{'seqs'}} );
+	@results =  @{$stats->dups()};
 	if(@results) {
 	    $self->results()->{'duplicates'} = $results[0];
 	    $self->results()->{'outOfOrder'} = $results[1];
