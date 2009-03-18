@@ -23,9 +23,9 @@ use Log::Log4perl qw(get_logger :levels);
 use base 'Exporter';
 
 use perfSONAR_PS::Common;
-use perfSONAR_PS::Topology::ID qw( idConstruct, idIsFQ, idAddLevel, idRemoveLevel, idBaseLevel, idEncode, idDecode, idSplit, idCompare, idMatch, idIsAmbiguous );
+use perfSONAR_PS::Topology::ID qw( idConstruct idIsFQ idAddLevel idRemoveLevel idBaseLevel idEncode idDecode idSplit idCompare idMatch idIsAmbiguous );
 
-our @EXPORT = qw( normalizeTopology, validateDomain, validateNode, validatePort, validateLink, getTopologyNamespaces, mergeNodes_general );
+our @EXPORT_OK = qw( normalizeTopology validateDomain validateNode validatePort validateLink getTopologyNamespaces mergeNodes_general );
 
 my %topology_namespaces = (
     ctrlplane => "http://ogf.org/schema/network/topology/ctrlPlane/20070828/",

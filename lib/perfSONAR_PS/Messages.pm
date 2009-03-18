@@ -29,8 +29,8 @@ use perfSONAR_PS::Utils::ParameterValidation;
 use base 'Exporter';
 
 our @EXPORT = qw(
-    startMessage,          endMessage,        startMetadata, endMetadata,   startData,      endData,    startParameters, endParameters, addParameter, getResultCodeMessage,
-    getResultCodeMetadata, getResultCodeData, statusReport,  createMessage, createMetadata, createData, getErrorResponseMessage );
+    startMessage          endMessage        startMetadata endMetadata   startData      endData    startParameters endParameters addParameter getResultCodeMessage
+    getResultCodeMetadata getResultCodeData statusReport  createMessage createMetadata createData getErrorResponseMessage );
 
 =head2 startMessage($output, $id, $messageIdRef, $type, $content, $namespaces)
 

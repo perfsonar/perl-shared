@@ -5,9 +5,8 @@ use warnings;
 
 our $VERSION = 3.1;
 
-use fields 'CONF', 'LS_KEY';
-
 use base 'perfSONAR_PS::Client::LS';
+use fields 'CONF', 'LS_KEY';
 
 =head1 NAME
 

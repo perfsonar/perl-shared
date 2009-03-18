@@ -1548,7 +1548,7 @@ sub metadataKeyRetrieveMetadataData {
         $queryString = "/nmwg:store[\@type=\"MAStore\"]/nmwg:metadata[" . getMetadataXQuery( { node => $parameters->{metadata} } ) . "]";
     }
 
-    $self->{LOGGER}->debug( "Running query \"" . $query . "\"" );
+    $self->{LOGGER}->debug( "Running query \"" . $queryString . "\"" );
 
     my $results             = $parameters->{metadatadb}->querySet( { query => $queryString } );
     my %et                  = ();
