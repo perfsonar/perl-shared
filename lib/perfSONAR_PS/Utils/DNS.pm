@@ -1,37 +1,32 @@
 package perfSONAR_PS::Utils::DNS;
 
+use strict;
+use warnings;
+
+our $VERSION = 3.1;
+
 =head1 NAME
 
-perfSONAR_PS::Utils::DNS - A module that provides utility methods for interacting with DNS servers.
+perfSONAR_PS::Utils::DNS
 
 =head1 DESCRIPTION
 
-This module provides a set of methods for interacting with DNS servers. This
-module IS NOT an object, and the methods can be invoked directly. The methods
-need to be explicitly imported to use them.
-
-=head1 DETAILS
-
-The API for this module aims to be simple; note that this is not an object and
-each method does not have the 'self knowledge' of variables that may travel
-between functions.
+A module that provides utility methods for interacting with DNS servers.  This
+module provides a set of methods for interacting with DNS servers. This module
+IS NOT an object, and the methods can be invoked directly. The methods need to
+be explicitly imported to use them.
 
 =head1 API
 
-The API of perfSONAR_PS::Utils::DNS provides a simple set of functions for
-interacting with DNS servers.
 =cut
 
 use base 'Exporter';
-
-use strict;
-use warnings;
 
 use Net::DNS;
 use NetAddr::IP;
 use Regexp::Common;
 
-our @EXPORT_OK = ( 'reverse_dns', 'resolve_address' );
+our @EXPORT_OK = qw( reverse_dns resolve_address );
 
 =head2 resolve_address ($name)
 
@@ -40,10 +35,10 @@ Resolve an ip address to a DNS name.
 =cut
 
 sub resolve_address {
-    my ($name) = @_;
+    my ( $name ) = @_;
 
     my $res   = Net::DNS::Resolver->new;
-    my $query = $res->search($name);
+    my $query = $res->search( $name );
 
     if ( not $query or $name !~ /$RE{net}{domain}/ ) {
         my @dns = ();
@@ -54,7 +49,6 @@ sub resolve_address {
     my @addresses = ();
     foreach my $ans ( $query->answer ) {
         next if ( $ans->type ne "A" );
-
         push @addresses, $ans->address;
     }
 
@@ -69,27 +63,26 @@ dotted decimal or IPv6 colon-separated decimal form.
 =cut
 
 sub reverse_dns {
-    my ($ip) = @_;
+    my ( $ip ) = @_;
 
-    my $tmp_ip = NetAddr::IP->new($ip);
-    if ( not $tmp_ip ) {
+    my $tmp_ip = NetAddr::IP->new( $ip );
+    unless ( $tmp_ip ) {
         return;
     }
 
     my $addr = $tmp_ip->addr();
-    if ( not $addr ) {
+    unless ( $addr ) {
         return;
     }
 
     my $res   = Net::DNS::Resolver->new;
-    my $query = $res->search("$addr");
-    if ( not $query ) {
+    my $query = $res->search( "$addr" );
+    unless ( $query ) {
         return;
     }
 
     foreach my $ans ( $query->answer ) {
         next if ( $ans->type ne "PTR" );
-
         return $ans->ptrdname;
     }
 
@@ -102,18 +95,18 @@ __END__
 
 =head1 SEE ALSO
 
-L<Exporter>, L<Net::DNS>, L<NetAddr::IP>
+L<Net::DNS>, L<NetAddr::IP>, L<Regexp::Common>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -123,16 +116,17 @@ $Id$
 
 =head1 AUTHOR
 
-Aaron Brown <aaron@internet2.edu>
+Aaron Brown, aaron@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2
+Copyright (c) 2008-2009, Internet2
 
 All rights reserved.
 

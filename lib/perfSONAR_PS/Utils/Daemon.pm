@@ -1,36 +1,32 @@
 package perfSONAR_PS::Utils::Daemon;
 
+use strict;
+use warnings;
+
+our $VERSION = 3.1;
+
 =head1 NAME
 
-perfSONAR_PS::Utils::Daemon - A module that exposes common functions for 
-'daemonizing' a perl script.
+perfSONAR_PS::Utils::Daemon
 
 =head1 DESCRIPTION
 
-This module features functions that can be used to impart 'daemon' (e.g. 
+A module that exposes common functions for 'daemonizing' a perl script.  This
+module features functions that can be used to impart 'daemon' (e.g.
 backgrounding, error handling) functions to a perl script.
 
-=head1 DETAILS
-
-TBD
-
 =head1 API
-
-TBD
 
 =cut
 
 use base 'Exporter';
-
-use strict;
-use warnings;
 
 use POSIX qw(setsid);
 use Fcntl qw(:DEFAULT :flock);
 use File::Basename;
 use English '-no_match_vars';
 
-our @EXPORT_OK = ( 'daemonize', 'setids', 'lockPIDFile', 'unlockPIDFile' );
+our @EXPORT_OK = qw( daemonize setids lockPIDFile unlockPIDFile );
 
 =head2 daemonize({ DEVNULL => /path/to/dev/null, UMASK => $umask, KEEPSTDERR => 1 })
 
@@ -43,7 +39,7 @@ screen. Returns (0, "") on success and (-1, $error_msg) on failure.
 =cut
 
 sub daemonize {
-    my (%args) = @_;
+    my ( %args ) = @_;
     my ( $dnull, $umask ) = ( '/dev/null', 022 );
 
     $dnull = $args{'DEVNULL'} if ( defined $args{'DEVNULL'} );
@@ -53,7 +49,7 @@ sub daemonize {
 
     open $STDIN,  "<",  "$dnull" or return ( -1, "Can't read $dnull: $!" );
     open $STDOUT, ">>", "$dnull" or return ( -1, "Can't write $dnull: $!" );
-    if ( !$args{'KEEPSTDERR'} ) {
+    unless ( $args{'KEEPSTDERR'} ) {
         open $STDERR, ">>", "$dnull" or return ( -1, "Can't write $dnull: $!" );
     }
 
@@ -76,7 +72,7 @@ failure.
 =cut
 
 sub setids {
-    my (%args) = @_;
+    my ( %args ) = @_;
     my ( $uid,  $gid );
     my ( $unam, $gnam );
 
@@ -89,14 +85,14 @@ sub setids {
     return 0 if ( $EFFECTIVE_USER_ID != 0 );
 
     # set GID first to ensure we still have permissions to.
-    if ( defined($gid) ) {
+    if ( defined( $gid ) ) {
         if ( $gid =~ /\D/ ) {
 
             # If there are any non-digits, it is a groupname.
             $gid = getgrnam( $gnam = $gid );
             if ( not $gid ) {
 
-                #                $logger->error("Can't getgrnam($gnam): $!");
+                #$logger->error("Can't getgrnam($gnam): $!");
                 return -1;
             }
         }
@@ -104,9 +100,9 @@ sub setids {
             $gid = -$gid;
         }
 
-        if ( not getgrgid($gid) ) {
+        unless ( getgrgid( $gid ) ) {
 
-            #            $logger->error("Invalid GID: $gid");
+            #$logger->error("Invalid GID: $gid");
             return -1;
         }
 
@@ -118,9 +114,9 @@ sub setids {
 
         # If there are any non-digits, it is a username.
         $uid = getpwnam( $unam = $uid );
-        if ( not $uid ) {
+        unless ( $uid ) {
 
-            #            $logger->error("Can't getpwnam($unam): $!");
+            #$logger->error("Can't getpwnam($unam): $!");
             return -1;
         }
     }
@@ -128,7 +124,7 @@ sub setids {
         $uid = -$uid;
     }
 
-    if ( not getpwuid($uid) ) {
+    if ( not getpwuid( $uid ) ) {
 
         #        $logger->error("Invalid UID: $uid");
         return -1;
@@ -150,19 +146,19 @@ $error_msg) on failure.
 =cut
 
 sub lockPIDFile {
-    my ($pidfile) = @_;
-    return ( -1, "Can't write pidfile: $pidfile" ) unless -w dirname($pidfile);
+    my ( $pidfile ) = @_;
+    return ( -1, "Can't write pidfile: $pidfile" ) unless -w dirname( $pidfile );
     sysopen( PIDFILE, $pidfile, O_RDWR | O_CREAT ) or return ( -1, "Couldn't open file: $pidfile" );
     flock( PIDFILE, LOCK_EX );
     my $p_id = <PIDFILE>;
-    chomp($p_id) if ( defined $p_id );
-    if ( defined $p_id and $p_id ne q{} ) {
+    chomp( $p_id ) if ( defined $p_id );
+    if ( defined $p_id and $p_id ) {
         my $PSVIEW;
 
         open( $PSVIEW, "-|", "ps -p " . $p_id ) or return ( -1, "Open failed for pid: $p_id" );
         my @output = <$PSVIEW>;
-        close($PSVIEW);
-        unless ($CHILD_ERROR) {
+        close( $PSVIEW );
+        unless ( $CHILD_ERROR ) {
             return ( -1, "Application is already running on pid: $p_id" );
         }
     }
@@ -178,13 +174,13 @@ unlocks the file and closes it.
 =cut
 
 sub unlockPIDFile {
-    my ($filehandle) = @_;
+    my ( $filehandle ) = @_;
 
     truncate( $filehandle, 0 );
     seek( $filehandle, 0, 0 );
     print $filehandle "$$\n";
     flock( $filehandle, LOCK_UN );
-    close($filehandle);
+    close( $filehandle );
     return;
 }
 
@@ -194,18 +190,18 @@ __END__
 
 =head1 SEE ALSO
 
-L<Exporter>, L<Net::DNS>, L<NetAddr::IP>, L<English>
+L<POSIX>, L<Fcntl>, L<File::Basename>, L<English>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -215,17 +211,18 @@ $Id$
 
 =head1 AUTHOR
 
-Aaron Brown <aaron@internet2.edu>,
-Jeff Boote <boote@internet2.edu>
+Aaron Brown, aaron@internet2.edu
+Jeff Boote, boote@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2
+Copyright (c) 2000-2009, Internet2
 
 All rights reserved.
 

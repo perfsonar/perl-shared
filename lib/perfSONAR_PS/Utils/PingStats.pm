@@ -1,5 +1,10 @@
 package  perfSONAR_PS::Utils::PingStats;
 
+use strict;
+use warnings;
+
+our $VERSION = 3.1;
+
 =head1 NAME
 
  perfSONAR_PS::Utils::PingStats - OOP approach to calculate statistical values for various  ping results

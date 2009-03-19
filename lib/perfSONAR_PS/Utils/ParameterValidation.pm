@@ -3,27 +3,26 @@ package perfSONAR_PS::Utils::ParameterValidation;
 use strict;
 use warnings;
 
-our $VERSION = 0.09;
+our $VERSION = 3.1;
 
 use base 'Exporter';
 
 =head1 NAME
 
-perfSONAR_PS::Utils::ParameterValidation - Only use Params::Validate when the logger
-is set to debug mode.
+perfSONAR_PS::Utils::ParameterValidation
 
 =head1 DESCRIPTION
 
-Performance testing has revealed that Params::Validate can be costly, especially
-when called repeatable functions.  This module wraps the commonly used
-Params::Validate functions and only uses them when the logging level is set to
-DEBUG. 
+Only use Params::Validate when the logger is set to debug mode.  Performance
+testing has revealed that Params::Validate can be costly, especially when called
+repeatable functions.  This module wraps the commonly used Params::Validate
+functions and only uses them when the logging level is set to DEBUG. 
 
 =cut
 
-our @EXPORT = ( 'validateParams', 'validateParamsPos' );
+our @EXPORT = qw( validateParams validateParamsPos );
 
-our $logger = get_logger("perfSONAR_PS::Utils::ParameterValidation");
+our $logger = get_logger( "perfSONAR_PS::Utils::ParameterValidation" );
 
 use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger :nowarn);
@@ -39,10 +38,11 @@ sub validateParams(\@$) {
 
     if ( $logger->is_debug() ) {
         my @a;
-        if (not defined $options) {
-                $options = $params;
-        } else {
-                @a = @{ $params }; 
+        if ( not defined $options ) {
+            $options = $params;
+        }
+        else {
+            @a = @{$params};
         }
         return validate( @a, $options );
     }
@@ -88,18 +88,18 @@ __END__
 
 L<Params::Validate>, L<Log::Log4perl>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
 Questions and comments can be directed to the author, or the mailing list.
 Bugs, feature requests, and improvements can be directed here:
 
-  https://bugs.internet2.edu/jira/browse/PSPS
+  http://code.google.com/p/perfsonar-ps/issues/list
 
 =head1 VERSION
 
@@ -117,8 +117,10 @@ along with this software.  If not, see
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2007-2009, Internet2
 
 All rights reserved.
 
 =cut
+
+# vim: expandtab shiftwidth=4 tabstop=4
