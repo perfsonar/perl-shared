@@ -1,39 +1,44 @@
 package perfSONAR_PS::XML::Document;
 
+use strict;
+use warnings;
+
+our $VERSION = 3.1;
+
+use fields 'OPEN_TAGS', 'DEFINED_PREFIXES', 'FH', 'LOGGER';
+
 =head1 NAME
 
-perfSONAR_PS::XML::Document - This module is used to provide a more
-abstract method for constructing XML documents that can be implemented using
-file construction, outputting to a file or even DOM construction without
-tying the code creating the XML to any particular construction method..
+perfSONAR_PS::XML::Document
+
+=head1 DESCRIPTION
+
+This module is used to provide a more abstract method for constructing XML
+documents that can be implemented using file construction, outputting to a file
+or even DOM construction without tying the code creating the XML to any
+particular construction method..
 
 =cut
 
-use strict;
-use warnings;
 use Log::Log4perl qw(get_logger :nowarn);
-
 use Params::Validate qw(:all);
 use perfSONAR_PS::Utils::ParameterValidation;
 use English qw( -no_match_vars );
-
 use IO::File;
-
-our $VERSION = 0.09;
-
-use fields 'OPEN_TAGS', 'DEFINED_PREFIXES', 'FH', 'LOGGER';
 
 my $pretty_print = 0;
 
 =head2 new ($package)
-    Allocate a new XML Document
+
+Allocate a new XML Document
+
 =cut
 
 sub new {
-    my ($package) = @_;
-    my $self = fields::new($package);
+    my ( $package ) = @_;
+    my $self = fields::new( $package );
 
-    $self->{LOGGER} = get_logger("perfSONAR_PS::XML::Document");
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::XML::Document" );
 
     $self->{OPEN_TAGS}        = ();
     $self->{DEFINED_PREFIXES} = ();
@@ -42,11 +47,13 @@ sub new {
 }
 
 =head2 getNormalizedURI ($uri)
-    This function ensures the URI has no whitespace and ends in a '/'.
+
+This function ensures the URI has no whitespace and ends in a '/'.
+
 =cut
 
 sub getNormalizedURI {
-    my ($uri) = @_;
+    my ( $uri ) = @_;
 
     # trim whitespace
     $uri =~ s/^\s+//;
@@ -55,23 +62,24 @@ sub getNormalizedURI {
     if ( $uri =~ /[^\/]$/ ) {
         $uri .= "/";
     }
-
     return $uri;
 }
 
 =head2 startElement ($self, { prefix, namespace, tag, attributes, extra_namespaces, content })
-    This function starts a new element 'tag' with the prefix 'prefix' and
-    namespace 'namespace'. Those elements are the only ones that are required.
-    The attributes parameter can point at a hash whose keys will become
-    attributes of the element with the value of the attribute being the value
-    corresponding to that key in the hash. The extra_namespaces parameter can
-    be specified to add namespace declarations to this element. The keys of the
-    hash will be the new prefixes and the values those keys point to will be
-    the new namespace URIs. The content parameter can be specified to give the
-    content of the element in which case more elements can still be added, but
-    initally the content will be added. Once started, the element must be
-    closed before the document can be retrieved. This function returns -1 if an
-    error occurs and 0 if the element was successfully created.
+
+This function starts a new element 'tag' with the prefix 'prefix' and
+namespace 'namespace'. Those elements are the only ones that are required.
+The attributes parameter can point at a hash whose keys will become
+attributes of the element with the value of the attribute being the value
+corresponding to that key in the hash. The extra_namespaces parameter can
+be specified to add namespace declarations to this element. The keys of the
+hash will be the new prefixes and the values those keys point to will be
+the new namespace URIs. The content parameter can be specified to give the
+content of the element in which case more elements can still be added, but
+initally the content will be added. Once started, the element must be
+closed before the document can be retrieved. This function returns -1 if an
+error occurs and 0 if the element was successfully created.
+
 =cut
 
 sub startElement {
@@ -97,9 +105,9 @@ sub startElement {
     my $extra_namespaces = $args->{"extra_namespaces"};
     my $content          = $args->{"content"};
 
-    $self->{LOGGER}->debug("Starting tag: $tag");
+    $self->{LOGGER}->debug( "Starting tag: $tag" );
 
-    $namespace = getNormalizedURI($namespace);
+    $namespace = getNormalizedURI( $namespace );
 
     my %namespaces = ();
     $namespaces{$prefix} = $namespace;
@@ -123,7 +131,7 @@ sub startElement {
     $node_info{"namespace"}        = $namespace;
     $node_info{"defined_prefixes"} = ();
 
-    if ($pretty_print) {
+    if ( $pretty_print ) {
         foreach my $node ( @{ $self->{OPEN_TAGS} } ) {
             print { $self->{FH} } "  ";
         }
@@ -152,7 +160,7 @@ sub startElement {
             }
         }
 
-        if ($require_defintion) {
+        if ( $require_defintion ) {
             push @{ $node_info{"defined_prefixes"} }, $prefix;
             print { $self->{FH} } " xmlns:$prefix=\"" . $namespaces{$prefix} . "\"";
         }
@@ -166,13 +174,13 @@ sub startElement {
 
     print { $self->{FH} } ">";
 
-    if ($pretty_print) {
+    if ( $pretty_print ) {
         print { $self->{FH} } "\n";
     }
 
     if ( defined $content and $content ) {
         print { $self->{FH} } $content;
-        print { $self->{FH} } "\n" if ($pretty_print);
+        print { $self->{FH} } "\n" if ( $pretty_print );
     }
 
     push @{ $self->{OPEN_TAGS} }, \%node_info;
@@ -181,9 +189,11 @@ sub startElement {
 }
 
 =head2 createElement ($self, { prefix, namespace, tag, attributes, extra_namespaces, content })
-    This function has identical parameters to the startElement function.
-    However, it closes the element immediately. This function returns -1 if an
-    error occurs and 0 if the element was successfully created.
+
+This function has identical parameters to the startElement function.
+However, it closes the element immediately. This function returns -1 if an
+error occurs and 0 if the element was successfully created.
+
 =cut
 
 sub createElement {
@@ -227,7 +237,7 @@ sub createElement {
 
     my $output = q{};
 
-    if ($pretty_print) {
+    if ( $pretty_print ) {
         foreach my $node ( @{ $self->{OPEN_TAGS} } ) {
             print { $self->{FH} } "  ";
         }
@@ -253,7 +263,7 @@ sub createElement {
             }
         }
 
-        if ($require_defintion) {
+        if ( $require_defintion ) {
             print { $self->{FH} } " xmlns:$prefix=\"" . $namespaces{$prefix} . "\"";
         }
     }
@@ -264,19 +274,19 @@ sub createElement {
         }
     }
 
-    if ( not defined $content or $content eq "" ) {
+    if ( not defined $content or $content eq q{} ) {
         print { $self->{FH} } " />";
     }
     else {
         print { $self->{FH} } ">";
 
-        if ($pretty_print) {
+        if ( $pretty_print ) {
             print { $self->{FH} } "\n" if ( $content =~ /\n/ );
         }
 
         print { $self->{FH} } $content;
 
-        if ($pretty_print) {
+        if ( $pretty_print ) {
             if ( $content =~ /\n/ ) {
                 print { $self->{FH} } "\n";
                 foreach my $node ( @{ $self->{OPEN_TAGS} } ) {
@@ -288,7 +298,7 @@ sub createElement {
         print { $self->{FH} } "</" . $prefix . ":" . $tag . ">";
     }
 
-    if ($pretty_print) {
+    if ( $pretty_print ) {
         print { $self->{FH} } "\n";
     }
 
@@ -298,20 +308,22 @@ sub createElement {
 }
 
 =head2 endElement ($self, $tag)
-    This function is used to end the most recently opened element. The tag
-    being closed is specified to sanity check the output. If the element is
-    properly closed, 0 is returned. -1 otherwise.
+
+This function is used to end the most recently opened element. The tag
+being closed is specified to sanity check the output. If the element is
+properly closed, 0 is returned. -1 otherwise.
+
 =cut
 
 sub endElement {
     my ( $self, $tag ) = @_;
 
-    $self->{LOGGER}->debug("Ending tag: $tag");
+    $self->{LOGGER}->debug( "Ending tag: $tag" );
 
     my @tags = @{ $self->{OPEN_TAGS} };
 
     if ( $#tags == -1 ) {
-        $self->{LOGGER}->error("Tried to close tag $tag but no current open tags");
+        $self->{LOGGER}->error( "Tried to close tag $tag but no current open tags" );
         return -1;
     }
     elsif ( $tags[-1]->{"tag"} ne $tag ) {
@@ -325,7 +337,7 @@ sub endElement {
 
     pop @{ $self->{OPEN_TAGS} };
 
-    if ($pretty_print) {
+    if ( $pretty_print ) {
         foreach my $node ( @{ $self->{OPEN_TAGS} } ) {
             print { $self->{FH} } "  ";
         }
@@ -333,21 +345,22 @@ sub endElement {
 
     print { $self->{FH} } "</" . $tags[-1]->{"prefix"} . ":" . $tag . ">";
 
-    if ($pretty_print) {
+    if ( $pretty_print ) {
         print { $self->{FH} } "\n";
     }
-
     return 0;
 }
 
 =head2 addExistingXMLElement ($self, $element)
-    This function adds a LibXML element to the current document.
+
+This function adds a LibXML element to the current document.
+
 =cut
 
 sub addExistingXMLElement {
     my ( $self, $element ) = @_;
 
-    my $elm = $element->cloneNode(1);
+    my $elm = $element->cloneNode( 1 );
     $elm->unbindNode();
 
     print { $self->{FH} } $elm->toString();
@@ -356,7 +369,9 @@ sub addExistingXMLElement {
 }
 
 =head2 addOpaque ($self, $element)
-    This function adds arbitrary data to the current document.
+
+This function adds arbitrary data to the current document.
+
 =cut
 
 sub addOpaque {
@@ -368,30 +383,32 @@ sub addOpaque {
 }
 
 =head2 getValue ($self)
-    This function returns the current state of the document. It will warn if
-    there are open tags still.
+
+This function returns the current state of the document. It will warn if there
+are open tags still.
+
 =cut
 
 sub getValue {
-    my ($self) = @_;
+    my ( $self ) = @_;
 
     if ( defined $self->{OPEN_TAGS} ) {
         my @open_tags = @{ $self->{OPEN_TAGS} };
 
-        if ( scalar(@open_tags) != 0 ) {
+        if ( scalar( @open_tags ) != 0 ) {
             my $msg = "Open tags still exist: ";
 
             for ( my $x = $#open_tags; $x >= 0; $x-- ) {
                 $msg .= " -> " . $open_tags[$x];
             }
 
-            $self->{LOGGER}->warn($msg);
+            $self->{LOGGER}->warn( $msg );
         }
     }
 
     my $value;
     seek( $self->{FH}, 0, 0 );
-    $value = do { local ($INPUT_RECORD_SEPARATOR); my $file = $self->{FH}; <$file> };
+    $value = do { local ( $INPUT_RECORD_SEPARATOR ); my $file = $self->{FH}; <$file> };
     seek( $self->{FH}, 0, 2 );
 
     $self->{LOGGER}->debug( "Construction Results: " . $value ) if $value;
@@ -406,18 +423,18 @@ __END__
 =head1 SEE ALSO
 
 L<Log::Log4perl>, L<Params::Validate>, L<perfSONAR_PS::Utils::ParameterValidation>,
-L<English>
+L<English>, L<IO::File>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -432,12 +449,13 @@ Jason Zurawski, zurawski@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 
