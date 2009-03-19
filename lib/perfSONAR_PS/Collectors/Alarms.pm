@@ -5,6 +5,8 @@ use warnings;
 
 our $VERSION = 3.1;
 
+use base 'perfSONAR_PS::Collectors::Base';
+
 use fields 'DB_CLIENT', 'ROUTERS', 'ALARM_TABLE';
 
 =head1 NAME
@@ -33,8 +35,6 @@ use perfSONAR_PS::Utils::TL1::HDXc;
 use perfSONAR_PS::Utils::TL1::Ciena;
 use perfSONAR_PS::Utils::TL1::Cisco;
 use perfSONAR_PS::Utils::TL1::Infinera;
-
-use base 'perfSONAR_PS::Collectors::Base';
 
 =head2 new($self, $conf, $directory)
 

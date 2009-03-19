@@ -7,6 +7,7 @@ use warnings;
 
 our $VERSION = 3.1;
 
+use base 'perfSONAR_PS::Collectors::Base';
 use fields 'DB_CLIENT', 'COUNTERS', 'TL1AGENTS';
 
 =head1 NAME
@@ -30,8 +31,6 @@ use perfSONAR_PS::DB::File;
 use perfSONAR_PS::DB::SQL;
 use perfSONAR_PS::Collectors::TL1::Agent::OME;
 use perfSONAR_PS::Collectors::TL1::Agent::HDXc;
-
-use base 'perfSONAR_PS::Collectors::Base';
 
 =head2 new($self, $conf, $directory)
 

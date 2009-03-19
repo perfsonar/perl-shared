@@ -5,8 +5,6 @@ use warnings;
 
 our $VERSION = 3.1;
 
-use fields
-
 =head1 NAME
 
 perfSONAR_PS::Collectors::TL1::Agent::Ciena
