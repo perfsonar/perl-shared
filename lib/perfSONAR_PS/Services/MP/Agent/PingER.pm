@@ -2,14 +2,18 @@ package perfSONAR_PS::Services::MP::Agent::PingER;
 
 use strict;
 use warnings;
-use version; our $VERSION = 3.1;
+
+use version;
+our $VERSION = 3.1;
 
 =head1 NAME
 
-perfSONAR_PS::Services::MP::Agent::Ping - A module that will run a ping and
-return it's output in a suitable internal data structure.
+perfSONAR_PS::Services::MP::Agent::Ping
 
 =head1 DESCRIPTION
+
+A module that will run a ping and return it's output in a suitable internal data
+structure.
 
 Inherited perfSONAR_PS::MP::Agent::Ping class that allows a ping to 
 be executed. This class extends the features of the ping class to enable:
@@ -18,32 +22,8 @@ be executed. This class extends the features of the ping class to enable:
 - ping 'priming'; where by the first ping singleton value is ignore as it
   it expected that it will be anomolous due to the effect of various caches
   along the path
-  
-   
-=head1 SYNOPSIS
-
-  # create and setup a new Agent  
-  my $agent = perfSONAR_PS::Services::MP::Agent::Ping( );
-  $agent->init();
-  
-  # collect the results (i.e. run the command)
-  if( $mp->collectMeasurements() == 0 )
-  {
-  	
-  	# get the raw datastructure for the measurement
-  	use Data::Dumper;
-  	print "Results:\n" . Dumper $self->results() . "\n";
-
-  }
-  # opps! something went wrong! :(
-  else {
-    
-    print STDERR "Command: '" . $self->commandString() . "' failed with result '" . $self->results() . "': " . $agent->error() . "\n"; 
-    
-  }
-
-
-head1 API
+     
+=head1 API
 
 =cut
 
@@ -92,7 +72,7 @@ sub pingPriming {
 
 deadline is not supported in pinger
 
-=cut 
+=cut
 
 sub deadline {
     my $self = shift;
@@ -363,6 +343,12 @@ sub toDOM {
     return $message->getDOM();
 }
 
+=head2 _createInterface
+
+TBD
+
+=cut
+
 sub _createInterface {
     my $self = shift;
     my $role = shift;
@@ -388,6 +374,12 @@ sub _createInterface {
     return $src;
 }
 
+=head2 _datumAPI
+
+TBD
+
+=cut
+
 sub _datumAPI {
     my $self = shift;
     my $name = shift;
@@ -397,4 +389,65 @@ sub _datumAPI {
 }
 
 1;
+
+__END__
+
+=head1 SYNOPSIS
+
+  # create and setup a new Agent  
+  my $agent = perfSONAR_PS::Services::MP::Agent::Ping( );
+  $agent->init();
+  
+  # collect the results (i.e. run the command)
+  if( $mp->collectMeasurements() == 0 )
+  {
+  	
+  	# get the raw datastructure for the measurement
+  	use Data::Dumper;
+  	print "Results:\n" . Dumper $self->results() . "\n";
+
+  }
+  # opps! something went wrong! :(
+  else {
+    
+    print STDERR "Command: '" . $self->commandString() . "' failed with result '" . $self->results() . "': " . $agent->error() . "\n"; 
+    
+  }
+
+=head1 SEE ALSO
+
+To join the 'perfSONAR Users' mailing list, please visit:
+
+  https://mail.internet2.edu/wws/info/perfsonar-user
+
+The perfSONAR-PS subversion repository is located at:
+
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+  http://code.google.com/p/perfsonar-ps/issues/list
+
+=head1 VERSION
+
+$Id$
+
+=head1 AUTHOR
+
+Yee-Ting Li <ytl@slac.stanford.edu>
+
+=head1 LICENSE
+
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
+
+=head1 COPYRIGHT
+
+Copyright (c) 2007-2009, Internet2 and SLAC National Accelerator Laboratory
+
+All rights reserved.
+
+=cut
 

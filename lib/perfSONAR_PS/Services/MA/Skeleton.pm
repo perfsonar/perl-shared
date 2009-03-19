@@ -1,69 +1,71 @@
-=head1 NAME
-
-perfSONAR_PS::Services::MA::Skeleton - A skeleton of a Measurement Archive module.
-
-=head1 DESCRIPTION
-
-This module aims to be easily modifiable to support new and different MAs.
-
-=cut
-
 package perfSONAR_PS::Services::MA::Skeleton;
-
-=head2 perfSONAR_PS::Services::Base
-    All perfSONAR Message Handling Modules need to be of type
-    perfSONAR_PS::Services::Base. This adds the 'new' function and a set of
-    functions that can be used to set various values for this MA.
-=cut
-use base 'perfSONAR_PS::Services::Base';
 
 use strict;
 use warnings;
+
+our $VERSION = 3.1;
+
+=head1 NAME
+
+perfSONAR_PS::Services::MA::Skeleton
+
+=head1 DESCRIPTION
+
+A skeleton of a Measurement Archive module.  This module aims to be easily
+modifiable to support new and different MAs.
+
+=cut
+
+use base 'perfSONAR_PS::Services::Base';
+
 use Log::Log4perl qw(get_logger);
 use Params::Validate qw(:all);
 
 use fields 'LOGGER';
-
-our $VERSION = 0.09;
 
 use perfSONAR_PS::Common;
 use perfSONAR_PS::Messages;
 use perfSONAR_PS::Utils::ParameterValidation;
 
 =head2 init($self, $handler);
-    This routine is called on startup for each endpoint that uses this
-    module. The function should be used to verify the configuration and set
-    any default values. The function should return 0 if the configuration
-    is valid, and -1 if an error is found.
-=cut
-sub init {
-    my ($self, $handler) = @_;
 
-    $self->{LOGGER} = get_logger("perfSONAR_PS::Services::MA::Skeleton");
+This routine is called on startup for each endpoint that uses this module. The
+function should be used to verify the configuration and set any default values.
+The function should return 0 if the configuration is valid, and -1 if an error
+is found.
+
+=cut
+
+sub init {
+    my ( $self, $handler ) = @_;
+
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::Services::MA::Skeleton" );
 
     # Check the configuration and set some default values
 
     # If they haven't specified whether or not to perform LS registration, set it to false
-    if (not defined $self->{CONF}->{"skeleton"}->{"enable_registration"} or
-        $self->{CONF}->{"skeleton"}->{"enable_registration"} eq "") {
-        $self->{LOGGER}->warn("Disabling registration since its use is unspecified");
+    if ( not exists $self->{CONF}->{"skeleton"}->{"enable_registration"}
+        or $self->{CONF}->{"skeleton"}->{"enable_registration"} eq q{} )
+    {
+        $self->{LOGGER}->warn( "Disabling registration since its use is unspecified" );
         $self->{CONF}->{"skeleton"}->{"enable_registration"} = 0;
     }
 
-    if ($self->{CONF}->{"skeleton"}->{"enable_registration"}) {
-        if (not defined $self->{CONF}->{"skeleton"}->{"service_accesspoint"} or $self->{CONF}->{"skeleton"}->{"service_accesspoint"} eq "") {
-            $self->{LOGGER}->error("No access point specified for SNMP service");
+    if ( $self->{CONF}->{"skeleton"}->{"enable_registration"} ) {
+        if ( not exists $self->{CONF}->{"skeleton"}->{"service_accesspoint"} or $self->{CONF}->{"skeleton"}->{"service_accesspoint"} eq q{} ) {
+            $self->{LOGGER}->error( "No access point specified for SNMP service" );
             return -1;
         }
 
         # Verify an LS instance exists. If no ls is set specifically
         # for the skeleton MA, check if a global ls_instance exists. If
         # so, set it to be the skeleton MA's ls_instance.
-        if (not defined $self->{CONF}->{"skeleton"}->{"ls_instance"} or $self->{CONF}->{"skeleton"}->{"ls_instance"} eq "") {
-            if (defined $self->{CONF}->{"ls_instance"} and $self->{CONF}->{"ls_instance"} ne "") {
+        if ( not exists $self->{CONF}->{"skeleton"}->{"ls_instance"} or $self->{CONF}->{"skeleton"}->{"ls_instance"} eq q{} ) {
+            if ( exists $self->{CONF}->{"ls_instance"} and $self->{CONF}->{"ls_instance"} ) {
                 $self->{CONF}->{"skeleton"}->{"ls_instance"} = $self->{CONF}->{"ls_instance"};
-            } else {
-                $self->{LOGGER}->error("No LS instance specified for SNMP service");
+            }
+            else {
+                $self->{LOGGER}->error( "No LS instance specified for SNMP service" );
                 return -1;
             }
         }
@@ -72,100 +74,108 @@ sub init {
         # exists, check to see if one was globally set. If not, set it
         # to a default of 30 minutes. If one does exist, change the
         # registration interval from minutes to seconds.
-        if (not defined $self->{CONF}->{"skeleton"}->{"ls_registration_interval"} or $self->{CONF}->{"skeleton"}->{"ls_registration_interval"} eq "") {
-            if (defined $self->{CONF}->{"ls_registration_interval"} and $self->{CONF}->{"ls_registration_interval"} ne "") {
+        if ( not exists $self->{CONF}->{"skeleton"}->{"ls_registration_interval"} or $self->{CONF}->{"skeleton"}->{"ls_registration_interval"} eq q{} ) {
+            if ( exists $self->{CONF}->{"ls_registration_interval"} and $self->{CONF}->{"ls_registration_interval"} ) {
                 $self->{CONF}->{"skeleton"}->{"ls_registration_interval"} = $self->{CONF}->{"ls_registration_interval"};
-            } else {
-                $self->{LOGGER}->warn("Setting registration interval to 30 minutes");
+            }
+            else {
+                $self->{LOGGER}->warn( "Setting registration interval to 30 minutes" );
                 $self->{CONF}->{"skeleton"}->{"ls_registration_interval"} = 1800;
             }
-        } else {
+        }
+        else {
+
             # turn the registration interval from minutes to seconds
             $self->{CONF}->{"skeleton"}->{"ls_registration_interval"} *= 60;
         }
 
         # set a default service description
-        if(not defined $self->{CONF}->{"skeleton"}->{"service_description"} or
-                $self->{CONF}->{"skeleton"}->{"service_description"} eq "") {
+        if ( not exists $self->{CONF}->{"skeleton"}->{"service_description"}
+            or $self->{CONF}->{"skeleton"}->{"service_description"} eq q{} )
+        {
             $self->{CONF}->{"skeleton"}->{"service_description"} = "perfSONAR_PS Skeleton MA";
-            $self->{LOGGER}->warn("Setting 'service_description' to 'perfSONAR_PS Skeleton MA'.");
+            $self->{LOGGER}->warn( "Setting 'service_description' to 'perfSONAR_PS Skeleton MA'." );
         }
 
         # set a default service name
-        if(not defined $self->{CONF}->{"skeleton"}->{"service_name"} or
-                $self->{CONF}->{"skeleton"}->{"service_name"} eq "") {
+        if ( not exists $self->{CONF}->{"skeleton"}->{"service_name"}
+            or $self->{CONF}->{"skeleton"}->{"service_name"} eq q{} )
+        {
             $self->{CONF}->{"skeleton"}->{"service_name"} = "Skeleton MA";
-            $self->{LOGGER}->warn("Setting 'service_name' to 'Skeleton MA'.");
+            $self->{LOGGER}->warn( "Setting 'service_name' to 'Skeleton MA'." );
         }
 
         # set a default service type
-        if(not defined $self->{CONF}->{"skeleton"}->{"service_type"} or
-                $self->{CONF}->{"skeleton"}->{"service_type"} eq "") {
+        if ( not exists $self->{CONF}->{"skeleton"}->{"service_type"}
+            or $self->{CONF}->{"skeleton"}->{"service_type"} eq q{} )
+        {
             $self->{CONF}->{"skeleton"}->{"service_type"} = "MA";
-            $self->{LOGGER}->warn("Setting 'service_type' to 'MA'.");
+            $self->{LOGGER}->warn( "Setting 'service_type' to 'MA'." );
         }
 
         # Create the LS client. This client will be reused each time
         # the registerLS function is called.
         my %ls_conf = (
-                SERVICE_TYPE => $self->{CONF}->{"skeleton"}->{"service_type"},
-                SERVICE_NAME => $self->{CONF}->{"skeleton"}->{"service_name"},
-                SERVICE_DESCRIPTION => $self->{CONF}->{"skeleton"}->{"service_description"},
-                SERVICE_ACCESSPOINT => $self->{CONF}->{"skeleton"}->{"service_accesspoint"},
-                  );
+            SERVICE_TYPE        => $self->{CONF}->{"skeleton"}->{"service_type"},
+            SERVICE_NAME        => $self->{CONF}->{"skeleton"}->{"service_name"},
+            SERVICE_DESCRIPTION => $self->{CONF}->{"skeleton"}->{"service_description"},
+            SERVICE_ACCESSPOINT => $self->{CONF}->{"skeleton"}->{"service_accesspoint"},
+        );
 
-        $self->{LS_CLIENT} = new perfSONAR_PS::Client::LS::Remote($self->{CONF}->{"skeleton"}->{"ls_instance"}, \%ls_conf, $self->{NAMESPACES});
+        $self->{LS_CLIENT} = new perfSONAR_PS::Client::LS::Remote( $self->{CONF}->{"skeleton"}->{"ls_instance"}, \%ls_conf, $self->{NAMESPACES} );
     }
 
     # Add a handler for events types "SkeletonRequest" in messages of type "SkeletonMessage"
-    $handler->registerEventHandler("SkeletonMessage", "SkeletonRequest", $self);
+    $handler->registerEventHandler( "SkeletonMessage", "SkeletonRequest", $self );
 
     # Add a handler for all events in messages of type "SkeletonMessage2"
-    $handler->registerMessageHandler("SkeletonMessage2", $self);
+    $handler->registerMessageHandler( "SkeletonMessage2", $self );
 
     # Add a complete handler for messages of type "SkeletonMessage"
-    $handler->registerFullMessageHandler("SkeletonMessage3", $self);
+    $handler->registerFullMessageHandler( "SkeletonMessage3", $self );
 
     my @eventTypes = ( 'SkeletonRequest' );
-    $handler->registerMergeHandler("SkeletonMessage", \@eventTypes, $self);
-    $handler->registerMergeHandler("SkeletonMessage2", \@eventTypes, $self);
-    $handler->registerMergeHandler("SkeletonMessage3", \@eventTypes, $self);
+    $handler->registerMergeHandler( "SkeletonMessage",  \@eventTypes, $self );
+    $handler->registerMergeHandler( "SkeletonMessage2", \@eventTypes, $self );
+    $handler->registerMergeHandler( "SkeletonMessage3", \@eventTypes, $self );
     return 0;
 }
 
 =head2 needLS();
-    This function returns whether or not this MA will need a registration
-    process. It returns 0 if none is needed and non-zero if one is needed.
-    If non-zero is returned, the function registerLS must be defined.
+
+This function returns whether or not this MA will need a registration process.
+It returns 0 if none is needed and non-zero if one is needed. If non-zero is
+returned, the function registerLS must be defined.
+
 =cut
+
 sub needLS {
-    my ($self) = @_;
+    my ( $self ) = @_;
 
     return $self->{CONF}->{"skeleton"}->{"enable_registration"};
 }
 
 =head2 registerLS($self, $sleep_time)
-    This function is called in a separate process from the message
-    handling. It is used to register the MA's metadata with an LS.
-    Generally, this is done using the LS client software. The $sleep_time
-    variable is a reference that can be used to return how long the process
-    should sleep for before calling the registerLS function again.
-=cut
-sub registerLS {
-    my ( $self, $sleep_time ) = validateParamsPos(@_,
-            1,
-            { type => SCALARREF },
-            );
 
+This function is called in a separate process from the message handling. It is
+used to register the MA's metadata with an LS.  Generally, this is done using
+the LS client software. The $sleep_time variable is a reference that can be used
+to return how long the process should sleep for before calling the registerLS
+function again.
+
+=cut
+
+sub registerLS {
+    my ( $self, $sleep_time ) = validateParamsPos( @_, 1, { type => SCALARREF }, );
 
     # Obtain the metadata as an array of strings containing the metadata
     my @metadata = $self->getMetadataToRegister();
 
-    $self->{LS_CLIENT}->registerStatic(\@metadata);
+    $self->{LS_CLIENT}->registerStatic( \@metadata );
 
     # Set the next sleep_time. This could be used to dynamically change the
     # registration interval if desired.
-    if (defined $sleep_time) {
+    if ( defined $sleep_time ) {
         $$sleep_time = $self->{CONF}->{"status"}->{"ls_registration_interval"};
     }
 
@@ -173,8 +183,9 @@ sub registerLS {
 }
 
 =head2 handleMessage 
-    If a full message handler is registered, this function will be called
-    when a new message of the specified type is received.
+
+If a full message handler is registered, this function will be called when a new
+message of the specified type is received.
 
     Valid Parameters:
      output: The perfSONAR_PS::XML::Document being used to construct the response message
@@ -184,37 +195,41 @@ sub registerLS {
      rawRequest: The raw request received
 
 =cut
+
 sub handleMessage {
-    my ($self, @args) = @_;
-    my $args = validateParams(@args, 
-            {
-                output => 1,
-                messageId => 1,
-                messageType => 1,
-                message => 1,
-                rawRequest => 1,
-            });
+    my ( $self, @args ) = @_;
+    my $args = validateParams(
+        @args,
+        {
+            output      => 1,
+            messageId   => 1,
+            messageType => 1,
+            message     => 1,
+            rawRequest  => 1,
+        }
+    );
 
     my $messageId = $args->{"messageId"};
-    my $output = $args->{"output"};
+    my $output    = $args->{"output"};
 
-    my $mdID = "metadata.".genuid();
-    my $msg = "The skeleton can handle full message.";
+    my $mdID = "metadata." . genuid();
+    my $msg  = "The skeleton can handle full message.";
 
-    startMessage($output, genuid(), $messageId, "SkeletonResponse", "", undef);
-     getResultCodeMetadata($output, $mdID, "", "success.fullmessage.skeleton");
-     getResultCodeData($output, "data.".genuid(), $mdID, $msg, 1);
-    endMessage($output);
+    startMessage( $output, genuid(), $messageId, "SkeletonResponse", q{}, undef );
+    getResultCodeMetadata( $output, $mdID, q{}, "success.fullmessage.skeleton" );
+    getResultCodeData( $output, "data." . genuid(), $mdID, $msg, 1 );
+    endMessage( $output );
 
     return;
 }
 
 =head2 handleMessageBegin ($self, $ret_message, $messageId, $messageType, $msgParams, $request, $retMessageType, $retMessageNamespaces);
-     When a message handler is added, this function will be called when a
-     message of the registered message type is received. The function can be used to initialize any per
-     request fields. This could include things like opening database
-     connections once instead of opening them each time a metadata/data
-     pair is found.  
+
+When a message handler is added, this function will be called when a message of
+the registered message type is received. The function can be used to initialize
+any per request fields. This could include things like opening database
+connections once instead of opening them each time a metadata/data pair is
+found.  
 
     Valid Parameters:
      output: The perfSONAR_PS::XML::Document being used to construct the response message
@@ -230,31 +245,34 @@ sub handleMessage {
      outputNamespaces: A ref that can be set to a hash to specify additional namespaces to be added to the return message header
 
 =cut
-sub handleMessageBegin {
-    my ($self, @args) = @_;
-    my $args = validateParams(@args, 
-            {
-                output => 1,
-                messageId => 1, 
-                messageType => 1,
-                messageParameters => 1,
-                message => 1,
-                rawRequest => 1,
-                doOutputMessageHeader => 1,
-                doOutputMetadata => 1,
-                outputMessageType => 1,
-                outputNamespaces => 1,
-                outputMessageId => 1,
-            });
 
-    
+sub handleMessageBegin {
+    my ( $self, @args ) = @_;
+    my $args = validateParams(
+        @args,
+        {
+            output                => 1,
+            messageId             => 1,
+            messageType           => 1,
+            messageParameters     => 1,
+            message               => 1,
+            rawRequest            => 1,
+            doOutputMessageHeader => 1,
+            doOutputMetadata      => 1,
+            outputMessageType     => 1,
+            outputNamespaces      => 1,
+            outputMessageId       => 1,
+        }
+    );
+
     return;
 }
 
 =head2 handleMessageEnd ($self, $ret_message, $messageId);
-    When a message handler is added, this function is called when the
-    message is finished. This function can be used to cleanup any per
-    request fields (like open database connections).
+
+When a message handler is added, this function is called when the message is
+finished. This function can be used to cleanup any per request fields (like open
+database connections).
 
     Valid Parameters:
      output: The perfSONAR_PS::XML::Document being used to construct the response message
@@ -264,16 +282,19 @@ sub handleMessageBegin {
      doOutputMessageFooter: A ref that can be set to specify whether the daemon should output the message footer
 
 =cut
+
 sub handleMessageEnd {
-    my ($self, @args) = @_;
-    my $args = validateParams(@args, 
-            {
-                output => 1,
-                messageId => 1,
-                messageType => 1,
-                message => 1,
-                doOutputMessageFooter => 1,
-            });
+    my ( $self, @args ) = @_;
+    my $args = validateParams(
+        @args,
+        {
+            output                => 1,
+            messageId             => 1,
+            messageType           => 1,
+            message               => 1,
+            doOutputMessageFooter => 1,
+        }
+    );
 
     # The daemon will, by default, put on the footer to the message
     # "</nmwg:message>". However by setting the doOutputMessageFooter ref to
@@ -286,8 +307,9 @@ sub handleMessageEnd {
 }
 
 =head2 handleEvent ($self, $output, $messageId, $messageType, $message_parameters, $eventType, $md, $d, $raw_request);
-    The handleEvent function is called when a metadata/data pair is found in a
-    received message. 
+
+The handleEvent function is called when a metadata/data pair is found in a
+received message. 
 
     Valid Parameters:
      output: The perfSONAR_PS::XML::Document being used to construct the response message
@@ -302,34 +324,37 @@ sub handleMessageEnd {
      doOutputMetadata: A ref that can be set to have the daemon output the metadata from the request message when it outputs the message header
 
 =cut
+
 sub handleEvent {
-    my ($self, @args) = @_;
-    my $parameters = validateParams(@args,
-            {
-                output => 1,
-                messageId => 1,
-                messageType => 1,
-                messageParameters => 1,
-                eventType => 1,
-                subject => 1,
-                filterChain => 1,
-                data => 1,
-                rawRequest => 1,
-                doOutputMetadata => 1,
-            });
+    my ( $self, @args ) = @_;
+    my $parameters = validateParams(
+        @args,
+        {
+            output            => 1,
+            messageId         => 1,
+            messageType       => 1,
+            messageParameters => 1,
+            eventType         => 1,
+            subject           => 1,
+            filterChain       => 1,
+            data              => 1,
+            rawRequest        => 1,
+            doOutputMetadata  => 1,
+        }
+    );
 
-    my $output = $parameters->{"output"};
-    my $messageId = $parameters->{"messageId"};
-    my $messageType = $parameters->{"messageType"};
+    my $output             = $parameters->{"output"};
+    my $messageId          = $parameters->{"messageId"};
+    my $messageType        = $parameters->{"messageType"};
     my $message_parameters = $parameters->{"messageParameters"};
-    my $eventType = $parameters->{"eventType"};
-    my $d = $parameters->{"data"};
-    my $raw_request = $parameters->{"rawRequest"};
-    my @subjects = @{ $parameters->{"subject"} };
-    my @filters = @{ $parameters->{"filterChain"} };
+    my $eventType          = $parameters->{"eventType"};
+    my $d                  = $parameters->{"data"};
+    my $raw_request        = $parameters->{"rawRequest"};
+    my @subjects           = @{ $parameters->{"subject"} };
+    my @filters            = @{ $parameters->{"filterChain"} };
 
-    my $mdID = "metadata.".genuid();
-    my $msg = "The skeleton exists.";
+    my $mdID = "metadata." . genuid();
+    my $msg  = "The skeleton exists.";
 
     # if the module is going to output both the metadata and data for this
     # request, it needs to tell the daemon to not output the metadata. It does
@@ -339,16 +364,17 @@ sub handleEvent {
 
     ${ $parameters->{"doOutputMetadata"} } = 0;
 
-    getResultCodeMetadata($output, $mdID, $subjects[0]->getAttribute("id"), "success.skeleton");
-    getResultCodeData($output, "data.".genuid(), $mdID, $msg, 1);
+    getResultCodeMetadata( $output, $mdID, $subjects[0]->getAttribute( "id" ), "success.skeleton" );
+    getResultCodeData( $output, "data." . genuid(), $mdID, $msg, 1 );
 
     return;
 }
 
 =head2 mergeMetadata
-    This function is called by the daemon if the module has registered a merge
-    handler and a md is found that needs to be merged with another md and has
-    an eventType that matches what's been registered with the daemon.
+
+This function is called by the daemon if the module has registered a merge
+handler and a md is found that needs to be merged with another md and has an
+eventType that matches what's been registered with the daemon.
 
      messageType: The type of the message where the merging is occurring
      eventType: The event type in at least one of the md that caused this handler to be chosen
@@ -356,44 +382,51 @@ sub handleEvent {
      childMd: The metadata that needs to be merged with its parent
 
 =cut
+
 sub mergeMetadata {
-	my ($self, @args) = @_;
-	my $parameters = validateParams(@args,
-    		{
-    			messageType => 1,
-    			eventType => 1,
-    			parentMd => 1,
-    			childMd => 1,
-    		});
+    my ( $self, @args ) = @_;
+    my $parameters = validateParams(
+        @args,
+        {
+            messageType => 1,
+            eventType   => 1,
+            parentMd    => 1,
+            childMd     => 1,
+        }
+    );
 
     my $parent_md = $parameters->{parentMd};
-    my $child_md = $parameters->{childMd};
+    my $child_md  = $parameters->{childMd};
 
-    $self->{LOGGER}->info("mergeMetadata called");
+    $self->{LOGGER}->info( "mergeMetadata called" );
 
     # Just use the default merge routine for now
-    defaultMergeMetadata($parent_md, $child_md);
+    defaultMergeMetadata( $parent_md, $child_md );
 
     return;
 }
 
 1;
 
+__END__
+
 =head1 SEE ALSO
 
 L<perfSONAR_PS::MA::Base>, L<perfSONAR_PS::MA::General>, L<perfSONAR_PS::Common>,
 L<perfSONAR_PS::Messages>, L<perfSONAR_PS::LS::Register>
 
+To join the 'perfSONAR Users' mailing list, please visit:
 
-To join the 'perfSONAR-PS' mailing list, please visit:
-
-https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
 Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+  http://code.google.com/p/perfsonar-ps/issues/list
 
 =head1 VERSION
 
@@ -404,16 +437,15 @@ $Id:$
 Aaron Brown, aaron@internet2.edu
 
 =head1 LICENSE
- 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
- 
-Copyright (c) 2004-2007, Internet2 and the University of Delaware
+
+Copyright (c) 2008-2009, Internet2
 
 All rights reserved.
 
 =cut
-
-# vim: expandtab shiftwidth=4 tabstop=4

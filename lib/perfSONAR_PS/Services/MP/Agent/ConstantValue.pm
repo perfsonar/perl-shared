@@ -1,19 +1,93 @@
-use perfSONAR_PS::Common;
-
 package perfSONAR_PS::Services::MP::Agent::ConstantValue;
 
-use version; our $VERSION = 0.09; 
+use strict;
+use warnings;
+
+use version;
+our $VERSION = 3.1;
 
 =head1 NAME
 
-perfSONAR_PS::Services::MP::Agent::ConstantValue - A perfsonar MP Agent class that returns
-a constant value.
+perfSONAR_PS::Services::MP::Agent::ConstantValue
 
 =head1 DESCRIPTION
 
-This module returns a constant value. It inherits from 
-perfSONAR_PS::MP::Agent::Base to provide a consistent interface.
+A perfsonar MP Agent class that returns a constant value.  This module returns
+a constant value. It inherits from perfSONAR_PS::MP::Agent::Base to provide a
+consistent interface.
 
+=cut
+
+use perfSONAR_PS::Common;
+
+# derive from the base agent class
+use perfSONAR_PS::Services::MP::Agent::Base;
+our @ISA = qw(perfSONAR_PS::Services::MP::Agent::Base);
+
+use Log::Log4perl qw(get_logger);
+our $logger = Log::Log4perl::get_logger( 'perfSONAR_PS::Services::MP::Agent::ConstantValue' );
+
+=head2 new( $value )
+
+Creates a new agent class
+
+  $value = constant value to set
+
+=cut
+
+sub new {
+    my ( $package, $value ) = @_;
+    my %hash = ();
+
+    $hash{"RESULTS"} = $value if defined $value;
+
+    bless \%hash => $package;
+}
+
+=head2 init()
+
+No initiation needed, do nothing
+
+=cut
+
+sub init {
+    my $self = shift;
+    return 0;
+}
+
+=head2 collectMeasurements( )
+
+Always okay as long as the constant value is set.
+
+ -1 = something failed
+  0 = command ran okay
+
+=cut
+
+sub collectMeasurements {
+    my ( $self ) = @_;
+
+    if ( defined $self->results() ) {
+        $logger->debug( "Collecting constant value '" . $self->results() . "'" );
+        return 0;
+    }
+    else {
+        $self->error( "No constant value defined" );
+        $logger->error( $self->error() );
+        return -1;
+    }
+}
+
+=head2 results( )
+
+Returns the results (ie the constant value assigned in the constructor). No need to redefine 
+here as it's inherited.
+
+=cut
+
+1;
+
+__END__
 
 =head1 SYNOPSIS
 
@@ -35,78 +109,39 @@ perfSONAR_PS::MP::Agent::Base to provide a consistent interface.
     
   }
 
-=cut
+=head1 SEE ALSO
 
-# derive from teh base agent class
-use perfSONAR_PS::Services::MP::Agent::Base;
-our @ISA = qw(perfSONAR_PS::Services::MP::Agent::Base);
+To join the 'perfSONAR Users' mailing list, please visit:
 
-use Log::Log4perl qw(get_logger);
-our $logger = Log::Log4perl::get_logger( 'perfSONAR_PS::Services::MP::Agent::ConstantValue' );
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
+The perfSONAR-PS subversion repository is located at:
 
-=head2 new( $value )
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Creates a new agent class
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
-  $value = constant value to set
+  http://code.google.com/p/perfsonar-ps/issues/list
 
-=cut
-sub new {
-  my ($package, $value ) = @_; 
-  my %hash = ();
- 
-  $hash{"RESULTS"} = $value if defined $value;
+=head1 VERSION
 
-  bless \%hash => $package;
-}
+$Id$
 
+=head1 AUTHOR
 
-=head2 init()
+Yee-Ting Li <ytl@slac.stanford.edu>
 
-No initiation needed, do nothing
+=head1 LICENSE
 
-=cut
-sub init
-{
-	my $self = shift;
-	return 0;
-}
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
+=head1 COPYRIGHT
 
-=head2 collectMeasurements( )
+Copyright (c) 2007-2009, Internet2 and SLAC National Accelerator Laboratory
 
-Always okay as long as the constant value is set.
-
- -1 = something failed
-  0 = command ran okay
+All rights reserved.
 
 =cut
-sub collectMeasurements 
-{
-  	my ($self) = @_;
-
-	if ( defined $self->results() ) {
-		$logger->debug( "Collecting constant value '" . $self->results() . "'" );
-		return 0;
-	}
-	else {
-		$self->error( "No constant value defined");
-		$logger->error( $self->error() );
-		return -1;
-	}
-}
-
-
-=head2 results( )
-
-Returns the results (ie the constant value assigned in the constructor). No need to redefine 
-here as it's inherited.
-
-=cut
-
-
-
-
-
-1;

@@ -1,32 +1,30 @@
 package perfSONAR_PS::Services::LS::General;
 
-use base 'Exporter';
-
 use strict;
 use warnings;
 
-our $VERSION = 0.10;
+our $VERSION = 3.1;
 
 =head1 NAME
 
-perfSONAR_PS::LS::General - A module that provides methods for general tasks
-that LSs need to perform.
+perfSONAR_PS::LS::General
 
 =head1 DESCRIPTION
 
-This module is a catch all for common methods (for now) of LSs in the
-perfSONAR-PS framework.  As such there is no 'common thread' that each method
-shares.  This module IS NOT an object, and the methods can be invoked directly
-(and sparingly). 
+A module that provides methods for general tasks that LSs need to perform.  This
+module is a catch all for common methods (for now) of LSs in the perfSONAR-PS
+framework.  As such there is no 'common thread' that each method shares.  This
+module IS NOT an object, and the methods can be invoked directly (and sparingly). 
 
 =cut
 
+use base 'Exporter';
 use Exporter;
 use Params::Validate qw(:all);
 use perfSONAR_PS::Common;
 use perfSONAR_PS::Utils::ParameterValidation;
 
-our @EXPORT = ( 'createControlKey', 'createLSKey', 'createLSData', 'extractQuery' );
+our @EXPORT = qw( createControlKey createLSKey createLSData extractQuery );
 
 =head2 createControlKey($key, $time)
 
@@ -35,7 +33,7 @@ Creates a 'control' key for the control database that keeps track of time.
 =cut
 
 sub createControlKey {
-    my (@args) = @_;
+    my ( @args ) = @_;
     my $parameters = validateParams( @args, { key => 1, time => 1, auth => 0 } );
 
     my $keyElement = "  <nmwg:metadata id=\"" . $parameters->{key} . "-control\" metadataIdRef=\"" . $parameters->{key} . "\" xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\">\n";
@@ -61,7 +59,7 @@ Creates the 'internals' of the metadata that will be returned w/ a key.
 =cut
 
 sub createLSKey {
-    my (@args) = @_;
+    my ( @args ) = @_;
     my $parameters = validateParams( @args, { key => 1, eventType => 0 } );
 
     my $keyElement = q{};
@@ -70,7 +68,7 @@ sub createLSKey {
     $keyElement = $keyElement . "            <nmwg:parameter name=\"lsKey\">" . $parameters->{key} . "</nmwg:parameter>\n";
     $keyElement = $keyElement . "          </nmwg:parameters>\n";
     $keyElement = $keyElement . "        </nmwg:key>\n";
-    if ( $parameters->{eventType} ) {
+    if ( exists $parameters->{eventType} and $parameters->{eventType} ) {
         $keyElement = $keyElement . "        <nmwg:eventType>" . $parameters->{eventType} . "</nmwg:eventType>\n";
     }
     return $keyElement;
@@ -83,7 +81,7 @@ Creates a 'data' block that is stored in the backend storage.
 =cut
 
 sub createLSData {
-    my (@args) = @_;
+    my ( @args ) = @_;
     my $parameters = validateParams( @args, { dataId => 1, metadataId => 1, data => 1, type => 0 } );
 
     my $dataElement = "    <nmwg:data xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\" id=\"" . $parameters->{dataId} . "\" metadataIdRef=\"" . $parameters->{metadataId} . "\">\n";
@@ -105,7 +103,7 @@ elements.
 =cut
 
 sub extractQuery {
-    my (@args) = @_;
+    my ( @args ) = @_;
     my $parameters = validateParams( @args, { node => 1 } );
 
     my $query = q{};
@@ -132,7 +130,7 @@ NOT FOR EXTERNAL USE
 =cut
 
 sub wrapStore {
-    my (@args) = @_;
+    my ( @args ) = @_;
     my $parameters = validateParams( @args, { content => 0, type => 0 } );
 
     my $store = "<nmwg:store xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\"";
@@ -159,16 +157,16 @@ __END__
 L<Exporter>, L<Params::Validate>, L<perfSONAR_PS::Common>,
 L<perfSONAR_PS::Utils::ParameterValidation>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -182,12 +180,13 @@ Jason Zurawski, zurawski@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2008, Internet2 and the University of Delaware
+Copyright (c) 2004-2009, Internet2 and the University of Delaware
 
 All rights reserved.
 
