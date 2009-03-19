@@ -73,7 +73,7 @@ sub init {
 
         my $environment = $self->{CONF}->{"topology"}->{"db_environment"};
         if ( exists $self->{DIRECTORY} and $self->{DIRECTORY} ) {
-            unless ( $environment =~ "^/" ) ) {
+            unless ( $environment =~ "^/" ) {
                 $environment = $self->{DIRECTORY} . "/" . $environment;
             }
         }
