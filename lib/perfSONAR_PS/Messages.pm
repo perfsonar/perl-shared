@@ -219,8 +219,8 @@ sub getResultCodeMetadata {
     $attrs{"id"} = $id;
     $attrs{"metadataIdRef"} = $metadataIdRef if defined $metadataIdRef and $metadataIdRef;
 
-    $output->startElement( prefix => "nmwg", tag => "metadata", namespace => "http://ggf.org/ns/nmwg/base/2.0/", attributes => \%attrs );
-    $output->startElement( prefix => "nmwg", tag => "eventType", namespace => "http://ggf.org/ns/nmwg/base/2.0/", content => $event );
+    $output->startElement( prefix => "nmwg", tag => "metadata",  namespace => "http://ggf.org/ns/nmwg/base/2.0/", attributes => \%attrs );
+    $output->startElement( prefix => "nmwg", tag => "eventType", namespace => "http://ggf.org/ns/nmwg/base/2.0/", content    => $event );
     $output->endElement( "eventType" );
     $output->endElement( "metadata" );
 
@@ -362,7 +362,7 @@ sub getErrorResponseMessage {
     my $eventType     = $args->{eventType};
     my $description   = $args->{description};
 
-    $id = "message." . genuid() unless exists $args->{id};
+    $id     = "message." . genuid()             unless exists $args->{id};
     $output = new perfSONAR_PS::XML::Document() unless exists $args->{output};
 
     my $n = getResultCodeMessage( $output, $id, $messageIdRef, $metadataIdRef, "ErrorResponse", $eventType, $description, undef, 0 );

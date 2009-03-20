@@ -96,7 +96,7 @@ sub init {
 
     if ( $self->{CONF}->{"topology"}->{"enable_registration"} ) {
         unless ( exists $self->{CONF}->{service_accesspoint} and $self->{CONF}->{service_accesspoint} ) {
-            unless ( exists $self->{CONF}->{external_address} and  $self->{CONF}->{external_address} ) {
+            unless ( exists $self->{CONF}->{external_address} and $self->{CONF}->{external_address} ) {
                 $self->{LOGGER}->error( "With LS registration enabled, you need to specify either the service accessPoint for the service or the external_address" );
                 return -1;
             }

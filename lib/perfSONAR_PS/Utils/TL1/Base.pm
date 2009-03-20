@@ -149,15 +149,30 @@ sub getCacheTime {
     return $self->{CACHE_TIME};
 }
 
-=head2 login()
+=head2 login({ inhibit_messages })
 
-Internal function used to login to the service. MUST be overridden by
-implementing classes.
+Internal function used to login to the service. MAY be overridden by
+implementing classes if they have special needs for logging in. If
+inhibit_messages is set to true (the default), AS messages will be turned off
+on login. If it is set to false, the connection will receive AS messages.
 
 =cut
 
 sub login {
-    croak "This method must be overriden by a subclass";
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { inhibit_messages => { type => SCALAR, optional => 1, default => 1 }, } );
+
+    my ( $status, $lines ) = $self->send_cmd( "ACT-USER::" . $self->{USERNAME} . ":" . $self->{CTAG} . "::" . $self->{PASSWORD} . ";" );
+
+    if ( $status != 1 ) {
+        return 0;
+    }
+
+    if ( $parameters->{inhibit_messages} ) {
+        $self->send_cmd( "INH-MSG-ALL:::" . $self->{CTAG} . ";" );
+    }
+
+    return 1;
 }
 
 =head2 logout()

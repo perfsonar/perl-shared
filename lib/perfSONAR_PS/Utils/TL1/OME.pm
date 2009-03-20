@@ -56,13 +56,13 @@ sub initialize {
     return $self->SUPER::initialize( $parameters );
 }
 
-=head2 getOCN()
+=head2 get_optical_facilities()
 
 TBD
 
 =cut
 
-sub getOCN {
+sub get_optical_facilities {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{OPTICAL_PORTS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -122,13 +122,13 @@ sub getOCN {
     return ( 0, $self->{OPTICAL_PORTS}->{$facility_name} );
 }
 
-=head2 getETH()
+=head2 get_ethernet_facilities()
 
 TBD
 
 =cut
 
-sub getETH {
+sub get_ethernet_facilities {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{ETHERNET_PORTS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -184,13 +184,13 @@ sub getETH {
     return ( 0, $self->{ETHERNET_PORTS}->{$facility_name} );
 }
 
-=head2 getWAN()
+=head2 get_wan_facilities()
 
 TBD
 
 =cut
 
-sub getWAN {
+sub get_wan_facilities {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{OPTICAL_PORTS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -245,13 +245,13 @@ sub getWAN {
     return ( 0, $self->{WAN_PORTS}->{$facility_name} );
 }
 
-=head2 getCrossconnect()
+=head2 get_crossconnects()
 
 TBD
 
 =cut
 
-sub getCrossconnect {
+sub get_crossconnects {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{CROSSCONNECTS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -293,13 +293,13 @@ sub getCrossconnect {
     return ( 0, $self->{CROSSCONNECTS} );
 }
 
-=head2 getAlarms()
+=head2 get_alarms()
 
 TBD
 
 =cut
 
-sub getAlarms {
+sub get_alarms {
     my ( $self, $alarm_to_match ) = @_;
 
     if ( $self->{ALARMS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -390,13 +390,13 @@ sub getAlarms {
     return ( 0, \@ret_alarms );
 }
 
-=head2 waitEvent()
+=head2 wait_event()
 
 TBD
 
 =cut
 
-sub waitEvent {
+sub wait_event {
     my ( $self, @args ) = @_;
     my $args = validateParams( @args, { timeout => { type => SCALAR }, } );
 
@@ -466,7 +466,7 @@ TBD
 
 =cut
 
-sub waitAlarm {
+sub wait_alarm {
     my ( $self, @args ) = @_;
     my $args = validateParams( @args, { timeout => { type => SCALAR }, } );
 
@@ -532,13 +532,13 @@ sub waitAlarm {
     return ( -1, undef );
 }
 
-=head2 getETH_PM()
+=head2 get_ethernet_pms()
 
 TBD
 
 =cut
 
-sub getETH_PM {
+sub get_ethernet_pms {
     my ( $self, $aid, $pm_type ) = @_;
 
     my %facility_types = ( "eth" => 1, "eth10g" => 1 );
@@ -580,13 +580,13 @@ sub getETH_PM {
     }
 }
 
-=head2 getOCN_PM()
+=head2 get_optical_pms()
 
 TBD
 
 =cut
 
-sub getOCN_PM {
+sub get_optical_pms {
     my ( $self, $aid, $pm_type ) = @_;
 
     my %facility_types = ( "oc3" => 1, "oc12" => 1, "oc48" => 1, "oc192" => 1 );

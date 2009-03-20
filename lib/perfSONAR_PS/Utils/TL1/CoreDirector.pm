@@ -60,13 +60,13 @@ sub initialize {
     return $self->SUPER::initialize( $parameters );
 }
 
-=head2 getVCG()
+=head2 get_vcgs()
 
 TBD
 
 =cut
 
-sub getVCG {
+sub get_vcgs {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{VCGSBYNAME_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -113,13 +113,13 @@ sub getVCG {
     return ( 0, $self->{VCGSBYNAME}->{$facility_name} );
 }
 
-=head2 getSNC()
+=head2 get_sncs()
 
 TBD
 
 =cut
 
-sub getSNC {
+sub get_sncs {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{SNCSBYNAME_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -166,13 +166,13 @@ sub getSNC {
     return ( 0, $self->{SNCSBYNAME}->{$facility_name} );
 }
 
-=head2 getSTS()
+=head2 get_stss()
 
 TBD
 
 =cut
 
-sub getSTS {
+sub get_stss {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{STSSBYNAME_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -219,13 +219,13 @@ sub getSTS {
     return ( 0, $self->{STSSBYNAME}->{$facility_name} );
 }
 
-=head2 getETH()
+=head2 get_ethernet_facilities()
 
 TBD
 
 =cut
 
-sub getETH {
+sub get_ethernet_facilities {
     my ( $self, $facility_name ) = @_;
 
     if ( not defined $facility_name ) {
@@ -266,13 +266,13 @@ sub getETH {
     return ( 0, $eths{$facility_name} );
 }
 
-=head2 getOCN()
+=head2 get_optical_facilities()
 
 TBD
 
 =cut
 
-sub getOCN {
+sub get_optical_facilities {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{OCNSBYAID_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -320,13 +320,13 @@ sub getOCN {
     return ( -1, $self->{OCNSBYAID}->{$facility_name} );
 }
 
-=head2 getEFLOW()
+=head2 get_eflows()
 
 TBD
 
 =cut
 
-sub getEFLOW {
+sub get_eflows {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{EFLOWSBYNAME_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -372,13 +372,13 @@ sub getEFLOW {
     return ( 0, $self->{EFLOWSBYNAME}->{$facility_name} );
 }
 
-=head2 getGTP()
+=head2 get_gtps ()
 
 TBD
 
 =cut
 
-sub getGTP {
+sub get_gtps {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{GTPSBYNAME_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -425,13 +425,13 @@ sub getGTP {
     return ( 0, $self->{GTPSBYNAME}->{$facility_name} );
 }
 
-=head2 getCrossconnect()
+=head2 get_crossconnects()
 
 TBD
 
 =cut
 
-sub getCrossconnect {
+sub get_crossconnects {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{CRSSBYNAME_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -487,13 +487,13 @@ sub getCrossconnect {
     return ( 0, $self->{CRSSBYNAME}->{$facility_name} );
 }
 
-=head2 getSTS_PM()
+=head2 get_sts_pms()
 
 TBD
 
 =cut
 
-sub getSTS_PM {
+sub get_sts_pms {
     my ( $self, $facility_name, $pm_type ) = @_;
 
     my ( $successStatus, $results );
@@ -560,13 +560,13 @@ sub getSTS_PM {
     }
 }
 
-=head2 getETH_PM()
+=head2 get_ethernet_pms()
 
 TBD
 
 =cut
 
-sub getETH_PM {
+sub get_ethernet_pms {
     my ( $self, $facility_name, $pm_type ) = @_;
 
     if ( not $facility_name ) {
@@ -648,13 +648,13 @@ sub getETH_PM {
     }
 }
 
-=head2 getEFLOW_PM()
+=head2 get_eflow_pms()
 
 TBD
 
 =cut
 
-sub getEFLOW_PM {
+sub get_eflow_pms {
     my ( $self, $facility_name, $pm_type ) = @_;
 
     if ( not $facility_name ) {
@@ -730,13 +730,13 @@ sub getEFLOW_PM {
     }
 }
 
-=head2 getVCG_PM()
+=head2 get_vcg_pms()
 
 TBD
 
 =cut
 
-sub getVCG_PM {
+sub get_vcg_pms {
     my ( $self, $facility_name, $pm_type ) = @_;
 
     if ( not $facility_name ) {
@@ -816,13 +816,13 @@ sub getVCG_PM {
     }
 }
 
-=head2 getOCN_PM()
+=head2 get_optical_pms()
 
 TBD
 
 =cut
 
-sub getOCN_PM {
+sub get_optical_pms {
     my ( $self, $facility_name, $pm_type ) = @_;
 
     if ( not $facility_name ) {
@@ -910,13 +910,13 @@ sub getOCN_PM {
     }
 }
 
-=head2 getAlarms()
+=head2 get_alarms()
 
 TBD
 
 =cut
 
-sub getAlarms {
+sub get_alarms {
     my ( $self, $alarm_to_match ) = @_;
 
     if ( $self->{ALARMS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -998,13 +998,13 @@ sub getAlarms {
     return ( 0, \@ret_alarms );
 }
 
-=head2 waitEvent()
+=head2 wait_event ()
 
 TBD
 
 =cut
 
-sub waitEvent {
+sub wait_event {
     my ( $self, @args ) = @_;
     my $args = validateParams( @args, { timeout => { type => SCALAR }, } );
 
@@ -1064,13 +1064,13 @@ sub waitEvent {
     return ( -1, undef );
 }
 
-=head2 waitAlarm()
+=head2 wait_alarm ()
 
 TBD
 
 =cut
 
-sub waitAlarm {
+sub wait_alarm {
     my ( $self, @args ) = @_;
     my $args = validateParams( @args, { timeout => { type => SCALAR }, } );
 
@@ -1125,32 +1125,10 @@ sub waitAlarm {
     return ( -1, undef );
 }
 
-=head2 login()
-
-TBD
-
-=cut
-
-sub login {
-    my ( $self, @params ) = @_;
-    my $parameters = validate( @params, { inhibitMessages => { type => SCALAR, optional => 1, default => 1 }, } );
-
-    my ( $status, $lines ) = $self->send_cmd( "ACT-USER::" . $self->{USERNAME} . ":" . $self->{CTAG} . "::" . $self->{PASSWORD} . ";" );
-
-    if ( $status != 1 ) {
-        return 0;
-    }
-
-    if ( $parameters->{inhibitMessages} ) {
-        $self->send_cmd( "INH-MSG-ALL:::" . $self->{CTAG} . ";" );
-    }
-
-    return 1;
-}
-
 =head2 logout()
 
-TBD
+A function to enable proper logouts from the CoreDirector, the session should
+get cancelled so the base function is overriden to make sure this happens.
 
 =cut
 

@@ -48,13 +48,13 @@ sub initialize {
     return $self->SUPER::initialize( $parameters );
 }
 
-=head2 getAlarms()
+=head2 get_alarms()
 
 TBD
 
 =cut
 
-sub getAlarms {
+sub get_alarms {
     my ( $self ) = shift;
     my %args = @_;
 
@@ -185,35 +185,6 @@ sub readAlarms {
 
     $self->{ALARMS} = \@alarms;
     return;
-}
-
-=head2 login()
-
-TBD
-
-=cut
-
-sub login {
-    my ( $self ) = @_;
-
-    if ( not $self->{TELNET} ) {
-        return -1;
-    }
-
-    $self->{TELNET}->print( "\n" );
-    $self->{TELNET}->waitfor( String => 'TL1' );
-
-    $self->{LOGGER}->debug( "PASSWORD: $self->{PASSWORD}\n" );
-
-    my ( $status, $lines ) = $self->send_cmd( "ACT-USER::" . $self->{USERNAME} . ":" . $self->{CTAG} . "::" . $self->{PASSWORD} . ";" );
-
-    if ( $status != 1 ) {
-        return -1;
-    }
-
-    $self->send_cmd( "INH-MSG-ALL:::" . $self->{CTAG} . ";" );
-
-    return 0;
 }
 
 1;

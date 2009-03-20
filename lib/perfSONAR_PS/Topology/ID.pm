@@ -270,7 +270,7 @@ sub idBaseLevel {
     }
 
     if ( $id =~ /^urn:ogf:network$/ ) {
-        $$ret_type = "" if ( defined $ret_type and $ret_type  );
+        $$ret_type = "" if ( defined $ret_type and $ret_type );
         return q{};
     }
 

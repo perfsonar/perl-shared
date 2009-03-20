@@ -28,7 +28,7 @@ use English qw( -no_match_vars );
 
 use base 'Exporter';
 our @EXPORT = qw( readXML defaultMergeMetadata countRefs genuid extract reMap consultArchive find findvalue escapeString unescapeString makeEnvelope mapNamespaces mergeConfig mergeHash mergeNodes_general );
- 
+
 =head2 find($node, $query, $return_first)
 
 This function replicates the libxml "find" function. However, it formats the

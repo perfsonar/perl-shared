@@ -56,13 +56,13 @@ sub initialize {
     return $self->SUPER::initialize( $parameters );
 }
 
-=head2 getOCN()
+=head2 get_optical_facilities()
 
 TBD
 
 =cut
 
-sub getOCN {
+sub get_optical_facilities {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{OPTICAL_PORTS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -127,135 +127,13 @@ sub getOCN {
     return ( 0, $self->{OPTICAL_PORTS}->{$facility_name} );
 }
 
-#=head2 getETH()
-#
-#TBD
-#
-#=cut
-#
-#sub getETH {
-#    my ($self, $facility_name) = @_;
-#
-#    if ($self->{ETHERNET_PORTS_CACHE_TIME} + $self->{CACHE_DURATION} < time) {
-#        my %eths = ();
-#
-#        foreach my $type ("ETH", "ETH10G") {
-#            my ($successStatus, $results) = $self->send_cmd("RTRV-".$type."::".$type."-1-ALL:".$self->{CTAG}.";");
-#            if ($successStatus != 1) {
-#                return (-1, $results);
-#            }
-#
-##   "ETH-1-4-3::AN=ENABLE,ANSTATUS=INPROGRESS,ANETHDPX=UNKNOWN,ANSPEED=UNKNOWN,ANPAUSETX=UNKNOWN,ANPAUSERX=UNKNOWN,ADVETHDPX=UNKNOWN,ADVSPEED=UNKNOWN,ADVFLOWCTRL=UNKNOWN,ETHDPX=FULL,SPEED=1000,FLOWCTRL=ASYM,PAUSETX=ENABLE,PAUSERX=DISABLE,PAUSERXOVERRIDE=ENABLE,MTU=9600,TXCON=ENABLE,PASSCTRL=DISABLE,PAUSETXOVERRIDE=DISABLE,RXIDLE=0,CFPRF=CFPRF-1-4,PHYSADDR=00140D034877:OOS-MA,DISCD"
-##   "ETH-1-4-4::AN=ENABLE,ANSTATUS=INPROGRESS,ANETHDPX=UNKNOWN,ANSPEED=UNKNOWN,ANPAUSETX=UNKNOWN,ANPAUSERX=UNKNOWN,ADVETHDPX=UNKNOWN,ADVSPEED=UNKNOWN,ADVFLOWCTRL=UNKNOWN,ETHDPX=FULL,SPEED=1000,FLOWCTRL=ASYM,PAUSETX=ENABLE,PAUSERX=DISABLE,PAUSERXOVERRIDE=ENABLE,MTU=9600,TXCON=ENABLE,PASSCTRL=DISABLE,PAUSETXOVERRIDE=DISABLE,RXIDLE=0,CFPRF=CFPRF-1-4,PHYSADDR=00140D034878:OOS-MA,DISCD"
-#
-#            foreach my $line (@$results) {
-#                $self->{LOGGER}->debug($line);
-#                if ($line =~ /"([^:]*:[^:]*:[^:]*:[^"]*)"/) {
-#                    $line = $1;
-#
-#                my %eth = ();
-#
-#                my @fields = split(':', $line);
-#                my $aid = $fields[0];
-#                my ($pst, $sst) = split(',', $fields[3]);
-#
-#                $eth{facility} = $aid;
-#                $eth{facility_type} = "ethernet";
-#
-#                foreach my $pair (split(',', $fields[2])) {
-#                    next if (not $pair);
-#
-#                    my ($key, $value) = split('=', $pair);
-#
-#                    $eth{lc($key)} = $value;
-#                }
-#
-#                $eth{pst} = $pst;
-#                $eth{sst} = $sst;
-#
-#                $eths{$aid} = \%eth;
-#            }
-#            }
-#        }
-#
-#        $self->{ETHERNET_PORTS} = \%eths;
-#        $self->{ETHERNET_PORTS_CACHE_TIME} = time;
-#    }
-#
-#    if (not defined $facility_name) {
-#        return (0, $self->{ETHERNET_PORTS});
-#    }
-#
-#    return (0, $self->{ETHERNET_PORTS}->{$facility_name});
-#}
-
-#=head2 getWAN()
-#
-#TBD
-#
-#=cut
-#
-#sub getWAN {
-#    my ($self, $facility_name) = @_;
-#
-#    if ($self->{OPTICAL_PORTS_CACHE_TIME} + $self->{CACHE_DURATION} < time) {
-#        my %wans = ();
-#
-#        my ($successStatus, $results) = $self->send_cmd("RTRV-WAN::WAN-1-ALL:".$self->{CTAG}.";");
-#        if ($successStatus != 1) {
-#            return (-1, $results);
-#        }
-#
-#        $self->{LOGGER}->debug("Got OCN Lines\n");
-#
-#        foreach my $line (@$results) {
-#            $self->{LOGGER}->debug($line."\n");
-##   "WAN-1-10-1::MAPPING=GFP-F,FCS=0,CONDTYPE=GFPCMF,GFPRFI=ENABLE,PROVRXUNITS=0,GFPRTDELAY=ENABLE,RATE=NONE,LCAS=DISABLE,VCAT=ENABLE,PROVUNITS=0,ACTUALUNITS=0,LANFCS=ENABLE,RTDELAY=UNKNOWN,MAXVCDEL=0,CURRVCDEL=0,SCRAMBLE=ENABLE,ACTUALRXUNITS=0:OOS-MA,DISCD"
-##   "WAN-1-12-1::MAPPING=GFP-F,FCS=32,CONDTYPE=GFPCMF,GFPRFI=ENABLE,PROVRXUNITS=0,GFPRTDELAY=ENABLE,RATE=NONE,LCAS=DISABLE,VCAT=DISABLE,PROVUNITS=0,ACTUALUNITS=0,LANFCS=ENABLE,RTDELAY=UNKNOWN,MAXVCDEL=0,CURRVCDEL=0,SCRAMBLE=ENABLE,ACTUALRXUNITS=0:OOS-MA,DISCD"
-#            if ($line =~ /"([^:]*:[^:]*:[^:]*:[^"]*)"/) {
-#                $line = $1;
-#                my %wan = ();
-#
-#                my @fields = split(':', $line);
-#                my $aid = $fields[0];
-#                my ($pst, $sst) = split(',', $fields[3]);
-#
-#                $wan{facility} = $aid;
-#                $wan{facility_type} = "wan";
-#
-#                foreach my $pair (split(',', $fields[2])) {
-#                    next if (not $pair);
-#
-#                    my ($key, $value) = split('=', $pair);
-#
-#                    $wan{lc($key)} = $value;
-#                }
-#
-#                $wan{pst} = $pst;
-#                $wan{sst} = $sst;
-#
-#                $wans{$aid} = \%wan;
-#            }
-#        }
-#
-#        $self->{WAN_PORTS} = \%wans;
-#        $self->{WAN_PORTS_CACHE_TIME} = time;
-#    }
-#
-#    if (not defined $facility_name) {
-#        return (0, $self->{WAN_PORTS});
-#    }
-#
-#    return (0, $self->{WAN_PORTS}->{$facility_name});
-#}
-
-=head2 getCrossconnect()
+=head2 get_crossconnects()
 
 TBD
 
 =cut
 
-sub getCrossconnect {
+sub get_crossconnects {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{CROSSCONNECTS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -328,7 +206,7 @@ TBD
 
 =cut
 
-sub getAlarms {
+sub get_alarms {
     my ( $self, $alarm_to_match ) = @_;
 
     if ( $self->{ALARMS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -425,7 +303,7 @@ TBD
 
 =cut
 
-sub waitEvent {
+sub wait_event {
     my ( $self, @args ) = @_;
     my $args = validateParams( @args, { timeout => { type => SCALAR }, } );
 
@@ -495,7 +373,7 @@ TBD
 
 =cut
 
-sub waitAlarm {
+sub wait_alarm {
     my ( $self, @args ) = @_;
     my $args = validateParams( @args, { timeout => { type => SCALAR }, } );
 
@@ -561,13 +439,13 @@ sub waitAlarm {
     return ( -1, undef );
 }
 
-=head2 getETH_PM()
+=head2 get_ethernet_pms()
 
 TBD
 
 =cut
 
-sub getETH_PM {
+sub get_ethernet_pms {
     my ( $self, $aid, $pm_type ) = @_;
 
     my %facility_types = ( "eth" => 1, "eth10g" => 1 );
@@ -609,13 +487,13 @@ sub getETH_PM {
     }
 }
 
-=head2 getOCN_PM()
+=head2 get_optical_pms()
 
 TBD
 
 =cut
 
-sub getOCN_PM {
+sub get_optical_pms {
     my ( $self, $aid, $pm_type ) = @_;
 
     my %facility_types = ( "optical" => 1 );
@@ -857,7 +735,7 @@ TBD
 
 sub login {
     my ( $self, @params ) = @_;
-    my $parameters = validate( @params, { inhibitMessages => { type => SCALAR, optional => 1, default => 1 }, } );
+    my $parameters = validate( @params, { inhibit_messages => { type => SCALAR, optional => 1, default => 1 }, } );
 
     #    my ($status, $lines) = $self->waitMessage({ type => "other" });
     #    if ($status != 0 or not defined $lines) {
@@ -873,7 +751,7 @@ sub login {
         return 0;
     }
 
-    if ( $parameters->{inhibitMessages} ) {
+    if ( $parameters->{inhibit_messages} ) {
         $self->send_cmd( "INH-MSG-ALL:::" . $self->{CTAG} . ";" );
     }
 

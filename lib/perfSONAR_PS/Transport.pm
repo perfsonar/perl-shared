@@ -123,6 +123,7 @@ sub splitURI {
     $endpoint = substr $chunk[$len], length $port, length $chunk[$len];
 
     if ( $port =~ m/^\d+$/ ) {
+
         # the fun part ... If its all numbers, it COULD be the port
         $chunk[$len] = q{};
         unless ( $chunk[ $len - 1 ] =~ m/\]$/ ) {
@@ -219,8 +220,8 @@ that message. If not, it is filled with "".
 sub sendReceive {
     my ( $self, $envelope, $timeout, $error ) = @_;
 
-        # XXX 3/17 - JZ
-        #    Should be configurable.
+    # XXX 3/17 - JZ
+    #    Should be configurable.
     $timeout = 30 unless $timeout;
     my $logger       = get_logger( "perfSONAR_PS::Transport" );
     my $method_uri   = "http://ggf.org/ns/nmwg/base/2.0/message/";

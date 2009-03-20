@@ -661,7 +661,7 @@ sub maintenance {
     while ( 1 ) {
         my $cleanStatus = 0;
         my $sumStatus   = 0;
-        eval {     
+        eval {
             $cleanStatus = $service->cleanLS( { error => \$error, noclean => $CLEANFLAG } ) if $service->can( "cleanLS" );
             $sumStatus = $service->summarizeLS( { error => \$error } ) if $service->can( "summarizeLS" );
         };

@@ -9,7 +9,7 @@ use fields 'URI_STRING', 'LOGGER';
 
 =head1 NAME
 
-perfSONAR_PS::Client::Topology::MA
+perfSONAR_PS::Client::Topology
 
 =head1 DESCRIPTION
 
@@ -42,7 +42,7 @@ sub new {
 
     my $self = fields::new( $package );
 
-    $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::Topology::MA" );
+    $self->{LOGGER} = get_logger( $package );
 
     if ( defined $uri_string and $uri_string ) {
         $self->{"URI_STRING"} = $uri_string;

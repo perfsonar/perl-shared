@@ -48,13 +48,13 @@ sub initialize {
     return $self->SUPER::initialize( $parameters );
 }
 
-=head2 getAlarms()
+=head2 get_alarms()
 
 Get Alarms
 
 =cut
 
-sub getAlarms {
+sub get_alarms {
     my ( $self ) = shift;
     my %args = @_;
 

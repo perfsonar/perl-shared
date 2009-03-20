@@ -48,13 +48,13 @@ sub initialize {
     return $self->SUPER::initialize( $parameters );
 }
 
-=head2 getAlarms( $self )
+=head2 get_alarms( $self )
 
 Get all alarms.
 
 =cut
 
-sub getAlarms {
+sub get_alarms {
     my ( $self ) = shift;
     my %args = @_;
 
@@ -93,42 +93,6 @@ sub getAlarms {
     return ( 0, \@ret_alarms );
 }
 
-=head2 getETH_PM()
-
-TBD
-
-=cut
-
-sub getETH_PM {
-    return;
-}
-
-=head2 getSTS_PM()
-
-TBD
-
-=cut
-
-sub getSTS_PM {
-    return;
-}
-
-=head2 getOCN_PM()
-
-TBD
-
-=cut
-
-sub getOCN_PM {
-    return;
-}
-
-=head2 readStats()
-
-TBD
-
-=cut
-
 sub readStats {
     my ( $self ) = @_;
 
@@ -165,12 +129,6 @@ sub readAlarms {
 
     foreach my $line ( @$results ) {
         $self->{LOGGER}->debug( "ALM LINE: " . $line . "\n" );
-
-        #   ACC-CIENA-1 08-10-28 14:56:38
-        if ( $line =~ /(\d\d)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/ ) {
-            $self->setMachineTime( "$1-$2-$3 $4:$5:$6" );
-            next;
-        }
 
         #    "system,COM:MJ,LOGBUFOVFL-CMD,NSA,10-28,14-5-12:\"Log buffer overflow- cmd\""
         #    "oc192-1-4b-1,EQPT:MN,DATAFLT,NSA,10-26,21-44-14:\"Data integrity fault\""
