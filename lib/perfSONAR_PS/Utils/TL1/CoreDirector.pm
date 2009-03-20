@@ -60,9 +60,13 @@ sub initialize {
     return $self->SUPER::initialize( $parameters );
 }
 
-=head2 get_vcgs()
+=head2 get_vcgs($facility_name)
 
-TBD
+A function to grab the set of virtual concatenation group (VCG) facilities on
+the switch. If a facility name is specified, it returns a hash containing the
+properties of that facility. If no facility name is specified, it returns a
+hash whose keys are the facility names and whose values are hashes with the
+facility properties.
 
 =cut
 
@@ -113,9 +117,12 @@ sub get_vcgs {
     return ( 0, $self->{VCGSBYNAME}->{$facility_name} );
 }
 
-=head2 get_sncs()
+=head2 get_sncs($facility_name)
 
-TBD
+A function to grab the set of subnetwork connections (SNC) on the switch. If a
+facility name is specified, it returns a hash containing the properties of that
+facility. If no facility name is specified, it returns a hash whose keys are
+the facility names and whose values are hashes with the facility properties.
 
 =cut
 
@@ -166,13 +173,17 @@ sub get_sncs {
     return ( 0, $self->{SNCSBYNAME}->{$facility_name} );
 }
 
-=head2 get_stss()
+=head2 get_ctps($facility_name)
 
-TBD
+A function to grab the set of connection termination points (CTP) on the
+switch. If a facility name is specified, it returns a hash containing the
+properties of that facility. If no facility name is specified, it returns a
+hash whose keys are the facility names and whose values are hashes with the
+facility properties.
 
 =cut
 
-sub get_stss {
+sub get_ctps {
     my ( $self, $facility_name ) = @_;
 
     if ( $self->{STSSBYNAME_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
@@ -221,7 +232,13 @@ sub get_stss {
 
 =head2 get_ethernet_facilities()
 
-TBD
+A function to grab the set of ethernet ports on the switch. If a facility name
+is specified, it returns a hash containing the properties of that facility. If
+no facility name is specified, it returns a hash whose keys are the facility
+names and whose values are hashes with the facility properties.
+
+NOTE: due to a bug that used to exist in the CoreDirector, ethernet ports must
+be requested by name instead of grabbing all of them at once.
 
 =cut
 
@@ -266,9 +283,12 @@ sub get_ethernet_facilities {
     return ( 0, $eths{$facility_name} );
 }
 
-=head2 get_optical_facilities()
+=head2 get_optical_facilities($facility_name)
 
-TBD
+A function to grab the set of optical ports on the switch. If a facility name
+is specified, it returns a hash containing the properties of that facility. If
+no facility name is specified, it returns a hash whose keys are the facility
+names and whose values are hashes with the facility properties.
 
 =cut
 
@@ -320,9 +340,12 @@ sub get_optical_facilities {
     return ( -1, $self->{OCNSBYAID}->{$facility_name} );
 }
 
-=head2 get_eflows()
+=head2 get_eflows($facility_name)
 
-TBD
+A function to grab the set of EFLOWs on the switch. If a facility name is
+specified, it returns a hash containing the properties of that facility. If no
+facility name is specified, it returns a hash whose keys are the facility names
+and whose values are hashes with the facility properties.
 
 =cut
 
@@ -372,9 +395,13 @@ sub get_eflows {
     return ( 0, $self->{EFLOWSBYNAME}->{$facility_name} );
 }
 
-=head2 get_gtps ()
+=head2 get_gtps ($facility_name)
 
-TBD
+A function to grab the set of group termination points (GTPs) on the switch. If
+a facility name is specified, it returns a hash containing the properties of
+that facility. If no facility name is specified, it returns a hash whose keys
+are the facility names and whose values are hashes with the facility
+properties.
 
 =cut
 
@@ -427,7 +454,10 @@ sub get_gtps {
 
 =head2 get_crossconnects()
 
-TBD
+A function to grab the cross connects on the switch. If a facility name is
+specified, it returns a hash containing the properties of that facility. If no
+facility name is specified, it returns a hash whose keys are the facility names
+and whose values are hashes with the facility properties.
 
 =cut
 
@@ -487,13 +517,16 @@ sub get_crossconnects {
     return ( 0, $self->{CRSSBYNAME}->{$facility_name} );
 }
 
-=head2 get_sts_pms()
+=head2 get_ctp_pms($facility_name, $pm_type)
 
-TBD
+A function which returns the current performance counters for the connection
+termination points on the switch. If the facility name is specified, it only
+returns the performance counters for that facility. If a $pm_type is specified,
+it will only return performance counters of that type.
 
 =cut
 
-sub get_sts_pms {
+sub get_ctp_pms {
     my ( $self, $facility_name, $pm_type ) = @_;
 
     my ( $successStatus, $results );
@@ -560,9 +593,12 @@ sub get_sts_pms {
     }
 }
 
-=head2 get_ethernet_pms()
+=head2 get_ethernet_pms($facility_name, $pm_type)
 
-TBD
+A function which returns the current performance counters for the ethernet
+ports on the switch. If the facility name is specified, it only returns the
+performance counters for that facility. If a $pm_type is specified, it will
+only return performance counters of that type.
 
 =cut
 
@@ -648,9 +684,12 @@ sub get_ethernet_pms {
     }
 }
 
-=head2 get_eflow_pms()
+=head2 get_eflow_pms($facility_name, $pm_type)
 
-TBD
+A function which returns the current performance counters for the EFLOWS on the
+switch. If the facility name is specified, it only returns the performance
+counters for that facility. If a $pm_type is specified, it will only return
+performance counters of that type.
 
 =cut
 
@@ -730,9 +769,12 @@ sub get_eflow_pms {
     }
 }
 
-=head2 get_vcg_pms()
+=head2 get_vcg_pms($facility_name, $pm_type)
 
-TBD
+A function which returns the current performance counters for the virtual
+concatenation groups on the switch. If the facility name is specified, it only
+returns the performance counters for that facility. If a $pm_type is specified,
+it will only return performance counters of that type.
 
 =cut
 
@@ -816,9 +858,12 @@ sub get_vcg_pms {
     }
 }
 
-=head2 get_optical_pms()
+=head2 get_optical_pms($facility_name, $pm_type)
 
-TBD
+A function which returns the current performance counters for the optical ports
+on the switch. If the facility name is specified, it only returns the
+performance counters for that facility. If a $pm_type is specified, it will
+only return performance counters of that type.
 
 =cut
 
@@ -912,12 +957,13 @@ sub get_optical_pms {
 
 =head2 get_alarms()
 
-TBD
+A function to return the current alarms on the switch. It returns the alarms as
+an array of hashes with each hash describing a different alarm.
 
 =cut
 
 sub get_alarms {
-    my ( $self, $alarm_to_match ) = @_;
+    my ( $self ) = @_;
 
     if ( $self->{ALARMS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
         my @alarms = ();
@@ -979,28 +1025,18 @@ sub get_alarms {
     my @ret_alarms = ();
 
     foreach my $alarm ( @{ $self->{ALARMS} } ) {
-        my $matches = 1;
-        if ( $alarm_to_match ) {
-            foreach my $key ( keys %$alarm_to_match ) {
-                if ( $alarm->{$key} ) {
-                    if ( $alarm->{$key} ne $alarm_to_match->{$key} ) {
-                        $matches = 1;
-                    }
-                }
-            }
-        }
-
-        if ( $matches ) {
-            push @ret_alarms, $alarm;
-        }
+        push @ret_alarms, $alarm;
     }
 
     return ( 0, \@ret_alarms );
 }
 
-=head2 wait_event ()
+=head2 wait_event({ timeout => 0 })
 
-TBD
+A function that will wait for an autonymous event to come from the switch and
+will return that a hash containing that event's properties. If a timeout value is
+specified, the function will return after that many seconds if no events have
+occurred.
 
 =cut
 
@@ -1064,9 +1100,12 @@ sub wait_event {
     return ( -1, undef );
 }
 
-=head2 wait_alarm ()
+=head2 wait_alarm({ timeout => 0 })
 
-TBD
+A function that will wait for an alarm to be signaled from the switch and will
+return that a hash containing that alarms's properties. If a timeout value is
+specified, the function will return after that many seconds if no alarms have
+occurred.
 
 =cut
 

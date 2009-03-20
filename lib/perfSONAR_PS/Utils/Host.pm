@@ -11,9 +11,8 @@ perfSONAR_PS::Utils::Host
 
 =head1 DESCRIPTION
 
-A module that extract the usable IP addresses from a host.  This module provides
-a function that parses the ouput of the /sbin/ifconfig command on *nix systems
-looking for ip addresses.
+A module that provides functions for querying information about the host on
+which the application is running. 
 
 =head1 API
 
@@ -23,6 +22,13 @@ use base 'Exporter';
 
 our @EXPORT_OK = qw( get_ips );
 
+=head2 get_ips()
+
+A function that returns the non-loopback IP addresses from a host. The current
+implementation parses the output of the /sbin/ifconfig command to look for the
+IP addresses.
+
+=cut
 sub get_ips {
     my @ret_interfaces = ();
 
