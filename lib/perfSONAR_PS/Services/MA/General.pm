@@ -29,7 +29,7 @@ use perfSONAR_PS::Utils::ParameterValidation;
 use perfSONAR_PS::Common;
 use perfSONAR_PS::Messages;
 
-our @EXPORT = qw( getMetadataXQuery getDataXQuery getDataRRD adjustRRDTime getFilterParameters extractTime complexTime );
+our @EXPORT = qw( getMetadataXQuery getDataXQuery adjustRRDTime getFilterParameters extractTime complexTime );
 
 =head2 getMetadataXQuery( { node } )
 
@@ -419,60 +419,6 @@ sub xQueryEventType {
         }
     }
     return $parameters->{queryString};
-}
-
-=head2 getDataRRD( { directory, file, timeSettings, rrdtool } )
-
-Returns either an error or the actual results of an RRD database query.
-
-=cut
-
-sub getDataRRD {
-    my ( @args ) = @_;
-    my $parameters = validateParams( @args, { directory => 1, file => 1, timeSettings => 1, rrdtool => 1 } );
-    my $logger = get_logger( "perfSONAR_PS::Services::MA::General" );
-
-    my %result = ();
-    if ( exists $parameters->{directory} and $parameters->{directory} ) {
-        unless ( $parameters->{file} =~ "^/" ) {
-            $parameters->{file} = $parameters->{directory} . "/" . $parameters->{file};
-        }
-    }
-
-    my $datadb = new perfSONAR_PS::DB::RRD( { path => $parameters->{rrdtool}, name => $parameters->{file}, error => 1 } );
-    $datadb->openDB;
-
-    if (
-        not $parameters->{timeSettings}->{"CF"}
-        or (    $parameters->{timeSettings}->{"CF"} ne "AVERAGE"
-            and $parameters->{timeSettings}->{"CF"} ne "MIN"
-            and $parameters->{timeSettings}->{"CF"} ne "MAX"
-            and $parameters->{timeSettings}->{"CF"} ne "LAST" )
-        )
-    {
-        $parameters->{timeSettings}->{"CF"} = "AVERAGE";
-    }
-
-    my %rrd_result = $datadb->query(
-        {
-            cf         => $parameters->{timeSettings}->{"CF"},
-            resolution => $parameters->{timeSettings}->{"RESOLUTION"},
-            start      => $parameters->{timeSettings}->{"START"}->{"internal"},
-            end        => $parameters->{timeSettings}->{"END"}->{"internal"}
-        }
-    );
-
-    if ( $datadb->getErrorMessage ) {
-        my $msg = "Query error \"" . $datadb->getErrorMessage . "\"; query returned \"" . $rrd_result{ANSWER} . "\"";
-        $logger->error( $msg );
-        $result{"ERROR"} = $msg;
-        $datadb->closeDB;
-        return %result;
-    }
-    else {
-        $datadb->closeDB;
-        return %rrd_result;
-    }
 }
 
 =head2 adjustRRDTime( { timeSettings } )
