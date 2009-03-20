@@ -42,7 +42,7 @@ sub getMetadataXQuery {
     my $parameters = validateParams( @args, { node => 1 } );
     my $logger = get_logger( "perfSONAR_PS::Services::MA::General" );
 
-    my $query          = getSPXQuery(        { node => $parameters->{node}, queryString => q{} } );
+    my $query = getSPXQuery( { node => $parameters->{node}, queryString => q{} } );
     my $eventTypeQuery = getEventTypeXQuery( { node => $parameters->{node}, queryString => q{} } );
     if ( $eventTypeQuery ) {
         if ( $query ) {

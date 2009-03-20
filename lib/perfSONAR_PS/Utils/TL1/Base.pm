@@ -346,7 +346,7 @@ sub waitMessage {
     my $args = validateParams(
         @args,
         {
-             type    => { type => SCALAR },
+            type    => { type => SCALAR },
             timeout => { type => SCALAR, optional => 1 },
         }
     );

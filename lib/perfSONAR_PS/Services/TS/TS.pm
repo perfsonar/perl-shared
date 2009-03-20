@@ -88,7 +88,7 @@ sub init {
         my %ns   = getTopologyNamespaces();
 
         $self->{CLIENT} = perfSONAR_PS::DB::TopologyXMLDB->new();
-	$self->{CLIENT}->init({ directory => $environment, file => $file, namespaces => \%ns, read_only => $read_only });
+        $self->{CLIENT}->init( { directory => $environment, file => $file, namespaces => \%ns, read_only => $read_only } );
     }
     else {
         $self->{LOGGER}->error( "Invalid database type specified" );
@@ -418,9 +418,8 @@ sub handleEvent {
     }
     elsif ( $messageType eq "TSReplaceRequest" ) {
         $self->handleChangeTopologyRequest( $output, "replace", $md, $d );
-
-        #    } elsif ($messageType eq "TSRemoveRequest") {
-        #        $self->handleChangeTopologyRequest($output, "remove", $m, $d);
+#    } elsif ($messageType eq "TSRemoveRequest") {
+#        $self->handleChangeTopologyRequest($output, "remove", $m, $d);
     }
 
     return;

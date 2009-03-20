@@ -37,9 +37,9 @@ sub snmpwalk {
     # Create the SNMP session
     my ( $s, $e ) = Net::SNMP->session(
         -hostname => $host,
-        ( defined $port      and $port      ) ? ( -port      => $port )      : (),
+        ( defined $port      and $port )      ? ( -port      => $port )      : (),
         ( defined $community and $community ) ? ( -community => $community ) : (),
-        ( defined $version   and $version   ) ? ( -version   => $version )   : (),
+        ( defined $version   and $version )   ? ( -version   => $version )   : (),
     );
 
     # Was the session created?
