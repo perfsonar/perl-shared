@@ -58,7 +58,10 @@ sub initialize {
 
 =head2 get_optical_facilities()
 
-TBD
+A function to grab the set of optical facilities on the switch. If a facility
+name is specified, it returns a hash containing the properties of that
+facility. If no facility name is specified, it returns a hash whose keys are
+the facility names and whose values are hashes with the facility properties.
 
 =cut
 
@@ -129,7 +132,9 @@ sub get_optical_facilities {
 
 =head2 get_crossconnects()
 
-TBD
+A function to grab the crossconnect facilities on the switch. The function
+returns a hash whose keys are of the form "[source facility]_[destination
+facility]" and whose values are hashes with the crossconnects properties.
 
 =cut
 
@@ -200,14 +205,15 @@ sub get_crossconnects {
     return ( 0, $self->{CROSSCONNECTS} );
 }
 
-=head2 getAlarms()
+=head2 get_alarms()
 
-TBD
+A function to return the current alarms on the switch. It returns the alarms as
+an array of hashes with each hash describing a different alarm.
 
 =cut
 
 sub get_alarms {
-    my ( $self, $alarm_to_match ) = @_;
+    my ( $self ) = @_;
 
     if ( $self->{ALARMS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
         my @alarms = ();
@@ -278,28 +284,18 @@ sub get_alarms {
     my @ret_alarms = ();
 
     foreach my $alarm ( @{ $self->{ALARMS} } ) {
-        my $matches = 1;
-        if ( $alarm_to_match ) {
-            foreach my $key ( keys %$alarm_to_match ) {
-                if ( $alarm->{$key} ) {
-                    if ( $alarm->{$key} ne $alarm_to_match->{$key} ) {
-                        $matches = 1;
-                    }
-                }
-            }
-        }
-
-        if ( $matches ) {
-            push @ret_alarms, $alarm;
-        }
+        push @ret_alarms, $alarm;
     }
 
     return ( 0, \@ret_alarms );
 }
 
-=head2 waitEvent()
+=head2 wait_event({ timeout => 0 })
 
-TBD
+A function that will wait for an autonymous event to come from the switch and
+will return that a hash containing that event's properties. If a timeout value is
+specified, the function will return after that many seconds if no events have
+occurred.
 
 =cut
 
@@ -367,9 +363,12 @@ sub wait_event {
     return ( -1, undef );
 }
 
-=head2 waitAlarm()
+=head2 wait_alarm({ timeout => 0 })
 
-TBD
+A function that will wait for an alarm to be signaled from the switch and will
+return that a hash containing that alarms's properties. If a timeout value is
+specified, the function will return after that many seconds if no alarms have
+occurred.
 
 =cut
 
@@ -439,9 +438,12 @@ sub wait_alarm {
     return ( -1, undef );
 }
 
-=head2 get_ethernet_pms()
+=head2 get_ethernet_pms($facility_name, $pm_type)
 
-TBD
+A function which returns the current ethernet performance counters for a
+switch. If the facility name is specified, it only returns the performance
+counters for that facility. If a $pm_type is specified, it will only return
+performance counters of that type.
 
 =cut
 
@@ -487,9 +489,12 @@ sub get_ethernet_pms {
     }
 }
 
-=head2 get_optical_pms()
+=head2 get_optical_pms($facility_name, $pm_type)
 
-TBD
+A function which returns the current optical performance counters for a
+switch. If the facility name is specified, it only returns the performance
+counters for that facility. If a $pm_type is specified, it will only return
+performance counters of that type.
 
 =cut
 
@@ -501,9 +506,11 @@ sub get_optical_pms {
     return $self->__get_PM( $aid, $pm_type, \%facility_types );
 }
 
-=head2 __get_PM()
+=head2 __get_PM ()
 
-TBD
+An internal function which can be used to grab any of the PM counters. Since
+the PM counters are grabbed in mass, this allows the construction of functions
+to grab subsets of the PM counters.
 
 =cut
 
@@ -551,7 +558,9 @@ sub __get_PM {
 
 =head2 readOCN_PMs()
 
-TBD
+A function to read all the performance counters on the machine and cache them.
+This is called by the functions to get optical performance counters whenever
+the users requests more up to date statistics.
 
 =cut
 
@@ -611,7 +620,9 @@ sub readOCN_PMs {
 
 =head2 readETH_OMs()
 
-TBD
+A function to read all the ethernet performance counters on the machine and cache them.
+This is called by the functions to get ethernet performance counters whenever
+the users requests more up to date statistics.
 
 =cut
 
@@ -726,37 +737,6 @@ sub readETH_OMs {
 #   "STS3C-1-6-1-82,STS3C:UAS-P,311,PRTL,NEND,RCV,15-MIN,06-16,15-15,0"
 #   "WAN-1-2-2,WAN:UAS-W,314,PRTL,NEND,RCV,15-MIN,06-16,15-15,0"
 #   "ETH-1-2-2,ETH:UAS-E,314,PRTL,NEND,RCV,15-MIN,06-16,15-15,0"
-
-=head2 login()
-
-TBD
-
-=cut
-
-sub login {
-    my ( $self, @params ) = @_;
-    my $parameters = validate( @params, { inhibit_messages => { type => SCALAR, optional => 1, default => 1 }, } );
-
-    #    my ($status, $lines) = $self->waitMessage({ type => "other" });
-    #    if ($status != 0 or not defined $lines) {
-    #        $self->{LOGGER}->debug("login failed");
-    #        return -1;
-    #    }
-
-    $self->{LOGGER}->debug( "PASSWORD: $self->{PASSWORD}\n" );
-
-    my ( $status, $lines ) = $self->send_cmd( "ACT-USER::" . $self->{USERNAME} . ":" . $self->{CTAG} . "::" . $self->{PASSWORD} . ";" );
-
-    if ( $status != 1 ) {
-        return 0;
-    }
-
-    if ( $parameters->{inhibit_messages} ) {
-        $self->send_cmd( "INH-MSG-ALL:::" . $self->{CTAG} . ";" );
-    }
-
-    return 1;
-}
 
 1;
 
