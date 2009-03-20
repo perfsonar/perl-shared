@@ -42,7 +42,7 @@ sub getMetadataXQuery {
     my $parameters = validateParams( @args, { node => 1 } );
     my $logger = get_logger( "perfSONAR_PS::Services::MA::General" );
 
-    my $query = getSPXQuery( { node => $parameters->{node}, queryString => q{} } );
+    my $query          = getSPXQuery(        { node => $parameters->{node}, queryString => q{} } );
     my $eventTypeQuery = getEventTypeXQuery( { node => $parameters->{node}, queryString => q{} } );
     if ( $eventTypeQuery ) {
         if ( $query ) {
@@ -113,6 +113,7 @@ sub getEventTypeXQuery {
     my $parameters = validateParams( @args, { node => 1, queryString => 1 } );
     my $logger = get_logger( "perfSONAR_PS::Services::MA::General" );
 
+    my $eTs;
     unless ( $parameters->{node}->getType == 8 ) {
         if ( $parameters->{node}->nodeType != 3 ) {
             ( my $path = $parameters->{node}->nodePath() ) =~ s/\/nmwg:message//mx;
@@ -121,11 +122,27 @@ sub getEventTypeXQuery {
             $path =~ s/\/nmwg:data//mx;
             $path =~ s/\[\d+\]//gmx;
             $path =~ s/^\///gmx;
+
             if ( $path eq "nmwg:eventType" ) {
                 if ( $parameters->{node}->hasChildNodes() ) {
                     $parameters->{queryString} = xQueryEventType( { node => $parameters->{node}, path => $path, queryString => $parameters->{queryString} } );
                 }
             }
+            elsif ( $path =~ m/parameters$/mx ) {
+                if ( $parameters->{node}->hasChildNodes() ) {
+                    $eTs = xQueryETParameters( { node => $parameters->{node}, path => $path } );
+
+                    foreach my $n ( keys %{$eTs} ) {
+                        if ( $parameters->{queryString} ) {
+                            $parameters->{queryString} .= " or text()=\"" . $eTs->{$n} . "\"";
+                        }
+                        else {
+                            $parameters->{queryString} = "nmwg:eventType[text()=\"" . $eTs->{$n} . "\" ";
+                        }
+                    }
+                }
+            }
+
             foreach my $c ( $parameters->{node}->childNodes ) {
                 $parameters->{queryString} = getEventTypeXQuery( { node => $c, queryString => $parameters->{queryString} } );
             }
@@ -155,12 +172,7 @@ sub getDataXQuery {
             $path =~ s/\[\d+\]//gmx;
             $path =~ s/^\///gmx;
 
-            if (   $path =~ m/nmwg:parameters$/mx
-                or $path =~ m/snmp:parameters$/mx
-                or $path =~ m/netutil:parameters$/mx
-                or $path =~ m/neterr:parameters$/mx
-                or $path =~ m/netdisc:parameters$/mx )
-            {
+            if ( $path =~ m/\w+:parameters$/mx ) {
                 ( $queryCount, $parameters->{queryString} ) = xQueryParameters( { node => $parameters->{node}, path => $path, queryCount => $queryCount, queryString => $parameters->{queryString} } ) if ( $parameters->{node}->hasChildNodes() );
             }
             else {
@@ -207,12 +219,7 @@ sub xQueryParameters {
                 $path2              =~ s/\[\d+\]//gmx;
                 $path2              =~ s/^\///gmx;
 
-                if (   $path2 =~ m/nmwg:parameters\/nmwg:parameter$/mx
-                    or $path2 =~ m/snmp:parameters\/nmwg:parameter$/mx
-                    or $path2 =~ m/netutil:parameters\/nmwg:parameter$/mx
-                    or $path2 =~ m/netdisc:parameters\/nmwg:parameter$/mx
-                    or $path2 =~ m/neterr:parameters\/nmwg:parameter$/mx )
-                {
+                if ( $path2 =~ m/\w+:parameters\/nmwg:parameter$/mx ) {
                     foreach my $attr ( $c->attributes ) {
                         if ( $attr->isa( 'XML::LibXML::Attr' ) ) {
                             if ( $attr->getName eq "name" ) {
@@ -223,7 +230,9 @@ sub xQueryParameters {
                                     and ( $attrString ne "\@name=\"endTime\"" )
                                     and ( $attrString ne "\@name=\"time\"" )
                                     and ( $attrString ne "\@name=\"resolution\"" )
-                                    and ( $attrString ne "\@name=\"consolidationFunction\"" ) )
+                                    and ( $attrString ne "\@name=\"consolidationFunction\"" )
+                                    and ( $attrString ne "\@name=\"supportedEventType\"" )
+                                    and ( $attrString ne "\@name=\"eventType\"" ) )
                                 {
                                     if ( $paramHash{$attrString} ) {
                                         $paramHash{$attrString} .= " or " . $attrString . "and \@" . $attr->getName . "=\"" . $attr->getValue . "\"";
@@ -242,7 +251,9 @@ sub xQueryParameters {
                         and ( $attrString ne "\@name=\"endTime\"" )
                         and ( $attrString ne "\@name=\"time\"" )
                         and ( $attrString ne "\@name=\"resolution\"" )
-                        and ( $attrString ne "\@name=\"consolidationFunction\"" ) )
+                        and ( $attrString ne "\@name=\"consolidationFunction\"" )
+                        and ( $attrString ne "\@name=\"supportedEventType\"" )
+                        and ( $attrString ne "\@name=\"eventType\"" ) )
                     {
                         if ( $c->childNodes->size() >= 1 ) {
                             if ( $c->firstChild->nodeType == 3 ) {
@@ -274,6 +285,56 @@ sub xQueryParameters {
         }
     }
     return ( $parameters->{queryCount}, $parameters->{queryString} );
+}
+
+=head2 xQueryETParameters( { node, path } )
+
+Extract other eventTypes from strange and exotic places.
+
+=cut
+
+sub xQueryETParameters {
+    my ( @args ) = @_;
+    my $parameters = validateParams( @args, { node => 1, path => 1 } );
+    my $logger = get_logger( "perfSONAR_PS::Services::MA::General" );
+
+    my %eTs = ();
+    unless ( $parameters->{node}->getType == 8 ) {
+        if ( $parameters->{node}->hasChildNodes() ) {
+            foreach my $c ( $parameters->{node}->childNodes ) {
+                my $name  = q{};
+                my $value = q{};
+                ( my $path2 = $c->nodePath() ) =~ s/\/nmwg:message//mx;
+                $parameters->{path} =~ s/\?//gmx;
+                $path2              =~ s/\/nmwg:metadata//mx;
+                $path2              =~ s/\/nmwg:data//mx;
+                $path2              =~ s/\[\d+\]//gmx;
+                $path2              =~ s/^\///gmx;
+
+                if ( $path2 =~ m/\w+:parameters\/nmwg:parameter$/mx ) {
+                    foreach my $attr ( $c->attributes ) {
+                        if ( $attr->isa( 'XML::LibXML::Attr' ) ) {
+                            if ( $attr->getName eq "name" ) {
+                                $name = $attr->getValue if $attr->getValue;
+                            }
+                            elsif ( $attr->getName eq "value" ) {
+                                $value = $attr->getValue if $attr->getValue;
+                            }
+                        }
+                    }
+                }
+                if ( $c->childNodes->size() >= 1 ) {
+                    if ( $c->firstChild->nodeType == 3 ) {
+                        ( my $v = $c->firstChild->textContent ) =~ s/\s{2}//gmx;
+                        $value = $v if $v;
+                    }
+                }
+                next unless $name eq "supportedEventType" or $name eq "eventType";
+                $eTs{ $name . "-" . $value } = $value if $name and $value;
+            }
+        }
+    }
+    return \%eTs;
 }
 
 =head2 xQueryAttributes( { node, path, queryCount, queryString } )
