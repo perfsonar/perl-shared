@@ -356,7 +356,7 @@ Questions and comments can be directed to the author, or the mailing list.
 
 =head1 VERSION
 
-$Id: PingER.pm 227 2007-06-13 12:25:52Z zurawski $
+$Id$
 
 =head1 AUTHOR
 

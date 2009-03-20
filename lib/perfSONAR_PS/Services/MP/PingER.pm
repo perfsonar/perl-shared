@@ -691,7 +691,7 @@ Bugs, feature requests, and improvements can be directed here:
 
 =head1 VERSION
 
-$Id: PingER.pm 242 2007-06-19 21:22:24Z zurawski $
+$Id$
 
 =head1 AUTHOR
 

@@ -175,7 +175,7 @@ Bugs, feature requests, and improvements can be directed here:
 
 =head1 VERSION
 
-$Id: Base.pm 524 2007-09-05 17:35:50Z aaron $
+$Id$
 
 =head1 AUTHOR
 

@@ -98,7 +98,7 @@ my $header =  qq(<?xml version="1.0" encoding="UTF-8"?>
 <description>
    MA RRD configuration file
 
-   \$Id: $fname,v 1.10 2005/10/25 05:39:08 zurawski Exp \$
+   \$Id$fname,v 1.10 2005/10/25 05:39:08 zurawski Exp \$
    project: perfSONAR
 
 Notes:

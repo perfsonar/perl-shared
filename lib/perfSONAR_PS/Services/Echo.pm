@@ -143,7 +143,7 @@ Questions and comments can be directed to the author, or the mailing list.
 
 =head1 VERSION
 
-$Id:$
+$Id$
 
 =head1 AUTHOR
 
