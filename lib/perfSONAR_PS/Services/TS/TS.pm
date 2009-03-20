@@ -87,7 +87,8 @@ sub init {
         my $file = $self->{CONF}->{"topology"}->{"db_file"};
         my %ns   = getTopologyNamespaces();
 
-        $self->{CLIENT} = perfSONAR_PS::DB::TopologyXMLDB->new( $environment, $file, \%ns, $read_only );
+        $self->{CLIENT} = perfSONAR_PS::DB::TopologyXMLDB->new();
+	$self->{CLIENT}->init({ directory => $environment, file => $file, namespaces => \%ns, read_only => $read_only });
     }
     else {
         $self->{LOGGER}->error( "Invalid database type specified" );
