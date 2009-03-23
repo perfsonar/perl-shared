@@ -186,16 +186,16 @@ sub logout {
     return;
 }
 
-=head2 connect({ inhibitMessages => 0 })
+=head2 connect({ inhibit_messages => 0 })
 
 Connects and logs into the device. Returns 0 on success and -1 on failure. AS
-messages can be disabled by setting the "inhibitMessages" key to 1.
+messages can be disabled by setting the "inhibit_messages" key to 1.
 
 =cut
 
 sub connect {
     my ( $self, @params ) = @_;
-    my $parameters = validate( @params, { inhibitMessages => { type => SCALAR, optional => 1, default => 1 }, } );
+    my $parameters = validate( @params, { inhibit_messages => { type => SCALAR, optional => 1, default => 1 }, } );
 
     $self->{LOGGER}->info( "Connecting to " . $self->{ADDRESS} . ":" . $self->{PORT} );
 
@@ -208,7 +208,7 @@ sub connect {
 
     $self->{LOGGER}->info( "Logging into " . $self->{ADDRESS} );
 
-    if ( not $self->login( { inhibitMessages => $parameters->{inhibitMessages} } ) ) {
+    if ( not $self->login( { inhibit_messages => $parameters->{inhibit_messages} } ) ) {
         $self->{TELNET} = undef;
         $self->{STATUS} = "DISCONNECTED";
         return -1;

@@ -43,7 +43,7 @@ sub initialize {
     );
 
     $parameters->{"type"}   = "ome";
-    $parameters->{"prompt"} = "TL1" if ( not $parameters->{"prompt"} );
+    $parameters->{"prompt"} = "<" if ( not $parameters->{"prompt"} );
     $parameters->{"port"}   = "23" if ( not $parameters->{"port"} );
 
     $self->{OPTICAL_PORTS_CACHE_TIME}  = 0;
@@ -202,7 +202,7 @@ the facility names and whose values are hashes with the facility properties.
 sub get_wan_facilities {
     my ( $self, $facility_name ) = @_;
 
-    if ( $self->{OPTICAL_PORTS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
+    if ( $self->{WAN_PORTS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
         my %wans = ();
 
         my ( $successStatus, $results ) = $self->send_cmd( "RTRV-WAN::WAN-1-ALL:" . $self->{CTAG} . ";" );
@@ -844,13 +844,13 @@ case.
 
 sub login {
     my ( $self, @params ) = @_;
-    my $parameters = validate( @params, { inhibitMessages => { type => SCALAR, optional => 1, default => 1 }, } );
+    my $parameters = validate( @params, { inhibit_messages => { type => SCALAR, optional => 1, default => 1 }, } );
 
-    #    my ($status, $lines) = $self->waitMessage({ type => "other" });
-    #    if ($status != 0 or not defined $lines) {
-    #        $self->{LOGGER}->debug("login failed");
-    #        return -1;
-    #    }
+#    my ($status, $lines) = $self->waitMessage({ type => "other" });
+#    if ($status != 0 or not defined $lines) {
+#        $self->{LOGGER}->debug("login failed");
+#        return -1;
+#    }
 
     $self->{LOGGER}->debug( "PASSWORD: $self->{PASSWORD}\n" );
 
@@ -860,7 +860,7 @@ sub login {
         return 0;
     }
 
-    if ( $parameters->{inhibitMessages} ) {
+    if ( $parameters->{inhibit_messages} ) {
         $self->send_cmd( "INH-MSG-ALL:::" . $self->{CTAG} . ";" );
     }
 

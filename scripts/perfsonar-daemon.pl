@@ -33,46 +33,10 @@ use HTTP::Daemon;
 use English '-no_match_vars';
 use Carp;
 
-my $libdir;
-my $confdir;
-my $dirname;
-
-# In the non-installed case, we need to figure out what the library is at
-# compile time so that "use lib" doesn't fail. To do this, we enclose the
-# calculation of it in a BEGIN block.
-BEGIN {
-
-    # this value is set by the installation scripts
-    my $was_installed = 0;
-
-    if ( $was_installed ) {
-
-        # In this case, libdir needs to be set to the directory that the modules
-        # were installed to, and confdir needs to be set to the directory that
-        # logger.conf et al. were installed in. The installation script
-        # replaces the LIBDIR and CONFDIR portions with the actual directories
-        $libdir  = "XXX_LIBDIR_XXX";
-        $confdir = "XXX_CONFDIR_XXX";
-        $dirname = q{};
-    }
-    else {
-
-        # we need a fully-qualified directory name in case we daemonize so that we
-        # can still access scripts or other files specified in configuration files
-        # in a relative manner. Also, we need to know the location in reference to
-        # the binary so that users can launch the daemon from wherever but specify
-        # scripts and whatnot relative to the binary.
-
-        $dirname = dirname( $PROGRAM_NAME );
-        $dirname = getcwd . "/" . $dirname unless $dirname =~ /^\//;
-
-        $confdir = $dirname;
-        $libdir  = dirname( $PROGRAM_NAME ) . "/lib";
-    }
-}
-
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
+
+my $confdir = "$Bin/../etc";
 
 my %ns = (
     nmwg          => "http://ggf.org/ns/nmwg/base/2.0/",
@@ -114,8 +78,6 @@ my %ns = (
     sonet         => "http://ogf.org/schema/network/topology/sonet/20070828/",
     transport     => "http://ogf.org/schema/network/topology/transport/20070828/"
 );
-
-use lib "$libdir";
 
 use perfSONAR_PS::Common;
 use perfSONAR_PS::Messages;

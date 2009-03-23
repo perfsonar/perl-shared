@@ -1341,12 +1341,16 @@ sub remove {
             }
         };
         if ( my $e = catch std::exception ) {
-            my $msg = "Error \"" . $e->what() . "\".";
-            $msg =~ s/(\n+|\s+)/ /gmx;
-            $msg = escapeString( $msg );
-            $self->{LOGGER}->error( $msg );
-            ${ $parameters->{error} } = $msg if exists $parameters->{error};
-            return -1;
+            if ( $e->getExceptionCode() == 11 ) {
+                $self->{LOGGER}->debug( "Document \"".$parameters->{name}."\" not found." );
+            } else {
+                my $msg = "Error \"" . $e->what() . "\".";
+                $msg =~ s/(\n+|\s+)/ /gmx;
+                $msg = escapeString( $msg );
+                $self->{LOGGER}->error( $msg );
+                ${ $parameters->{error} } = $msg if exists $parameters->{error};
+                return -1;
+            }
         }
         elsif ( $e = catch DbException ) {
             my $msg = "Error \"" . $e->what() . "\".";
