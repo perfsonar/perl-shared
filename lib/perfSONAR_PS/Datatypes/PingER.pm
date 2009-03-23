@@ -8,7 +8,7 @@ our $VERSION = 3.1;
 
 =head1 NAME
 
-perfSONAR_PS::Datatypes::PingER
+perfSONAR_PS::Datatypes::PingER - implemenataion of the handler for the PingER MA messages
 
 =head1 DESCRIPTION
 
