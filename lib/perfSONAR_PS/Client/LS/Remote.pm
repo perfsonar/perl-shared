@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.1;
 
-use fields 'LS_ORDER', 'LS_CONF', 'HINTS', 'LS', 'CONF', 'CHUNK', 'ALIVE', 'FIRST', 'LS_KEY', 'LOGGER';
+use fields 'LS_ORDER', 'LS_CONF', 'HINTS', 'LS', 'CONF', 'CHUNK', 'ALIVE', 'FIRST', 'LS_KEY', 'LOGGER', 'LIMIT';
 
 =head1 NAME
 
@@ -56,6 +56,10 @@ sub new {
     $self->{CHUNK}    = 50;
     $self->{ALIVE}    = 0;
     $self->{FIRST}    = 1;
+
+    # XXX JZ 3/23 - Set the hLS LIMIT to 3 for now
+    $self->{LIMIT} = 3;
+
     undef $self->{LS};
     $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::LS::Remote" );
 
@@ -243,7 +247,8 @@ sub init {
     my ( $self ) = @_;
 
     $self->{LS_ORDER} = ();
-    my %temp = ();
+    my %temp      = ();
+    my $lsCounter = 0;
     foreach my $ls ( @{ $self->{LS_CONF} } ) {
         my $echo_service = perfSONAR_PS::Client::Echo->new( $ls );
         my ( $status, $res ) = $echo_service->ping();
@@ -251,49 +256,57 @@ sub init {
             $self->{LOGGER}->info( "Adding LS \"" . $ls . "\" to the contact list." );
             push @{ $self->{LS_ORDER} }, $ls unless $temp{$ls};
             $temp{$ls}++;
+            $lsCounter++;
         }
         else {
             $self->{LOGGER}->warn( "LS \"" . $ls . "\" was not reacheable..." );
             next;
         }
+        last if $lsCounter >= $self->{LIMIT};
     }
 
-    # XXX JZ - 2/11
-    # Turning this off for now
+    if ( $#{ $self->{LS_ORDER} } < $self->{LIMIT} ) {
 
-    #    if ( $#{ $self->{HINTS} } > -1 ) {
-    #        my $gls    = perfSONAR_PS::Client::gLS->new( { url    => $self->{HINTS} } );
-    #        my $result = $gls->getLSDiscoverRaw(         { xquery => "/nmwg:store[\@type=\"LSStore\"]/nmwg:metadata/*[local-name()=\"subject\"]/*[local-name()=\"service\"]/*[local-name()=\"accessPoint\"]" } );
-    #        if ( $result and $result->{eventType} =~ m/^success/ ) {
-    #            my $parser = XML::LibXML->new();
-    #            my %temp2  = ();
-    #            my $ping   = Net::Ping->new();
-    #            $ping->hires();
-    #            if ( exists $result->{eventType} and $result->{eventType} ne "error.ls.query.empty_results" ) {
-    #                next unless exists $result->{response} and $result->{response};
-    #                my $doc = $parser->parse_string( $result->{response} );
-    #                my $ap = find( $doc->getDocumentElement, ".//psservice:accessPoint", 0 );
-    #                foreach my $a ( $ap->get_nodelist ) {
-    #                    my $value = extract( $a, 0 );
-    #                    if ($value) {
-    #                        my $echo_service = perfSONAR_PS::Client::Echo->new($value);
-    #                        my ( $status, $res ) = $echo_service->ping();
-    #                        next unless $status > -1;
+        # ask a gLS for help - do a single query to someone close, get an hLS
+        #   list and then add the results to the list are maintaining
 
-    #                        my $value2 = $value;
-    #                        $value2 =~ s/^http:\/\///;
-    #                        my ($unt_host) = $value2 =~ /^(.+):/;
-    #                        my ( $ret, $duration, $ip ) = $ping->ping($unt_host);
-    #                        $temp2{$duration} = $value if ( ( $ret or $duration ) and ( not $temp{$value} ) );
-    #                    }
-    #                }
-    #            }
-    #            $ping->close();
-    #            foreach my $time ( sort keys %temp2 ) {
-    #                push @{ $self->{LS_ORDER} }, $temp2{$time};
-    #            }
-    #        }
-    #    }
+        if ( $#{ $self->{HINTS} } > -1 ) {
+            my $gls    = perfSONAR_PS::Client::gLS->new( { url    => $self->{HINTS} } );
+            my $result = $gls->getLSDiscoverRaw(         { xquery => "/nmwg:store[\@type=\"LSStore\"]/nmwg:metadata/*[local-name()=\"subject\"]/*[local-name()=\"service\"]/*[local-name()=\"accessPoint\"]" } );
+            if ( $result and $result->{eventType} =~ m/^success/ ) {
+                my $parser = XML::LibXML->new();
+                my %temp2  = ();
+                my $ping   = Net::Ping->new();
+                $ping->hires();
+                if ( exists $result->{eventType} and $result->{eventType} ne "error.ls.query.empty_results" ) {
+                    next unless exists $result->{response} and $result->{response};
+                    my $doc = $parser->parse_string( $result->{response} );
+                    my $ap = find( $doc->getDocumentElement, ".//*[local-name()=\"accessPoint\"]", 0 );
+                    foreach my $a ( $ap->get_nodelist ) {
+                        my $value = extract( $a, 0 );
+                        if ( $value ) {
+                            my $value2 = $value;
+                            $value2 =~ s/^http:\/\///;
+                            my ( $unt_host ) = $value2 =~ /^(.+):/;
+                            my ( $ret, $duration, $ip ) = $ping->ping( $unt_host );
+                            $temp2{$duration} = $value if ( ( $ret or $duration ) and ( not $temp{$value} ) );
+                        }
+                    }
+                }
+                $ping->close();
+
+                foreach my $time ( sort keys %temp2 ) {
+                    my $echo_service = perfSONAR_PS::Client::Echo->new( $temp2{$time} );
+                    my ( $status, $res ) = $echo_service->ping();
+                    next unless $status > -1;
+
+                    push @{ $self->{LS_ORDER} }, $temp2{$time};
+                    $lsCounter++;
+                    last if $lsCounter >= $self->{LIMIT};
+                }
+            }
+        }
+    }
 
     if ( $self->{LS_ORDER}->[0] ) {
         $self->{LS}    = $self->{LS_ORDER}->[0];
@@ -548,7 +561,7 @@ sub registerDynamic {
         else {
             $subject = createKey( $self ) . "\n" . createService( $self );
         }
-        print $subject , "\n";
+
         if ( $#resultsString != -1 ) {
             if ( $self->__register( $subject, $data_ref ) == -1 ) {
                 $self->{LOGGER}->error( "Unable to register data with LS." );
@@ -573,7 +586,7 @@ registration, it splits the data into chunks and registers each independently.
 
 sub __register {
     my ( $self, $subject, $data_ref ) = @_;
-    my $success = 0;
+
     my %lsHash = map { $_, 1 } @{ $self->{LS_CONF} };
 
     unless ( $self->{LS} and $self->{ALIVE} ) {
@@ -604,20 +617,18 @@ sub __register {
         endMessage( $doc );
 
         foreach my $ls ( @{ $self->{LS_ORDER} } ) {
-            if ( exists $lsHash{$ls} or ( not $success ) ) {
-                my ( $host, $port, $endpoint ) = &perfSONAR_PS::Transport::splitURI( $ls );
-                unless ( $host and $port and $endpoint ) {
-                    $self->{LOGGER}->error( "URI conversion error for LS \"" . $ls . "\"." );
-                    next;
-                }
+            next unless exists $lsHash{$ls} and $lsHash{$ls};
+            my ( $host, $port, $endpoint ) = &perfSONAR_PS::Transport::splitURI( $ls );
+            unless ( $host and $port and $endpoint ) {
+                $self->{LOGGER}->error( "URI conversion error for LS \"" . $ls . "\"." );
+                next;
+            }
 
-                my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint );
+            my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint );
 
-                unless ( $self->callLS( $sender, $doc->getValue() ) == 0 ) {
-                    $self->{LOGGER}->error( "Unable to register data with LS \"" . $ls . "\"." );
-                    next;
-                }
-                $success++;
+            unless ( $self->callLS( $sender, $doc->getValue() ) == 0 ) {
+                $self->{LOGGER}->error( "Unable to register data with LS \"" . $ls . "\"." );
+                next;
             }
         }
     }
@@ -634,6 +645,8 @@ sub sendDeregister {
     my ( $self, $key ) = @_;
     $self->{LOGGER}->error( "Key value not supplied." ) and return -1 unless $key;
 
+    my %lsHash = map { $_, 1 } @{ $self->{LS_CONF} };
+
     unless ( $self->{LS} and $self->{ALIVE} ) {
         $self->getLS();
         unless ( $self->{LS} and $self->{ALIVE} ) {
@@ -642,13 +655,6 @@ sub sendDeregister {
         }
     }
 
-    my ( $host, $port, $endpoint ) = &perfSONAR_PS::Transport::splitURI( $self->{LS} );
-    unless ( $host and $port and $endpoint ) {
-        $self->{LOGGER}->error( "URI conversion error." );
-        return -1;
-    }
-
-    my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint );
     my $doc = perfSONAR_PS::XML::Document->new();
     startMessage( $doc, "message." . genuid(), q{}, "LSDeregisterRequest", q{}, { perfsonar => "http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/", psservice => "http://ggf.org/ns/nmwg/tools/org/perfsonar/service/1.0/" } );
 
@@ -657,7 +663,22 @@ sub sendDeregister {
     createData( $doc, "data." . genuid(), $mdID, q{}, undef );
     endMessage( $doc );
 
-    return callLS( $self, $sender, $doc->getValue() );
+    foreach my $ls ( @{ $self->{LS_ORDER} } ) {
+        next unless exists $lsHash{$ls} and $lsHash{$ls};
+        my ( $host, $port, $endpoint ) = &perfSONAR_PS::Transport::splitURI( $ls );
+        unless ( $host and $port and $endpoint ) {
+            $self->{LOGGER}->error( "URI conversion error for LS \"" . $ls . "\"." );
+            next;
+        }
+
+        my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint );
+
+        unless ( $self->callLS( $sender, $doc->getValue() ) == 0 ) {
+            $self->{LOGGER}->error( "Unable to de-register data with LS \"" . $ls . "\"." );
+            next;
+        }
+    }
+    return;
 }
 
 =head2 sendKeepalive ($self, $key)
@@ -670,6 +691,8 @@ sub sendKeepalive {
     my ( $self, $key ) = @_;
     $self->{LOGGER}->error( "Key value not supplied." ) and return -1 unless $key;
 
+    my %lsHash = map { $_, 1 } @{ $self->{LS_CONF} };
+
     unless ( $self->{LS} and $self->{ALIVE} ) {
         $self->getLS();
         unless ( $self->{LS} and $self->{ALIVE} ) {
@@ -678,13 +701,6 @@ sub sendKeepalive {
         }
     }
 
-    my ( $host, $port, $endpoint ) = &perfSONAR_PS::Transport::splitURI( $self->{LS} );
-    unless ( $host and $port and $endpoint ) {
-        $self->{LOGGER}->error( "URI conversion error." );
-        return -1;
-    }
-
-    my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint );
     my $doc = perfSONAR_PS::XML::Document->new();
     startMessage( $doc, "message." . genuid(), q{}, "LSKeepaliveRequest", q{}, { perfsonar => "http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/", psservice => "http://ggf.org/ns/nmwg/tools/org/perfsonar/service/1.0/" } );
 
@@ -693,7 +709,22 @@ sub sendKeepalive {
     createData( $doc, "data." . genuid(), $mdID, q{}, undef );
     endMessage( $doc );
 
-    return callLS( $self, $sender, $doc->getValue() );
+    foreach my $ls ( @{ $self->{LS_ORDER} } ) {
+        next unless exists $lsHash{$ls} and $lsHash{$ls};
+        my ( $host, $port, $endpoint ) = &perfSONAR_PS::Transport::splitURI( $ls );
+        unless ( $host and $port and $endpoint ) {
+            $self->{LOGGER}->error( "URI conversion error for LS \"" . $ls . "\"." );
+            next;
+        }
+
+        my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint );
+
+        unless ( $self->callLS( $sender, $doc->getValue() ) == 0 ) {
+            $self->{LOGGER}->error( "Unable to keepalive data with LS \"" . $ls . "\"." );
+            next;
+        }
+    }
+    return;
 }
 
 =head2 sendKey ($self)
