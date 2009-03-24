@@ -1342,8 +1342,9 @@ sub remove {
         };
         if ( my $e = catch std::exception ) {
             if ( $e->getExceptionCode() == 11 ) {
-                $self->{LOGGER}->debug( "Document \"".$parameters->{name}."\" not found." );
-            } else {
+                $self->{LOGGER}->debug( "Document \"" . $parameters->{name} . "\" not found." );
+            }
+            else {
                 my $msg = "Error \"" . $e->what() . "\".";
                 $msg =~ s/(\n+|\s+)/ /gmx;
                 $msg = escapeString( $msg );

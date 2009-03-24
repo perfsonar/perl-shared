@@ -130,8 +130,9 @@ $CONFIG_FILE = $confdir . "/daemon.conf" unless $CONFIG_FILE;
 
 # The configuration directory gets passed to the modules so that relative paths
 # defined in their configurations can be resolved.
+$CONFIG_FILE = getcwd . "/" . $CONFIG_FILE unless $CONFIG_FILE =~ /^\//;
+
 $confdir = dirname( $CONFIG_FILE );
-$confdir = getcwd . "/" . $confdir unless $confdir =~ /^\//;
 
 # Read in configuration information
 my $config = new Config::General( $CONFIG_FILE );

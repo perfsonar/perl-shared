@@ -29,6 +29,7 @@ implementation parses the output of the /sbin/ifconfig command to look for the
 IP addresses.
 
 =cut
+
 sub get_ips {
     my @ret_interfaces = ();
 

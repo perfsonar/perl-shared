@@ -271,8 +271,8 @@ sub init {
         #   list and then add the results to the list are maintaining
 
         if ( $#{ $self->{HINTS} } > -1 ) {
-            my $gls    = perfSONAR_PS::Client::gLS->new( { url    => $self->{HINTS} } );
-            my $result = $gls->getLSDiscoverRaw(         { xquery => "/nmwg:store[\@type=\"LSStore\"]/nmwg:metadata/*[local-name()=\"subject\"]/*[local-name()=\"service\"]/*[local-name()=\"accessPoint\"]" } );
+            my $gls = perfSONAR_PS::Client::gLS->new( { url => $self->{HINTS} } );
+            my $result = $gls->getLSDiscoverRaw( { xquery => "/nmwg:store[\@type=\"LSStore\"]/nmwg:metadata/*[local-name()=\"subject\"]/*[local-name()=\"service\"]/*[local-name()=\"accessPoint\"]" } );
             if ( $result and $result->{eventType} =~ m/^success/ ) {
                 my $parser = XML::LibXML->new();
                 my %temp2  = ();

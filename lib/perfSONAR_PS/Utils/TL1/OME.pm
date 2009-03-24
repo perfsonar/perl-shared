@@ -846,11 +846,11 @@ sub login {
     my ( $self, @params ) = @_;
     my $parameters = validate( @params, { inhibit_messages => { type => SCALAR, optional => 1, default => 1 }, } );
 
-#    my ($status, $lines) = $self->waitMessage({ type => "other" });
-#    if ($status != 0 or not defined $lines) {
-#        $self->{LOGGER}->debug("login failed");
-#        return -1;
-#    }
+    #    my ($status, $lines) = $self->waitMessage({ type => "other" });
+    #    if ($status != 0 or not defined $lines) {
+    #        $self->{LOGGER}->debug("login failed");
+    #        return -1;
+    #    }
 
     $self->{LOGGER}->debug( "PASSWORD: $self->{PASSWORD}\n" );
 
