@@ -366,7 +366,9 @@ sub idCompare {
 
 =head2 idIsAmbiguous( $id )
 
-TBD
+A function which takes an identifier string and checks if it is 'ambiguous'
+i.e. is of the form "urn:ogf:network:domain=*" or
+"urn:ogf:network:domain=internet2.edu:*" or similar.
 
 =cut
 
@@ -378,7 +380,10 @@ sub idIsAmbiguous {
 
 =head2 idMatch( $ids, $idExp )
 
-TBD
+A function which takes an array of topology identifiers, matches them against
+the specified expression and returns the subset that match. The expressions
+look similar to "urn:ogf:network:domain=*". Any identifiers that match
+everything up to the '*' will be returned.
 
 =cut
 

@@ -13,12 +13,12 @@ perfSONAR_PS::Client::Topology
 
 =head1 DESCRIPTION
 
-A module that provides methods for interacting with Topology MA servers.  This
-modules allows one to interact with the Topology MA via its Web Services
+A module that provides methods for interacting with Topology Services.  This
+modules allows one to interact with the Topology Service via its Web Services
 interface. The API provided is identical to the API for interacting with the
 topology database directly. Thus, a client written to read from or update a
-Topology MA can be easily modified to interact directly with its underlying
-database allowing more efficient interactions if required.
+Topology Service can be easily modified to interact directly with its
+underlying database allowing more efficient interactions if required.
 
 The module is to be treated as an object, where each instance of the object
 represents a connection to a single database. Each method may then be invoked on
@@ -33,7 +33,7 @@ use perfSONAR_PS::Transport;
 =head2 new($package, $uri_string)
 
 The new function takes a URI connection string as its first argument. This
-specifies which MA to interact with.
+specifies which TS to interact with.
 
 =cut
 
@@ -52,7 +52,7 @@ sub new {
 
 =head2 open($self)
 
-The open function could be used to open a persistent connection to the MA.
+The open function could be used to open a persistent connection to the TS.
 However, currently, it is simply a stub function.
 
 =cut
@@ -64,7 +64,7 @@ sub open {
 
 =head2 close($self)
 
-The close function could close a persistent connection to the MA. However,
+The close function could close a persistent connection to the TS. However,
 currently, it is simply a stub function.
 
 =cut
@@ -76,7 +76,7 @@ sub close {
 
 =head2 setURIString($self, $uri_string)
 
-The setURIString function changes the MA that the instance uses.
+The setURIString function changes the TS that the instance uses.
 
 =cut
 
@@ -109,7 +109,7 @@ sub getURIString {
 
 =head2 buildQueryRequest($xquery)
 
-TBD
+A function which constructs a query message out of the specified xquery string.
 
 =cut
 
@@ -135,7 +135,7 @@ sub buildQueryRequest {
 
 =head2 buildChangeRequest($type, $topology)
 
-TBD
+A function which constructs a change topology message out of the specified change type and topology.
 
 =cut
 
@@ -172,7 +172,7 @@ sub buildChangeRequest {
 
 =head2 xQuery($self, $xquery)
 
-The xQuery function performs an xquery on the specified MA. It returns the
+The xQuery function performs an xquery on the specified TS. It returns the
 results as a string.
 
 =cut
@@ -225,9 +225,9 @@ sub xQuery {
 
 =head2 getAll($self)
 
-The getAll function gets the full contents of the MA. It returns the results as
+The getAll function gets the full contents of the TS. It returns the results as
 a ref to a LibXML element pointing to the <nmtopo:topology> structure containing
-the contents of the MA's database. 
+the contents of the TS's database. 
 
 =cut
 
@@ -280,7 +280,9 @@ sub getAll {
 
 =head2 changeTopology($self, $type, $topology)
 
-TBD
+A function which takes the specified type and topology and updates the remote
+Topology Service. Returns an array whose first element is 0 on success and -1
+on failure. On failure, the second element will contain an error message.
 
 =cut
 
