@@ -1,15 +1,18 @@
-%{!?perl_prefix: %define perl_prefix %(eval "`%{__perl} -V:installprefix`"; echo $installprefix)}
-%{!?perl_style: %define perl_style %(eval "`%{__perl} -V:installstyle`"; echo $installstyle)}
+%define pkgname XML-LibXML
+%define filelist %{pkgname}-%{version}-filelist
+%define NVR %{pkgname}-%{version}-%{release}
+%define maketest 1
 
 Name:           perl-XML-LibXML
-Version:        1.69
-Release:        1%{?dist}
 Summary:        Perl Binding for libxml2
+Version:        1.69
+Release:        1
+Vendor:         Petr Pajas
+Packager:       Arix International <cpan2rpm@arix.com>
 License:        Distributable, see LICENSE
 Group:          Development/Libraries
 URL:            http://search.cpan.org/dist/XML-LibXML/
-Source0:        http://www.cpan.org/modules/by-module/XML/XML-LibXML-%{version}.tar.gz
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Buildroot:      %{_tmppath}/%{name}-%{version}-%(id -u -n)
 Buildarch:      i386
 BuildRequires:  perl(ExtUtils::MakeMaker)
 BuildRequires:  perl(XML::LibXML::Common) >= 0.13
@@ -21,6 +24,8 @@ Requires:       libxml2-devel
 Requires:       perl(XML::LibXML::Common) >= 0.13
 Requires:       perl(XML::NamespaceSupport) >= 1.07
 Requires:       perl(XML::SAX) >= 0.11
+prefix:         %(echo %{_prefix})
+Source:         http://www.cpan.org/modules/by-module/XML/XML-LibXML-%{version}.tar.gz
 
 %description
 This module is an interface to libxml2, providing XML and HTML parsers with
@@ -30,39 +35,98 @@ split into several packages which are not described in this section; unless
 stated otherwise, you only need to use XML::LibXML; in your programs.
 
 %prep
-%setup -q -n XML-LibXML-%{version}
+%setup -q -n %{pkgname}-%{version} 
+chmod -R u+w %{_builddir}/%{pkgname}-%{version}
 
 %build
-%{__perl} Makefile.PL INSTALL_BASE=%{perl_prefix} OPTIMIZE="$RPM_OPT_FLAGS"
-%{__perl} -pi -e 's/^\tLD_RUN_PATH=[^\s]+\s*/\t/' Makefile
-make %{?_smp_mflags}
+grep -rsl '^#!.*perl' . |
+grep -v '.bak$' |xargs --no-run-if-empty \
+%__perl -MExtUtils::MakeMaker -e 'MY->fixin(@ARGV)'
+CFLAGS="$RPM_OPT_FLAGS"
+%{__perl} Makefile.PL `%{__perl} -MExtUtils::MakeMaker -e ' print qq|PREFIX=%{buildroot}%{_prefix}| if \$ExtUtils::MakeMaker::VERSION =~ /5\.9[1-6]|6\.0[0-5]/ '`
+%{__make} 
+%if %maketest
+%{__make} test
+%endif
 
 %install
-rm -rf $RPM_BUILD_ROOT
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
-make pure_install PERL_INSTALL_ROOT=$RPM_BUILD_ROOT
+%{makeinstall} `%{__perl} -MExtUtils::MakeMaker -e ' print \$ExtUtils::MakeMaker::VERSION <= 6.05 ? qq|PREFIX=%{buildroot}%{_prefix}| : qq|DESTDIR=%{buildroot}| '`
 
-find $RPM_BUILD_ROOT -type f -name .packlist -exec rm -f {} \;
-find $RPM_BUILD_ROOT -type f -name '*.bs' -size 0 -exec rm -f {} \;
-find $RPM_BUILD_ROOT -depth -type d -exec rmdir {} 2>/dev/null \;
+cmd=/usr/share/spec-helper/compress_files
+[ -x $cmd ] || cmd=/usr/lib/rpm/brp-compress
+[ -x $cmd ] && $cmd
 
-%{_fixperms} $RPM_BUILD_ROOT/*
+# SuSE Linux
 
-%check || :
-make test
+if [ -e /etc/SuSE-release -o -e /etc/UnitedLinux-release ]
+then
+    %{__mkdir_p} %{buildroot}/var/adm/perl-modules
+    fname=`find %{buildroot} -name "perllocal.pod" | head -1`
+    if [ -f "$fname" ] ; then                             \
+        %{__cat} `find %{buildroot} -name "perllocal.pod"`  \
+        | %{__sed} -e s+%{buildroot}++g                     \
+        < /dev/null                                         \
+        > %{buildroot}/var/adm/perl-modules/%{name} ;      \
+    fi
+fi
+
+# remove special files
+find %{buildroot} -name "perllocal.pod" \
+    -o -name ".packlist"                \
+    -o -name "*.bs"                     \
+    |xargs -i rm -f {}
+
+# no empty directories
+find %{buildroot}%{_prefix}             \
+    -type d -depth                      \
+    -exec rmdir {} \; 2>/dev/null
+
+%{__perl} -MFile::Find -le '
+    find({ wanted => \&wanted, no_chdir => 1}, "%{buildroot}");
+    print "%doc  test debian example Changes docs README LICENSE";
+    for my $x (sort @dirs, @files) {
+        push @ret, $x unless indirs($x);
+        }
+    print join "\n", sort @ret;
+
+    sub wanted {
+        return if /auto$/;
+
+        local $_ = $File::Find::name;
+        my $f = $_; s|^\Q%{buildroot}\E||;
+        return unless length;
+        return $files[@files] = $_ if -f $f;
+
+        $d = $_;
+        /\Q$d\E/ && return for reverse sort @INC;
+        $d =~ /\Q$_\E/ && return
+            for qw|/etc %_prefix/man %_prefix/bin %_prefix/share|;
+
+        $dirs[@dirs] = $_;
+        }
+
+    sub indirs {
+        my $x = shift;
+        $x =~ /^\Q$_\E\// && $x ne $_ && return 1 for @dirs;
+        }
+    ' > %filelist
+
+[ -z %filelist ] && {
+    echo "ERROR: empty %files listing"
+    exit -1
+    }
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+[ "%{buildroot}" != "/" ] && rm -rf %{buildroot}
 
-%files
-%defattr(-,root,root,-)
-%doc Changes LICENSE README
-/usr/*
-
-%post
-ln -s %{perl_prefix}/%{perl_style}/Data %{perl_prefix}/%{perl_style}/vendor_perl
-ln -s %{perl_prefix}/%{perl_style}/auto %{perl_prefix}/%{perl_style}/vendor_perl
+%files -f %filelist
+%defattr(-,root,root)
 
 %changelog
-* Thu Mar 12 2009 Jason Zurawski 1.69-1
-- Specfile autogenerated by cpanspec 1.77.
+* Mon Mar 30 2009 Jason Zurawski 1.69-1
+- Compat changes for Fedora/Centos
+
+* Mon Feb 9 2009 root@localhost.localdomain
+- Initial build.
