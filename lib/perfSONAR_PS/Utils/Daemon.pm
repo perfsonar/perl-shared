@@ -45,12 +45,10 @@ sub daemonize {
     $dnull = $args{'DEVNULL'} if ( defined $args{'DEVNULL'} );
     $umask = $args{'UMASK'}   if ( defined $args{'UMASK'} );
 
-    my ( $STDIN, $STDOUT, $STDERR );
-
-    open $STDIN,  "<",  "$dnull" or return ( -1, "Can't read $dnull: $!" );
-    open $STDOUT, ">>", "$dnull" or return ( -1, "Can't write $dnull: $!" );
+    open STDIN,  "<",  "$dnull" or return ( -1, "Can't read $dnull: $!" );
+    open STDOUT, ">>", "$dnull" or return ( -1, "Can't write $dnull: $!" );
     unless ( $args{'KEEPSTDERR'} ) {
-        open $STDERR, ">>", "$dnull" or return ( -1, "Can't write $dnull: $!" );
+        open STDERR, ">>", "$dnull" or return ( -1, "Can't write $dnull: $!" );
     }
 
     defined( my $pid = fork ) or return ( -1, "Can't fork: $!" );
