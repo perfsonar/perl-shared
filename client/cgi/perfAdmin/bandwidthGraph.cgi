@@ -22,7 +22,8 @@ use Socket;
 use POSIX;
 
 # change this to the location where you install perfSONAR-PS
-use lib "/usr/local/perfSONAR-PS/Shared/lib/";
+use lib "/home/zurawski/perfSONAR-PS/lib";
+#use lib "/usr/local/perfSONAR-PS/lib";
 
 
 use perfSONAR_PS::Client::MA;

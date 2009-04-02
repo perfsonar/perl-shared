@@ -23,6 +23,7 @@ use Date::Manip;
 use Socket;
 use POSIX;
 
+# change this to the location where you install perfSONAR-PS
 use lib "/home/zurawski/perfSONAR-PS/lib";
 #use lib "/usr/local/perfSONAR-PS/lib";
 
@@ -45,7 +46,7 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
     $subject .= "    </nmwg:parameters>\n";
     $subject .= "  </nmwg:key>  \n";
 
-    my $time = 86400;
+    my $time = 2592000;
     my $result = $ma->setupDataRequest(
         {
             start      => ( $sec - $time ),
@@ -100,12 +101,12 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
             my @time  = split( /:/, $array[1] );
             print "        data.setValue(" . $counter . ", 0, new Date(" . $year[0] . "," . ( $year[1] - 1 ) . ",";
             print $year[2] . "," . $time[0] . "," . $time[1] . "," . $time[2] . "));\n";
-            print "        data.setValue(" . $counter . ", 1, " . $store{$time} . ");\n" if $store{$time};
+            print "        data.setValue(" . $counter . ", 1, " . $store{$time}/1000000 . ");\n" if $store{$time};
             $counter++;
         }
     
         print "        var chart = new google.visualization.AnnotatedTimeLine(document.getElementById('chart_div'));\n";
-        print "        chart.draw(data, {});\n";
+        print "        chart.draw(data, {legend: 'none', title: 'Bandwidth (Mbits/sec)', titleY: 'Mbps'});\n";
         print "      }\n";
         print "    </script>\n";
         print "  </head>\n";
@@ -176,7 +177,7 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
         print "  </head>\n";
         print "  <body>\n";
         print "    <br><br>\n";
-        print "    <h2 align=\"center\">Internal Error - Try again later.</h2>\n";
+        print "    <h2 align=\"center\">Data Not Found - Try again later.</h2>\n";
         print "    <br><br>\n";
     }
     
