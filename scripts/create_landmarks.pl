@@ -227,3 +227,47 @@ sub check_row {
         $row->[$lookup_row_h->{$key}] = $options_h->{$key}  unless $row->[$lookup_row_h->{$key}];
     }
 }
+
+1;
+
+__END__
+
+
+
+=head1 SEE ALSO
+
+ 
+To join the 'perfSONAR Users' mailing list, please visit:
+
+  https://mail.internet2.edu/wws/info/perfsonar-user
+
+The perfSONAR-PS subversion repository is located at:
+
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
+
+  http://code.google.com/p/perfsonar-ps/issues/list
+
+=head1 VERSION
+
+$Id$
+
+=head1 AUTHOR
+
+Maxim Grigoriev, maxim_at_fnal_dot_gov
+
+=head1 LICENSE
+
+You should have received a copy of  the Fermitools license
+along with this software. If not, see
+<http://fermitools.fnal.gov/about/terms.html>
+
+=head1 COPYRIGHT
+
+Copyright (c)  2009,   Fermi Research Alliance (FRA)
+
+All rights reserved.
+
+=cut

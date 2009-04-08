@@ -7,6 +7,7 @@ use Sys::Hostname;
 use English qw( -no_match_vars );
 use Module::Load;
 use File::Temp qw(tempfile);
+use Term::ReadKey;
 use Cwd;
 
 =head1 NAME
@@ -620,21 +621,63 @@ sub config_pinger {
     my ( $config, $accesspoint, $def_config, $modulename ) = @_;
     my $moduletype = ( $modulename =~ /ma$/ ? "MA" : "MP" );
     $config->{$modulename} = () unless exists $config->{$modulename};
-
+    
     $config->{$modulename}->{"db_type"} = &ask( "Enter the database type to read from (sqlite,mysql) ", "mysql", $config->{$modulename}->{"db_type"}, '^(sqlite|mysql)$' );
-
+    
+    my $dirname = getcwd;
+     
     if ( $config->{$modulename}->{"db_type"} eq "sqlite" ) {
         $config->{$modulename}->{"db_file"} = &ask( "Enter the filename of the SQLite database ", "pinger.db", $config->{$modulename}->{"db_file"}, '.+' );
+	eval {
+	    require DBD::SQLite;
+	    require DBI;
+
+	    system("sqlite3 $config->{$modulename}->{db_file} < $dirname/../scripts/create_pingerMA_SQLite.sql");
+	 
+	    my $dbh = DBI->connect("dbi:SQLite:dbname=$config->{$modulename}->{db_file}", "","", 
+	                            { AutoCommit => 1,
+                                      RaiseError => 1 });
+	    $dbh->do("INSERT into host (ip_name, ip_number, comments) values ('test_name', '1.0.0.1', 'test')");
+	    
+	    if($dbh->err()) { die "$DBI::errstr\n"; }
+	};
+	if($EVAL_ERROR) {
+	    die " $EVAL_ERROR :: You have to install perl DBD::SQLite driver, run: sudo cpan -i 'DBD::SQLite' ";
+	}	
     }
     elsif ( $config->{$modulename}->{"db_type"} eq "mysql" ) {
-        $config->{$modulename}->{"db_name"} = &ask( "Enter the name of the MySQL database ",                                $db_name,          $config->{$modulename}->{"db_name"}, '.+' );
-        $config->{$modulename}->{"db_host"} = &ask( "Enter the host for the MySQL database ",                               $default_hostname, $config->{$modulename}->{"db_host"}, '.+' );
+        $config->{$modulename}->{db_name} = &ask( "Enter the name of the MySQL database ",                                $db_name,          $config->{$modulename}->{"db_name"}, '.+' );
+        $config->{$modulename}->{db_host} = &ask( "Enter the host for the MySQL database ",                               $default_hostname, $config->{$modulename}->{"db_host"}, '.+' );
         $tmp                                = &ask( "Enter the port for the MySQL database (leave blank for the default) ", $db_port,          $config->{$modulename}->{"db_port"}, '^\d*$' );
-        $config->{$modulename}->{"db_port"} = $tmp if ( $tmp ne "" );
+        $config->{$modulename}->{db_port} = $tmp if ( $tmp ne "" );
         $tmp = &ask( "Enter the username for the MySQL database (leave blank for default) ", $db_username, $config->{$modulename}->{"db_username"}, '' );
-        $config->{$modulename}->{"db_username"} = $tmp if ( $tmp ne "" );
+        $config->{$modulename}->{db_username} = $tmp if ( $tmp ne "" );
         $tmp = &ask( "Enter the password for the MySQL database (leave blank for default) ", $db_password, $config->{$modulename}->{"db_password"}, '' );
-        $config->{$modulename}->{"db_password"} = $tmp if ( $tmp ne "" );
+        $config->{$modulename}->{db_password} = $tmp if ( $tmp ne "" );
+	ReadMode 'noecho';
+	my $root_pass = &ask( "Enter the 'root' password for the MySQL database  ",  '',undef, '' );
+	ReadMode 'normal';
+        $config->{$modulename}->{db_password} = $tmp if ( $tmp ne "" );
+	eval {
+	    require DBD::mysql;
+	    require DBI;
+
+	    system("mysql -u root -p'$root_pass' -e 'create  database if not exists  $config->{$modulename}->{db_name}'");
+	    system("mysql -u root ->{db_username} -p'$root_pass' -e 'grant all privileges  $config->{$modulename}->{db_name}.* to 
+	            '$config->{$modulename}->{db_username}'@'localhost' identified by '$config->{$modulename}->{db_password}'");
+	    system("mysql -u root ->{db_username} -p'$root_pass' -e 'flush privileges'");
+	    system("mysql -u $config->{$modulename}->{db_username} -p'$config->{$modulename}->{db_password}' $config->{$modulename}->{db_name} < $dirname/../scripts/create_pingerMA_MySQL.sql");
+	 
+	    my $dbh = DBI->connect("dbi:mysql:database=$config->{$modulename}->{db_name}",  $config->{$modulename}->{db_username}, $config->{$modulename}->{db_password}, 
+	                            { AutoCommit => 1,
+                                      RaiseError => 1 });
+	    $dbh->do("INSERT into host (ip_name, ip_number, comments) values ('test_name', '1.0.0.1', 'test')");
+	    
+	    if($dbh->err()) { die "$DBI::errstr\n"; }
+	};
+	if($EVAL_ERROR) {
+	    die " $EVAL_ERROR :: You have to install perl DBD::mysql driver, run: sudo cpan -i 'DBD::mysql' ";
+	}
     }
 
     if ( $modulename eq "pingermp" ) {
@@ -813,6 +856,7 @@ sub ask {
         }
         print ": ";
         local $| = 1;
+	
         local $_ = <STDIN>;
         chomp;
         if ( defined $_ and $_ ne q{} ) {
