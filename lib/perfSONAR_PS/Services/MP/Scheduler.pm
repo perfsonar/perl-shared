@@ -6,7 +6,6 @@ package perfSONAR_PS::Services::MP::Scheduler;
 use version;
 our $VERSION = 3.1;
 
-use fields qw( SCHEDULE METADATA MAXCHILDREN );
 
 =head1 NAME
 
@@ -40,6 +39,7 @@ use POSIX;
 
 use Log::Log4perl qw(get_logger);
 our $logger = get_logger( CLASS );
+use fields qw( SCHEDULE METADATA MAXCHILDREN );
 
 use constant CLASS => 'perfSONAR_PS::Services::MP::Scheduler';
 
