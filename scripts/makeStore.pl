@@ -22,9 +22,11 @@ makeStore.pl
 
 use English qw( -no_match_vars );
 use File::Temp qw(tempfile);
+use Carp;
 
 my $confdir = shift;
 unless ( $confdir ) {
+    croak "Configuration directory not provided, aborting.\n";
     exit( 1 );
 }
 
@@ -41,6 +43,7 @@ eval {
         $rrdtool =~ s/rrdtool:\s+//mx;
         $rrdtool =~ s/\n//gmx;
         unless ( close( RRDTOOL ) ) {
+            croak "Cannot close RRDTool\n";
             return -1;
         }
     }
@@ -67,7 +70,8 @@ eval {
 
 };
 if ( $EVAL_ERROR ) {
-    print "Store generation error: \"" . $EVAL_ERROR . "\"\n";
+    print "RRD generation error: \"" . $EVAL_ERROR . "\", aborting.\n";
+    exit ( 1 );
 }
 
 my ( $fileHandle, $fileName ) = tempfile();
