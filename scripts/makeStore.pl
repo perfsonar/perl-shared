@@ -44,7 +44,7 @@ eval {
         $rrdtool =~ s/\n//gmx;
         unless ( close( RRDTOOL ) ) {
             croak "Cannot close RRDTool\n";
-            return -1;
+            exit( 1 );
         }
     }
 
