@@ -243,14 +243,14 @@ sub info {
     my %res = ();
     if ( $$answer ) {
         my @array = split( /\n/mx, $$answer );
-        my $len = $#{@array};
+        my $len = $#array;
 
         my %lookup = ();
         for my $x ( 0 .. $len ) {
             my @line = split( /\s=\s/mx, $array[$x] );
             if ( $line[0] =~ m/^rra/ ) {
                 my @key = split( /\./mx, $line[0] );
-                if ( $#{@key} == 1 ) {
+                if ( $#key == 1 ) {
                     $key[0]  =~ s/^.*\[//;
                     $key[0]  =~ s/\]$//;
                     $key[1]  =~ s/\[.*$//;
@@ -310,7 +310,7 @@ sub query {
 
     if ( $$answer ) {
         my @array = split( /\n/mx, $$answer );
-        my $len = $#{@array};
+        my $len = $#array;
         for my $x ( 0 .. $len ) {
             if ( $x == 0 ) {
                 @rrd_headings = split( /\s+/mx, $array[$x] );
@@ -321,7 +321,7 @@ sub query {
                 }
                 my @line = split( /\s+/mx, $array[$x] );
                 $line[0] =~ s/://mx;
-                my $len2 = $#{@rrd_headings};
+                my $len2 = $#rrd_headings;
                 for my $z ( 1 .. $len2 ) {
                     $rrd_result{ $line[0] }{ $rrd_headings[$z] } = $line[$z] if $line[$z];
                 }
