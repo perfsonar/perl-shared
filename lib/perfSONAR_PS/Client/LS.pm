@@ -408,6 +408,7 @@ sub keyRequestLS {
         $metadata .= $parameters->{servicexml};
     }
     else {
+
         # error?
     }
 

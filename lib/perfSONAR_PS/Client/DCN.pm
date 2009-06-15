@@ -51,11 +51,11 @@ sub new {
 
     my $self = fields::new( $package );
 
-    $self->{ALIVE} = 0;
-    $self->{SERVICE} = ();
+    $self->{ALIVE}                          = 0;
+    $self->{SERVICE}                        = ();
     $self->{SERVICE}->{nonPerfSONARService} = 1;
-    $self->{SERVICE}->{addresses} = ();
-    $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::DCN" );
+    $self->{SERVICE}->{addresses}           = ();
+    $self->{LOGGER}                         = get_logger( "perfSONAR_PS::Client::DCN" );
 
     if ( exists $parameters->{"instance"} and $parameters->{"instance"} ) {
         if ( $parameters->{"instance"} =~ m/^http(s?):\/\// ) {
@@ -70,8 +70,8 @@ sub new {
         if ( $parameters->{"instance"} =~ m/^http(s?):\/\// ) {
             my $temp;
             $temp->{value} = $parameters->{"myAddress"};
-            $temp->{type} = "url";
-            push @{ $self->{SERVICE}->{addresses} }, $temp; 
+            $temp->{type}  = "url";
+            push @{ $self->{SERVICE}->{addresses} }, $temp;
         }
         else {
             $self->{LOGGER}->error( "'myAddress' must be of the form http://ADDRESS." );
@@ -108,7 +108,7 @@ sub setInstance {
     }
     else {
         $self->{LOGGER}->error( "'instance' must be of the form http://ADDRESS." );
-    }    
+    }
     return;
 }
 
@@ -129,13 +129,13 @@ sub setMyAddress {
         $self->{SERVICE}->{addresses} = ();
         my $temp = ();
         $temp->{value} = $parameters->{"myAddress"};
-        $temp->{type} = "url";
-        push @{ $self->{SERVICE}->{addresses} }, $temp; 
+        $temp->{type}  = "url";
+        push @{ $self->{SERVICE}->{addresses} }, $temp;
         $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
     }
     else {
         $self->{LOGGER}->error( "'myAddress' must be of the form http://ADDRESS." );
-    }    
+    }
     return;
 }
 
@@ -151,9 +151,9 @@ sub setMyName {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { myName => 1 } );
 
-    $self->{ALIVE} = 0;
+    $self->{ALIVE}           = 0;
     $self->{SERVICE}->{name} = $parameters->{"myName"};
-    $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
+    $self->{LS_KEY}          = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
     return;
 }
 
@@ -169,10 +169,10 @@ sub setMyType {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { myType => 1 } );
 
-    $self->{ALIVE} = 0;
+    $self->{ALIVE}           = 0;
     $self->{SERVICE}->{type} = $parameters->{"myType"};
-    $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
-    
+    $self->{LS_KEY}          = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
+
     return;
 }
 
@@ -290,7 +290,6 @@ sub idToName {
     return \@names;
 }
 
-
 =head2 control($self { id name })
 
 Returns -1 or 0 (false or true) if the service, as specififed in an instantiated
@@ -318,10 +317,10 @@ sub control {
     }
 
     my $q = "declare namespace nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\";\n";
-    $q .= "declare namespace perfsonar=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/\";\n";
-    $q .= "declare namespace nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\";\n";
-    $q .= "declare namespace psservice=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/1.0/\";\n";
-    $q .= "/nmwg:store[\@type=\"LSStore\"]/nmwg:data[nmwg:metadata/*[local-name()='subject']/nmtb:node[nmtb:address/text()=\"". $parameters->{name} ."\" and nmtb:relation[\@type=\"connectionLink\"]/nmtb:linkIdRef[text()=\"" . $parameters->{id} . "\"]]]\n";
+    $q        .= "declare namespace perfsonar=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/\";\n";
+    $q        .= "declare namespace nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\";\n";
+    $q        .= "declare namespace psservice=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/1.0/\";\n";
+    $q        .= "/nmwg:store[\@type=\"LSStore\"]/nmwg:data[nmwg:metadata/*[local-name()='subject']/nmtb:node[nmtb:address/text()=\"" . $parameters->{name} . "\" and nmtb:relation[\@type=\"connectionLink\"]/nmtb:linkIdRef[text()=\"" . $parameters->{id} . "\"]]]\n";
     $metadata .= $self->queryWrapper( { query => $q } );
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
@@ -333,7 +332,7 @@ sub control {
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
     if ( $eventType and $eventType =~ m/^success/mx ) {
         my $datablock = find( $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 ), ".//nmwg:data", 1 );
-        if ( $datablock->getAttribute("metadataIdRef") eq $self->{LS_KEY} ) {
+        if ( $datablock->getAttribute( "metadataIdRef" ) eq $self->{LS_KEY} ) {
             return 0;
         }
     }
@@ -413,11 +412,11 @@ sub remove {
         $self->{LOGGER}->error( "Must supply either a name or id." );
         return -1;
     }
-    
+
     unless ( $self->{LS_KEY} ) {
         $self->{LS_KEY} = $self->getLSKey;
     }
- 
+
     if ( exists $self->{LS_KEY} and $self->{LS_KEY} ) {
         my %ns = (
             dcn  => "http://ggf.org/ns/nmwg/tools/dcn/2.0/",

@@ -392,7 +392,8 @@ sub getTransaction {
 
     my $dbTr = q{};
     eval {
-        if ( exists $self->{MANAGER} and $self->{MANAGER} ) {
+        if ( exists $self->{MANAGER} and $self->{MANAGER} )
+        {
             $dbTr = $self->{MANAGER}->createTransaction();
         }
     };
@@ -518,9 +519,7 @@ sub checkpoint {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { error => 0 } );
     $self->{LOGGER}->debug( "Checkpoint started." );
-    eval { 
-        $self->{ENV}->txn_checkpoint( 0, 0, Db::DB_FORCE ); 
-    };
+    eval { $self->{ENV}->txn_checkpoint( 0, 0, Db::DB_FORCE ); };
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
@@ -591,6 +590,7 @@ sub query {
             my $contName = $self->{CONTAINER}->getName();
 
             unless ( exists $parameters->{internal} and $parameters->{internal} ) {
+
                 # make sure the query is clean
                 $parameters->{query} =~ s/&/&amp;/gmx;
                 $parameters->{query} =~ s/</&lt;/gmx;
