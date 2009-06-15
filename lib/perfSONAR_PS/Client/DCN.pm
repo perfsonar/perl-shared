@@ -290,6 +290,59 @@ sub idToName {
     return \@names;
 }
 
+
+=head2 control($self { id name })
+
+Returns -1 or 0 (false or true) if the service, as specififed in an instantiated
+object, 'controls' or was the original entity to register a given Id/Name
+combination.
+
+This should be used in conjunction with the remove function, e.g. we cannot
+remove an item if we we do not control it.
+
+=cut
+
+sub control {
+    my ( $self, @args ) = @_;
+    my $parameters = validateParams( @args, { id => 1, name => 1 } );
+    my @ids        = ();
+    my $metadata   = q{};
+    my %ns         = ( xquery => "http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0/" );
+
+    unless ( $self->{LS_KEY} ) {
+        $self->{LS_KEY} = $self->getLSKey;
+        unless ( $self->{LS_KEY} ) {
+            $self->{LOGGER}->error( "Service is not registered in LS." );
+            return -1;
+        }
+    }
+
+    my $q = "declare namespace nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\";\n";
+    $q .= "declare namespace perfsonar=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/\";\n";
+    $q .= "declare namespace nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\";\n";
+    $q .= "declare namespace psservice=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/1.0/\";\n";
+    $q .= "/nmwg:store[\@type=\"LSStore\"]/nmwg:data[nmwg:metadata/*[local-name()='subject']/nmtb:node[nmtb:address/text()=\"". $parameters->{name} ."\" and nmtb:relation[\@type=\"connectionLink\"]/nmtb:linkIdRef[text()=\"" . $parameters->{id} . "\"]]]\n";
+    $metadata .= $self->queryWrapper( { query => $q } );
+
+    my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
+    unless ( $msg ) {
+        $self->{LOGGER}->error( "Message element not found in return." );
+        return;
+    }
+
+    my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
+    if ( $eventType and $eventType =~ m/^success/mx ) {
+        my $datablock = find( $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 ), ".//nmwg:data", 1 );
+        if ( $datablock->getAttribute("metadataIdRef") eq $self->{LS_KEY} ) {
+            return 0;
+        }
+    }
+    else {
+        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
+    }
+    return -1;
+}
+
 =head2 insert($self { id name })
 
 Given an id AND a name, register this infomration to the LS instance.
@@ -396,6 +449,9 @@ sub remove {
             $self->{LOGGER}->error( $datum ) if $datum;
             return -1;
         }
+    }
+    else {
+        $self->{LOGGER}->error( "No record of information registered in LS for this service." );
     }
     return -1;
 }
@@ -746,20 +802,26 @@ sub queryTS {
     return \%result;
 }
 
-=head2 queryWrapper($self { })
+=head2 queryWrapper($self { query, eventType })
 
-Given some XQuery/Xpath expression, insert this into a 'canned' subject/parameter/eventType for an LSQueryRequest
+Given some XQuery/Xpath expression, insert this into a 'canned'
+subject/parameter/eventType for an LSQueryRequest.  
 
 =cut
 
 sub queryWrapper {
     my ( $self, @args ) = @_;
-    my $parameters = validateParams( @args, { query => 0 } );
+    my $parameters = validateParams( @args, { query => 0, eventType => 0 } );
 
     my $query = "    <xquery:subject id=\"subject." . genuid() . "\" xmlns:xquery=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0/\">\n";
     $query .= $parameters->{query};
     $query .= "    </xquery:subject>\n";
-    $query .= "    <nmwg:eventType>http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0</nmwg:eventType>\n";
+    if ( exists $parameters->{query} and $parameters->{eventType} ) {
+        $query .= "    <nmwg:eventType>" . $parameters->{eventType} . "</nmwg:eventType>\n";
+    }
+    else {
+        $query .= "    <nmwg:eventType>http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0</nmwg:eventType>\n";
+    }
     $query .= "  <xquery:parameters id=\"parameters." . genuid() . "\" xmlns:xquery=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0/\">\n";
     $query .= "    <nmwg:parameter name=\"lsOutput\">native</nmwg:parameter>\n";
     $query .= "  </xquery:parameters>\n";
