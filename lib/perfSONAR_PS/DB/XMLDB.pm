@@ -140,25 +140,21 @@ sub prep {
         $dbTr   = $parameters->{txn};
         $atomic = 0;
     }
-
     eval {
         $self->{ENV} = new DbEnv( 0 );
 
-        # XXX: JZ 11/7 - Old options
-        # Db::DB_CREATE | Db::DB_RECOVER | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL | Db::DB_INIT_TXN | Db::DB_JOINENV | Db::DB_REGISTER
+        # XXX: JZ 11/7/2008 - These options were removed: Db::DB_JOINENV | Db::DB_REGISTER
         $self->{ENV}->open( $self->{ENVIRONMENT}, Db::DB_CREATE | Db::DB_RECOVER | Db::DB_JOINENV | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL | Db::DB_INIT_TXN );
 
-        # XXX: JZ 11/7 - Old options
-        # DbXml::DBXML_ALLOW_EXTERNAL_ACCESS | DbXml::DBXML_ALLOW_AUTO_OPEN
+        # XXX: JZ 11/7/2008 - These options were removed: DbXml::DBXML_ALLOW_EXTERNAL_ACCESS | DbXml::DBXML_ALLOW_AUTO_OPEN
         $self->{MANAGER} = new XmlManager( $self->{ENV} );
 
         $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
 
-        # XXX: JZ 11/7 - Old options
-        #  Db::DB_CREATE | Db::DB_DIRTY_READ | DbXml::DBXML_TRANSACTIONAL
+        # XXX: JZ 11/7/2008 - This option was removed: Db::DB_DIRTY_READ
         $self->{CONTAINER} = $self->{MANAGER}->openContainer( $dbTr, $self->{CONTAINERFILE}, Db::DB_CREATE | DbXml::DBXML_TRANSACTIONAL );
 
-        # XXX: JZ 11/7 - Disable index for now
+        # XXX: JZ 11/7/2008 - Disable index for now
         #        unless ( $self->{CONTAINER}->getIndexNodes ) {
         #            my $dbUC = $self->{MANAGER}->createUpdateContext();
         #            $self->{INDEX} = $self->{CONTAINER}->addIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
@@ -219,18 +215,14 @@ sub openDB {
     eval {
         $self->{ENV} = new DbEnv( 0 );
 
-        # XXX: JZ 11/7 - Old options
-        # Db::DB_JOINENV | Db::DB_INIT_MPOOL | Db::DB_CREATE | Db::DB_INIT_LOCK | Db::DB_INIT_LOG | Db::DB_INIT_TXN
         $self->{ENV}->open( $self->{ENVIRONMENT}, Db::DB_CREATE | Db::DB_JOINENV | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL | Db::DB_INIT_TXN );
 
-        # XXX: JZ 11/7 - Old options
-        # DbXml::DBXML_ALLOW_EXTERNAL_ACCESS | DbXml::DBXML_ALLOW_AUTO_OPEN
+        # XXX: JZ 11/7/2008 - These options were removed: DbXml::DBXML_ALLOW_EXTERNAL_ACCESS | DbXml::DBXML_ALLOW_AUTO_OPEN
         $self->{MANAGER} = new XmlManager( $self->{ENV} );
 
         $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
 
-        # XXX: JZ 11/7 - Old options
-        #  Db::DB_CREATE | Db::DB_DIRTY_READ | DbXml::DBXML_TRANSACTIONAL
+        # XXX: JZ 11/7/2008 - These options were removed: Db::DB_DIRTY_READ
         $self->{CONTAINER} = $self->{MANAGER}->openContainer( $dbTr, $self->{CONTAINERFILE}, Db::DB_CREATE | DbXml::DBXML_TRANSACTIONAL );
 
         # XXX: JZ 11/7 - Disable index for now
@@ -400,8 +392,7 @@ sub getTransaction {
 
     my $dbTr = q{};
     eval {
-        if ( exists $self->{MANAGER} and $self->{MANAGER} )
-        {
+        if ( exists $self->{MANAGER} and $self->{MANAGER} ) {
             $dbTr = $self->{MANAGER}->createTransaction();
         }
     };
@@ -527,7 +518,9 @@ sub checkpoint {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { error => 0 } );
     $self->{LOGGER}->debug( "Checkpoint started." );
-    eval { $self->{ENV}->txn_checkpoint( 0, 0, Db::DB_FORCE ); };
+    eval { 
+        $self->{ENV}->txn_checkpoint( 0, 0, Db::DB_FORCE ); 
+    };
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
@@ -598,7 +591,6 @@ sub query {
             my $contName = $self->{CONTAINER}->getName();
 
             unless ( exists $parameters->{internal} and $parameters->{internal} ) {
-
                 # make sure the query is clean
                 $parameters->{query} =~ s/&/&amp;/gmx;
                 $parameters->{query} =~ s/</&lt;/gmx;
@@ -1395,10 +1387,8 @@ sub closeDB {
             undef $self->{$key};
         }
     }
-
     undef $self->{MANAGER};
     undef $self->{ENV};
-
     return;
 }
 

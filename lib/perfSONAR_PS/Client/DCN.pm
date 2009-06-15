@@ -6,7 +6,7 @@ use warnings;
 our $VERSION = 3.1;
 
 use base 'perfSONAR_PS::Client::LS';
-use fields 'CONF', 'LS_KEY';
+use fields 'SERVICE', 'LS_KEY';
 
 =head1 NAME
 
@@ -32,33 +32,62 @@ use perfSONAR_PS::Client::LS;
 
 =head2 new($package { instance })
 
-Constructor for object.  Optional argument of 'instance' is the LS instance
-to be contacted for queries.  This can also be set via 'setInstance'.
+Constructor for object.  Four optional arguments are possible:
+
+ instance - LS instance to communicate with
+ myAddress - address of 'service' that is using this API.  For example if you
+             are an IDC your 'contact address' goes here.  If you are a web page
+             (e.g. the registration web page) your url goes here.
+ myName - name of 'service' that is using this API.
+ myType - type of 'service' that is using this API.
+
+Each value may also be set in the other 'set' functions.  
 
 =cut
 
 sub new {
     my ( $package, @args ) = @_;
-    my $parameters = validateParams( @args, { instance => 0 } );
+    my $parameters = validateParams( @args, { instance => 0, myAddress => 0, myName => 0, myType => 0 } );
 
     my $self = fields::new( $package );
 
-    $self->{ALIVE}               = 0;
-    $self->{CONF}                = ();
-    $self->{CONF}->{serviceType} = "LS";
-    $self->{CONF}->{serviceName} = "DCN LS";
-
+    $self->{ALIVE} = 0;
+    $self->{SERVICE} = ();
+    $self->{SERVICE}->{nonPerfSONARService} = 1;
+    $self->{SERVICE}->{addresses} = ();
     $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::DCN" );
+
     if ( exists $parameters->{"instance"} and $parameters->{"instance"} ) {
-        if ( $parameters->{"instance"} =~ m/^http:\/\// ) {
-            $self->{INSTANCE}            = $parameters->{"instance"};
-            $self->{CONF}->{accessPoint} = $parameters->{"instance"};
-            $self->{LS_KEY}              = $self->getLSKey;
+        if ( $parameters->{"instance"} =~ m/^http(s?):\/\// ) {
+            $self->{INSTANCE} = $parameters->{"instance"};
         }
         else {
-            $self->{LOGGER}->error( "Instance must be of the form http://ADDRESS." );
+            $self->{LOGGER}->error( "'instance' must be of the form http://ADDRESS." );
         }
     }
+
+    if ( exists $parameters->{"myAddress"} and $parameters->{"myAddress"} ) {
+        if ( $parameters->{"instance"} =~ m/^http(s?):\/\// ) {
+            my $temp;
+            $temp->{value} = $parameters->{"myAddress"};
+            $temp->{type} = "url";
+            push @{ $self->{SERVICE}->{addresses} }, $temp; 
+        }
+        else {
+            $self->{LOGGER}->error( "'myAddress' must be of the form http://ADDRESS." );
+        }
+    }
+
+    if ( exists $parameters->{"myName"} and $parameters->{"myName"} ) {
+        $self->{SERVICE}->{name} = $parameters->{"myName"};
+    }
+
+    if ( exists $parameters->{"myType"} and $parameters->{"myType"} ) {
+        $self->{SERVICE}->{type} = $parameters->{"myType"};
+    }
+
+    $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
+
     return $self;
 }
 
@@ -73,14 +102,77 @@ sub setInstance {
     my $parameters = validateParams( @args, { instance => 1 } );
 
     $self->{ALIVE} = 0;
-    if ( $parameters->{"instance"} =~ m/^http:\/\// ) {
-        $self->{INSTANCE}            = $parameters->{"instance"};
-        $self->{CONF}->{accessPoint} = $parameters->{"instance"};
-        $self->{LS_KEY}              = $self->getLSKey;
+    if ( $parameters->{"instance"} =~ m/^http(s?):\/\// ) {
+        $self->{INSTANCE} = $parameters->{"instance"};
+        $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
     }
     else {
-        $self->{LOGGER}->error( "Instance must be of the form http://ADDRESS." );
+        $self->{LOGGER}->error( "'instance' must be of the form http://ADDRESS." );
+    }    
+    return;
+}
+
+=head2 setMyAddress($self { myAddress })
+
+Sets the address of the 'service' that is using this API.  For example if you
+are an IDC your 'contact address' goes here.  If you are a web page (e.g. the
+registration web page) your url goes here.
+
+=cut
+
+sub setMyAddress {
+    my ( $self, @args ) = @_;
+    my $parameters = validateParams( @args, { myAddress => 1 } );
+
+    $self->{ALIVE} = 0;
+    if ( $parameters->{"myAddress"} =~ m/^http(s?):\/\// ) {
+        $self->{SERVICE}->{addresses} = ();
+        my $temp = ();
+        $temp->{value} = $parameters->{"myAddress"};
+        $temp->{type} = "url";
+        push @{ $self->{SERVICE}->{addresses} }, $temp; 
+        $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
     }
+    else {
+        $self->{LOGGER}->error( "'myAddress' must be of the form http://ADDRESS." );
+    }    
+    return;
+}
+
+=head2 setMyName($self { myName })
+
+Sets the name of the 'service' that is using this API.  For example if you
+are an IDC your 'serviceName' goes here.  If you are a web page (e.g. the
+registration web page) enter your title here.
+
+=cut
+
+sub setMyName {
+    my ( $self, @args ) = @_;
+    my $parameters = validateParams( @args, { myName => 1 } );
+
+    $self->{ALIVE} = 0;
+    $self->{SERVICE}->{name} = $parameters->{"myName"};
+    $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
+    return;
+}
+
+=head2 setMyType($self { myType })
+
+Sets the type of the 'service' that is using this API.  For example if you
+are an IDC your type shlould be 'IDC' or similar.  If you are a web page (e.g.
+the registration web page) your should note that here.
+
+=cut
+
+sub setMyType {
+    my ( $self, @args ) = @_;
+    my $parameters = validateParams( @args, { myType => 1 } );
+
+    $self->{ALIVE} = 0;
+    $self->{SERVICE}->{type} = $parameters->{"myType"};
+    $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
+    
     return;
 }
 
@@ -95,12 +187,17 @@ sub getLSKey {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, {} );
 
-    my $result = $self->keyRequestLS( { service => \%{ $self->{CONF} } } );
+    my $result = $self->keyRequestLS( { service => \%{ $self->{SERVICE} } } );
     if ( $result and exists $result->{key} and $result->{key} ) {
         return $result->{key};
     }
     else {
-        $self->{LOGGER}->error( "Error in LSKeyRequest" );
+        if ( $result ) {
+            $self->{LOGGER}->error( "Error \"" . $result->{eventType} . "\" in LSKeyRequest: \"" . $result->{response} . "\"" );
+        }
+        else {
+            $self->{LOGGER}->error( "Error in LSKeyRequest" );
+        }
         return;
     }
 }
@@ -219,7 +316,7 @@ sub insert {
         $metadata = $self->createKey( { key => $self->{LS_KEY} } );
     }
     else {
-        $metadata = $self->createService( { service => \%{ $self->{CONF} } } );
+        $metadata = $self->createService( { service => \%{ $self->{SERVICE} } } );
     }
 
     my @data = ();
@@ -242,6 +339,7 @@ sub insert {
                 return 0;
             }
         }
+        $self->{LOGGER}->info( "Information already registered." );
         return -1;
     }
     $self->{LOGGER}->error( $datum ) if $datum;
@@ -262,9 +360,11 @@ sub remove {
         $self->{LOGGER}->error( "Must supply either a name or id." );
         return -1;
     }
+    
     unless ( $self->{LS_KEY} ) {
         $self->{LS_KEY} = $self->getLSKey;
     }
+ 
     if ( exists $self->{LS_KEY} and $self->{LS_KEY} ) {
         my %ns = (
             dcn  => "http://ggf.org/ns/nmwg/tools/dcn/2.0/",
@@ -423,7 +523,7 @@ sub getDomainKey {
     $q .= "  let \$metadata_id := \$metadata/\@id\n";
     $q .= "  let \$data := /nmwg:store[\@type=\"LSStore\"]/nmwg:data[\@metadataIdRef=\$metadata_id]\n";
     $q .= "  where \$metadata_id=\"" . $parameters->{key} . "\"\n";
-    $q .= "  return \$data/nmwg:metadata/*[local-name()='subject']/nmtb:domain\n\n";
+    $q .= "  return \$data/nmwg:metadata/*[local-name()='subject']/*[local-name()='domain']\n\n";
     my $metadata = $self->queryWrapper( { query => $q } );
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
@@ -435,7 +535,7 @@ sub getDomainKey {
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
     if ( $eventType and $eventType =~ m/^success/mx ) {
 
-        my $ds = find( $msg, "./nmwg:data/*[local-name()='datum']/nmtb:domain", 0 );
+        my $ds = find( $msg, "./nmwg:data/*[local-name()='datum']/*[local-name()='domain']", 0 );
         if ( $ds ) {
             foreach my $d ( $ds->get_nodelist ) {
                 my $value = $d->getAttribute( "id" );
@@ -474,13 +574,13 @@ sub getDomainService {
     $q .= "  let \$metadata_id := \$metadata/\@id\n";
     $q .= "  let \$data := /nmwg:store[\@type=\"LSStore\"]/nmwg:data[\@metadataIdRef=\$metadata_id]\n";
     $q .= "  where \$metadata/*[local-name()='subject']/*[local-name()='service']/*[local-name()='accessPoint' and text()=\"" . $parameters->{accessPoint} . "\"]\n";
-    if ( exits $parameters->{serviceType} and $parameters->{serviceType} ) {
+    if ( exists $parameters->{serviceType} and $parameters->{serviceType} ) {
         $q .= "        and \$metadata/*[local-name()='subject']/*[local-name()='service']/*[local-name()='serviceType' and text()=\"" . $parameters->{serviceType} . "\"]\n";
     }
     if ( exists $parameters->{serviceName} and $parameters->{serviceName} ) {
         $q .= "        and \$metadata/*[local-name()='subject']/*[local-name()='service']/*[local-name()='serviceName' and text()=\"" . $parameters->{serviceName} . "\"]\n";
     }
-    $q .= "  return \$data/nmwg:metadata/*[local-name()='subject']/nmtb:domain\n\n";
+    $q .= "  return \$data/nmwg:metadata/*[local-name()='subject']/*[local-name()='domain']\n\n";
     my $metadata = $self->queryWrapper( { query => $q } );
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
@@ -491,7 +591,7 @@ sub getDomainService {
 
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
     if ( $eventType and $eventType =~ m/^success/mx ) {
-        my $ds = find( $msg, "./nmwg:data/psservice:datum/nmtb:domain", 0 );
+        my $ds = find( $msg, "./nmwg:data/psservice:datum/*[local-name()='domain']", 0 );
         if ( $ds ) {
             foreach my $d ( $ds->get_nodelist ) {
                 my $value = $d->getAttribute( "id" );
@@ -529,10 +629,10 @@ sub getTopologyServices {
     $q .= "declare namespace psservice=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/1.0/\";\n";
     $q .= "declare namespace nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\";\n";
     if ( exists $parameters->{domain} and $parameters->{domain} ) {
-        $q .= "for \$data in /nmwg:store[\@type=\"LSStore\"]/nmwg:data[./nmwg:metadata/*[local-name()='subject']/nmtb:domain[\@id=\"urn:ogf:network:domain=" . $parameters->{domain} . "\"]]\n";
+        $q .= "for \$data in /nmwg:store[\@type=\"LSStore\"]/nmwg:data[./nmwg:metadata/*[local-name()='subject']/*[local-name()='domain' and \@id=\"urn:ogf:network:domain=" . $parameters->{domain} . "\"]]\n";
     }
     else {
-        $q .= "for \$data in /nmwg:store[\@type=\"LSStore\"]/nmwg:data[./nmwg:metadata/*[local-name()='subject']/nmtb:domain]\n";
+        $q .= "for \$data in /nmwg:store[\@type=\"LSStore\"]/nmwg:data[./nmwg:metadata/*[local-name()='subject']/*[local-name()='domain']]\n";
     }
     $q .= " let \$metadataidref := \$data/\@metadataIdRef\n";
     $q .= " let \$metadata := /nmwg:store[\@type=\"LSStore\"]/nmwg:metadata[\@id=\$metadataidref]\n";
@@ -676,13 +776,16 @@ __END__
 
     use perfSONAR_PS::Client::DCN;
 
-    my $dcn = new perfSONAR_PS::Client::DCN( { instance => "http://some.host.edu/perfSONAR_PS/services/LS" } );
+    my $dcn = new perfSONAR_PS::Client::DCN( { instance => "http://some.host.edu/perfSONAR_PS/services/LS", myAddress => "https://dcn-ls.internet2.edu/", myName => "DCN Registration CGI", myType => "dcnmap" } );
     
     # 
     # or 
     # 
     # my $dcn = new perfSONAR_PS::Client::DCN;
     # $dcn->setInstance( { instance => "http://some.host.edu/perfSONAR_PS/services/LS" } );
+    # $dcn->setMyAddress( { myAddress => "https://dcn-ls.internet2.edu/" } );
+    # $dcn->setMyName( { myName => "DCN Registration CGI" } );
+    # $dcn->setMyType( { myType => "dcnmap" } );
 
     my $name = "some.hostname.edu";
     my $id = "urn:ogf:network:domain=some.info.about.this.link";

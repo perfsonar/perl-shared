@@ -407,6 +407,9 @@ sub keyRequestLS {
     elsif ( exists $parameters->{servicexml} and $parameters->{servicexml} ) {
         $metadata .= $parameters->{servicexml};
     }
+    else {
+        # error?
+    }
 
     if ( exists $parameters->{eventType} and $parameters->{eventType} ) {
         $metadata .= "  <nmwg:eventType>" . $parameters->{eventType} . "</nmwg:eventType>\n";
