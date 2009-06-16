@@ -14,9 +14,7 @@ perfSONAR_PS::Client::DCN
 
 =head1 DESCRIPTION
 
-Simple library to implement some perfSONAR calls that DCN tools will require.
-The goal of this module is to provide some simple library calls that DCN
-software may implement to receive information from perfSONAR deployments.
+API that implements select perfSONAR calls that DCN tools will require.
 
 =cut
 
@@ -35,6 +33,23 @@ use perfSONAR_PS::Client::LS;
 Constructor for object.  Four optional arguments are possible:
 
  instance - LS instance to communicate with
+ 
+The next three items compose the 'service' defintion of something using this
+API.  For example if we are a registration web page, we may have a service block
+that looks like this:
+
+  <nmwg:metadata xmlns:nmwg="http://ggf.org/ns/nmwg/base/2.0/">
+    <perfsonar:subject xmlns:perfsonar="http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/">
+      <nmtb:service xmlns:nmtb="http://ogf.org/schema/network/base/20070828/">
+        <nmtb:name>DCN Registration CGI</nmtb:name>
+        <nmtb:type>dcnmap</nmtb:type>
+        <nmtb:address type="url">https://dcn-ls.internet2.edu</nmtb:address>
+      </nmtb:service>
+    </perfsonar:subject>
+  </nmwg:metadata> 
+ 
+The correspoinding variables to input to this function are: 
+ 
  myAddress - address of 'service' that is using this API.  For example if you
              are an IDC your 'contact address' goes here.  If you are a web page
              (e.g. the registration web page) your url goes here.
@@ -62,7 +77,7 @@ sub new {
             $self->{INSTANCE} = $parameters->{"instance"};
         }
         else {
-            $self->{LOGGER}->error( "'instance' must be of the form http://ADDRESS." );
+            $self->{LOGGER}->error( "'instance' must be of the form http://ADDRESS or https://ADDRESS" );
         }
     }
 
@@ -74,26 +89,20 @@ sub new {
             push @{ $self->{SERVICE}->{addresses} }, $temp;
         }
         else {
-            $self->{LOGGER}->error( "'myAddress' must be of the form http://ADDRESS." );
+            $self->{LOGGER}->error( "'myAddress' must be of the form http://ADDRESS or https://ADDRESS" );
         }
     }
 
-    if ( exists $parameters->{"myName"} and $parameters->{"myName"} ) {
-        $self->{SERVICE}->{name} = $parameters->{"myName"};
-    }
-
-    if ( exists $parameters->{"myType"} and $parameters->{"myType"} ) {
-        $self->{SERVICE}->{type} = $parameters->{"myType"};
-    }
-
+    $self->{SERVICE}->{name} = $parameters->{"myName"} if exists $parameters->{"myName"} and $parameters->{"myName"};
+    $self->{SERVICE}->{type} = $parameters->{"myType"} if exists $parameters->{"myType"} and $parameters->{"myType"};
     $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
-
     return $self;
 }
 
 =head2 setInstance($self { instance })
 
-Required argument 'instance' is the LS instance to be contacted for queries.  
+Required argument 'instance' is the LS instance to be contacted for queries.
+See 'new' for more information.   
 
 =cut
 
@@ -107,7 +116,7 @@ sub setInstance {
         $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
     }
     else {
-        $self->{LOGGER}->error( "'instance' must be of the form http://ADDRESS." );
+        $self->{LOGGER}->error( "'instance' must be of the form http://ADDRESS or https://ADDRESS" );
     }
     return;
 }
@@ -116,7 +125,7 @@ sub setInstance {
 
 Sets the address of the 'service' that is using this API.  For example if you
 are an IDC your 'contact address' goes here.  If you are a web page (e.g. the
-registration web page) your url goes here.
+registration web page) your url goes here.  See 'new' for more information.
 
 =cut
 
@@ -124,7 +133,6 @@ sub setMyAddress {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { myAddress => 1 } );
 
-    $self->{ALIVE} = 0;
     if ( $parameters->{"myAddress"} =~ m/^http(s?):\/\// ) {
         $self->{SERVICE}->{addresses} = ();
         my $temp = ();
@@ -134,7 +142,7 @@ sub setMyAddress {
         $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
     }
     else {
-        $self->{LOGGER}->error( "'myAddress' must be of the form http://ADDRESS." );
+        $self->{LOGGER}->error( "'myAddress' must be of the form http://ADDRESS or https://ADDRESS" );
     }
     return;
 }
@@ -143,7 +151,7 @@ sub setMyAddress {
 
 Sets the name of the 'service' that is using this API.  For example if you
 are an IDC your 'serviceName' goes here.  If you are a web page (e.g. the
-registration web page) enter your title here.
+registration web page) enter your title here.  See 'new' for more information.
 
 =cut
 
@@ -151,9 +159,8 @@ sub setMyName {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { myName => 1 } );
 
-    $self->{ALIVE}           = 0;
     $self->{SERVICE}->{name} = $parameters->{"myName"};
-    $self->{LS_KEY}          = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
+    $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
     return;
 }
 
@@ -161,7 +168,8 @@ sub setMyName {
 
 Sets the type of the 'service' that is using this API.  For example if you
 are an IDC your type shlould be 'IDC' or similar.  If you are a web page (e.g.
-the registration web page) your should note that here.
+the registration web page) your should note that here.  See 'new' for more
+information.
 
 =cut
 
@@ -169,10 +177,8 @@ sub setMyType {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { myType => 1 } );
 
-    $self->{ALIVE}           = 0;
     $self->{SERVICE}->{type} = $parameters->{"myType"};
-    $self->{LS_KEY}          = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
-
+    $self->{LS_KEY} = $self->getLSKey if $self->{INSTANCE} and $self->{SERVICE}->{addresses} and $self->{SERVICE}->{name} and $self->{SERVICE}->{type};
     return;
 }
 
@@ -198,8 +204,23 @@ sub getLSKey {
         else {
             $self->{LOGGER}->error( "Error in LSKeyRequest" );
         }
-        return;
     }
+    return;
+}
+
+=head2 getServiceKey($self { })
+
+Return the value of the LS_KEY field.  
+
+=cut
+
+sub getServiceKey {
+    my ( $self, @args ) = @_;
+    my $parameters = validateParams( @args, {} );
+    unless ( $self->{LS_KEY} ) {
+        $self->{LS_KEY} = $self->getLSKey;
+    }
+    return $self->{LS_KEY};
 }
 
 =head2 nameToId
@@ -236,12 +257,11 @@ sub nameToId {
             }
         }
         else {
-            $self->{LOGGER}->error( "No link elements found in return: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
-            return;
+            $self->{LOGGER}->error( "No link elements found in message: " . $msg->toString );
         }
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
+        $self->{LOGGER}->error( "EventType not found in message: " . $msg->toString );
     }
     return \@ids;
 }
@@ -280,41 +300,27 @@ sub idToName {
             }
         }
         else {
-            $self->{LOGGER}->error( "No link elements found in return: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
-            return;
+            $self->{LOGGER}->error( "No link elements found in message: " . $msg->toString );
         }
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
+        $self->{LOGGER}->error( "EventType not found in message: " . $msg->toString );
     }
     return \@names;
 }
 
-=head2 control($self { id name })
+=head2 controlKey($self { id name })
 
-Returns -1 or 0 (false or true) if the service, as specififed in an instantiated
-object, 'controls' or was the original entity to register a given Id/Name
-combination.
-
-This should be used in conjunction with the remove function, e.g. we cannot
-remove an item if we we do not control it.
+Returns the key of the service that 'controls' a given Id/Name combination.
 
 =cut
 
-sub control {
+sub controlKey {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { id => 1, name => 1 } );
     my @ids        = ();
     my $metadata   = q{};
     my %ns         = ( xquery => "http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0/" );
-
-    unless ( $self->{LS_KEY} ) {
-        $self->{LS_KEY} = $self->getLSKey;
-        unless ( $self->{LS_KEY} ) {
-            $self->{LOGGER}->error( "Service is not registered in LS." );
-            return -1;
-        }
-    }
 
     my $q = "declare namespace nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\";\n";
     $q        .= "declare namespace perfsonar=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/\";\n";
@@ -332,25 +338,29 @@ sub control {
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
     if ( $eventType and $eventType =~ m/^success/mx ) {
         my $datablock = find( $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 ), ".//nmwg:data", 1 );
-        if ( $datablock->getAttribute( "metadataIdRef" ) eq $self->{LS_KEY} ) {
-            return 0;
-        }
+        return $datablock->getAttribute( "metadataIdRef" );
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
+        $self->{LOGGER}->error( "EventType not found in message: " . $msg->toString );
     }
-    return -1;
+    return;
 }
 
 =head2 insert($self { id name })
 
-Given an id AND a name, register this infomration to the LS instance.
+Given an id AND a name, register this infomration to the LS instance.  Optional
+elements include:
+
+ institution - Textual location name, e.g. someschool.edu is really "The University of Someschool"
+ latitude - Latitude coordinate reading for this node
+ longitude - Longitude coordinate reading for this node
+ keywords - Array of 'keyword' values, e.g. project:ScienceExperiement or project:BackboneNetwork
 
 =cut
 
 sub insert {
     my ( $self, @args ) = @_;
-    my $parameters = validateParams( @args, { id => 1, name => 1 } );
+    my $parameters = validateParams( @args, { id => 1, name => 1, institution => 0, latitude => 0, longitude => 0, keywords => 0 } );
 
     unless ( $self->{LS_KEY} ) {
         $self->{LS_KEY} = $self->getLSKey;
@@ -372,85 +382,96 @@ sub insert {
     }
 
     my @data = ();
-    $data[0] = $self->createNode( { id => $parameters->{id}, name => $parameters->{name} } );
+    $data[0] = $self->createNode( { id => $parameters->{id}, name => $parameters->{name}, institution => $parameters->{institution}, latitude => $parameters->{latitude}, longitude => $parameters->{longitude}, keywords => $parameters->{keywords} } );
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSRegisterRequest", ns => \%ns, metadata => $metadata, data => \@data } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
         return -1;
     }
 
-    my $code  = extract( find( $msg, "./nmwg:metadata/nmwg:eventType",        1 ), 0 );
-    my $datum = extract( find( $msg, "./nmwg:data/*[local-name()=\"datum\"]", 1 ), 0 );
-    if ( $code and $code =~ m/success/xm ) {
-        $self->{LOGGER}->info( $datum ) if $datum;
+    my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
+    if ( $eventType and $eventType =~ m/^success/mx ) {
+        my $datum = extract( find( $msg, "./nmwg:data/*[local-name()=\"datum\"]", 1 ), 0 );
         if ( $datum and $datum =~ m/^\s*\[\d+\] Data elements/m ) {
             my $num = $datum;
             $num =~ s/^\[//xm;
             $num =~ s/\].*//xm;
-            if ( $num > 0 ) {
+            if ( $num >= 0 ) {
+                $self->{LOGGER}->warn( "Information already registered." ) if $num == 0;
                 return 0;
             }
         }
-        $self->{LOGGER}->info( "Information already registered." );
-        return -1;
+        $self->{LOGGER}->error( "Datum not found or in unexpected format: " . $msg->toString );
     }
-    $self->{LOGGER}->error( $datum ) if $datum;
+    else {
+        $self->{LOGGER}->error( "EventType not found or unexpected in message: " . $msg->toString );
+    }
     return -1;
 }
 
-=head2 remove($self { id name })
+=head2 remove($self { id name key })
 
-Given an id or a name, delete this specific info from the LS instance.
+Given an id or a name, delete this specific info from the LS instance.  The
+optional key argument can be used to insert some other LS key instead of the
+key that travels with the service information in this object. 
 
 =cut
 
 sub remove {
     my ( $self, @args ) = @_;
-    my $parameters = validateParams( @args, { id => 0, name => 0 } );
+    my $parameters = validateParams( @args, { id => 0, name => 0, key => 0 } );
 
     unless ( $parameters->{id} or $parameters->{name} ) {
         $self->{LOGGER}->error( "Must supply either a name or id." );
         return -1;
     }
 
-    unless ( $self->{LS_KEY} ) {
-        $self->{LS_KEY} = $self->getLSKey;
+    my $searchKey = q{};
+    if ( exists $parameters->{key} and $parameters->{key} ) {
+        $searchKey = $parameters->{key};
+    }
+    else {
+        unless ( $self->{LS_KEY} ) {
+            $self->{LS_KEY} = $self->getLSKey;
+        }
+        $searchKey = $self->{LS_KEY};
     }
 
-    if ( exists $self->{LS_KEY} and $self->{LS_KEY} ) {
+    if ( $searchKey ) {
         my %ns = (
-            dcn  => "http://ggf.org/ns/nmwg/tools/dcn/2.0/",
-            nmtb => "http://ogf.org/schema/network/topology/base/20070828/"
+            perfsonar => "http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/",
+            psservice => "http://ggf.org/ns/nmwg/tools/org/perfsonar/service/1.0/",
+            dcn       => "http://ggf.org/ns/nmwg/tools/dcn/2.0/",
+            nmtb      => "http://ogf.org/schema/network/topology/base/20070828/"
         );
         my @data = ();
         $data[0] = $self->createNode( { id => $parameters->{id}, name => $parameters->{name} } );
-        my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSDeregisterRequest", metadata => $self->createKey( { key => $self->{LS_KEY} } ), data => \@data } ) } );
-
+        my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSDeregisterRequest", metadata => $self->createKey( { key => $searchKey } ), data => \@data } ) } );
         unless ( $msg ) {
             $self->{LOGGER}->error( "Message element not found in return." );
             return -1;
         }
-        my $code  = extract( find( $msg, "./nmwg:metadata/nmwg:eventType",        1 ), 0 );
-        my $datum = extract( find( $msg, "./nmwg:data/*[local-name()=\"datum\"]", 1 ), 0 );
-        if ( $code and $code =~ m/success/xm ) {
-            $self->{LOGGER}->info( $datum ) if $datum;
+
+        my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
+        if ( $eventType and $eventType =~ m/^success/mx ) {
+            my $datum = extract( find( $msg, "./nmwg:data/*[local-name()=\"datum\"]", 1 ), 0 );
             if ( $datum and $datum =~ m/^Removed/xm ) {
                 my $num = $datum;
                 $num =~ s/^Removed\s{1}\[//xm;
                 $num =~ s/\].*//xm;
-                if ( $num > 0 ) {
+                if ( $num >= 0 ) {
+                    $self->{LOGGER}->warn( "Response successful, but nothing removed." ) if $num == 0;
                     return 0;
                 }
             }
-            return -1;
+            $self->{LOGGER}->error( "Datum not found or in unexpected format: " . $msg->toString );
         }
         else {
-            $self->{LOGGER}->error( $datum ) if $datum;
-            return -1;
+            $self->{LOGGER}->error( "EventType not found or unexpected in message: " . $msg->toString );
         }
     }
     else {
-        $self->{LOGGER}->error( "No record of information registered in LS for this service." );
+        $self->{LOGGER}->error( "Key not found, cannot de-register." );
     }
     return -1;
 }
@@ -470,9 +491,8 @@ sub getMappings {
 
     my $q = "declare namespace nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\";\n";
     $q .= "declare namespace nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\";\n";
-    $q .= "/nmwg:store[\@type=\"LSStore\"]/nmwg:data/nmwg:metadata/*[local-name()='subject']/nmtb:node\n";
+    $q .= "/nmwg:store[\@type=\"LSStore\"]/nmwg:data/nmwg:metadata[*[local-name()='subject']/nmtb:node]\n";
     my $metadata = $self->queryWrapper( { query => $q } );
-
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
@@ -483,31 +503,57 @@ sub getMappings {
     if ( $eventType and $eventType =~ m/^success/mx ) {
         my $datum = find( $msg, ".//*[local-name()='datum']", 0 )->get_node( 1 );
         unless ( $datum ) {
-            $self->{LOGGER}->error( "No name elements found in return." );
+            $self->{LOGGER}->error( "No datum elements found in return:" . $msg->toString );
             return;
         }
 
-        foreach my $n ( $datum->getChildrenByTagNameNS( "http://ogf.org/schema/network/topology/base/20070828/", "node" ) ) {
-            my $address = extract( find( $n, "./nmtb:address", 1 ), 0 );
-            my $link = extract( find( $n, "./nmtb:relation[\@type=\"connectionLink\"]/nmtb:linkIdRef", 1 ), 0 );
-            push @lookup, [ $address, $link ];
+        foreach my $md ( $datum->getChildrenByTagNameNS( "http://ggf.org/ns/nmwg/base/2.0/", "metadata" ) ) {
+            my $keywords = find( $md, ".//nmwg:parameters/nmwg:parameter", 0 );
+
+            my $address = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:address", 1 ), 0 );
+            my $link = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:relation[\@type=\"connectionLink\"]/nmtb:linkIdRef", 1 ), 0 );
+
+            my %misc = ();
+            my $temp;
+            $temp = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:location/nmtb:institution", 1 ), 0 );
+            $misc{institution} = $temp if $temp;
+            $temp = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:location/nmtb:latitude", 1 ), 0 );
+            $misc{latitude} = $temp if $temp;
+            $temp = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:location/nmtb:longitude", 1 ), 0 );
+            $misc{longitude} = $temp if $temp;
+
+            if ( $keywords ) {
+                foreach my $kw ( $keywords->get_nodelist ) {
+                    my $name = $kw->getAttribute( "name" );
+                    next unless $name eq "keyword";
+                    my $value = extract( $kw, 0 );
+                    push @{ $misc{keywords} }, $value if $value;
+                }
+            }
+
+            push @lookup, [ $address, $link, \%misc ];
         }
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
+        $self->{LOGGER}->error( "EventType not found or unexpected in message: " . $msg->toString );
     }
     return \@lookup;
 }
 
 =head2 createNode($self { id name })
 
-Construct a node given an id and a name.
+Construct a node given an id and a name.  Optional elements include:
+
+ institution - Textual location name, e.g. someschool.edu is really "The University of Someschool"
+ latitude - Latitude coordinate reading for this node
+ longitude - Longitude coordinate reading for this node
+ keywords - Array of 'keyword' values, e.g. project:ScienceExperiement or project:BackboneNetwork
 
 =cut
 
 sub createNode {
     my ( $self, @args ) = @_;
-    my $parameters = validateParams( @args, { id => 0, name => 0 } );
+    my $parameters = validateParams( @args, { id => 0, name => 0, institution => 0, latitude => 0, longitude => 0, keywords => 0 } );
 
     unless ( $parameters->{id} or $parameters->{name} ) {
         $self->{LOGGER}->error( "Must supply either a name or id." );
@@ -524,11 +570,24 @@ sub createNode {
         $node .= "            <nmtb:linkIdRef>" . $parameters->{id} . "</nmtb:linkIdRef>\n";
         $node .= "          </nmtb:relation>\n";
     }
+    if ( ( exists $parameters->{institution} and $parameters->{institution} ) or ( exists $parameters->{latitude} and $parameters->{latitude} ) or ( exists $parameters->{longitude} and $parameters->{longitude} ) ) {
+        $node .= "          <nmtb:location>\n";
+        $node .= "            <nmtb:institution>" . $parameters->{institution} . "</nmtb:institution>\n" if $parameters->{institution} and $parameters->{institution};
+        $node .= "            <nmtb:latitude>" . $parameters->{latitude} . "</nmtb:latitude>\n" if exists $parameters->{latitude} and $parameters->{latitude};
+        $node .= "            <nmtb:longitude>" . $parameters->{longitude} . "</nmtb:longitude>\n" if exists $parameters->{longitude} and $parameters->{longitude};
+        $node .= "          </nmtb:location>\n";
+    }
     $node .= "        </nmtb:node>\n";
     $node .= "      </dcn:subject>\n";
     $node .= "      <nmwg:eventType>http://oscars.es.net/OSCARS</nmwg:eventType>\n";
+    if ( exists $parameters->{keywords} and $parameters->{keywords} ) {
+        $node .= "      <nmwg:parameters id=\"" . $id . "\">\n";
+        foreach my $kw ( @{ $parameters->{keywords} } ) {
+            $node .= "        <nmwg:parameter name=\"keyword\">" . $kw . "</nmwg:parameter>\n";
+        }
+        $node .= "      </nmwg:parameters>\n";
+    }
     $node .= "    </nmwg:metadata>\n";
-
     return $node;
 }
 
@@ -604,7 +663,7 @@ sub getDomainKey {
         }
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
+        $self->{LOGGER}->error( "EventType not found or unexpected in message: " . $msg->toString );
     }
     return \@domains;
 }
@@ -660,7 +719,7 @@ sub getDomainService {
         }
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
+        $self->{LOGGER}->error( "EventType not found or unexpected in message: " . $msg->toString );
     }
     return \@domains;
 }
@@ -724,7 +783,7 @@ sub getTopologyServices {
         }
     }
     else {
-        $self->{LOGGER}->error( "EventType not found: " . $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "datum" )->get_node( 1 )->toString );
+        $self->{LOGGER}->error( "EventType not found or unexpected in message: " . $msg->toString );
     }
     return \%services;
 }
@@ -797,6 +856,9 @@ sub queryTS {
                 $result{"response"} = extract( find( $msg, "./nmwg:data/nmwg:datum", 1 ), 0 );
             }
         }
+    }
+    else {
+        $self->{LOGGER}->error( "EventType not found or unexpected in message: " . $msg->toString );
     }
     return \%result;
 }
