@@ -527,6 +527,7 @@ sub getMappings {
                     my $name = $kw->getAttribute( "name" );
                     next unless $name eq "keyword";
                     my $value = extract( $kw, 0 );
+                    $value =~ s/(\n|\r)//g;
                     push @{ $misc{keywords} }, $value if $value;
                 }
             }
