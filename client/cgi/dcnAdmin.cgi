@@ -5,13 +5,13 @@ use warnings;
 use CGI;
 use CGI::Ajax;
 
-use lib "/home/jason/RELEASE/RELEASE_3.1/perfSONAR_PS-LookupService/lib";
+use lib "/home/zurawski/RELEASE_3.1/perfSONAR_PS-LookupService/lib";
 use perfSONAR_PS::Client::DCN;
 use perfSONAR_PS::Common qw( escapeString );
 
 my $cgi = new CGI;
 
-my $INSTANCE = "http://localhost:9995/perfSONAR_PS/services/hLS";
+my $INSTANCE = "http://dcn-ls.internet2.edu:8006/perfSONAR_PS/services/hLS";
 if ( $cgi->param( 'hls' ) ) {
     $INSTANCE = $cgi->param( 'hls' );
 }
@@ -23,19 +23,24 @@ print $pjx->build_html( $cgi, \&display );
 # Call/Display the DCN mappings
 
 sub delete {
-    my ( $hls, $load, $hostname, $linkid, $add, $institution, $longitude, $latitude, $key1, $key2, $key3 ) = @_;
+    my ( $hls, $load, $hostname, $linkid, $add, $institution, $longitude, $latitude, $kw ) = @_;
 
     my @kw = ();
-    push @kw, $key1 if $key1;
-    push @kw, $key2 if $key2;
-    push @kw, $key3 if $key3;
+    @kw = split( /\n/, $kw ) if $kw;
 
     my $html = q{};
     unless ( defined $load and $load and defined $hls and $hls ) {
         return $html;
     }
 
-    my $dcn = new perfSONAR_PS::Client::DCN( { instance => $hls, myAddress => "https://dcn-ls.internet2.edu/", myName => "DCN Registration CGI", myType => "dcnmap" } );
+    my $dcn = new perfSONAR_PS::Client::DCN( 
+        { 
+            instance => $hls, 
+            myAddress => "https://dcn-ls.internet2.edu/dcnAdmin.cgi", 
+            myName => "DCN Registration CGI", 
+            myType => "dcnmap" 
+        } 
+    );
 
     $html = "<br>\n";
     if ( $hostname or $linkid ) {
@@ -95,7 +100,7 @@ sub delete {
     $html .= "<td colspan=\"4\" align=\"center\">\n";
     $html .= "<input type=\"submit\" name=\"insert\" ";
     $html .= "value=\"Insert\" onclick=\"exported_func( ";
-    $html .= "['hls', 'loadQuery', 'hostname', 'linkid', 'add', 'institution', 'longitude', 'latitude', 'key1', 'key2', 'key3'], ['resultdiv'] );\">\n";
+    $html .= "['hls', 'loadQuery', 'hostname', 'linkid', 'add', 'institution', 'longitude', 'latitude', 'kw'], ['resultdiv'] );\">\n";
     $html .= "<input type=\"hidden\" name=\"add\" value=\"1\" id=\"add\" >\n";
     $html .= "</td>\n";
     $html .= "</tr>\n";
@@ -110,17 +115,14 @@ sub delete {
     $html .= "</tr>\n";
 
     $html .= "<tr>\n";
-    $html .= "<td align=\"center\">\n";
-    $html .= "<font color=\"blue\">Institution: </font><input type=\"text\" name=\"institution\" id=\"institution\" />\n";
+    $html .= "<td align=\"center\" colspan=\"4\">\n";
+    $html .= "<br><font color=\"blue\">Institution: </font><input type=\"text\" name=\"institution\" id=\"institution\" />\n";
     $html .= "</td>\n";
-    $html .= "<td align=\"center\">\n";
-    $html .= "<font color=\"blue\">Keyword (1): </font><input type=\"text\" name=\"key1\" id=\"key1\" />\n";
-    $html .= "</td>\n";
-    $html .= "<td align=\"center\">\n";
-    $html .= "<font color=\"blue\">Keyword (2): </font><input type=\"text\" name=\"key2\" id=\"key2\" />\n";
-    $html .= "</td>\n";
-    $html .= "<td align=\"center\">\n";
-    $html .= "<font color=\"blue\">Keyword (3): </font><input type=\"text\" name=\"key3\" id=\"key3\" />\n";
+    $html .= "</tr>\n";
+
+    $html .= "<tr>\n";
+    $html .= "<td align=\"center\" colspan=4>\n";
+    $html .= "<br><font color=\"blue\">Keywords:</font><br><textarea cols=\"30\" rows=\"5\" name=\"kw\" id=\"kw\" /></textarea><br><br>\n";
     $html .= "</td>\n";
     $html .= "</tr>\n";
 
@@ -197,15 +199,17 @@ sub delete {
             }
 
             $html .= "<td>\n";
-            if ( $dcn->controlKey( { name => $m->[0], id => $m->[1] } ) eq $dcn->getServiceKey ) {
+
+#            if ( $dcn->controlKey( { name => $m->[0], id => $m->[1] } ) eq $dcn->getServiceKey ) {
                 $html .= "<input type=\"submit\" name=\"submit." . $counter . "\" ";
                 $html .= "value=\"Delete\" onclick=\"exported_func( ";
                 $html .= "['hls', 'loadQuery', 'hostname." . $counter . "', 'linkid." . $counter . "'], ";
                 $html .= "['resultdiv'] );\">\n";
-            }
-            else {
-                $html .= "<font color=\"red\">Can't Delete</font>";
-            }
+#            }
+#            else {
+#                $html .= "<font color=\"red\">Can't Delete</font>";
+#            }
+
             $html .= "</td>\n";
             
             $html .= "</tr>\n";
