@@ -488,6 +488,7 @@ sub getMappings {
     my @lookup = ();
 
     $self->{LS_KEY} = $self->getLSKey unless $self->{LS_KEY};
+    $self->{LS_KEY} = q{} unless $self->{LS_KEY};
     my %ns = ( xquery => "http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0/" );
 
     for my $times ( 0 .. 1 ) {
