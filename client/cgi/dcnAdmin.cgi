@@ -5,7 +5,7 @@ use warnings;
 use CGI;
 use CGI::Ajax;
 
-use lib "/home/zurawski/RELEASE_3.1/perfSONAR_PS-LookupService/lib";
+use lib "/home/jason/RELEASE/RELEASE_3.1/perfSONAR_PS-LookupService/lib";
 use perfSONAR_PS::Client::DCN;
 use perfSONAR_PS::Common qw( escapeString );
 
@@ -191,27 +191,26 @@ sub delete {
                 else {
                     $html .= "<td><br></td>";
                 }
+                
+                if ( exists $m->[2]->{authoratative} and $m->[2]->{authoratative} ) {
+                    $html .= "<td>\n";
+                    $html .= "<input type=\"submit\" name=\"submit." . $counter . "\" ";
+                    $html .= "value=\"Delete\" onclick=\"exported_func( ";
+                    $html .= "['hls', 'loadQuery', 'hostname." . $counter . "', 'linkid." . $counter . "'], ";
+                    $html .= "['resultdiv'] );\">\n";         
+                    $html .= "</td>\n";       
+                }
+                else {
+                    $html .= "<td><br></td>"; 
+                }
+                
             }
             else {
                 $html .= "<td><br></td>";
                 $html .= "<td><br></td>";
                 $html .= "<td><br></td>";
+                $html .= "<td><br></td>";               
             }
-
-            $html .= "<td>\n";
-
-#            if ( $dcn->controlKey( { name => $m->[0], id => $m->[1] } ) eq $dcn->getServiceKey ) {
-                $html .= "<input type=\"submit\" name=\"submit." . $counter . "\" ";
-                $html .= "value=\"Delete\" onclick=\"exported_func( ";
-                $html .= "['hls', 'loadQuery', 'hostname." . $counter . "', 'linkid." . $counter . "'], ";
-                $html .= "['resultdiv'] );\">\n";
-#            }
-#            else {
-#                $html .= "<font color=\"red\">Can't Delete</font>";
-#            }
-
-            $html .= "</td>\n";
-            
             $html .= "</tr>\n";
             $counter++;
         }

@@ -487,57 +487,78 @@ sub getMappings {
     my $parameters = validateParams( @args, {} );
     my @lookup = ();
 
+    $self->{LS_KEY} = $self->getLSKey unless $self->{LS_KEY};
     my %ns = ( xquery => "http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0/" );
 
-    my $q = "declare namespace nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\";\n";
-    $q .= "declare namespace nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\";\n";
-    $q .= "/nmwg:store[\@type=\"LSStore\"]/nmwg:data/nmwg:metadata[*[local-name()='subject']/nmtb:node]\n";
-    my $metadata = $self->queryWrapper( { query => $q } );
-    my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
-    unless ( $msg ) {
-        $self->{LOGGER}->error( "Message element not found in return." );
-        return;
-    }
+    for my $times ( 0 .. 1 ) {
+        my $q = "declare namespace nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\";\n";
+        $q .= "declare namespace nmtb=\"http://ogf.org/schema/network/topology/base/20070828/\";\n";
+        $q .= "declare namespace perfsonar=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/\";\n";
+        $q .= "declare namespace psservice=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/1.0/\";\n";
+        $q .= "declare namespace dcn=\"http://ggf.org/ns/nmwg/tools/dcn/2.0/\";\n";
+        $q .= "for \$metadata in /nmwg:store[\@type=\"LSStore\"]/nmwg:metadata\n";
+        $q .= "let \$metadata_id := \$metadata/\@id\n";
+        $q .= "let \$data := /nmwg:store[\@type=\"LSStore\"]/nmwg:data[\@metadataIdRef=\$metadata_id]\n";
+        if ( $times == 0 ) {
+            $q .= "where \$metadata_id=\"" . $self->{LS_KEY} . "\"\n";
+        }
+        else {
+            $q .= "where \$metadata_id!=\"" . $self->{LS_KEY} . "\"\n";
+        }
+        $q .= "return \$data/nmwg:metadata[*[local-name()='subject']/nmtb:node]\n";
 
-    my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
-    if ( $eventType and $eventType =~ m/^success/mx ) {
-        my $datum = find( $msg, ".//*[local-name()='datum']", 0 )->get_node( 1 );
-        unless ( $datum ) {
-            $self->{LOGGER}->error( "No datum elements found in return:" . $msg->toString );
+        my $metadata = $self->queryWrapper( { query => $q } );
+        my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
+        unless ( $msg ) {
+            $self->{LOGGER}->error( "Message element not found in return." );
             return;
         }
 
-        foreach my $md ( $datum->getChildrenByTagNameNS( "http://ggf.org/ns/nmwg/base/2.0/", "metadata" ) ) {
-            my $keywords = find( $md, ".//nmwg:parameters/nmwg:parameter", 0 );
-
-            my $address = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:address", 1 ), 0 );
-            my $link = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:relation[\@type=\"connectionLink\"]/nmtb:linkIdRef", 1 ), 0 );
-
-            my %misc = ();
-            my $temp;
-            $temp = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:location/nmtb:institution", 1 ), 0 );
-            $misc{institution} = $temp if $temp;
-            $temp = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:location/nmtb:latitude", 1 ), 0 );
-            $misc{latitude} = $temp if $temp;
-            $temp = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:location/nmtb:longitude", 1 ), 0 );
-            $misc{longitude} = $temp if $temp;
-
-            if ( $keywords ) {
-                foreach my $kw ( $keywords->get_nodelist ) {
-                    my $name = $kw->getAttribute( "name" );
-                    next unless $name eq "keyword";
-                    my $value = extract( $kw, 0 );
-                    $value =~ s/(\n|\r)//g;
-                    push @{ $misc{keywords} }, $value if $value;
-                }
+        my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
+        if ( $eventType and $eventType =~ m/^success/mx ) {
+            my $datum = find( $msg, ".//*[local-name()='datum']", 0 )->get_node( 1 );
+            unless ( $datum ) {
+                $self->{LOGGER}->error( "No datum elements found in return:" . $msg->toString );
+                return;
             }
 
-            push @lookup, [ $address, $link, \%misc ];
+            foreach my $md ( $datum->getChildrenByTagNameNS( "http://ggf.org/ns/nmwg/base/2.0/", "metadata" ) ) {
+                my $keywords = find( $md, ".//nmwg:parameters/nmwg:parameter", 0 );
+
+                my $address = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:address", 1 ), 0 );
+                my $link = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:relation[\@type=\"connectionLink\"]/nmtb:linkIdRef", 1 ), 0 );
+
+                my %misc = ();
+                my $temp;
+                if ( $times == 0 ) {
+                    $misc{authoratative} = 1;
+                }
+                else {
+                    $misc{authoratative} = 0;
+                }
+                $temp = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:location/nmtb:institution", 1 ), 0 );
+                $misc{institution} = $temp if $temp;
+                $temp = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:location/nmtb:latitude", 1 ), 0 );
+                $misc{latitude} = $temp if $temp;
+                $temp = extract( find( $md, "./*[local-name()=\"subject\"]/nmtb:node/nmtb:location/nmtb:longitude", 1 ), 0 );
+                $misc{longitude} = $temp if $temp;
+
+                if ( $keywords ) {
+                    foreach my $kw ( $keywords->get_nodelist ) {
+                        my $name = $kw->getAttribute( "name" );
+                        next unless $name eq "keyword";
+                        my $value = extract( $kw, 0 );
+                        $value =~ s/(\n|\r)//g;
+                        push @{ $misc{keywords} }, $value if $value;
+                    }
+                }
+                push @lookup, [ $address, $link, \%misc ];
+            }
         }
-    }
-    else {
-        $self->{LOGGER}->error( "EventType not found or unexpected in message: " . $msg->toString );
-    }
+        else {
+            $self->{LOGGER}->error( "EventType not found or unexpected in message: " . $msg->toString );
+        }
+    }    
     return \@lookup;
 }
 
