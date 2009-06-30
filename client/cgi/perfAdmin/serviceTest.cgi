@@ -20,7 +20,9 @@ use HTML::Template;
 use XML::LibXML;
 use Socket;
 
-use lib "/home/zurawski/perfSONAR-PS/lib";
+# change this to the location where you install perfSONAR-PS
+
+use lib "/home/jason/RELEASE/RELEASE_3.1/Shared/lib";
 #use lib "/usr/local/perfSONAR-PS/lib";
 
 use perfSONAR_PS::Client::MA;
@@ -270,7 +272,7 @@ else {
                     my $dhost = gethostbyaddr( $iaddr, Socket::AF_INET );
                     $dhost = $list{$src}{$dst}->{"dst"} unless $dhost;
                                             
-                    push @pairs, { SADDRESS => $list{$src}{$dst}->{"src"}, SHOST => $shost, DADDRESS => $list{$src}{$dst}->{"dst"}, DHOST => $dhost, PROTOCOL => $list{$src}{$dst}->{"type"}, KEY => $list{$src}{$dst}->{"key"}, COUNT => $counter, SERVICE => $service };
+                    push @pairs, { SADDRESS => $list{$src}{$dst}->{"src"}, SHOST => $shost, DADDRESS => $list{$src}{$dst}->{"dst"}, DHOST => $dhost, PROTOCOL => $list{$src}{$dst}->{"type"}, KEY => $list{$src}{$dst}->{"key"}, KEY2 => $list{$dst}{$src}->{"key"}, COUNT => $counter, SERVICE => $service };
                     $counter++;
                 }
                 else {

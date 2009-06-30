@@ -22,9 +22,9 @@ use Socket;
 use POSIX;
 
 # change this to the location where you install perfSONAR-PS
-use lib "/home/zurawski/perfSONAR-PS/lib";
-#use lib "/usr/local/perfSONAR-PS/lib";
 
+use lib "/home/jason/RELEASE/RELEASE_3.1/Shared/lib";
+#use lib "/usr/local/perfSONAR-PS/lib";
 
 use perfSONAR_PS::Client::MA;
 use perfSONAR_PS::Common qw( extract find );
@@ -37,7 +37,7 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
 
     my @eventTypes = ();
     my $parser     = XML::LibXML->new();
-    my ( $sec, $frac ) = Time::HiRes::gettimeofday;
+    my $sec = time;
 
     my $subject = "  <nmwg:key id=\"key-1\">\n";
     $subject .= "    <nmwg:parameters id=\"parameters-key-1\">\n";
@@ -45,7 +45,8 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
     $subject .= "    </nmwg:parameters>\n";
     $subject .= "  </nmwg:key>  \n";
 
-    my $time = 2592000;
+#    my $time = 2592000;
+    my $time = 86400*7;
     my $result = $ma->setupDataRequest(
         {
             start      => ( $sec - $time ),
@@ -58,17 +59,47 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
     my $doc1 = $parser->parse_string( $result->{"data"}->[0] );
     my $datum1 = find( $doc1->getDocumentElement, "./*[local-name()='datum']", 0 );
 
+    my $doc2;
+    my $datum2;    
+    my $result2;
+    if( $cgi->param('key2') ) {
+        my $subject2 = "  <nmwg:key id=\"key-2\">\n";
+        $subject2 .= "    <nmwg:parameters id=\"parameters-key-2\">\n";
+        $subject2 .= "      <nmwg:parameter name=\"maKey\">" . $cgi->param('key2') . "</nmwg:parameter>\n";
+        $subject2 .= "    </nmwg:parameters>\n";
+        $subject2 .= "  </nmwg:key>  \n";
+
+        $result2 = $ma->setupDataRequest(
+            {
+                start      => ( $sec - $time ),
+                end        => $sec,
+                subject    => $subject2,
+                eventTypes => \@eventTypes
+            }
+        );
+
+        $doc2 = $parser->parse_string( $result2->{"data"}->[0] );
+        $datum2 = find( $doc2->getDocumentElement, "./*[local-name()='datum']", 0 );
+    }
+
     my %store = ();
-    my $counter = 0;
     if ( $datum1 ) {
         foreach my $dt ( $datum1->get_nodelist ) {
-            $counter++;
+            my $secs = UnixDate( $dt->getAttribute("timeValue"), "%s" );
+            $store{$secs}{"src"} = eval( $dt->getAttribute("throughput") ) if $secs and $dt->getAttribute("throughput");
         }
 
-        foreach my $dt ( $datum1->get_nodelist ) {
+    }
+    if ( $datum2 ) {
+        foreach my $dt ( $datum2->get_nodelist ) {
             my $secs = UnixDate( $dt->getAttribute("timeValue"), "%s" );
-            $store{$secs} = eval( $dt->getAttribute("throughput") ) if $secs and $dt->getAttribute("throughput");
+            $store{$secs}{"dest"} = eval( $dt->getAttribute("throughput") ) if $secs and $dt->getAttribute("throughput");
         }
+    }
+
+    my $counter = 0;
+    foreach my $time ( keys %store ) {
+        $counter++;
     }
 
     print "<html>\n";
@@ -80,18 +111,47 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
     print "</title>\n";
 
     if ( scalar keys %store > 0 ) {
+
+        my $title = q{};
+        if ( $cgi->param('src') and $cgi->param('dst') ) {
+
+            my $display = $cgi->param('src');
+            my $iaddr = Socket::inet_aton($display);
+            my $shost = gethostbyaddr( $iaddr, Socket::AF_INET );
+            $display = $cgi->param('dst');
+            $iaddr = Socket::inet_aton($display);
+            my $dhost = gethostbyaddr( $iaddr, Socket::AF_INET );
+            $title = "Source: " . $cgi->param('src');         
+            $title .= " (" . $shost . ") " if $shost;
+            $title .= " Destination: " . $cgi->param('dst');
+            $title .= " (" . $dhost . ") " if $dhost;
+            $title .= " -- Mbits/sec";
+        }
+        else {
+            $title = "Observed Bandwidth -- Mbits/sec";
+        }
+
         print "    <script type=\"text/javascript\" src=\"http://www.google.com/jsapi\"></script>\n";
         print "    <script type=\"text/javascript\">\n";
         print "      google.load(\"visualization\", \"1\", {packages:[\"areachart\"]})\n";
         print "      google.setOnLoadCallback(drawChart);\n";
         print "      function drawChart() {\n";
         print "        var data = new google.visualization.DataTable();\n";
-        print "        data.addColumn('date', 'Time');\n";
-        print "        data.addColumn('number', 'Bandwidth');\n";
+        print "        data.addColumn('datetime', 'Time');\n";
+        print "        data.addColumn('number', 'Src -> Dest Bandwidth in Mbps');\n";
+        if( $cgi->param('key2') ) {
+            print "        data.addColumn('number', 'Dest -> Src Bandwidth in Mbps');\n";
+        }
 
         my $doc1 = $parser->parse_string( $result->{"data"}->[0] );
         my $datum1 = find( $doc1->getDocumentElement, "./*[local-name()='datum']", 0 );
 
+        my $doc2;
+        my $datum2;
+        if( $cgi->param('key2') ) {
+            $doc2 = $parser->parse_string( $result2->{"data"}->[0] );
+            $datum2 = find( $doc2->getDocumentElement, "./*[local-name()='datum']", 0 );
+        }
         print "        data.addRows(" . $counter . ");\n";
 
         $counter = 0;
@@ -101,78 +161,28 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
             my @array = split( / /, $date2 );
             my @year  = split( /-/, $array[0] );
             my @time  = split( /:/, $array[1] );
-            print "        data.setValue(" . $counter . ", 0, new Date(" . $year[0] . "," . ( $year[1] - 1 ) . ",";
-            print $year[2] . "," . $time[0] . "," . $time[1] . "," . $time[2] . "));\n";
-            print "        data.setValue(" . $counter . ", 1, " . $store{$time}/1000000. . ");\n" if $store{$time};
-            $counter++;
+            if ( $#year > 1 and $#time > 1 ) {
+                if ( exists $store{$time}{"src"} and $store{$time}{"src"} ) {
+                    print "        data.setValue(" . $counter . ", 0, new Date(" . $year[0] . "," . ( $year[1] - 1 ) . ",";
+                    print $year[2] . "," . $time[0] . "," . $time[1] . "," . $time[2] . "));\n";
+                    print "        data.setValue(" . $counter . ", 1, " . $store{$time}{"src"}/1000000. . ");\n" if exists $store{$time}{"src"};               
+                }
+                if ( exists $store{$time}{"dest"} and $store{$time}{"dest"} ) {
+                    print "        data.setValue(" . $counter . ", 0, new Date(" . $year[0] . "," . ( $year[1] - 1 ) . ",";
+                    print $year[2] . "," . $time[0] . "," . $time[1] . "," . $time[2] . "));\n" unless ( exists $store{$time}{"src"} and $store{$time}{"src"} );
+                    print "        data.setValue(" . $counter . ", 2, " . $store{$time}{"dest"}/1000000. . ");\n" if exists $store{$time}{"dest"};         
+                }
+                $counter++ if ( exists $store{$time}{"dest"} and $store{$time}{"dest"} ) or ( exists $store{$time}{"src"} and $store{$time}{"src"} );         
+            }
         }
         print "        var chart = new google.visualization.AreaChart(document.getElementById('chart_div'));\n";
-        print "        chart.draw(data, {width: 900, height: 400, min: 0, legend: 'none', title: 'Bandwidth (Mbits/sec)', titleY: 'Mbps'});\n";
+        print "        chart.draw(data, {legendFontSize: 12, axisFontSize: 12, titleFontSize: 16, colors: ['#00cc00', '#0000ff'], width: 900, height: 400, min: 0, legend: 'bottom', title: '" . $title . "', titleY: 'Mbps'});\n";
         print "      }\n";
         print "    </script>\n";
         print "  </head>\n";
         print "  <body>\n";
 
-        if ( $cgi->param('src') and $cgi->param('dst') ) {
 
-            my $display = $cgi->param('src');
-            my $iaddr = Socket::inet_aton($display);
-            my $shost = gethostbyaddr( $iaddr, Socket::AF_INET );
-            $display = $cgi->param('dst');
-            $iaddr = Socket::inet_aton($display);
-            my $dhost = gethostbyaddr( $iaddr, Socket::AF_INET );
-
-            print "    <table border=\"0\" cellpadding=\"0\" width=\"75%\" align=\"center\">";
-            print "      <tr>\n";
-            print "        <td align=\"right\" width=\"30%\">\n";
-            print "          <br>\n";
-            print "        </td>\n";
-            print "        <th align=\"left\" width=\"10%\">\n";
-            print "          <font size=\"-1\"><i>Source</i>:</font>\n";
-            print "        </th>\n";
-            print "        <td align=\"left\" width=\"10%\">\n";
-            print "          <br>\n";
-            print "        </td>\n";
-            print "        <td align=\"left\" width=\"60%\">\n";
-            print "          <font size=\"-1\">".$cgi->param('src')."</font>\n";
-            print "        </td>\n";
-            print "      </tr>\n";            
-            if ( $shost ) {
-                print "      <tr>\n";
-                print "        <td align=\"right\" width=\"40%\" colspan=3>\n";
-                print "          <br>\n";
-                print "        </td>\n";
-                print "        <td align=\"left\" width=\"60%\">\n";
-                print "          <font size=\"-1\">".$shost."</font>\n";
-                print "        </td>\n";
-                print "      </tr>\n";   
-            }             
-            print "      <tr>\n";
-            print "        <td align=\"right\" width=\"30%\">\n";
-            print "          <br>\n";
-            print "        </td>\n";
-            print "        <th align=\"left\" width=\"10%\">\n";
-            print "          <font size=\"-1\"><i>Destination</i>:</font>\n";
-            print "        </th>\n";
-            print "        <td align=\"left\" width=\"10%\">\n";
-            print "          <br>\n";
-            print "        </td>\n";
-            print "        <td align=\"left\" width=\"60%\">\n";
-            print "          <font size=\"-1\">".$cgi->param('dst')."</font>\n";
-            print "        </td>\n";
-            print "      </tr>\n";
-            if ( $dhost ) {
-                print "      <tr>\n";
-                print "        <td align=\"right\" width=\"40%\" colspan=3>\n";
-                print "          <br>\n";
-                print "        </td>\n";
-                print "        <td align=\"left\" width=\"60%\">\n";
-                print "          <font size=\"-1\">".$dhost."</font>\n";
-                print "        </td>\n";
-                print "      </tr>\n";   
-            }   
-            print "    </table>\n";
-        }
 
         print "    <div id=\"chart_div\" style=\"width: 900px; height: 400px;\"></div>\n";
     }
