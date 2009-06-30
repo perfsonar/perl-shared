@@ -22,11 +22,14 @@ use Socket;
 use POSIX;
 use Data::Validate::IP qw(is_ipv4);
 
-use lib "/home/zurawski/perfSONAR-PS/lib";
+# change this to the location where you install perfSONAR-PS
+
+use lib "/home/jason/RELEASE/RELEASE_3.1/Shared/lib";
 #use lib "/usr/local/perfSONAR-PS/lib";
 
 use perfSONAR_PS::Client::MA;
 use perfSONAR_PS::Common qw( extract find );
+use perfSONAR_PS::Utils::ParameterValidation;
 
 my $cgi = new CGI;
 print "Content-type: text/html\n\n";
@@ -37,7 +40,7 @@ if ( ( $cgi->param('key1_type') or $cgi->param('key2_type') ) and $cgi->param('u
 
     my @eventTypes = ();
     my $parser     = XML::LibXML->new();
-    my ( $sec, $frac ) = Time::HiRes::gettimeofday;
+    my $sec = time;
 
     # 'in' data
     my $subject = q{};
@@ -121,58 +124,30 @@ if ( ( $cgi->param('key1_type') or $cgi->param('key2_type') ) and $cgi->param('u
 
     my %store = ();
     my $counter = 0;
+    my $inUnit = q{};
+    my $outUnit = q{};
     if ( $datum1 and $datum2 ) {
         foreach my $dt ( $datum1->get_nodelist ) {
             $counter++;
         }
-
         foreach my $dt ( $datum1->get_nodelist ) {
             $store{ $dt->getAttribute("timeValue") }{"in"} = eval( $dt->getAttribute("value") );
+            $inUnit = $dt->getAttribute("valueUnits") unless $inUnit;   
         }
         foreach my $dt ( $datum2->get_nodelist ) {
             $store{ $dt->getAttribute("timeValue") }{"out"} = eval( $dt->getAttribute("value") );
+            $outUnit = $dt->getAttribute("valueUnits") unless $outUnit;
         }
     }
 
     print "<html>\n";
     print "  <head>\n";
     print "    <title>perfSONAR-PS perfAdmin Utilization Graph</title>\n";
-    
+        
     if ( scalar keys %store > 0 ) {
-        print "    <script type=\"text/javascript\" src=\"http://www.google.com/jsapi\"></script>\n";
-        print "    <script type=\"text/javascript\">\n";
-        print "      google.load(\"visualization\", \"1\", {packages:[\"areachart\"]})\n";
-        print "      google.setOnLoadCallback(drawChart);\n";
-        print "      function drawChart() {\n";
-        print "        var data = new google.visualization.DataTable();\n";
-        print "        data.addColumn('date', 'Time');\n";
-        print "        data.addColumn('number', 'In');\n";
-        print "        data.addColumn('number', 'Out');\n";
 
-        print "        data.addRows(" . $counter . ");\n";
-
-        $counter = 0;
-        foreach my $time ( sort keys %store ) {
-            my $date  = ParseDateString( "epoch " . $time );
-            my $date2 = UnixDate( $date, "%Y-%m-%d %H:%M:%S" );
-            my @array = split( / /, $date2 );
-            my @year  = split( /-/, $array[0] );
-            my @time  = split( /:/, $array[1] );
-            print "        data.setValue(" . $counter . ", 0, new Date(" . $year[0] . "," . ( $year[1] - 1 ) . ",";
-            print $year[2] . "," . $time[0] . "," . $time[1] . "," . $time[2] . "));\n";
-            print "        data.setValue(" . $counter . ", 1, " . $store{$time}{"in"} . ");\n"  if $store{$time}{"in"};
-            print "        data.setValue(" . $counter . ", 2, " . $store{$time}{"out"} . ");\n" if $store{$time}{"out"};
-            $counter++;
-        }
-   
-        print "        var chart = new google.visualization.AreaChart(document.getElementById('chart_div'));\n";
-        print "        chart.draw(data, {width: 900, height: 400, legend: 'bottom', title: 'Utilization'});\n";
-        print "      }\n";
-        print "    </script>\n";
-        print "  </head>\n";
-        print "  <body>\n";
+        my $title = q{};
         if ( $cgi->param('host') and $cgi->param('interface') ) {
-
             my $host = q{};
             if ( is_ipv4( $cgi->param('host') ) ) {
                 my $iaddr = Socket::inet_aton( $cgi->param('host') );
@@ -186,49 +161,134 @@ if ( ( $cgi->param('key1_type') or $cgi->param('key2_type') ) and $cgi->param('u
                     $host = inet_ntoa( $packed_ip );
                 }
             }
-  
-            print "    <table border=\"0\" cellpadding=\"0\" width=\"75%\" align=\"center\">";
-            print "      <tr>\n";
-            print "        <td align=\"right\" width=\"30%\">\n";
-            print "          <br>\n";
-            print "        </td>\n";
-            print "        <th align=\"left\" width=\"10%\">\n";
-            print "          <font size=\"-1\"><i>Host</i>:</font>\n";
-            print "        </th>\n";
-            print "        <td align=\"left\" width=\"10%\">\n";
-            print "          <br>\n";
-            print "        </td>\n";
-            print "        <td align=\"left\" width=\"60%\">\n";
-            print "          <font size=\"-1\">".$cgi->param('host')."</font>\n";
-            print "        </td>\n";
-            print "      </tr>\n";            
-            if ( $host ) {
-                print "      <tr>\n";
-                print "        <td align=\"right\" width=\"40%\" colspan=3>\n";
-                print "          <br>\n";
-                print "        </td>\n";
-                print "        <td align=\"left\" width=\"60%\">\n";
-                print "          <font size=\"-1\">".$host."</font>\n";
-                print "        </td>\n";
-                print "      </tr>\n";   
-            }             
-            print "      <tr>\n";
-            print "        <td align=\"right\" width=\"30%\">\n";
-            print "          <br>\n";
-            print "        </td>\n";
-            print "        <th align=\"left\" width=\"10%\">\n";
-            print "          <font size=\"-1\"><i>Name</i>:</font>\n";
-            print "        </th>\n";
-            print "        <td align=\"left\" width=\"10%\">\n";
-            print "          <br>\n";
-            print "        </td>\n";
-            print "        <td align=\"left\" width=\"60%\">\n";
-            print "          <font size=\"-1\">".$cgi->param('interface')."</font>\n";
-            print "        </td>\n";
-            print "      </tr>\n";  
-            print "    </table>\n";
+            $title = "Device: " . $cgi->param('host');         
+            $title .= " (" . $host . ") " if $host;
+            $title .= " -- " . $cgi->param('interface');
         }
+        else {
+            $title = "Interface Utilization";
+        }
+        
+        print "    <script type=\"text/javascript\" src=\"http://www.google.com/jsapi\"></script>\n";
+        print "    <script type=\"text/javascript\">\n";
+        print "      google.load(\"visualization\", \"1\", {packages:[\"areachart\"]})\n";
+        print "      google.setOnLoadCallback(drawChart);\n";
+        print "      function drawChart() {\n";
+        print "        var data = new google.visualization.DataTable();\n";
+        print "        data.addColumn('datetime', 'Time');\n";
+
+        $counter = 0;
+        my %inStats = ();
+        my %outStats = ();
+        foreach my $time ( keys %store ) {
+            if ( exists $store{$time}{"in"} and $store{$time}{"in"} and exists $store{$time}{"out"} and $store{$time}{"out"} ) {
+                $inStats{"average"} += $store{$time}{"in"};
+                $outStats{"average"} += $store{$time}{"out"};
+                $inStats{"max"} = $store{$time}{"in"} if $store{$time}{"in"} > $inStats{"max"};
+                $outStats{"max"} = $store{$time}{"out"} if $store{$time}{"out"} > $outStats{"max"};
+                $inStats{"current"} = $store{$time}{"in"};
+                $outStats{"current"} = $store{$time}{"out"};      
+                $counter++;
+            }
+        }
+        $inStats{"average"} /= $counter;
+        $outStats{"average"} /= $counter;
+
+        my $mod = q{};
+        my $scale = q{};
+        if ( $inUnit and $outUnit and ( $inUnit eq $outUnit ) and ( lc($inUnit) eq "bps" ) ) {
+            $scale = $inStats{"max"};
+            $scale = $outStats{"max"} if $outStats{"max"} > $scale;            
+            if ( $scale < 1000 ) {
+                $scale = 1;
+            }
+            elsif ( $scale < 1000000 ) {
+                $mod = "K";
+                $scale = 1000;
+            }
+            elsif( $scale < 1000000000 ) {
+                $mod = "M";
+                $scale = 1000000;
+            }
+            elsif( $scale < 1000000000000 ) {
+                $mod = "G";
+                $scale = 1000000000;
+            }
+        }
+
+        my $yLabel = q{};
+        if ( $inUnit and $outUnit and $inUnit eq $outUnit ) {
+            print "        data.addColumn('number', 'Incoming Traffic in " . $mod . $inUnit . "');\n";
+            print "        data.addColumn('number', 'Outgoing Traffic in " . $mod . $outUnit . "');\n";
+            $yLabel = $mod . $inUnit;
+        }
+        else {
+            print "        data.addColumn('number', 'Incoming Traffic in unknown units');\n";
+            print "        data.addColumn('number', 'Outgoing Traffic in unknown units');\n";
+            $yLabel = "unknown units";
+        }
+        print "        data.addRows(" . $counter . ");\n";
+
+        $counter = 0;
+        foreach my $time ( sort keys %store ) {
+            my $date  = ParseDateString( "epoch " . $time );
+            my $date2 = UnixDate( $date, "%Y-%m-%d %H:%M:%S" );
+            my @array = split( / /, $date2 );
+            my @year  = split( /-/, $array[0] );
+            my @time  = split( /:/, $array[1] );
+            if ( $#year > 1 and $#time > 1 and ( exists $store{$time}{"in"} and $store{$time}{"in"} and exists $store{$time}{"out"} and $store{$time}{"out"} ) ) {
+                if ( $scale and $mod ) {
+                    $store{$time}{"in"} /= $scale;
+                    $store{$time}{"out"} /= $scale;
+                }
+                print "        data.setValue(" . $counter . ", 0, new Date(" . $year[0] . "," . ( $year[1] - 1 ) . ",";
+                print $year[2] . "," . $time[0] . "," . $time[1] . "," . $time[2] . "));\n";
+                print "        data.setValue(" . $counter . ", 1, " . $store{$time}{"in"} . ");\n";
+                print "        data.setValue(" . $counter . ", 2, " . $store{$time}{"out"} . ");\n"; 
+                $counter++;
+            }
+        }
+
+        print "        var formatter = new google.visualization.DateFormat({formatType: 'short'});\n";
+        print "        formatter.format(data, 0);\n";  
+        print "        var chart = new google.visualization.AreaChart(document.getElementById('chart_div'));\n";
+        print "        chart.draw(data, {legendFontSize: 12, axisFontSize: 12, titleFontSize: 16, colors: ['#00cc00', '#0000ff'], width: 900, height: 400, legend: 'bottom', title: '" . $title . "', titleY: 'Traffic in " . $yLabel . "' });\n";
+        print "      }\n";
+        print "    </script>\n";
+        print "  </head>\n";
+        print "  <body>\n";
+  
         print "    <div id=\"chart_div\"></div>\n";
+        
+        print "    <table border=\"0\" cellpadding=\"0\" width=\"75%\" align=\"center\">";
+        print "      <tr>\n";
+        print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Maximum In</font></th>\n";        
+        my $temp = scaleValue({ value => $inStats{"max"} });
+        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $inUnit . "</font></td>\n", $temp->{"value"} );                
+        print "        <td align=\"right\" width=\"10%\"><br></td>\n";
+        print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Maximum Out</font></th>\n";
+        $temp = scaleValue({ value => $outStats{"max"} });
+        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $outUnit . "</font></td>\n", $temp->{"value"});
+        print "      <tr>\n";        
+        print "      <tr>\n";
+        print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Average In</font></th>\n";
+        $temp = scaleValue({ value => $inStats{"average"} });
+        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $inUnit . "</font></td>\n", $temp->{"value"});
+        print "        <td align=\"right\" width=\"10%\"><br></td>\n";
+        print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Average Out</font></th>\n";
+        $temp = scaleValue({ value => $outStats{"average"} });
+        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $outUnit . "</font></td>\n", $temp->{"value"});
+        print "      <tr>\n";  
+        print "      <tr>\n";
+        print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Current In</font></th>\n";
+        $temp = scaleValue({ value => $inStats{"current"} });
+        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $inUnit . "</font></td>\n", $temp->{"value"});
+        print "        <td align=\"right\" width=\"10%\"><br></td>\n";
+        print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Current Out</font></th>\n";
+        $temp = scaleValue({ value => $outStats{"current"} });
+        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $outUnit . "</font></td>\n", $temp->{"value"});
+        print "      <tr>\n";          
+        print "    </table>\n";           
     }
     else {
         print "  </head>\n";
@@ -243,6 +303,28 @@ if ( ( $cgi->param('key1_type') or $cgi->param('key2_type') ) and $cgi->param('u
 else {
     print "<html><head><title>perfSONAR-PS perfAdmin Utilization Graph</title></head>";
     print "<body><h2 align=\"center\">Graph error; Close window and try again.</h2></body></html>";
+}
+
+sub scaleValue {
+    my $parameters = validateParams( @_, { value => 1  } );
+    my %result = ();
+    if ( $parameters->{"value"} < 1000 ) {
+        $result{"value"} = $parameters->{"value"};
+        $result{"mod"} = q{};
+    }
+    elsif( $parameters->{"value"} < 1000000 ) {
+        $result{"value"} = $parameters->{"value"} / 1000;
+        $result{"mod"} = "K";
+    }
+    elsif( $parameters->{"value"} < 1000000000 ) {
+        $result{"value"} = $parameters->{"value"} / 1000000;
+        $result{"mod"} = "M";
+    }
+    elsif( $parameters->{"value"} < 1000000000000 ) {
+        $result{"value"} = $parameters->{"value"} / 1000000000;
+        $result{"mod"} = "G";
+    }
+    return \%result;
 }
 
 __END__
