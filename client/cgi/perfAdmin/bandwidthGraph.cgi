@@ -46,8 +46,14 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
     $subject .= "    </nmwg:parameters>\n";
     $subject .= "  </nmwg:key>  \n";
 
-#    my $time = 2592000;
-    my $time = 86400*7;
+    my $time;
+    if ( $cgi->param('length') ) {
+        $time = $cgi->param('length');
+    }
+    else {
+        $time = 86400;
+    }
+
     my $result = $ma->setupDataRequest(
         {
             start      => ( $sec - $time ),

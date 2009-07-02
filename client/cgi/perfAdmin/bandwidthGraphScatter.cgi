@@ -5,15 +5,13 @@ use warnings;
 
 =head1 NAME
 
-bandwidthGraphFlash.cgi - CGI script that graphs the output of a perfSONAR MA
-that delivers bandwidth data.  
+bandwidthGraph.cgi - CGI script that graphs the output of a perfSONAR MA that
+delivers bandwidth data.  
 
 =head1 DESCRIPTION
 
 Given a url of an MA, and a key value (corresponds to a specific bandwidth
-result) graph using the Google graph API.  Note this specific instance uses a
-flash-based API so browsers will be required to have an instance of a flash
-player installed.  
+result) graph using the Google graph API.
 
 =cut
 
@@ -40,7 +38,7 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
 
     my @eventTypes = ();
     my $parser     = XML::LibXML->new();
-    my ( $sec, $frac ) = Time::HiRes::gettimeofday;
+    my $sec = time;
 
     my $subject = "  <nmwg:key id=\"key-1\">\n";
     $subject .= "    <nmwg:parameters id=\"parameters-key-1\">\n";
@@ -55,7 +53,7 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
     else {
         $time = 86400;
     }
-    
+
     my $result = $ma->setupDataRequest(
         {
             start      => ( $sec - $time ),
@@ -117,7 +115,7 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
         print " ".$cgi->param('type');
     }
     print "</title>\n";
-    
+
     if ( scalar keys %store > 0 ) {
 
         my $title = q{};
@@ -148,12 +146,12 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
 
         print "    <script type=\"text/javascript\" src=\"http://www.google.com/jsapi\"></script>\n";
         print "    <script type=\"text/javascript\">\n";
-        print "      google.load(\"visualization\", \"1\", {packages:[\"annotatedtimeline\"]});\n";
+        print "      google.load(\"visualization\", \"1\", {packages:[\"linechart\"]})\n";
         print "      google.setOnLoadCallback(drawChart);\n";
         print "      function drawChart() {\n";
         print "        var data = new google.visualization.DataTable();\n";
         print "        data.addColumn('datetime', 'Time');\n";
-        
+
         my %SStats = ();
         my %DStats = ();
         my $scounter = 0;
@@ -173,9 +171,9 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
             }
         }
         $SStats{"average"} /= $scounter if $scounter;
-        $DStats{"average"} /= $dcounter if $dcounter;        
-        
-        
+        $DStats{"average"} /= $dcounter if $dcounter;    
+
+
         my $mod = q{};
         my $scale = q{};
         $scale = $SStats{"max"};
@@ -194,8 +192,11 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
         elsif( $scale < 1000000000000 ) {
             $mod = "G";
             $scale = 1000000000;
-        }        
+        }
         
+
+
+
         print "        data.addColumn('number', '" . $cgi->param('shost') . " -> " . $cgi->param('dhost') . " in " . $mod . "bps');\n";
         if( $cgi->param('key2') ) {
             print "        data.addColumn('number', '" . $cgi->param('dhost') . " -> " . $cgi->param('shost') . " in " . $mod . "bps');\n";
@@ -211,7 +212,6 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
             $datum2 = find( $doc2->getDocumentElement, "./*[local-name()='datum']", 0 );
         }
         print "        data.addRows(" . $counter . ");\n";
-
 
         $counter = 0;
         foreach my $time ( sort keys %store ) {
@@ -236,15 +236,20 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
                 $counter++ if ( exists $store{$time}{"dest"} and $store{$time}{"dest"} ) or ( exists $store{$time}{"src"} and $store{$time}{"src"} );         
             }
         }
-    
-        print "        var chart = new google.visualization.AnnotatedTimeLine(document.getElementById('chart_div'));\n";
-        print "        chart.draw(data, {legend: 'none', colors: ['#00cc00', '#0000ff']});\n";
+        print "        var formatter = new google.visualization.DateFormat({formatType: 'short'});\n";
+        print "        formatter.format(data, 0);\n";  
+        print "        var chart = new google.visualization.LineChart(document.getElementById('chart_div'));\n";
+        print "        chart.draw(data, {legendFontSize: 12, axisFontSize: 12, titleFontSize: 16, colors: ['#00cc00', '#0000ff'], width: 900, height: 400, min: 0, legend: 'bottom', title: '" . $title . "', titleY: '" . $mod . "bps', lineSize: '0'});\n";
+#        print "        chart.draw(data, {});\n";
         print "      }\n";
         print "    </script>\n";
         print "  </head>\n";
         print "  <body>\n";
-        print "    <h3 align=\"center\">" . $title . "</h3>\n";
-        print "    <div id=\"chart_div\" style=\"width: 900px; height: 400px;\"></div><br>\n";
+
+
+
+        print "    <div id=\"chart_div\" style=\"width: 900px; height: 400px;\"></div>\n";
+
         print "    <table border=\"0\" cellpadding=\"0\" width=\"85%\" align=\"center\">";
         print "      <tr>\n";
         print "        <td align=\"left\" width=\"35%\"><font size=\"-1\">Maximum <b>" . $cgi->param('shost') . "</b> -> <b>" . $cgi->param('dhost') . "</b></font></td>\n";        
@@ -273,7 +278,7 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
         $temp = scaleValue({ value => $DStats{"current"} });
         printf( "        <td align=\"right\" width=\"10%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . "bps</font></td>\n", $temp->{"value"});
         print "      <tr>\n";          
-        print "    </table>\n"; 
+        print "    </table>\n";  
     }
     else {
         print "  </head>\n";
@@ -282,7 +287,7 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
         print "    <h2 align=\"center\">Data Not Found - Try again later.</h2>\n";
         print "    <br><br>\n";
     }
-    
+
     print "  </body>\n";
     print "</html>\n";
 }
