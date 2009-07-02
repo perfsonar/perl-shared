@@ -193,8 +193,8 @@ if ( ( $cgi->param('key1_type') or $cgi->param('key2_type') ) and $cgi->param('u
                 $counter++;
             }
         }
-        $inStats{"average"} /= $counter;
-        $outStats{"average"} /= $counter;        
+        $inStats{"average"} /= $counter if $counter;
+        $outStats{"average"} /= $counter if $counter;        
         
         my $mod = q{};
         my $scale = q{};
