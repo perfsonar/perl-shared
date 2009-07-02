@@ -164,8 +164,8 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
                 $dcounter++;
             }
         }
-        $SStats{"average"} /= $scounter;
-        $DStats{"average"} /= $dcounter;
+        $SStats{"average"} /= $scounter if $scounter;
+        $DStats{"average"} /= $dcounter if $dcounter;    
 
 
         my $mod = q{};
