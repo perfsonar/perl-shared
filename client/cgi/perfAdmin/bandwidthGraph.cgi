@@ -243,7 +243,7 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
 
         print "    <div id=\"chart_div\" style=\"width: 900px; height: 400px;\"></div>\n";
 
-        print "    <table border=\"0\" cellpadding=\"0\" width=\"75%\" align=\"center\">";
+        print "    <table border=\"0\" cellpadding=\"0\" width=\"85%\" align=\"center\">";
         print "      <tr>\n";
         print "        <td align=\"left\" width=\"35%\"><font size=\"-1\">Maximum <b>" . $cgi->param('shost') . "</b> -> <b>" . $cgi->param('dhost') . "</b></font></td>\n";        
         my $temp = scaleValue({ value => $SStats{"max"} });
