@@ -30,11 +30,11 @@
         </td>
         <tmpl_if name=PRESENT>   
         <td align="center">
-          <input type="submit" value="Graph" id="pgraph2.<tmpl_var name=COUNT>" name="pgraph2.<tmpl_var name=COUNT>" onClick="window.open('./pinger/index.cgi?ma=<tmpl_var name=SERVICE>&get_it=jh34587wuhlkh789hbyf78343gort03idjuhf3785t0gfgofbf78o4348orgofg7o4fg7&link=<tmpl_var name=SHOST>:<tmpl_var name=DHOST>:<tmpl_var name=PACKETSIZE>&time_start=<tmpl_var name=STARTTIME>&time_end=<tmpl_var name=ENDTIME>&upper_rtt=auto&gmt_offset=-5&gtype=rt&gpresent=lines','pgraph.<tmpl_var name=COUNT>','width=460,height=250,status=yes,scrollbars=yes,resizable=yes')" />
+          <input type="submit" value="Graph" id="pgraph2_<tmpl_var name=COUNT>" name="pgraph2_<tmpl_var name=COUNT>" onClick="window.open('./pinger/index.cgi?ma=<tmpl_var name=SERVICE>&get_it=jh34587wuhlkh789hbyf78343gort03idjuhf3785t0gfgofbf78o4348orgofg7o4fg7&link=<tmpl_var name=SHOST>:<tmpl_var name=DHOST>:<tmpl_var name=PACKETSIZE>&time_start=<tmpl_var name=STARTTIME>&time_end=<tmpl_var name=ENDTIME>&upper_rtt=auto&gmt_offset=-5&gtype=rt&gpresent=lines','pgraph_<tmpl_var name=COUNT>','width=460,height=250,status=yes,scrollbars=yes,resizable=yes')" />
         </td>
         <tmpl_else>
         <td align="center">
-          <input type="submit" value="Graph" id="pgraph2.<tmpl_var name=COUNT>" name="pgraph2.<tmpl_var name=COUNT>" onClick="window.open('http://tukki.fnal.gov/pinger/pingerUI.pl?ma=<tmpl_var name=SERVICE>&get_it=jh34587wuhlkh789hbyf78343gort03idjuhf3785t0gfgofbf78o4348orgofg7o4fg7&link=<tmpl_var name=SHOST>:<tmpl_var name=DHOST>:<tmpl_var name=PACKETSIZE>&time_start=<tmpl_var name=STARTTIME>&time_end=<tmpl_var name=ENDTIME>&upper_rtt=auto&gmt_offset=-5&gtype=rt&gpresent=lines', 'pgraph.<tmpl_var name=COUNT>', 'width=460,height=250,status=yes,scrollbars=yes,resizable=yes')" />
+          <input type="submit" value="Graph" id="pgraph2_<tmpl_var name=COUNT>" name="pgraph2_<tmpl_var name=COUNT>" onClick="window.open('http://tukki.fnal.gov/pinger/pingerUI.pl?ma=<tmpl_var name=SERVICE>&get_it=jh34587wuhlkh789hbyf78343gort03idjuhf3785t0gfgofbf78o4348orgofg7o4fg7&link=<tmpl_var name=SHOST>:<tmpl_var name=DHOST>:<tmpl_var name=PACKETSIZE>&time_start=<tmpl_var name=STARTTIME>&time_end=<tmpl_var name=ENDTIME>&upper_rtt=auto&gmt_offset=-5&gtype=rt&gpresent=lines', 'pgraph_<tmpl_var name=COUNT>', 'width=460,height=250,status=yes,scrollbars=yes,resizable=yes')" />
         </td>
         </tmpl_if>
       </tr>
