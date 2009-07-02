@@ -191,9 +191,9 @@ if ( $cgi->param('key') and $cgi->param('url') ) {
 
 
 
-        print "        data.addColumn('number', '" . $cgi->param('shost') . " -> " . $cgi->param('dhost') . " Bandwidth in " . $mod . "bps');\n";
+        print "        data.addColumn('number', '" . $cgi->param('shost') . " -> " . $cgi->param('dhost') . " in " . $mod . "bps');\n";
         if( $cgi->param('key2') ) {
-            print "        data.addColumn('number', '" . $cgi->param('dhost') . " -> " . $cgi->param('shost') . " Bandwidth in " . $mod . "bps');\n";
+            print "        data.addColumn('number', '" . $cgi->param('dhost') . " -> " . $cgi->param('shost') . " in " . $mod . "bps');\n";
         }
 
         my $doc1 = $parser->parse_string( $result->{"data"}->[0] );
