@@ -5,7 +5,7 @@
   <body>
     <table width="95%" align="center" cellpadding="1" border="2">
       <tr>
-        <th align="center" colspan="6"><tmpl_var name=EVENTTYPE> @ <tmpl_var name=SERVICE></th>
+        <th align="center" colspan="8"><tmpl_var name=EVENTTYPE> @ <tmpl_var name=SERVICE></th>
       </tr>
       <tr>
         <th align="center">Source Host</th>
@@ -13,7 +13,9 @@
         <th align="center">Destination Host</th>
         <th align="center">Destination Address</th>
         <th align="center">Protocol</th>
-        <th align="center">Graph</th>
+        <th align="center">Line Graph</th>
+        <th align="center">Flash Graph</th>
+        <th align="center">Scatter Graph</th>
       </tr>
       <tmpl_loop name=PAIRS>
       <tr>
@@ -32,8 +34,6 @@
         <td align="center">
           <tmpl_var name=PROTOCOL>&nbsp;
         </td>
-<!--
-     
         <td align="center">
           <select value="Graph" id="graph1_<tmpl_var name=COUNT>" name="graph1_<tmpl_var name=COUNT>" onChange="window.open(options[selectedIndex].value,'graph1_<tmpl_var name=COUNT>','width=950,height=500,status=yes,scrollbars=yes,resizable=yes')">
             <option selected value="./bandwidthGraph.cgi">-- Select --</option>
@@ -42,30 +42,22 @@
             <option value="./bandwidthGraph.cgi?url=<tmpl_var name=SERVICE>&key=<tmpl_var name=KEY>&key2=<tmpl_var name=KEY2>&dst=<tmpl_var name=DADDRESS>&src=<tmpl_var name=SADDRESS>&dhost=<tmpl_var name=DHOST>&shost=<tmpl_var name=SHOST>&type=<tmpl_var name=PROTOCOL>&length=2592000">1 Month</option>
           </select>
         </td>
-
--->
-<!--
         <td align="center">
-          <select value="Graph" id="graph1_<tmpl_var name=COUNT>" name="graph1_<tmpl_var name=COUNT>" onChange="window.open(options[selectedIndex].value,'graph1_<tmpl_var name=COUNT>','width=950,height=500,status=yes,scrollbars=yes,resizable=yes')">
+          <select value="Graph" id="graph2_<tmpl_var name=COUNT>" name="graph2_<tmpl_var name=COUNT>" onChange="window.open(options[selectedIndex].value,'graph2_<tmpl_var name=COUNT>','width=950,height=550,status=yes,scrollbars=yes,resizable=yes')">
             <option selected value="./bandwidthGraphFlash.cgi">-- Select --</option>
             <option value="./bandwidthGraphFlash.cgi?url=<tmpl_var name=SERVICE>&key=<tmpl_var name=KEY>&key2=<tmpl_var name=KEY2>&dst=<tmpl_var name=DADDRESS>&src=<tmpl_var name=SADDRESS>&dhost=<tmpl_var name=DHOST>&shost=<tmpl_var name=SHOST>&type=<tmpl_var name=PROTOCOL>&length=86400">1 Day</option>
             <option value="./bandwidthGraphFlash.cgi?url=<tmpl_var name=SERVICE>&key=<tmpl_var name=KEY>&key2=<tmpl_var name=KEY2>&dst=<tmpl_var name=DADDRESS>&src=<tmpl_var name=SADDRESS>&dhost=<tmpl_var name=DHOST>&shost=<tmpl_var name=SHOST>&type=<tmpl_var name=PROTOCOL>&length=604800">1 Week</option>
             <option value="./bandwidthGraphFlash.cgi?url=<tmpl_var name=SERVICE>&key=<tmpl_var name=KEY>&key2=<tmpl_var name=KEY2>&dst=<tmpl_var name=DADDRESS>&src=<tmpl_var name=SADDRESS>&dhost=<tmpl_var name=DHOST>&shost=<tmpl_var name=SHOST>&type=<tmpl_var name=PROTOCOL>&length=2592000">1 Month</option>
           </select>
         </td>
--->
-<!--
--->
         <td align="center">
-          <select value="Graph" id="graph1_<tmpl_var name=COUNT>" name="graph1_<tmpl_var name=COUNT>" onChange="window.open(options[selectedIndex].value,'graph1_<tmpl_var name=COUNT>','width=950,height=500,status=yes,scrollbars=yes,resizable=yes')">
+          <select value="Graph" id="graph3_<tmpl_var name=COUNT>" name="graph3_<tmpl_var name=COUNT>" onChange="window.open(options[selectedIndex].value,'graph3_<tmpl_var name=COUNT>','width=950,height=500,status=yes,scrollbars=yes,resizable=yes')">
             <option selected value="./bandwidthGraphScatter.cgi">-- Select --</option>
             <option value="./bandwidthGraphScatter.cgi?url=<tmpl_var name=SERVICE>&key=<tmpl_var name=KEY>&key2=<tmpl_var name=KEY2>&dst=<tmpl_var name=DADDRESS>&src=<tmpl_var name=SADDRESS>&dhost=<tmpl_var name=DHOST>&shost=<tmpl_var name=SHOST>&type=<tmpl_var name=PROTOCOL>&length=86400">1 Day</option>
             <option value="./bandwidthGraphScatter.cgi?url=<tmpl_var name=SERVICE>&key=<tmpl_var name=KEY>&key2=<tmpl_var name=KEY2>&dst=<tmpl_var name=DADDRESS>&src=<tmpl_var name=SADDRESS>&dhost=<tmpl_var name=DHOST>&shost=<tmpl_var name=SHOST>&type=<tmpl_var name=PROTOCOL>&length=604800">1 Week</option>
             <option value="./bandwidthGraphScatter.cgi?url=<tmpl_var name=SERVICE>&key=<tmpl_var name=KEY>&key2=<tmpl_var name=KEY2>&dst=<tmpl_var name=DADDRESS>&src=<tmpl_var name=SADDRESS>&dhost=<tmpl_var name=DHOST>&shost=<tmpl_var name=SHOST>&type=<tmpl_var name=PROTOCOL>&length=2592000">1 Month</option>
           </select>
         </td>
-<!--
--->
       </tr>
       </tmpl_loop>
     </table>
