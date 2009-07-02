@@ -19,6 +19,8 @@ use CGI;
 use HTML::Template;
 use XML::LibXML;
 use Socket;
+use Data::Validate::IP qw(is_ipv4);
+use Net::IPv6Addr;
 
 # change this to the location where you install perfSONAR-PS
 
@@ -197,8 +199,7 @@ else {
                         $temp{"capacity"} /= 1000000;
                         $temp{"capacity"} .= " Tbps";
                     }
-                }
-                
+                }                
                 $list{$host}{$name}    = \%temp;
             }
         }
@@ -238,58 +239,84 @@ else {
             my $metadata   = $parser->parse_string($md);
             my $metadataId = $metadata->getDocumentElement->getAttribute("id");
 
-            my $src  = extract( find( $metadata->getDocumentElement, "./*[local-name()='subject']/nmwgt:endPointPair/nmwgt:src",                           1 ), 0 );
-            my $dst  = extract( find( $metadata->getDocumentElement, "./*[local-name()='subject']/nmwgt:endPointPair/nmwgt:dst",                           1 ), 0 );
-            my $type = extract( find( $metadata->getDocumentElement, "./*[local-name()='parameters']/*[local-name()='parameter' and \@name=\"protocol\"]", 1 ), 0 );
-
-            my %temp = ();
-            $temp{"key"}     = $lookup{$metadataId};
-            $temp{"src"}     = $src;
-            $temp{"dst"}     = $dst;
-            if ( $type ) {
-                $temp{"type"}    = $type;
-                $list{$src}{$dst}{$type} = \%temp;
+            my $src  = extract( find( $metadata->getDocumentElement, "./*[local-name()='subject']/nmwgt:endPointPair/nmwgt:src", 1 ), 0 );
+            my $saddr;
+            my $shost;
+            if ( is_ipv4( $src ) ) {
+                $saddr = $src;
+                my $iaddr = Socket::inet_aton( $src );
+                if ( defined $iaddr and $iaddr ) {
+                    $shost = gethostbyaddr( $iaddr, Socket::AF_INET );
+                }
+            }
+            elsif ( &Net::IPv6Addr::is_ipv6( $src ) ) {
+                $saddr = $src;
+                $shost = $src;
+                # do something?
             }
             else {
-                $list{$src}{$dst} = \%temp;
+                $shost = $src;
+                my $packed_ip = gethostbyname( $src );
+                if ( defined $packed_ip and $packed_ip ) {
+                    $saddr = inet_ntoa( $packed_ip );
+                }
+            }
+                                
+            my $dst  = extract( find( $metadata->getDocumentElement, "./*[local-name()='subject']/nmwgt:endPointPair/nmwgt:dst", 1 ), 0 );
+            my $daddr;
+            my $dhost;
+            if ( is_ipv4( $dst ) ) {
+                $daddr = $dst;
+                my $iaddr = Socket::inet_aton( $dst );
+                if ( defined $iaddr and $iaddr ) {
+                    $dhost = gethostbyaddr( $iaddr, Socket::AF_INET );
+                }
+            }
+            elsif ( &Net::IPv6Addr::is_ipv6( $dst ) ) {
+                $daddr = $dst;
+                $dhost = $dst;
+                # do something?
+            }
+            else {
+                $dhost = $dst;
+                my $packed_ip = gethostbyname( $dst );
+                if ( defined $packed_ip and $packed_ip ) {
+                    $daddr = inet_ntoa( $packed_ip );
+                }
+            }
+
+            my $type = extract( find( $metadata->getDocumentElement, "./*[local-name()='parameters']/*[local-name()='parameter' and \@name=\"protocol\"]", 1 ), 0 );
+            
+            my %temp = ();
+            $temp{"key"}     = $lookup{$metadataId};
+            $temp{"src"}     = $shost;
+            $temp{"dst"}     = $dhost;
+            $temp{"saddr"}   = $saddr;
+            $temp{"daddr"}   = $daddr;
+            if ( $type ) {
+                $temp{"type"}    = $type;
+                $list{$shost}{$dhost}{$type} = \%temp;
+            }
+            else {
+                $list{$shost}{$dhost} = \%temp;
             }
         }
 
         my @pairs = ();
+        my %mark = ();
         my $counter = 0;
-        foreach my $src ( sort keys %list ) {
+        foreach my $src ( sort keys %list ) {     
             foreach my $dst ( sort keys %{ $list{$src} } ) {
+                next if exists $mark{$src}{$dst} and $mark{$src}{$dst};
                 if ( exists $list{$src}{$dst}->{"src"} and exists $list{$src}{$dst}->{"dst"} and exists $list{$src}{$dst}->{"key"} ) {
-                    my $display = $list{$src}{$dst}->{"src"};
-                    $display =~ s/:.*$//;
-                    my $iaddr = Socket::inet_aton( $display );
-                    my $shost = gethostbyaddr( $iaddr, Socket::AF_INET );
-                    $shost = $list{$src}{$dst}->{"src"} unless $shost;
-
-                    $display = $list{$src}{$dst}->{"dst"};
-                    $display =~ s/:.*$//;
-                    $iaddr = Socket::inet_aton( $display );
-                    my $dhost = gethostbyaddr( $iaddr, Socket::AF_INET );
-                    $dhost = $list{$src}{$dst}->{"dst"} unless $dhost;
-                                            
-                    push @pairs, { SADDRESS => $list{$src}{$dst}->{"src"}, SHOST => $shost, DADDRESS => $list{$src}{$dst}->{"dst"}, DHOST => $dhost, PROTOCOL => $list{$src}{$dst}->{"type"}, KEY => $list{$src}{$dst}->{"key"}, KEY2 => $list{$dst}{$src}->{"key"}, COUNT => $counter, SERVICE => $service };
+                    $mark{$dst}{$src} = 1 if exists $list{$dst}{$src}->{"key"} and $list{$dst}{$src}->{"key"};
+                    push @pairs, { SADDRESS => $list{$src}{$dst}->{"saddr"}, SHOST => $list{$src}{$dst}->{"src"}, DADDRESS => $list{$src}{$dst}->{"daddr"}, DHOST => $list{$src}{$dst}->{"dst"}, PROTOCOL => $list{$src}{$dst}->{"type"}, KEY => $list{$src}{$dst}->{"key"}, KEY2 => $list{$dst}{$src}->{"key"}, COUNT => $counter, SERVICE => $service };
                     $counter++;
                 }
                 else {
                     foreach my $type ( sort keys %{ $list{$src}{$dst} } ) {
-                        my $display = $list{$src}{$dst}{$type}->{"src"};
-                        $display =~ s/:.*$//;
-                        my $iaddr = Socket::inet_aton( $display );
-                        my $shost = gethostbyaddr( $iaddr, Socket::AF_INET );
-                        $shost = $list{$src}{$dst}{$type}->{"src"} unless $shost;
-
-                        $display = $list{$src}{$dst}{$type}->{"dst"};
-                        $display =~ s/:.*$//;
-                        $iaddr = Socket::inet_aton( $display );
-                        my $dhost = gethostbyaddr( $iaddr, Socket::AF_INET );
-                        $dhost = $list{$src}{$dst}{$type}->{"dst"} unless $dhost;
-                                            
-                        push @pairs, { SADDRESS => $list{$src}{$dst}{$type}->{"src"}, SHOST => $shost, DADDRESS => $list{$src}{$dst}{$type}->{"dst"}, DHOST => $dhost, PROTOCOL => $list{$src}{$dst}{$type}->{"type"}, KEY => $list{$src}{$dst}{$type}->{"key"}, COUNT => $counter, SERVICE => $service };
+                        $mark{$dst}{$src} = 1 if exists $list{$dst}{$src}->{"key"} and $list{$dst}{$src}->{"key"};
+                        push @pairs, { SADDRESS => $list{$src}{$dst}->{"saddr"}, SHOST => $list{$src}{$dst}->{"src"}, DADDRESS => $list{$src}{$dst}{$type}->{"daddr"}, DHOST => $list{$src}{$dst}{$type}->{"dst"}, PROTOCOL => $list{$src}{$dst}{$type}->{"type"}, KEY => $list{$src}{$dst}{$type}->{"key"}, KEY2 => $list{$dst}{$src}->{"key"}, COUNT => $counter, SERVICE => $service };
                         $counter++;
                     }
                 }
