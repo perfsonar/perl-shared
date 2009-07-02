@@ -22,7 +22,9 @@ use Date::Manip;
 use Socket;
 use POSIX;
 
-use lib "/home/zurawski/perfSONAR-PS/lib";
+# change this to the location where you install perfSONAR-PS
+
+use lib "/home/jason/RELEASE/RELEASE_3.1/Shared/lib";
 #use lib "/usr/local/perfSONAR-PS/lib";
 
 use perfSONAR_PS::Client::MA;

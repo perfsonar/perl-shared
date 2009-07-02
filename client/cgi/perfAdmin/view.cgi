@@ -6,7 +6,9 @@ use CGI;
 use HTML::Template;
 use XML::LibXML;
 
-use lib "/home/zurawski/perfSONAR-PS/lib";
+# change this to the location where you install perfSONAR-PS
+
+use lib "/home/jason/RELEASE/RELEASE_3.1/Shared/lib";
 use perfSONAR_PS::Client::DCN;
 use perfSONAR_PS::Common qw( escapeString find extract );
 

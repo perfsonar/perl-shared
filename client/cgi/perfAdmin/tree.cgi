@@ -17,7 +17,9 @@ use HTML::Template;
 use CGI;
 use CGI::Carp;
 
-use lib "/home/zurawski/perfSONAR-PS/lib";
+# change this to the location where you install perfSONAR-PS
+
+use lib "/home/jason/RELEASE/RELEASE_3.1/Shared/lib";
 #use lib "/usr/local/perfSONAR-PS/lib";
 
 my $base   = "/home/zurawski/perfSONAR-PS/client/cgi/perfAdmin/cache";

@@ -19,7 +19,9 @@ use IO::Socket;
 use IO::Socket::INET6;
 use IO::Socket::INET;
 
-use lib "/home/jason/perfSONAR-PS/lib";
+# change this to the location where you install perfSONAR-PS
+
+use lib "/home/jason/RELEASE/RELEASE_3.1/Shared/lib";
 
 use perfSONAR_PS::Transport;
 
