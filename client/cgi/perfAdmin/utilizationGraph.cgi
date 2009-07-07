@@ -34,48 +34,48 @@ use perfSONAR_PS::Utils::ParameterValidation;
 my $cgi = new CGI;
 print "Content-type: text/html\n\n";
 
-if ( ( $cgi->param('key1_type') or $cgi->param('key2_type') ) and $cgi->param('url') ) {
+if ( ( $cgi->param( 'key1_type' ) or $cgi->param( 'key2_type' ) ) and $cgi->param( 'url' ) ) {
 
-    my $ma = new perfSONAR_PS::Client::MA( { instance => $cgi->param('url') } );
+    my $ma = new perfSONAR_PS::Client::MA( { instance => $cgi->param( 'url' ) } );
 
     my @eventTypes = ();
     my $parser     = XML::LibXML->new();
-    my $sec = time;
+    my $sec        = time;
 
     # 'in' data
     my $subject = q{};
-    if ( $cgi->param('key1_type') eq "key" ) {
+    if ( $cgi->param( 'key1_type' ) eq "key" ) {
         $subject = "  <nmwg:key id=\"key-1\">\n";
         $subject .= "    <nmwg:parameters id=\"parameters-key-1\">\n";
-        $subject .= "      <nmwg:parameter name=\"maKey\">" . $cgi->param('key1_1') . "</nmwg:parameter>\n";
+        $subject .= "      <nmwg:parameter name=\"maKey\">" . $cgi->param( 'key1_1' ) . "</nmwg:parameter>\n";
         $subject .= "    </nmwg:parameters>\n";
         $subject .= "  </nmwg:key>  \n";
     }
     else {
         $subject = "  <nmwg:key id=\"key-1\">\n";
         $subject .= "    <nmwg:parameters id=\"parameters-key-1\">\n";
-        $subject .= "      <nmwg:parameter name=\"file\">" . $cgi->param('key1_1') . "</nmwg:parameter>\n";
-        $subject .= "      <nmwg:parameter name=\"dataSource\">" . $cgi->param('key1_2') . "</nmwg:parameter>\n";
+        $subject .= "      <nmwg:parameter name=\"file\">" . $cgi->param( 'key1_1' ) . "</nmwg:parameter>\n";
+        $subject .= "      <nmwg:parameter name=\"dataSource\">" . $cgi->param( 'key1_2' ) . "</nmwg:parameter>\n";
         $subject .= "    </nmwg:parameters>\n";
         $subject .= "  </nmwg:key>  \n";
     }
 
     my $time;
-    if ( $cgi->param('length') ) {
-        $time = $cgi->param('length');
+    if ( $cgi->param( 'length' ) ) {
+        $time = $cgi->param( 'length' );
     }
     else {
         $time = 86400;
     }
 
     my $res;
-    if ( $cgi->param('resolution') ) {
-        $res = $cgi->param('resolution');
+    if ( $cgi->param( 'resolution' ) ) {
+        $res = $cgi->param( 'resolution' );
     }
     else {
         $res = 5;
     }
-    
+
     my $result = $ma->setupDataRequest(
         {
             start                 => ( $sec - $time ),
@@ -89,18 +89,18 @@ if ( ( $cgi->param('key1_type') or $cgi->param('key2_type') ) and $cgi->param('u
 
     # 'out' data
     my $subject2 = q{};
-    if ( $cgi->param('key2_type') eq "key" ) {
+    if ( $cgi->param( 'key2_type' ) eq "key" ) {
         $subject2 = "  <nmwg:key id=\"key-2\">\n";
         $subject2 .= "    <nmwg:parameters id=\"parameters-key-2\">\n";
-        $subject2 .= "      <nmwg:parameter name=\"maKey\">" . $cgi->param('key2_1') . "</nmwg:parameter>\n";
+        $subject2 .= "      <nmwg:parameter name=\"maKey\">" . $cgi->param( 'key2_1' ) . "</nmwg:parameter>\n";
         $subject2 .= "    </nmwg:parameters>\n";
         $subject2 .= "  </nmwg:key>  \n";
     }
     else {
         $subject2 = "  <nmwg:key id=\"key-2\">\n";
         $subject2 .= "    <nmwg:parameters id=\"parameters-key-2\">\n";
-        $subject2 .= "      <nmwg:parameter name=\"file\">" . $cgi->param('key2_1') . "</nmwg:parameter>\n";
-        $subject2 .= "      <nmwg:parameter name=\"dataSource\">" . $cgi->param('key2_2') . "</nmwg:parameter>\n";
+        $subject2 .= "      <nmwg:parameter name=\"file\">" . $cgi->param( 'key2_1' ) . "</nmwg:parameter>\n";
+        $subject2 .= "      <nmwg:parameter name=\"dataSource\">" . $cgi->param( 'key2_2' ) . "</nmwg:parameter>\n";
         $subject2 .= "    </nmwg:parameters>\n";
         $subject2 .= "  </nmwg:key>  \n";
     }
@@ -122,53 +122,53 @@ if ( ( $cgi->param('key1_type') or $cgi->param('key2_type') ) and $cgi->param('u
     my $doc2 = $parser->parse_string( $result2->{"data"}->[0] );
     my $datum2 = find( $doc2->getDocumentElement, "./*[local-name()='datum']", 0 );
 
-    my %store = ();
+    my %store   = ();
     my $counter = 0;
-    my $inUnit = q{};
+    my $inUnit  = q{};
     my $outUnit = q{};
     if ( $datum1 and $datum2 ) {
         foreach my $dt ( $datum1->get_nodelist ) {
             $counter++;
         }
         foreach my $dt ( $datum1->get_nodelist ) {
-            $store{ $dt->getAttribute("timeValue") }{"in"} = eval( $dt->getAttribute("value") );
-            $inUnit = $dt->getAttribute("valueUnits") unless $inUnit;   
+            $store{ $dt->getAttribute( "timeValue" ) }{"in"} = eval( $dt->getAttribute( "value" ) );
+            $inUnit = $dt->getAttribute( "valueUnits" ) unless $inUnit;
         }
         foreach my $dt ( $datum2->get_nodelist ) {
-            $store{ $dt->getAttribute("timeValue") }{"out"} = eval( $dt->getAttribute("value") );
-            $outUnit = $dt->getAttribute("valueUnits") unless $outUnit;
+            $store{ $dt->getAttribute( "timeValue" ) }{"out"} = eval( $dt->getAttribute( "value" ) );
+            $outUnit = $dt->getAttribute( "valueUnits" ) unless $outUnit;
         }
     }
 
     print "<html>\n";
     print "  <head>\n";
     print "    <title>perfSONAR-PS perfAdmin Utilization Graph</title>\n";
-        
+
     if ( scalar keys %store > 0 ) {
 
         my $title = q{};
-        if ( $cgi->param('host') and $cgi->param('interface') ) {
+        if ( $cgi->param( 'host' ) and $cgi->param( 'interface' ) ) {
             my $host = q{};
-            if ( is_ipv4( $cgi->param('host') ) ) {
-                my $iaddr = Socket::inet_aton( $cgi->param('host') );
+            if ( is_ipv4( $cgi->param( 'host' ) ) ) {
+                my $iaddr = Socket::inet_aton( $cgi->param( 'host' ) );
                 if ( defined $iaddr and $iaddr ) {
                     $host = gethostbyaddr( $iaddr, Socket::AF_INET );
                 }
             }
             else {
-                my $packed_ip = gethostbyname( $cgi->param('host') );
+                my $packed_ip = gethostbyname( $cgi->param( 'host' ) );
                 if ( defined $packed_ip and $packed_ip ) {
                     $host = inet_ntoa( $packed_ip );
                 }
             }
-            $title = "Device: " . $cgi->param('host');         
+            $title = "Device: " . $cgi->param( 'host' );
             $title .= " (" . $host . ") " if $host;
-            $title .= " -- " . $cgi->param('interface');
+            $title .= " -- " . $cgi->param( 'interface' );
         }
         else {
             $title = "Interface Utilization";
         }
-        
+
         print "    <script type=\"text/javascript\" src=\"http://www.google.com/jsapi\"></script>\n";
         print "    <script type=\"text/javascript\">\n";
         print "      google.load(\"visualization\", \"1\", {packages:[\"areachart\"]})\n";
@@ -178,40 +178,40 @@ if ( ( $cgi->param('key1_type') or $cgi->param('key2_type') ) and $cgi->param('u
         print "        data.addColumn('datetime', 'Time');\n";
 
         $counter = 0;
-        my %inStats = ();
+        my %inStats  = ();
         my %outStats = ();
         foreach my $time ( keys %store ) {
             if ( exists $store{$time}{"in"} and $store{$time}{"in"} and exists $store{$time}{"out"} and $store{$time}{"out"} ) {
-                $inStats{"average"} += $store{$time}{"in"};
+                $inStats{"average"}  += $store{$time}{"in"};
                 $outStats{"average"} += $store{$time}{"out"};
-                $inStats{"max"} = $store{$time}{"in"} if $store{$time}{"in"} > $inStats{"max"};
+                $inStats{"max"}  = $store{$time}{"in"}  if $store{$time}{"in"} > $inStats{"max"};
                 $outStats{"max"} = $store{$time}{"out"} if $store{$time}{"out"} > $outStats{"max"};
-                $inStats{"current"} = $store{$time}{"in"};
-                $outStats{"current"} = $store{$time}{"out"};      
+                $inStats{"current"}  = $store{$time}{"in"};
+                $outStats{"current"} = $store{$time}{"out"};
                 $counter++;
             }
         }
-        $inStats{"average"} /= $counter if $counter;
+        $inStats{"average"}  /= $counter if $counter;
         $outStats{"average"} /= $counter if $counter;
 
-        my $mod = q{};
+        my $mod   = q{};
         my $scale = q{};
-        if ( $inUnit and $outUnit and ( $inUnit eq $outUnit ) and ( lc($inUnit) eq "bps" ) ) {
+        if ( $inUnit and $outUnit and ( $inUnit eq $outUnit ) and ( lc( $inUnit ) eq "bps" ) ) {
             $scale = $inStats{"max"};
-            $scale = $outStats{"max"} if $outStats{"max"} > $scale;            
+            $scale = $outStats{"max"} if $outStats{"max"} > $scale;
             if ( $scale < 1000 ) {
                 $scale = 1;
             }
             elsif ( $scale < 1000000 ) {
-                $mod = "K";
+                $mod   = "K";
                 $scale = 1000;
             }
-            elsif( $scale < 1000000000 ) {
-                $mod = "M";
+            elsif ( $scale < 1000000000 ) {
+                $mod   = "M";
                 $scale = 1000000;
             }
-            elsif( $scale < 1000000000000 ) {
-                $mod = "G";
+            elsif ( $scale < 1000000000000 ) {
+                $mod   = "G";
                 $scale = 1000000000;
             }
         }
@@ -238,57 +238,57 @@ if ( ( $cgi->param('key1_type') or $cgi->param('key2_type') ) and $cgi->param('u
             my @time  = split( /:/, $array[1] );
             if ( $#year > 1 and $#time > 1 and ( exists $store{$time}{"in"} and $store{$time}{"in"} and exists $store{$time}{"out"} and $store{$time}{"out"} ) ) {
                 if ( $scale and $mod ) {
-                    $store{$time}{"in"} /= $scale;
+                    $store{$time}{"in"}  /= $scale;
                     $store{$time}{"out"} /= $scale;
                 }
                 print "        data.setValue(" . $counter . ", 0, new Date(" . $year[0] . "," . ( $year[1] - 1 ) . ",";
                 print $year[2] . "," . $time[0] . "," . $time[1] . "," . $time[2] . "));\n";
                 print "        data.setValue(" . $counter . ", 1, " . $store{$time}{"in"} . ");\n";
-                print "        data.setValue(" . $counter . ", 2, " . $store{$time}{"out"} . ");\n"; 
+                print "        data.setValue(" . $counter . ", 2, " . $store{$time}{"out"} . ");\n";
                 $counter++;
             }
         }
 
         print "        var formatter = new google.visualization.DateFormat({formatType: 'short'});\n";
-        print "        formatter.format(data, 0);\n";  
+        print "        formatter.format(data, 0);\n";
         print "        var chart = new google.visualization.AreaChart(document.getElementById('chart_div'));\n";
         print "        chart.draw(data, {legendFontSize: 12, axisFontSize: 12, titleFontSize: 16, colors: ['#00cc00', '#0000ff'], width: 900, height: 400, legend: 'bottom', title: '" . $title . "', titleY: 'Traffic in " . $yLabel . "' });\n";
         print "      }\n";
         print "    </script>\n";
         print "  </head>\n";
         print "  <body>\n";
-  
+
         print "    <div id=\"chart_div\"></div>\n";
-        
+
         print "    <table border=\"0\" cellpadding=\"0\" width=\"75%\" align=\"center\">";
         print "      <tr>\n";
-        print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Maximum In</font></th>\n";        
-        my $temp = scaleValue({ value => $inStats{"max"} });
-        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $inUnit . "</font></td>\n", $temp->{"value"} );                
+        print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Maximum In</font></th>\n";
+        my $temp = scaleValue( { value => $inStats{"max"} } );
+        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $inUnit . "</font></td>\n", $temp->{"value"} );
         print "        <td align=\"right\" width=\"10%\"><br></td>\n";
         print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Maximum Out</font></th>\n";
-        $temp = scaleValue({ value => $outStats{"max"} });
-        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $outUnit . "</font></td>\n", $temp->{"value"});
-        print "      <tr>\n";        
+        $temp = scaleValue( { value => $outStats{"max"} } );
+        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $outUnit . "</font></td>\n", $temp->{"value"} );
+        print "      <tr>\n";
         print "      <tr>\n";
         print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Average In</font></th>\n";
-        $temp = scaleValue({ value => $inStats{"average"} });
-        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $inUnit . "</font></td>\n", $temp->{"value"});
+        $temp = scaleValue( { value => $inStats{"average"} } );
+        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $inUnit . "</font></td>\n", $temp->{"value"} );
         print "        <td align=\"right\" width=\"10%\"><br></td>\n";
         print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Average Out</font></th>\n";
-        $temp = scaleValue({ value => $outStats{"average"} });
-        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $outUnit . "</font></td>\n", $temp->{"value"});
-        print "      <tr>\n";  
+        $temp = scaleValue( { value => $outStats{"average"} } );
+        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $outUnit . "</font></td>\n", $temp->{"value"} );
+        print "      <tr>\n";
         print "      <tr>\n";
         print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Current In</font></th>\n";
-        $temp = scaleValue({ value => $inStats{"current"} });
-        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $inUnit . "</font></td>\n", $temp->{"value"});
+        $temp = scaleValue( { value => $inStats{"current"} } );
+        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $inUnit . "</font></td>\n", $temp->{"value"} );
         print "        <td align=\"right\" width=\"10%\"><br></td>\n";
         print "        <th align=\"left\" width=\"15%\"><font size=\"-1\">Current Out</font></th>\n";
-        $temp = scaleValue({ value => $outStats{"current"} });
-        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $outUnit . "</font></td>\n", $temp->{"value"});
-        print "      <tr>\n";          
-        print "    </table>\n";           
+        $temp = scaleValue( { value => $outStats{"current"} } );
+        printf( "        <td align=\"right\" width=\"30%\"><font size=\"-1\">%.2f " . $temp->{"mod"} . $outUnit . "</font></td>\n", $temp->{"value"} );
+        print "      <tr>\n";
+        print "    </table>\n";
     }
     else {
         print "  </head>\n";
@@ -296,7 +296,7 @@ if ( ( $cgi->param('key1_type') or $cgi->param('key2_type') ) and $cgi->param('u
         print "    <br><br>\n";
         print "    <h2 align=\"center\">Internal Error - Try again later.</h2>\n";
         print "    <br><br>\n";
-    }    
+    }
     print "  </body>\n";
     print "</html>\n";
 }
@@ -305,24 +305,30 @@ else {
     print "<body><h2 align=\"center\">Graph error; Close window and try again.</h2></body></html>";
 }
 
+=head2 scaleValue ( { value } )
+
+Given a value, return the value scaled to a magnitude.
+
+=cut
+
 sub scaleValue {
-    my $parameters = validateParams( @_, { value => 1  } );
+    my $parameters = validateParams( @_, { value => 1 } );
     my %result = ();
     if ( $parameters->{"value"} < 1000 ) {
         $result{"value"} = $parameters->{"value"};
-        $result{"mod"} = q{};
+        $result{"mod"}   = q{};
     }
-    elsif( $parameters->{"value"} < 1000000 ) {
+    elsif ( $parameters->{"value"} < 1000000 ) {
         $result{"value"} = $parameters->{"value"} / 1000;
-        $result{"mod"} = "K";
+        $result{"mod"}   = "K";
     }
-    elsif( $parameters->{"value"} < 1000000000 ) {
+    elsif ( $parameters->{"value"} < 1000000000 ) {
         $result{"value"} = $parameters->{"value"} / 1000000;
-        $result{"mod"} = "M";
+        $result{"mod"}   = "M";
     }
-    elsif( $parameters->{"value"} < 1000000000000 ) {
+    elsif ( $parameters->{"value"} < 1000000000000 ) {
         $result{"value"} = $parameters->{"value"} / 1000000000;
-        $result{"mod"} = "G";
+        $result{"mod"}   = "G";
     }
     return \%result;
 }
@@ -331,8 +337,9 @@ __END__
 
 =head1 SEE ALSO
 
-L<CGI>, L<XML::LibXML>, L<Date::Manip>, L<perfSONAR_PS::Client::MA>,
-L<perfSONAR_PS::Common>
+L<CGI>, L<XML::LibXML>, L<Date::Manip>, L<Socket>, L<POSIX>,
+L<perfSONAR_PS::Client::MA>, L<perfSONAR_PS::Common>,
+L<perfSONAR_PS::Utils::ParameterValidation>
 
 To join the 'perfSONAR-PS' mailing list, please visit:
 
@@ -342,8 +349,8 @@ The perfSONAR-PS subversion repository is located at:
 
   https://svn.internet2.edu/svn/perfSONAR-PS
 
-Questions and comments can be directed to the author, or the mailing list.  Bugs,
-feature requests, and improvements can be directed here:
+Questions and comments can be directed to the author, or the mailing list.
+Bugs, feature requests, and improvements can be directed here:
 
   http://code.google.com/p/perfsonar-ps/issues/list
 
@@ -357,14 +364,14 @@ Jason Zurawski, zurawski@internet2.edu
 
 =head1 LICENSE
 
-You should have received a copy of the Internet2 Intellectual Property Framework along
-with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
+You should have received a copy of the Internet2 Intellectual Property Framework
+along with this software.  If not, see
+<http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2007-2008, Internet2
+Copyright (c) 2007-2009, Internet2
 
 All rights reserved.
 
 =cut
-
