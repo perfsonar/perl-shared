@@ -29,7 +29,17 @@
           <tmpl_var name=DADDRESS>&nbsp;
         </td>
         <td align="center">
+        <!--
           <input type="submit" value="Graph" id="graph2_<tmpl_var name=COUNT>" name="graph2_<tmpl_var name=COUNT>" onClick="window.open('./delayGraph.cgi?url=<tmpl_var name=SERVICE>&key=<tmpl_var name=KEY>&key2=<tmpl_var name=KEY2>&dst=<tmpl_var name=DADDRESS>&src=<tmpl_var name=SADDRESS>&dhost=<tmpl_var name=DHOST>&shost=<tmpl_var name=SHOST>','graph2_<tmpl_var name=COUNT>','width=950,height=500,status=yes,scrollbars=yes,resizable=yes')" />
+-->
+
+          <select value="Graph" id="graph1_<tmpl_var name=COUNT>" name="graph1_<tmpl_var name=COUNT>" onChange="window.open(options[selectedIndex].value,'graph1_<tmpl_var name=COUNT>','width=950,height=500,status=yes,scrollbars=yes,resizable=yes')">
+            <option selected value="./bandwidthGraph.cgi">-- Select --</option>
+            <option value="./delayGraph.cgi?url=<tmpl_var name=SERVICE>&key=<tmpl_var name=KEY>&key2=<tmpl_var name=KEY2>&dst=<tmpl_var name=DADDRESS>&src=<tmpl_var name=SADDRESS>&dhost=<tmpl_var name=DHOST>&shost=<tmpl_var name=SHOST>&length=7200">2 Hours</option>
+            <option value="./delayGraph.cgi?url=<tmpl_var name=SERVICE>&key=<tmpl_var name=KEY>&key2=<tmpl_var name=KEY2>&dst=<tmpl_var name=DADDRESS>&src=<tmpl_var name=SADDRESS>&dhost=<tmpl_var name=DHOST>&shost=<tmpl_var name=SHOST>&length=14400">4 Hours</option>
+            <option value="./delayGraph.cgi?url=<tmpl_var name=SERVICE>&key=<tmpl_var name=KEY>&key2=<tmpl_var name=KEY2>&dst=<tmpl_var name=DADDRESS>&src=<tmpl_var name=SADDRESS>&dhost=<tmpl_var name=DHOST>&shost=<tmpl_var name=SHOST>&length=28800">8 Hours</option>
+          </select>
+
         </td>
       </tr>
       </tmpl_loop>
