@@ -328,6 +328,13 @@ else {
             SERVICE => $service,
             PAIRS => \@pairs
         );
+
+
+
+
+
+
+
     }
     elsif ( $eventType eq "http://ggf.org/ns/nmwg/tools/owamp/2.0" or $eventType eq "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921" ) {
         $template = HTML::Template->new( filename => "etc/serviceTest_psb_owamp.tmpl" );
@@ -345,34 +352,71 @@ else {
             my $metadata   = $parser->parse_string($md);
             my $metadataId = $metadata->getDocumentElement->getAttribute("id");
 
-            my $src = extract( find( $metadata->getDocumentElement, "./*[local-name()='subject']/nmwgt:endPointPair/nmwgt:src", 1 ), 0 );
-            my $dst = extract( find( $metadata->getDocumentElement, "./*[local-name()='subject']/nmwgt:endPointPair/nmwgt:dst", 1 ), 0 );
+            my $src  = extract( find( $metadata->getDocumentElement, "./*[local-name()='subject']/nmwgt:endPointPair/nmwgt:src", 1 ), 0 );
+            my $saddr;
+            my $shost;
 
+            if ( is_ipv4( $src ) ) {
+                $saddr = $src;
+                my $iaddr = Socket::inet_aton( $src );
+                if ( defined $iaddr and $iaddr ) {
+                    $shost = gethostbyaddr( $iaddr, Socket::AF_INET );
+                }
+            }
+            elsif ( &Net::IPv6Addr::is_ipv6( $src ) ) {
+                $saddr = $src;
+                $shost = $src;
+                # do something?
+            }
+            else {
+                $shost = $src;
+                my $packed_ip = gethostbyname( $src );
+                if ( defined $packed_ip and $packed_ip ) {
+                    $saddr = inet_ntoa( $packed_ip );
+                }
+            }
+                                
+            my $dst  = extract( find( $metadata->getDocumentElement, "./*[local-name()='subject']/nmwgt:endPointPair/nmwgt:dst", 1 ), 0 );
+            my $daddr;
+            my $dhost;
+            if ( is_ipv4( $dst ) ) {
+                $daddr = $dst;
+                my $iaddr = Socket::inet_aton( $dst );
+                if ( defined $iaddr and $iaddr ) {
+                    $dhost = gethostbyaddr( $iaddr, Socket::AF_INET );
+                }
+            }
+            elsif ( &Net::IPv6Addr::is_ipv6( $dst ) ) {
+                $daddr = $dst;
+                $dhost = $dst;
+                # do something?
+            }
+            else {
+                $dhost = $dst;
+                my $packed_ip = gethostbyname( $dst );
+                if ( defined $packed_ip and $packed_ip ) {
+                    $daddr = inet_ntoa( $packed_ip );
+                }
+            }
+            
             my %temp = ();
             $temp{"key"}      = $lookup{$metadataId};
-            $temp{"src"}      = $src;
-            $temp{"dst"}      = $dst;
-            $list{$src}{$dst} = \%temp;
+            $temp{"src"}     = $shost;
+            $temp{"dst"}     = $dhost;
+            $temp{"saddr"}   = $saddr;
+            $temp{"daddr"}   = $daddr;
+
+            $list{$shost}{$dhost} = \%temp;
         }
 
         my @pairs = ();
         my $counter = 0;
+        my %mark = ();
         foreach my $src ( sort keys %list ) {
             foreach my $dst ( sort keys %{ $list{$src} } ) {
-            
-                my $display = $list{$src}{$dst}->{"src"};
-                $display =~ s/:.*$//;
-                my $iaddr = Socket::inet_aton( $display );
-                my $shost = gethostbyaddr( $iaddr, Socket::AF_INET );
-                $shost = $list{$src}{$dst}->{"src"} unless $shost;
-
-                $display = $list{$src}{$dst}->{"dst"};
-                $display =~ s/:.*$//;
-                $iaddr = Socket::inet_aton( $display );
-                my $dhost = gethostbyaddr( $iaddr, Socket::AF_INET );
-                $dhost = $list{$src}{$dst}->{"dst"} unless $dhost;
-                                            
-                push @pairs, { SADDRESS => $list{$src}{$dst}->{"src"}, SHOST => $shost, DADDRESS => $list{$src}{$dst}->{"dst"}, DHOST => $dhost, KEY => $list{$src}{$dst}->{"key"}, COUNT => $counter, SERVICE => $service };
+                next if exists $mark{$src}{$dst} and $mark{$src}{$dst};
+                $mark{$dst}{$src} = 1 if exists $list{$dst}{$src}->{"key"} and $list{$dst}{$src}->{"key"};
+                push @pairs, { SADDRESS => $list{$src}{$dst}->{"saddr"}, SHOST => $list{$src}{$dst}->{"src"}, DADDRESS => $list{$src}{$dst}->{"daddr"}, DHOST => $list{$src}{$dst}->{"dst"}, KEY => $list{$src}{$dst}->{"key"}, KEY2 => $list{$dst}{$src}->{"key"}, COUNT => $counter, SERVICE => $service };
                 $counter++;
             }
         }
@@ -407,7 +451,7 @@ else {
             $temp{"key"}      = $lookup{$metadataId};
             $temp{"src"}      = $src;
             $temp{"dst"}      = $dst;
-	    $temp{"packetsize"} = $packetsize?$packetsize:1000;  
+	        $temp{"packetsize"} = $packetsize?$packetsize:1000;  
             $list{$src}{$dst} = \%temp;
         }
 
