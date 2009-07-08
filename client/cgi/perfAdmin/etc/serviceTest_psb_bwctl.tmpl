@@ -1,6 +1,25 @@
 <html>
   <head>
     <title>perfAdmin - Service Display - perfSONAR-BUOY Bandwidth Data</title>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <script type="text/javascript">
+      google.load("visualization", "1", {packages:["columnchart"]});
+      google.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var data = new google.visualization.DataTable();
+        data.addColumn('string', 'Location');
+        data.addColumn('number', 'Bandwidth Inbound (<tmpl_var name=GRAPHPREFIX>bps)');
+        data.addColumn('number', 'Bandwidth Outbound (<tmpl_var name=GRAPHPREFIX>bps)');       
+        data.addRows(<tmpl_var name=GRAPHTOTAL>);
+        <tmpl_loop name=GRAPH>
+        data.setValue(<tmpl_var name=C>, 0, '<tmpl_var name=LOCATION>');
+        data.setValue(<tmpl_var name=C>, 1, <tmpl_var name=IN>);
+        data.setValue(<tmpl_var name=C>, 2, <tmpl_var name=OUT>); 
+        </tmpl_loop>        
+        var chart = new google.visualization.ColumnChart(document.getElementById('chart_div'));
+        chart.draw(data, {width: <tmpl_var name=GRAPHTOTAL>*100, height: 250, is3D: true, title: '1 Day Average Bandwidth in <tmpl_var name=GRAPHPREFIX>bps', legendFontSize: 10, axisFontSize: 12, titleFontSize: 16, colors: ['#0000ff', '#00cc00'], legend: 'bottom' });
+      }
+    </script>
   </head>
   <body>
     <table width="95%" align="center" cellpadding="1" border="2">
@@ -61,6 +80,10 @@
       </tr>
       </tmpl_loop>
     </table>
+    <br><br>
+    <center>
+      <div id="chart_div"></div>
+    </center>
   </body>
 </html>
 

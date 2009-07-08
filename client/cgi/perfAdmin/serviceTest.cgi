@@ -29,6 +29,7 @@ use lib "/home/jason/RELEASE/RELEASE_3.1/Shared/lib";
 
 use perfSONAR_PS::Client::MA;
 use perfSONAR_PS::Common qw( extract find );
+use perfSONAR_PS::Utils::ParameterValidation;
 
 my $template = q{};
 my $cgi      = CGI->new();
@@ -313,8 +314,60 @@ else {
         my @pairs   = ();
         my %mark    = ();
         my $counter = 0;
+        my %data = ();
+
         foreach my $src ( sort keys %list ) {
+            unless ( exists $data{$src} ) {
+                $data{$src}{"out"}{"total"} = 0;
+                $data{$src}{"in"}{"total"} = 0;
+                $data{$src}{"out"}{"count"} = 0;
+                $data{$src}{"in"}{"count"} = 0;
+            }
             foreach my $dst ( sort keys %{ $list{$src} } ) {
+                unless ( exists $data{$dst} ) {
+                    $data{$dst}{"out"}{"total"} = 0;
+                    $data{$dst}{"in"}{"total"} = 0;
+                    $data{$dst}{"out"}{"count"} = 0;
+                    $data{$dst}{"in"}{"count"} = 0;
+                }
+
+                my @eventTypes = ();
+                my $parser     = XML::LibXML->new();
+                my $sec        = time;
+
+                my $subject = "  <nmwg:key id=\"key-1\">\n";
+                $subject .= "    <nmwg:parameters id=\"parameters-key-1\">\n";
+                $subject .= "      <nmwg:parameter name=\"maKey\">" . $list{$src}{$dst}->{"key"} . "</nmwg:parameter>\n";
+                $subject .= "    </nmwg:parameters>\n";
+                $subject .= "  </nmwg:key>  \n";
+                my $time = 86400;
+
+                my $result = $ma->setupDataRequest(
+                    {
+                        start      => ( $sec - $time ),
+                        end        => $sec,
+                        subject    => $subject,
+                        eventTypes => \@eventTypes
+                    }
+                );
+
+                my $doc1 = $parser->parse_string( $result->{"data"}->[0] );
+                my $datum1 = find( $doc1->getDocumentElement, "./*[local-name()='datum']", 0 );
+                if ( $datum1 ) {
+                    my $counter = 0;
+                    my $total = 0;
+                    foreach my $dt ( $datum1->get_nodelist ) {
+                        if ( $dt->getAttribute( "throughput" ) ) {
+                            $total += $dt->getAttribute( "throughput" );
+                            $counter++;
+                        }
+                    }                   
+                    $data{$src}{"out"}{"total"} += ( $total / $counter ) if $counter;
+                    $data{$dst}{"in"}{"total"} += ( $total / $counter ) if $counter;
+                    $data{$src}{"out"}{"count"}++;
+                    $data{$dst}{"in"}{"count"}++;
+                }
+            
                 next if exists $mark{$src}{$dst} and $mark{$src}{$dst};
                 if ( exists $list{$src}{$dst}->{"src"} and exists $list{$src}{$dst}->{"dst"} and exists $list{$src}{$dst}->{"key"} ) {
                     $mark{$dst}{$src} = 1 if exists $list{$dst}{$src}->{"key"} and $list{$dst}{$src}->{"key"};
@@ -353,12 +406,31 @@ else {
             }
         }
 
-        $template->param(
-            EVENTTYPE => $eventType,
-            SERVICE   => $service,
-            PAIRS     => \@pairs
-        );
+        my @graph = ();
+        my $datacounter = 0;
+        my $max = 0;
+        foreach my $d ( sort keys %data ) {
+            my $di = ( $data{$d}{"in"}{"total"} / $data{$d}{"in"}{"count"} );
+            my $do = ( $data{$d}{"out"}{"total"} / $data{$d}{"out"}{"count"} );
+            $max = $di if $di > $max;
+            $max = $do if $do > $max;
+            push @graph, { C => $datacounter, LOCATION => $d, IN => $di, OUT => $do };
+            $datacounter++;
+        }
+        my $temp = scaleValue( { value => $max } );
+        foreach my $g ( @graph ) {
+            $g->{"IN"} /= $temp->{"scale"};
+            $g->{"OUT"} /= $temp->{"scale"};
+        }
 
+        $template->param(
+            EVENTTYPE   => $eventType,
+            SERVICE     => $service,
+            PAIRS       => \@pairs,
+            GRAPHTOTAL  => $datacounter,
+            GRAPH       => \@graph,
+            GRAPHPREFIX => $temp->{"mod"}
+        );
     }
     elsif ( $eventType eq "http://ggf.org/ns/nmwg/tools/owamp/2.0" or $eventType eq "http://ggf.org/ns/nmwg/characteristic/delay/summary/20070921" ) {
         $template = HTML::Template->new( filename => "etc/serviceTest_psb_owamp.tmpl" );
@@ -536,12 +608,41 @@ else {
 
 print $template->output;
 
+=head2 scaleValue ( { value } )
+
+Given a value, return the value scaled to a magnitude.
+
+=cut
+
+sub scaleValue {
+    my $parameters = validateParams( @_, { value => 1 } );
+    my %result = ();
+    if ( $parameters->{"value"} < 1000 ) {
+        $result{"scale"} = 1;
+        $result{"mod"}   = q{};
+    }
+    elsif ( $parameters->{"value"} < 1000000 ) {
+        $result{"scale"} = 1000;
+        $result{"mod"}   = "K";
+    }
+    elsif ( $parameters->{"value"} < 1000000000 ) {
+        $result{"scale"} = 1000000;
+        $result{"mod"}   = "M";
+    }
+    elsif ( $parameters->{"value"} < 1000000000000 ) {
+        $result{"scale"} = 1000000000;
+        $result{"mod"}   = "G";
+    }
+    return \%result;
+}
+
 __END__
 
 =head1 SEE ALSO
 
 L<CGI>, L<HTML::Template>, L<XML::LibXML>, L<Socket>, L<Data::Validate::IP>,
-L<Net::IPv6Addr>, L<perfSONAR_PS::Client::MA>, L<perfSONAR_PS::Common>
+L<Net::IPv6Addr>, L<perfSONAR_PS::Client::MA>, L<perfSONAR_PS::Common>,
+L<perfSONAR_PS::Utils::ParameterValidation>
 
 To join the 'perfSONAR-PS' mailing list, please visit:
 
