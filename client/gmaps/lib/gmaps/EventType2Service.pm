@@ -32,7 +32,7 @@ our $logger = Log::Log4perl::get_logger( 'gmaps::EventType2Service');
 
 
 our %eventType2service = (
-    'http://ggf.org/ns/nmwg/characteristics/bandwidth/achieveable/2.0' => 'BWCTL',
+    'http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0' => 'BWCTL',
     'http://ggf.org/ns/nmwg/tools/owamp/2.0' => 'OWAMP',
     'http://ggf.org/ns/nmwg/tools/pinger/2.0/' => 'PingER',
     'http://ggf.org/ns/nmwg/characteristic/utilization/2.0' => 'Utilisation',

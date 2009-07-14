@@ -239,7 +239,7 @@ sub getMetaData
 
 		# add own ma
 		if ( ! defined $params->{eventType} ) {
-		    $params->{eventType} = 'http://ggf.org/ns/nmwg/characteristics/bandwidth/achieveable/2.0';
+		    $params->{eventType} = 'http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0';
 	    }
 		$hash->{eventType} = $params->{eventType};
 		$hash->{serviceType} => gmaps::EventType2Service::getServiceFromEventType( $hash->{eventType} );

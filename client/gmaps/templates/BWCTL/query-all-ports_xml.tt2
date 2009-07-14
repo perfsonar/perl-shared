@@ -1,5 +1,5 @@
 [%- DEFAULT
-  eventType = "http://ggf.org/ns/nmwg/characteristics/bandwidth/achieveable/2.0"
+  eventType = "http://ggf.org/ns/nmwg/characteristics/bandwidth/achievable/2.0"
 -%]
 
 <nmwg:message id="message1"
