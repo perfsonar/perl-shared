@@ -183,7 +183,7 @@ sub init {
                 last;
             }
             else {
-                $self->{LOGGER}->error( "There was an error accessing " . $self->{HINTS} . "." );
+                $self->{LOGGER}->error( "There was an error accessing " . join( " - ", @{ $self->{HINTS} } ) . "." );
             }
         }
         unless ( $complete ) {

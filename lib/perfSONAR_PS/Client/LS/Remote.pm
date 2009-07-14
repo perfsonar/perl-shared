@@ -349,7 +349,7 @@ sub getLS {
         $self->{ALIVE} = 0;
     }
     else {
-        $self->{LOGGER}->error( "LS List is emtpty, did you run init()?" );
+        $self->{LOGGER}->error( "LS List is emtpty, cannot contact active LS for registration." );
         undef $self->{LS};
         $self->{ALIVE} = 0;
     }
