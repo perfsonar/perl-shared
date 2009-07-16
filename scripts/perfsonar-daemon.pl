@@ -249,6 +249,7 @@ my %loaded_modules = ();
 my $echo_module    = "perfSONAR_PS::Services::Echo";
 
 my %handlers        = ();
+my %services        = ();
 my %listeners       = ();
 my %modules_loaded  = ();
 my %port_configs    = ();
@@ -285,6 +286,7 @@ foreach my $port ( keys %{ $conf{"port"} } ) {
 
     $listeners{$port}                     = $listener;
     $handlers{$port}                      = ();
+    $services{$port}                      = ();
     $service_configs{$port}->{"endpoint"} = ();
 
     my $num_endpoints = 0;
@@ -341,6 +343,8 @@ foreach my $port ( keys %{ $conf{"port"} } ) {
                 exit( -1 );
             }
 
+            push @{ $services{$port} }, $service;
+
             if ( $service->needLS() ) {
                 my %ls_child_args = ();
                 $ls_child_args{"service"}  = $service;
@@ -364,6 +368,7 @@ foreach my $port ( keys %{ $conf{"port"} } ) {
     if ( $num_endpoints == 0 ) {
         $logger->warn( "No endpoints enabled for port $port" );
 
+        delete( $services{$port} );
         delete( $listeners{$port} );
         delete( $handlers{$port} );
         delete( $service_configs{$port} );
@@ -393,7 +398,7 @@ foreach my $port ( keys %listeners ) {
     if ( $pid == 0 ) {
         %child_pids = ();
         $PROGRAM_NAME .= " - Listener ($port)";
-        psService( $listeners{$port}, $handlers{$port}, $service_configs{$port} );
+        psService( $listeners{$port}, $handlers{$port}, $services{$port}, $service_configs{$port} );
         exit( 0 );
     }
     elsif ( $pid < 0 ) {
@@ -455,7 +460,7 @@ responding to the request with an error.
 =cut
 
 sub psService {
-    my ( $listener, $handlers, $service_config ) = @_;
+    my ( $listener, $handlers, $services, $service_config ) = @_;
     my $max_worker_processes;
 
     $logger->debug( "Starting '" . $PROCESS_ID . "' as a service." );
@@ -544,6 +549,16 @@ sub psService {
                 $child_pids{$pid}                   = \%child_info;
             }
         }
+
+        foreach my $service ( @{$services} ) {
+            if ( $service->can( "inline_maintenance" ) ) {
+                $logger->debug( "Calling inline maintance function" );
+                eval { $service->inline_maintenance(); };
+                if ( $EVAL_ERROR ) {
+                    $logger->error( "Failure in inline maintenance: $EVAL_ERROR" );
+                }
+            }
+        }
     }
 
     return;
@@ -612,30 +627,46 @@ sub maintenance {
     elsif ( exists $args->{"conf"}->{"ls"}->{"maintenance_interval"} and $args->{"conf"}->{"ls"}->{"maintenance_interval"} ) {
         $sleep_time = $args->{"conf"}->{"ls"}->{"maintenance_interval"};
     }
+    elsif ( exists $args->{"conf"}->{"perfsonarbuoy"}->{"maintenance_interval"} and $args->{"conf"}->{"perfsonarbuoy"}->{"maintenance_interval"} ) {
+        $sleep_time = $args->{"conf"}->{"perfsonarbuoy"}->{"maintenance_interval"};
+    }
     else {
         $sleep_time = 1800;
     }
 
     unless ( $sleep_time ) {
-        $logger->error( "LS Maintenance Disabled." );
+        $logger->error( "Service Maintenance Disabled." );
         return;
     }
 
     while ( 1 ) {
-        my $cleanStatus = 0;
-        my $sumStatus   = 0;
-        eval {
-            $cleanStatus = $service->cleanLS( { error => \$error, noclean => $CLEANFLAG } ) if $service->can( "cleanLS" );
-            $sumStatus = $service->summarizeLS( { error => \$error } ) if $service->can( "summarizeLS" );
-        };
-        if ( my $e = catch std::exception ) {
-            $logger->error( "Problem running service maintenance: " . $e->what() );
-        }
-        elsif ( $EVAL_ERROR ) {
-            $logger->error( "Problem running service maintenance: " . $EVAL_ERROR );
+        if ( $service->can( "cleanLS" ) or $service->can( "summarizeLS" ) ) {
+            my $cleanStatus = 0;
+            my $sumStatus   = 0;
+            eval {
+                $cleanStatus = $service->cleanLS( { error => \$error, noclean => $CLEANFLAG } ) if $service->can( "cleanLS" );
+                $sumStatus = $service->summarizeLS( { error => \$error } ) if $service->can( "summarizeLS" );
+            };
+            if ( my $e = catch std::exception ) {
+                $logger->error( "Problem running service maintenance: " . $e->what() );
+            }
+            elsif ( $EVAL_ERROR ) {
+                $logger->error( "Problem running service maintenance: " . $EVAL_ERROR );
+            }
+
+            $logger->error( "Error returned: $error" ) if $cleanStatus == -1 or $sumStatus == -1;
         }
 
-        $logger->error( "Error returned: $error" ) if $cleanStatus == -1 or $sumStatus == -1;
+        if ( $service->can( "createStorage" ) ) {
+            my $loadStatus = 0;
+            eval { $loadStatus = $service->createStorage( { error => \$error } ) if $service->can( "createStorage" ); };
+            if ( $EVAL_ERROR ) {
+                $logger->error( "Problem running service maintenance: " . $EVAL_ERROR );
+            }
+
+            $logger->error( "Error returned: $error" ) if $loadStatus == -1;
+        }
+
         $logger->debug( "Sleeping for $sleep_time" );
         sleep( $sleep_time );
     }
