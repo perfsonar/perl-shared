@@ -252,7 +252,7 @@ sub __handleMessageBegin {
             output                => { isa  => "perfSONAR_PS::XML::Document" },
             messageId             => { type => SCALAR | UNDEF },
             messageType           => { type => SCALAR },
-            messageParameters     => { type => HASHREF | UNDEF },
+            messageParameters     => { type => HASHREF | SCALARREF | UNDEF },
             message               => { type => SCALARREF },
             rawRequest            => {},
             doOutputMessageHeader => { type => SCALARREF },
