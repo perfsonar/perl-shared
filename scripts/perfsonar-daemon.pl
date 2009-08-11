@@ -597,7 +597,6 @@ sub registerLS {
     }
 
     while ( 1 ) {
-        $sleep_time = $args->{"conf"}->{"ls_registration_interval"} unless $sleep_time;
         eval { $service->registerLS( \$sleep_time ); };
         if ( $EVAL_ERROR ) {
             $logger->error( "Problem running register LS: " . $EVAL_ERROR );
