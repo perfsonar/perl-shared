@@ -225,11 +225,8 @@ unless ( exists $conf{"max_worker_processes"} and $conf{"max_worker_processes"} 
 
 unless ( exists $conf{"ls_registration_interval"} and $conf{"ls_registration_interval"} ) {
     $logger->warn( "Setting LS registration interval at 60 minutes" );
-    $conf{"ls_registration_interval"} = 60;
+    $conf{"ls_registration_interval"} = 3600;
 }
-
-# turn the interval from minutes to seconds
-$conf{"ls_registration_interval"} *= 60;
 
 unless ( exists $conf{"disable_echo"} and $conf{"disable_echo"} ) {
     $logger->warn( "Enabling echo service for each endpoint unless specified otherwise" );
