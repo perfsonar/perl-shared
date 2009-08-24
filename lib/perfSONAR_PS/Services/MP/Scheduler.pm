@@ -145,11 +145,11 @@ sub prepareMetadata {
     my $self = shift;
 
     my @testids = $self->config()->getAllTestIds();
-
+    unless(@testids) {
+        $logger->warn( "Scheduler could not determine any tests to run." );
+        return;
+    }  
     $logger->debug( "TESTS: \n" . join "\n", @testids );
-    $logger->logdie( "Scheduler could not determine any tests to run." )
-        if ( scalar @testids < 1 );
-
     # popule schedule
     my $now = &getNowTime();
     foreach my $id ( @testids ) {
@@ -215,7 +215,7 @@ sub addTestSchedule {
     $logger->logdie( "argument must be of object type perfSONAR_PS::Services::MP::Config::Schedule" )
         unless UNIVERSAL::can( $schedule, 'isa' )
             && $schedule->isa( 'perfSONAR_PS::Services::MP::Config::Schedule' );
-
+    return  unless   $self->config()->getAllTestIds();
     $logger->info( "Initiating scheduler with " . scalar $self->config()->getAllTestIds() . " tests" );
 
     $self->parseMetadata();
@@ -371,7 +371,8 @@ sub run {
 
     # don't bother if there are no tests
     if ( scalar keys %{ $self->schedule() } < 1 ) {
-        $logger->logdie( "No tests are scheduled - please check " . $self->config()->configFile() );
+        $logger->warn( "No tests are scheduled - please check " . $self->config()->configFile() );
+	return 0;
     }
 
     my $sigset = POSIX::SigSet->new( SIGINT );

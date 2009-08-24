@@ -39,9 +39,9 @@ no strict 'refs';
 foreach my $key ( PARAMS ) {
     *{ __PACKAGE__ . "::$key" } = sub {
         my $obj = shift;
-        my $a   = shift;
-        if ( $a ) {
-            ( $key eq 'ERRORMSG' ) ? $obj->{"$key"} .= " \n $a" : $obj->{"$key"} = $a;
+        my $arg   = shift;
+        if ( $arg ) {
+            ( $key eq 'ERRORMSG' ) ? $obj->{"$key"} .= " \n $arg" : $obj->{"$key"} = $arg;
         }
         return $obj->{"$key"};
     };
@@ -207,7 +207,8 @@ sub getFromTable {
         )
     {
         $self->ERRORMSG( "getFromTable  requires single HASH ref parameter with required query  key as ARRAY ref " );
-        return -1;
+        $self->LOGGER->error( "getFromTable  requires single HASH ref parameter with required query  key as ARRAY ref " );
+	return -1;
     }
     my $results = -1;
     my ( @array_of_names, @array_of_columns );
@@ -223,7 +224,7 @@ sub getFromTable {
         }
     }
     if ( defined $param->{validate} && ref( $param->{validate} ) eq 'HASH' ) {
-        @array_of_names = keys %{ $param->{validate} } unless @array_of_names;
+        @array_of_names =  keys %{ $param->{validate} } unless @array_of_names;
         @array_of_columns = keys %{ $param->{validate} };
     }
     else {
@@ -234,7 +235,8 @@ sub getFromTable {
         }
     }
     unless ( @array_of_names ) {
-        $self->ERRORMSG( " getFromTable  failed, someting misssing  for  " . Dumper $param);
+        $self->ERRORMSG( " getFromTable  failed, something misssing  for $param->{query}");
+	$self->LOGGER->error(" getFromTable  failed, something misssing  for  " , sub{Dumper($param)});
         return -1;
     }
     my $stringified_names = join ", ", @array_of_names;
@@ -257,9 +259,9 @@ sub getFromTable {
         my $sth = $self->handle->prepare( $sql_query );
         $results = $self->handle->selectall_hashref( $sth, $param->{index} );
         $self->LOGGER->logdie( "SQL error:  $DBI::errstr" ) if $DBI::err;
-        $self->LOGGER->debug( "  RESULTS dump:: " . Dumper $results);
+        $self->LOGGER->debug( "  RESULTS dump:: ", sub{Dumper($results)});
     };
-    if ( $EVAL_ERROR ) {
+    if ( $EVAL_ERROR || $DBI::err) {
         $self->ERRORMSG( "getFromTable  failed with error \"" . $EVAL_ERROR . "\"." );
         $self->LOGGER->error( " !!! getFromTable  failed with error \"" . $EVAL_ERROR . "\"." );
         return -1;
@@ -332,7 +334,7 @@ accepts single hashref with keys:
 
 returns        
     0  or last inserted id number 
-   -1 = somethign went wrong 
+   -1 = somethign went wrong , although it utilises INSERT IGNORE to avoid concurrency conflicts
 
 =cut
 
@@ -357,7 +359,9 @@ sub insertTable {
         chop $stringified_values;
         eval {
             $self->openDB if !( $self->alive == 0 );
-            my $query_sql = "insert into " . $param->{table} . "  ($stringified_names) values ($stringified_values)";
+	    my $insert_sql = "insert ignore into ";
+	    $insert_sql = "insert or ignore into " if $self->driver =~ /sqlite/i;
+            my $query_sql =  $insert_sql . $param->{table} . "  ($stringified_names) values ($stringified_values)";
             $self->LOGGER->debug( "  SQL::  $query_sql " );
             $self->handle->do( $query_sql );
 

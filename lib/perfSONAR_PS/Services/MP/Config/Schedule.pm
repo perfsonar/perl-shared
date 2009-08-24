@@ -111,6 +111,10 @@ Returns a list of all the testids that have been parsed.
 
 sub getAllTestIds {
     my $self = shift;
+    unless (defined $self->config() && ref $self->config() eq 'HASH') {
+       $logger->warn( " Empty landmarks file, please add remote PingER nodes to start monitoring " ); 
+       return;
+    }
     return keys %{ $self->config() };
 }
 
