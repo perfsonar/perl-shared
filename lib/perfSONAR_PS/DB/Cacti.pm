@@ -217,8 +217,12 @@ sub openDB {
     $dbh->disconnect();
     $self->{STORE} .= $self->printFooter();
     $rrd->closeDB;
-
-    return 0;
+    if ( $len ) {
+        return 0;
+    }
+    else {
+        return -1;
+    }
 }
 
 =head2 printHeader($self, { })

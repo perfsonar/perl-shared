@@ -174,7 +174,6 @@ sub openDB {
 
     $self->{STORE} .= $self->printHeader();
     my $counter = 0;
-
     foreach my $item ( keys %master ) {
 
         my @temp = split( /\//, $item );
@@ -249,8 +248,12 @@ sub openDB {
     }
     $self->{STORE} .= $self->printFooter();
     $rrd->closeDB;
-
-    return 0;
+    if ( $counter ) {
+        return 0;
+    }
+    else {
+        return -1;
+    }
 }
 
 =head2 printHeader($self, { })
