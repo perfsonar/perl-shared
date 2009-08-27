@@ -282,7 +282,11 @@ public class DCNLookupClient{
             discoveryXQuery = discoveryXQuery.replaceAll("<!--domain-->", domain);
             discoveryXQuery = discoveryXQuery.replaceAll("<!--type-->", typeAttr);
             Element discReqElem = this.createQueryMetaData(discoveryXQuery);
-            glsResults = this.discover(this.requestString(discReqElem, null));
+            try{
+                glsResults = this.discover(this.requestString(discReqElem, null));
+            }catch(Exception e){
+                this.log.debug(e.getMessage());
+            }
         }
         hLSMatches = this.getHLSMatches(glsResults);
         
@@ -410,7 +414,11 @@ public class DCNLookupClient{
             discoveryXQuery = discoveryXQuery.replaceAll("<!--addrPath-->", "nmtb:domain/nmtb:name");
             discoveryXQuery = discoveryXQuery.replaceAll("<!--type-->", "dns");
             Element discReqElem = this.createQueryMetaData(discoveryXQuery);
-            glsResults = this.discover(this.requestString(discReqElem, null));
+            try{
+                glsResults = this.discover(this.requestString(discReqElem, null));
+            }catch(Exception e){
+                this.log.debug(e.getMessage());
+            }
         }
         hLSMatches = this.getHLSMatches(glsResults);
         
@@ -432,6 +440,10 @@ public class DCNLookupClient{
             this.log.debug("hLS: " + hLS);
             PSLookupClient lsClient = new PSLookupClient(hLS);
             Element response = lsClient.query(request);
+            if(response == null){
+                this.log.debug("No response returned from "+ hLS);
+                continue;
+            }
             datum = lsClient.parseDatum(response, psNS.PS_SERVICE);
             Element metaData = response.getChild("metadata", psNS.NMWG);
             if(metaData == null){

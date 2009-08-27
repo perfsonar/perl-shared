@@ -142,6 +142,9 @@ public class PSBaseClient {
     }
     
     public Element parseDatum(Element message, Namespace ns) throws PSException{
+        if(message == null){
+            return null;
+        }
     	Element data = message.getChild("data", psNS.NMWG);
     	if(data == null){
     		return null;
