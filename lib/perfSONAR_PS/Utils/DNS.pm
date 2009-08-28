@@ -22,11 +22,13 @@ be explicitly imported to use them.
 
 use base 'Exporter';
 
+use Params::Validate qw(:all);
 use Net::DNS;
 use NetAddr::IP;
 use Regexp::Common;
+use Data::Dumper;
 
-our @EXPORT_OK = qw( reverse_dns resolve_address );
+our @EXPORT_OK = qw( reverse_dns resolve_address resolve_address_multi reverse_dns_multi );
 
 =head2 resolve_address ($name)
 
@@ -87,6 +89,158 @@ sub reverse_dns {
     }
 
     return;
+}
+
+=head2 resolve_address_multi({ addresses => 1, timeout => 0 })
+Performs a dns lookup of all the addresses specified. If the timeout parameter
+is specified, the function will return after that number of seconds, whether
+data is returned or not. The default timeout is 60 seconds.
+=cut
+sub resolve_address_multi {
+    my $parameters = validate( @_, { addresses => 1, timeout => 0 } );
+
+    my $end_time;
+
+    unless ($parameters->{timeout}) {
+        $parameters->{timeout} = 60;
+    }
+
+    $end_time = time + $parameters->{timeout};
+
+    my $res   = Net::DNS::Resolver->new;
+
+    my @socket_map = ();
+
+    foreach my $addr (@{ $parameters->{addresses} }) {
+        my $bgsock = $res->bgsend($addr);
+
+        my %pair = ( socket => $bgsock, address => $addr );
+        push @socket_map, \%pair;
+    }
+
+    my %results = ();
+
+    while(@socket_map) {
+        my $sel = IO::Select->new();
+
+        foreach my $pair (@socket_map) {
+            $sel->add($pair->{socket});
+        }
+
+        my $duration = $end_time - time;
+
+        my @ready = $sel->can_read($duration);
+
+        last unless (@ready);
+
+        foreach my $sock (@ready) {
+            my $addr;
+            foreach my $pair (@socket_map) {
+                if ($pair->{socket} == $sock) {
+                    $addr = $pair->{address};
+                    last;
+                }
+            }
+
+            next unless ($addr);
+
+            my $query = $res->bgread($sock);
+
+            my @addresses = ();
+            foreach my $ans ( $query->answer ) {
+                next if ( $ans->type ne "A" );
+                push @addresses, $ans->address;
+            }
+            $results{$addr} = \@addresses;
+
+            # Create a new socket map
+            my @new_socket_map = ();
+            foreach my $pair (@socket_map) {
+                next if ($pair->{socket} == $sock);
+
+                push @new_socket_map, $pair;
+            }
+            @socket_map = @new_socket_map;
+        }
+   }
+
+   return \%results;
+}
+
+=head2 reverse_dns_multi({ addresses => 1, timeout => 0 })
+Performs a reverse dns lookup of all the addresses specified. If the timeout
+parameter is specified, the function will return after that number of seconds,
+whether data is returned or not. The default timeout is 60 seconds.
+=cut
+sub reverse_dns_multi {
+    my $parameters = validate( @_, { addresses => 1, timeout => 0 } );
+
+    my $end_time;
+
+    unless ($parameters->{timeout}) {
+        $parameters->{timeout} = 60;
+    }
+
+    $end_time = time + $parameters->{timeout};
+
+    my $res   = Net::DNS::Resolver->new;
+
+    my @socket_map = ();
+
+    foreach my $addr (@{ $parameters->{addresses} }) {
+        my $bgsock = $res->bgsend($addr);
+
+        my %pair = ( socket => $bgsock, address => $addr );
+        push @socket_map, \%pair;
+    }
+
+    my %results = ();
+
+    while(@socket_map) {
+        my $sel = IO::Select->new();
+
+        foreach my $pair (@socket_map) {
+            $sel->add($pair->{socket});
+        }
+
+        my $duration = $end_time - time;
+
+        my @ready = $sel->can_read($duration);
+
+        last unless (@ready);
+
+        foreach my $sock (@ready) {
+            my $addr;
+            foreach my $pair (@socket_map) {
+                if ($pair->{socket} == $sock) {
+                    $addr = $pair->{address};
+                    last;
+                }
+            }
+
+            next unless ($addr);
+
+            my $query = $res->bgread($sock);
+
+            my @addresses = ();
+            foreach my $ans ( $query->answer ) {
+                next if ( $ans->type ne "PTR" );
+                push @addresses, $ans->ptrdname;
+            }
+            $results{$addr} = \@addresses;
+
+            # Create a new socket map
+            my @new_socket_map = ();
+            foreach my $pair (@socket_map) {
+                next if ($pair->{socket} == $sock);
+
+                push @new_socket_map, $pair;
+            }
+            @socket_map = @new_socket_map;
+        }
+   }
+
+   return \%results;
 }
 
 1;

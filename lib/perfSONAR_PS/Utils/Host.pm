@@ -19,8 +19,9 @@ which the application is running.
 =cut
 
 use base 'Exporter';
+use Params::Validate qw(:all);
 
-our @EXPORT_OK = qw( get_ips );
+our @EXPORT_OK = qw( get_ips get_ethernet_interfaces get_interface_addresses );
 
 =head2 get_ips()
 
@@ -47,6 +48,56 @@ sub get_ips {
         }
 
         next unless $is_eth;
+
+        if ( /inet addr:(\d+\.\d+\.\d+\.\d+)/ ) {
+            push @ret_interfaces, $1;
+        }
+        elsif ( /inet6 addr: (\d*:[^\/ ]*)(\/\d+)? +Scope:Global/ ) {
+            push @ret_interfaces, $1;
+        }
+    }
+    close( $IFCONFIG );
+
+    return @ret_interfaces;
+}
+
+sub get_ethernet_interfaces {
+    my @ret_interfaces = ();
+
+    my $IFCONFIG;
+    open( $IFCONFIG, "-|", "/sbin/ifconfig -a" ) or return;
+    my $is_eth = 0;
+    while ( <$IFCONFIG> ) {
+        if ( /^(\S*).*Link encap:([^ ]+)/ ) {
+            if ( lc( $2 ) eq "ethernet" ) {
+                push @ret_interfaces, $1;
+            }
+        }
+    }
+    close( $IFCONFIG );
+
+    return @ret_interfaces;
+}
+
+sub get_interface_addresses {
+    my $parameters = validate( @_, { interface => 1, } );
+
+    my @ret_interfaces = ();
+
+    my $IFCONFIG;
+    open( $IFCONFIG, "-|", "/sbin/ifconfig" ) or return;
+    my $in_iface = 0;
+    while ( <$IFCONFIG> ) {
+        if ( /^(\S*).*Link encap:([^ ]+)/ ) {
+            if ( $1 eq $parameters->{interface} ) {
+                $in_iface = 1;
+            }
+            else {
+                $in_iface = 0;
+            }
+        }
+
+        next unless ( $in_iface );
 
         if ( /inet addr:(\d+\.\d+\.\d+\.\d+)/ ) {
             push @ret_interfaces, $1;
