@@ -821,7 +821,8 @@ returned hash to see if an error occured.
 
 sub queryTS {
     my ( $self, @args ) = @_;
-    my $parameters = validateParams( @args, { topology => 1 } );
+    my $parameters = validateParams( @args, { topology => 1, domain => 0 } );
+    my %ns = ( xquery => "http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0/" );
 
     my $echo_service = perfSONAR_PS::Client::Echo->new( $parameters->{topology} );
     my ( $status, $res ) = $echo_service->ping();
@@ -842,7 +843,14 @@ sub queryTS {
     }
 
     my $error = q{};
-    my $responseContent = $sender->sendReceive( makeEnvelope( $self->createLSMessage( { type => "SetupDataRequest", metadata => "<nmwg:eventType>http://ggf.org/ns/nmwg/topology/query/all/20070809</nmwg:eventType>\n" } ) ), q{}, \$error );
+    my $responseContent = q{};
+    if ( exists $parameters->{domain} and $parameters->{domain} ) {
+        $responseContent = $sender->sendReceive( makeEnvelope( $self->createLSMessage( { ns => \%ns, type => "QueryRequest", metadata => "<xquery:subject id=\"sub1\" xmlns:xquery=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/xquery/1.0/\">//*[\@id=\"" . $parameters->{domain} . "\"]</xquery:subject><nmwg:eventType>http://ggf.org/ns/nmwg/topology/20070809</nmwg:eventType>\n" } ) ), q{}, \$error );
+    }
+    else {
+        $responseContent = $sender->sendReceive( makeEnvelope( $self->createLSMessage( { type => "SetupDataRequest", metadata => "<nmwg:eventType>http://ggf.org/ns/nmwg/topology/query/all/20070809</nmwg:eventType>\n" } ) ), q{}, \$error );
+    }
+
     if ( $error ) {
         $self->{LOGGER}->error( "sendReceive failed: $error" );
         return;
@@ -870,7 +878,7 @@ sub queryTS {
     my $eventType = extract( find( $msg, "./nmwg:metadata/nmwg:eventType", 1 ), 0 );
     if ( $eventType ) {
         $result{"eventType"} = $eventType;
-        if ( $eventType and $eventType eq "http://ggf.org/ns/nmwg/topology/query/all/20070809" ) {
+        if ( $eventType and ( $eventType eq "http://ggf.org/ns/nmwg/topology/query/all/20070809" or $eventType eq "http://ggf.org/ns/nmwg/topology/20070809" ) ) {
             $result{"response"} = $msg->getChildrenByLocalName( "data" )->get_node( 1 )->getChildrenByLocalName( "topology" )->get_node( 1 )->toString;
         }
         else {
