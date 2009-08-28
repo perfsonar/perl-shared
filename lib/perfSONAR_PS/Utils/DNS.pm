@@ -28,7 +28,7 @@ use NetAddr::IP;
 use Regexp::Common;
 use Data::Dumper;
 
-our @EXPORT_OK = qw( reverse_dns resolve_address resolve_address_multi reverse_dns_multi );
+our @EXPORT_OK = qw( reverse_dns resolve_address resolve_address_multi reverse_dns_multi query_location );
 
 =head2 resolve_address ($name)
 
@@ -242,6 +242,37 @@ sub reverse_dns_multi {
 
    return \%results;
 }
+
+=head2 query_location ($address)
+
+Returns the latitude and longitude of the specified address if it has a DNS LOC
+record. The return value is an array of the form
+($status, { latitude => $latitude, longitude => $longitude }). Where $status is
+0 on success, and -1 on error. Note: latitude and longitude may be undefined if
+the address has no LOC record.
+
+=cut
+
+sub query_location {
+    my ( $address ) = @_;
+
+    my $res   = Net::DNS::Resolver->new;
+    my $query = $res->search( $address , "LOC" );
+
+    unless ( $query ) {
+        return (-1, "Couldn't find location");
+    }
+
+    my ($latitude, $longitude);
+
+    foreach my $ans ( $query->answer ) {
+        next if ( $ans->type ne "LOC" );
+        ($latitude, $longitude) = $ans->latlon;
+    }
+
+    return (0, { latitude => $latitude, longitude => $longitude });
+}
+
 
 1;
 

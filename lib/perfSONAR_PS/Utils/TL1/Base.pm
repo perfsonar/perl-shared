@@ -26,7 +26,7 @@ use Carp;
 use Params::Validate qw(:all);
 use perfSONAR_PS::Utils::ParameterValidation;
 
-use fields 'USERNAME', 'PASSWORD', 'TYPE', 'ADDRESS', 'PORT', 'CACHE_DURATION', 'CACHE_TIME', 'LOGGER', 'MACHINE_TIME', 'LOCAL_MACHINE_TIME', 'PROMPT', 'CTAG', 'TELNET', 'MESSAGES', 'STATUS';
+use fields 'USERNAME', 'PASSWORD', 'TYPE', 'ADDRESS', 'PORT', 'CACHE_DURATION', 'CACHE_TIME', 'LOGGER', 'MACHINE_TIME', 'LOCAL_MACHINE_TIME', 'PROMPT', 'CTAG', 'TELNET', 'MESSAGES', 'STATUS', 'NODENAME';
 
 =head2 new()
 
@@ -286,7 +286,15 @@ sub send_cmd {
 
     $self->{LOGGER}->debug( "Sending cmd: $cmd\n" );
 
-    my $res = $self->{TELNET}->send( $cmd );
+    my $res;
+    eval {
+        $res = $self->{TELNET}->send( $cmd );
+    };
+    if ($@) {
+        my $msg = "Send failed: ".$@;
+        $self->{LOGGER}->error($msg);
+        return (-1, $msg);
+    }
 
     my @retLines;
     my $successStatus;
@@ -311,7 +319,12 @@ sub send_cmd {
 
             next if ( $line =~ /$cmd/ );
 
-            if ( $line =~ /(\d\d\d?\d?)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/ ) {
+            if ( $line =~ /([A-Z]+) (\d\d\d?\d?)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/ ) {
+                $self->setMachineName( $1 );
+                $self->setMachineTime( "$2-$3-$4 $5:$6:$7" );
+                next;
+            }
+            elsif ( $line =~ /(\d\d\d?\d?)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)/ ) {
                 $self->setMachineTime( "$1-$2-$3 $4:$5:$6" );
                 next;
             }
@@ -543,6 +556,32 @@ sub categorizeMessage {
     # return 'undef' to delete the message
 
     return "other";
+}
+
+=head2 setMachineName($name)
+
+Internal function used to set the current machine name according to the name found in the machine.
+
+=cut
+
+sub setMachineName {
+    my ( $self, $name ) = @_;
+
+    $self->{NODENAME} = $name;
+
+    return;
+}
+
+=head2 getMachineName()
+
+Returns the machine's name as found during communication with the host. May be undefined.
+
+=cut
+
+sub getMachineName {
+    my ( $self ) = @_;
+
+    return $self->{NODENAME};
 }
 
 =head2 setMachineTime($time)

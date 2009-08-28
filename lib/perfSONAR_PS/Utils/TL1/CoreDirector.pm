@@ -245,9 +245,11 @@ be requested by name instead of grabbing all of them at once.
 sub get_ethernet_facilities {
     my ( $self, $facility_name ) = @_;
 
-    if ( not defined $facility_name ) {
-        return;
-    }
+#    if ( not defined $facility_name ) {
+#        return;
+#    }
+
+    $facility_name = "ALL" unless ($facility_name);
 
     my ( $successStatus, $results ) = $self->send_cmd( "RTRV-GIGE::$facility_name:" . $self->{CTAG} . ";" );
     if ( $successStatus != 1 ) {
@@ -280,7 +282,11 @@ sub get_ethernet_facilities {
         }
     }
 
-    return ( 0, $eths{$facility_name} );
+    if ($facility_name ne "ALL") {
+        return ( 0, $eths{$facility_name} );
+    } else {
+        return ( 0, \%eths );
+    }
 }
 
 =head2 get_optical_facilities($facility_name)
@@ -337,7 +343,7 @@ sub get_optical_facilities {
         return ( 0, $self->{OCNSBYAID} );
     }
 
-    return ( -1, $self->{OCNSBYAID}->{$facility_name} );
+    return ( 0, $self->{OCNSBYAID}->{$facility_name} );
 }
 
 =head2 get_eflows($facility_name)
@@ -615,7 +621,7 @@ sub get_ethernet_pms {
 
         my ( $successStatus, $results );
         if ( $facility_name eq "ALL" ) {
-            ( $successStatus, $results ) = $self->send_cmd( "RTRV-PM-GIGE::ALL:" . $self->{CTAG} . "::;" );
+            ( $successStatus, $results ) = $self->send_cmd( "RTRV-MIB-GIGE::ALL:" . $self->{CTAG} . "::;" );
         }
         else {
             ( $successStatus, $results ) = $self->send_cmd( "RTRV-PM-GIGE::\"$facility_name\":" . $self->{CTAG} . "::;" );
@@ -681,6 +687,165 @@ sub get_ethernet_pms {
     }
     else {
         return ( 0, $self->{COUNTERS}->{eth}->{$facility_name}->{COUNTERS} );
+    }
+}
+
+=head2 
+=cut
+
+sub get_ethernet_mib_pms {
+    my ( $self, $facility_name, $pm_type ) = @_;
+
+    return ( -1, "Must specify facility" ) unless ( $facility_name );
+
+    my ( $successStatus, $results ) = $self->send_cmd( "RTRV-MIB-GIGE::\"$facility_name\":" . $self->{CTAG} . "::;" );
+
+    if ( $successStatus != 1 ) {
+        return ( -1, $results );
+    }
+
+    my %pm_results = ();
+
+    foreach my $line ( @$results ) {
+
+        # "1-A-1-1:OVER_SIZE,0,PRTL,15-MIN,08-01,16-00"
+        #    "dcs_vcg_47089:INTF_IN_OCTETS,56380056942"
+        #    "1-A-7-1-1:INTF_OUT_OCTETS,177104521147"
+
+        if ( $line =~ /"(.*):([^:,]*),([^,]*)"/ ) {
+            my $facility_name  = $1;
+            my $monitoredType  = $2;
+            my $monitoredValue = $3;
+
+            my %result = (
+                facility         => $facility_name,
+                facility_type    => "ethernet",
+                type             => $monitoredType,
+                value            => $monitoredValue,
+                measurement_type => "counter",
+                measurement_time => time,
+                machine_time     => $self->getMachineTime_TS(),
+            );
+            if ( not defined $pm_results{$facility_name} ) {
+                my %new = ();
+                $pm_results{$facility_name} = \%new;
+            }
+
+            $pm_results{$facility_name}->{$monitoredType} = \%result;
+        }
+    }
+
+    if ( $pm_type ) {
+        return ( 0, $pm_results{$facility_name}->{$pm_type} );
+    }
+    else {
+        return ( 0, $pm_results{$facility_name} );
+    }
+}
+
+=head2 
+=cut
+
+sub get_vcg_mib_pms {
+    my ( $self, $facility_name, $pm_type ) = @_;
+
+    return ( -1, "Must specify facility" ) unless ( $facility_name );
+
+    my ( $successStatus, $results ) = $self->send_cmd( "RTRV-MIB-VCG::\"$facility_name\":" . $self->{CTAG} . "::;" );
+
+    if ( $successStatus != 1 ) {
+        return ( -1, $results );
+    }
+
+    my %pm_results = ();
+
+    foreach my $line ( @$results ) {
+
+        # "1-A-1-1:OVER_SIZE,0,PRTL,15-MIN,08-01,16-00"
+        #    "dcs_vcg_47089:INTF_IN_OCTETS,56380056942"
+        #    "1-A-7-1-1:INTF_OUT_OCTETS,177104521147"
+
+        if ( $line =~ /"(.*):([^:,]*),([^"]*)"/ ) {
+            my $facility_name  = $1;
+            my $monitoredType  = $2;
+            my $monitoredValue = $3;
+
+            my %result = (
+                facility         => $facility_name,
+                facility_type    => "vcg",
+                type             => $monitoredType,
+                value            => $monitoredValue,
+                measurement_type => "counter",
+                measurement_time => time,
+                machine_time     => $self->getMachineTime_TS(),
+            );
+            if ( not defined $pm_results{$facility_name} ) {
+                my %new = ();
+                $pm_results{$facility_name} = \%new;
+            }
+
+            $pm_results{$facility_name}->{$monitoredType} = \%result;
+        }
+    }
+
+    if ( $pm_type ) {
+        return ( 0, $pm_results{$facility_name}->{$pm_type} );
+    }
+    else {
+        return ( 0, $pm_results{$facility_name} );
+    }
+}
+
+=head2 
+=cut
+
+sub get_eflow_mib_pms {
+    my ( $self, $facility_name, $pm_type ) = @_;
+
+    return ( -1, "Must specify facility" ) unless ( $facility_name );
+
+    my ( $successStatus, $results ) = $self->send_cmd( "RTRV-MIB-EFLOW::\"$facility_name\":" . $self->{CTAG} . "::;" );
+
+    if ( $successStatus != 1 ) {
+        return ( -1, $results );
+    }
+
+    my %pm_results = ();
+
+    foreach my $line ( @$results ) {
+
+        # "1-A-1-1:OVER_SIZE,0,PRTL,15-MIN,08-01,16-00"
+        #    "dcs_vcg_47089:INTF_IN_OCTETS,56380056942"
+        #    "1-A-7-1-1:INTF_OUT_OCTETS,177104521147"
+
+        if ( $line =~ /"(.*):([^:,]*),([^"]*)"/ ) {
+            my $facility_name  = $1;
+            my $monitoredType  = $2;
+            my $monitoredValue = $3;
+
+            my %result = (
+                facility         => $facility_name,
+                facility_type    => "eflow",
+                type             => $monitoredType,
+                value            => $monitoredValue,
+                measurement_type => "counter",
+                measurement_time => time,
+                machine_time     => $self->getMachineTime_TS(),
+            );
+            if ( not defined $pm_results{$facility_name} ) {
+                my %new = ();
+                $pm_results{$facility_name} = \%new;
+            }
+
+            $pm_results{$facility_name}->{$monitoredType} = \%result;
+        }
+    }
+
+    if ( $pm_type ) {
+        return ( 0, $pm_results{$facility_name}->{$pm_type} );
+    }
+    else {
+        return ( 0, $pm_results{$facility_name} );
     }
 }
 
@@ -953,6 +1118,57 @@ sub get_optical_pms {
     else {
         return ( 0, $self->{COUNTERS}->{ocn}->{$facility_name}->{COUNTERS} );
     }
+}
+
+# - RTRV-OSRP-LTP::NEWY:1234::;
+#    "NEWY,2:ALIAS=,RMTNM=,RMTLID=0,RMTALIAS=,LOCAL=LOCAL,ADMW=5040,DELAY=1,PBID=0,OSRPCTPS=1-A-1-2,HSTATE=ATTEMPT,OOBENABLED=NO,OOBREMOTENODEID=10,OOBREMOTEADDR=255.255.255.255,OOBREMOTEPORT=51001"
+#    "NEWY,9:ALIAS=,RMTNM=PHIL,RMTLID=9,RMTALIAS=,LOCAL=LOCAL,ADMW=5040,DELAY=1,PBID=0,OSRPCTPS=1-A-2-1,HSTATE=2WAYINSIDE,OOBENABLED=NO,OOBREMOTENODEID=10,OOBREMOTEADDR=255.255.255.255,OOBREMOTEPORT=51001"
+#    "NEWY,129:ALIAS=,RMTNM=BOST,RMTLID=129,RMTALIAS=,LOCAL=LOCAL,ADMW=5040,DELAY=1,PBID=0,OSRPCTPS=1-A-1-1,HSTATE=2WAYINSIDE,OOBENABLED=NO,OOBREMOTENODEID=1,OOBREMOTEADDR=0.0.0.0,OOBREMOTEPORT=51001"
+#      ;
+#
+#      or
+# - RTRV-OSRP-LTP::CHIC:1234::; (from NEWY)
+#   "CHIC,1:ALIAS=,RMTNM=CLEV,RMTLID=9,RMTALIAS=,LOCAL=REMOTE,ADMW=5040,DELAY=1,PBID=0,OSRPCTPS=,HSTATE=NOTAPPL,,"
+#   "CHIC,2:ALIAS=,RMTNM=INDI,RMTLID=1,RMTALIAS=,LOCAL=REMOTE,ADMW=5040,DELAY=1,PBID=0,OSRPCTPS=,HSTATE=NOTAPPL,,"
+#   "CHIC,9:ALIAS=,RMTNM=KANS,RMTLID=1,RMTALIAS=,LOCAL=REMOTE,ADMW=5040,DELAY=1,PBID=0,OSRPCTPS=,HSTATE=NOTAPPL,,"
+
+sub rtrv_osrp_ltp {
+    my ( $self, $node_name ) = @_;
+
+    unless ( $node_name ) {
+        $node_name = $self->getMachineName();
+    }
+
+    unless ( $node_name ) {
+        return ( -1, "No node name specified, and current machine name is unknown" );
+    }
+
+    my ( $successStatus, $results ) = $self->send_cmd( " RTRV-OSRP-LTP::" . $node_name . ":" . $self->{CTAG} . "::;" );
+    if ( $successStatus != 1 ) {
+        return ( -1, $results );
+    }
+
+    my @retval = ();
+
+    foreach my $line ( @$results ) {
+
+        if ( $line =~ /"([^,]*),([0-9]+):(.*)"/ ) {
+            my %port_info = ();
+
+            $port_info{node} = $1;
+            $port_info{port} = $2;
+
+            my @pairs = split( ",", $3 );
+            foreach my $pair ( @pairs ) {
+                my ( $key, $value ) = split( "=", $pair );
+                $port_info{ lc( $key ) } = $value;
+            }
+
+            push @retval, \%port_info;
+        }
+    }
+
+    return ( 0, \@retval );
 }
 
 =head2 get_alarms()

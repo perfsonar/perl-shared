@@ -119,12 +119,12 @@ sub buildQueryRequest {
     my $request = q{};
 
     $request .= "<nmwg:message type=\"QueryRequest\" xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\">\n";
+    $request .= "<nmwg:metadata id=\"meta0\">\n";
     if ( defined $xquery and $xquery ) {
-        $request .= "  <xquery:subject id=\"sub1\" xmlns:xquery=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/service/lookup/xquery/1.0/\">\n";
+        $request .= "  <xquery:subject id=\"sub1\" xmlns:xquery=\"http://ggf.org/ns/nmwg/tools/org/perfsonar/xquery/1.0/\">\n";
         $request .= $xquery;
         $request .= "  </xquery:subject>\n";
     }
-    $request .= "<nmwg:metadata id=\"meta0\">\n";
     $request .= "  <nmwg:eventType>http://ggf.org/ns/nmwg/topology/20070809</nmwg:eventType>\n";
     $request .= "</nmwg:metadata>\n";
     $request .= "<nmwg:data id=\"data0\" metadataIdRef=\"meta0\" />\n";
@@ -170,15 +170,15 @@ sub buildChangeRequest {
     return $request;
 }
 
-=head2 xQuery($self, $xquery)
+=head2 xQuery($self, $xquery, $encoded)
 
 The xQuery function performs an xquery on the specified TS. It returns the
-results as a string.
+results as a string or as a dom object if the $encoded flag is set.
 
 =cut
 
 sub xQuery {
-    my ( $self, $xquery ) = @_;
+    my ( $self, $xquery, $encoded ) = @_;
     my $localContent = q{};
     my $error;
     my ( $status, $res, $request );
@@ -210,7 +210,12 @@ sub xQuery {
                     if ( $data->getAttribute( "metadataIdRef" ) eq $metadata->getAttribute( "id" ) ) {
                         my $topology = find( $data, './*[local-name()="topology"]', 1 );
                         if ( $topology ) {
-                            return ( 0, $topology->toString );
+                            unless ($encoded) {
+                                return ( 0, $topology->toString );
+                            }
+                            else {
+                                return ( 0, $topology );
+                            }
                         }
                     }
                 }
