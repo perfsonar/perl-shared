@@ -20,8 +20,7 @@ use perfSONAR_PS::Utils::ParameterValidation;
 use Data::Dumper;
 
 use base 'perfSONAR_PS::Utils::TL1::Base';
-use fields 'ALARMS', 'COUNTERS', 'EFLOWSBYNAME', 'CRSSBYNAME', 'ETHSBYAID', 'GTPSBYNAME', 'OCNSBYAID', 'SNCSBYNAME', 'VCGSBYNAME', 'STSSBYNAME', 'ALARMS_CACHE_TIME', 'EFLOWSBYNAME_CACHE_TIME', 'CRSSBYNAME_CACHE_TIME', 'ETHSBYAID_CACHE_TIME', 'GTPSBYNAME_CACHE_TIME', 'OCNSBYAID_CACHE_TIME',
-    'SNCSBYNAME_CACHE_TIME', 'VCGSBYNAME_CACHE_TIME', 'STSSBYNAME_CACHE_TIME';
+use fields 'ALARMS', 'COUNTERS', 'EFLOWSBYNAME', 'CRSSBYNAME', 'ETHSBYAID', 'GTPSBYNAME', 'OCNSBYAID', 'SNCSBYNAME', 'VCGSBYNAME', 'STSSBYNAME', 'ALARMS_CACHE_TIME', 'EFLOWSBYNAME_CACHE_TIME', 'CRSSBYNAME_CACHE_TIME', 'ETHSBYAID_CACHE_TIME', 'GTPSBYNAME_CACHE_TIME', 'OCNSBYAID_CACHE_TIME', 'SNCSBYNAME_CACHE_TIME', 'VCGSBYNAME_CACHE_TIME', 'STSSBYNAME_CACHE_TIME';
 
 =head2 initialize()
 
@@ -251,6 +250,14 @@ sub get_ethernet_facilities {
 
     $facility_name = "ALL" unless ($facility_name);
 
+    if ( $self->{ETHSBYAID_CACHE_TIME} + $self->{CACHE_DURATION} > time ) {
+        if ($facility_name ne "ALL") {
+            return ( 0, $self->{ETHSBYAID}->{$facility_name} );
+        } else {
+            return ( 0, $self->{ETHSBYAID});
+        }
+    }
+
     my ( $successStatus, $results ) = $self->send_cmd( "RTRV-GIGE::$facility_name:" . $self->{CTAG} . ";" );
     if ( $successStatus != 1 ) {
         return;
@@ -285,6 +292,8 @@ sub get_ethernet_facilities {
     if ($facility_name ne "ALL") {
         return ( 0, $eths{$facility_name} );
     } else {
+        $self->{ETHSBYAID} = \%eths;
+        $self->{ETHSBYAID_CACHE_TIME} = time;
         return ( 0, \%eths );
     }
 }
