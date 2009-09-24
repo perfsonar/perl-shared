@@ -13,7 +13,6 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 
 import java.lang.Exception;
-import org.jdom.xpath.XPath;
 
 public class PSBaseClient {
     protected String url;
@@ -82,10 +81,11 @@ public class PSBaseClient {
             this.log.debug("Parsing done");
 
             this.log.debug("Looking for message");
-            XPath xpath = XPath.newInstance("//nmwg:message");
-            xpath.addNamespace(psNS.NMWG);
 
-            message = (Element) xpath.selectSingleNode(responseMessage.getRootElement());
+	    Iterator messages = responseMessage.getRootElement().getDescendants(new org.jdom.filter.ElementFilter("message"));
+	    while(messages.hasNext()) {
+		    message = (Element) messages.next();
+            }
         } catch (Exception e) {
             this.log.error("Error: " + e.getMessage());
         }
