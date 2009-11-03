@@ -19,16 +19,16 @@ my $ok = GetOptions (
                 'help|?|h'    => \$help
         );
 if(!$ok || !$url  || $help) {
-   print " $0: sends an  XML request over SOAP to the pinger MA and prints response or returns conclusion about service's health \n";
-   print " $0   [--url=<pinger_MA_url, default is localhost> --debug|-d  --verbose|v --data] \n";
-   print " $0    --data - to check data for every metadata id for the past 30 minutes \n";
-   print " $0    --check - to return conclusion about health \n";
-   exit 0;
+    print " $0: sends an  XML request over SOAP to the pinger MA and prints response or returns conclusion about service's health \n";
+    print " $0   [--url=<pinger_MA_url, default is localhost> --debug|-d  --verbose|v --data] \n";
+    print " $0    --data - to check data for every metadata id for the past 30 minutes \n";
+    print " $0    --check - to return conclusion about health \n";
+    exit 0;
 }
 my $level = $INFO;
 
 if ($debug) {
-   $level = $DEBUG;    
+    $level = $DEBUG;    
 }
 
 Log::Log4perl->easy_init($level);
@@ -43,7 +43,7 @@ if($EVAL_ERROR) {
     health_failed({MDKrequest => $EVAL_ERROR});
 } 
 unless($result) {
-   health_failed({MDKrequest => 'No response from the service, its not running ?'});
+    health_failed({MDKrequest => 'No response from the service, its not running ?'});
 }
 eval {
     $metaids = $ma->getMetaData($result);
@@ -94,17 +94,19 @@ unless( @data_arr ) {
     health_failed({data => 'No data in the past 30 minutes, check if MP is running'});
 }
 unless(@data_arr == @metaids_arr) {
-    health_failed({data => 'some data is missing, check if some of the hosts you pinging are blocked or not on the network'});
+    foreach my $meta (@data_arr) {
+      delete $metaids->{$meta};
+    }
+    health_failed({data => 'data incomplete, these E2E pairs recorded as metadata but are not returning any data:' . join(', ', keys %$metaids)});
 }
 foreach my $key_id  (@data_arr) {
     $logger->debug("\n---- Key: $key_id");
     foreach my $id ( keys %{$data_md->{$key_id}{data}}) {
     	$logger->debug("---- MetaKey: $id");
     	foreach my $timev   (sort {$a <=> $b} keys %{$data_md->{$key_id}{data}{$id}}) {
-    	      $logger->debug("Data: tm=" . $ptime->($timev) . " datums: ");
-    	      map { $logger->debug("$_ = $data_md->{$key_id}{data}{$id}{$timev}{$_} ")} keys %{$data_md->{$key_id}{data}{$id}{$timev}};
-       }  
-  
+    	    $logger->debug("Data: tm=" . $ptime->($timev) . " datums: ");
+    	    map { $logger->debug("$_ = $data_md->{$key_id}{data}{$id}{$timev}{$_} ")} keys %{$data_md->{$key_id}{data}{$id}{$timev}};
+        }
     } 
 } 
 print encode_json {service => 'OK'};
@@ -112,10 +114,10 @@ exit 0;
 
 
 sub health_failed {
-  my $health = shift;
-  $health->{service} = 'NOT OK';
-  print encode_json $health;
-  exit 1;
+    my $health = shift;
+    $health->{service} = 'NOT OK';
+    print encode_json $health;
+    exit 1;
 }
  
 __END__
