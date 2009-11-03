@@ -421,7 +421,7 @@ sub getMetaData {
     }
     foreach my $md ( @{ $response->get_metadata } ) {
         unless ( $md->get_key && $md->get_subject ) {
-            $self->{LOGGER}->info( "Skipping metadata - key or subject is missing " );
+            $self->{LOGGER}->debug( "Skipping metadata - key or subject is missing " );
             next;
         }
 
