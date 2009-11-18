@@ -197,8 +197,10 @@ public class ServiceRegistration {
 		
 		Element protoElem = new Element("protocol", this.psNS.TOPO);
 		protoElem.addContent(this.txtNode("type", protocol, this.psNS.TOPO));
-		Element paramsElem = this.createParameters(params);
-		protoElem.addContent(paramsElem);
+		if(params != null){
+		    Element paramsElem = this.createParameters(params);
+		    protoElem.addContent(paramsElem);
+		}
 		port.addContent(protoElem);
 		this.serviceElem.addContent(port);
 	}
@@ -357,6 +359,26 @@ public class ServiceRegistration {
 		elem.setText(value);
 		return elem;
 	}
+	
+	/**
+	 * Adds a relation element
+	 * 
+	 * @param type the relation type
+	 * @param refs a map of each service where the index is the service URL and the value is the type
+	 */
+	public void addRelation(String type, List<String> relatedTo){
+	    HashMap<String, String> refs = new HashMap<String, String>();
+	    for(String addr : relatedTo){
+	        try{
+	            new URL(addr);
+	            refs.put(addr, "url");
+	        }catch(Exception e){
+	            refs.put(addr, "idRef");
+	        }
+	    }
+	    this.serviceElem.addContent(this.relationNode(type, refs));
+	}
+	
 	
 	/**
 	 * Creates a relation element
