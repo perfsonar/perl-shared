@@ -482,7 +482,7 @@ sub registerStatic {
     }
 
     if ( exists $self->{FIRST} and $self->{FIRST} ) {
-        if ( $self->sendDeregister() == 0 ) {
+        if ( $self->sendDeregister($self->getKey()) == 0 ) {
             $self->{LOGGER}->debug( "Nothing registered." );
         }
         else {
@@ -499,7 +499,7 @@ sub registerStatic {
         }
     }
     else {
-        if ( $self->sendKeepalive() == -1 ) {
+        if ( $self->sendKeepalive($self->getKey()) == -1 ) {
             my @resultsString = @{$data_ref};
             if ( $#resultsString != -1 ) {
                 my ( $status, $res ) = $self->__register( createService( $self ), $data_ref );
@@ -537,7 +537,7 @@ sub registerDynamic {
     }
 
     if ( exists $self->{FIRST} and $self->{FIRST} ) {
-        if ( $self->sendDeregister() == 0 ) {
+        if ( $self->sendDeregister($self->getKey()) == 0 ) {
             $self->{LOGGER}->debug( "Nothing registered." );
         }
         else {
@@ -555,7 +555,7 @@ sub registerDynamic {
     else {
         my @resultsString = @{$data_ref};
         my $subject       = q{};
-        if ( $self->sendKeepalive() == -1 ) {
+        if ( $self->sendKeepalive($self->getKey()) == -1 ) {
             $subject = createService( $self );
         }
         else {
