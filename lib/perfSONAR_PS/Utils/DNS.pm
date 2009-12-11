@@ -37,21 +37,18 @@ Resolve an ip address to a DNS name.
 =cut
 
 sub resolve_address {
-    my ( $name ) = @_;
+    my ( $name, $timeout ) = @_;
 
-    my $res   = Net::DNS::Resolver->new;
-    my $query = $res->search( $name );
+    $timeout = 2 unless ($timeout);
 
-    if ( not $query or $name !~ /$RE{net}{domain}/ ) {
-        my @dns = ();
-        push @dns, $name;
-        return @dns;
-    }
+    my $resolved_hostnames = resolve_address_multi({ addresses => [ $name ], timeout => $timeout });
 
     my @addresses = ();
-    foreach my $ans ( $query->answer ) {
-        next if ( $ans->type ne "A" );
-        push @addresses, $ans->address;
+
+    if ($resolved_hostnames && $resolved_hostnames->{$name}) {
+        foreach my $hostname (@{ $resolved_hostnames->{$name} }) {
+            push @addresses, $hostname;
+        }
     }
 
     return @addresses;
@@ -65,7 +62,9 @@ dotted decimal or IPv6 colon-separated decimal form.
 =cut
 
 sub reverse_dns {
-    my ( $ip ) = @_;
+    my ( $ip, $timeout ) = @_;
+
+    print STDERR "in reverse_dns()";
 
     my $tmp_ip = NetAddr::IP->new( $ip );
     unless ( $tmp_ip ) {
@@ -77,18 +76,19 @@ sub reverse_dns {
         return;
     }
 
-    my $res   = Net::DNS::Resolver->new;
-    my $query = $res->search( "$addr" );
-    unless ( $query ) {
-        return;
+    $timeout = 2 unless ($timeout);
+
+    my $resolved_hostnames = reverse_dns_multi({ addresses => [ $ip ], timeout => $timeout });
+
+    my $hostname;
+
+    if ($resolved_hostnames && $resolved_hostnames->{$ip}) {
+        $hostname = $resolved_hostnames->{$ip};
     }
 
-    foreach my $ans ( $query->answer ) {
-        next if ( $ans->type ne "PTR" );
-        return $ans->ptrdname;
-    }
+    print STDERR "out reverse_dns()";
 
-    return;
+    return $hostname;
 }
 
 =head2 resolve_address_multi({ addresses => 1, timeout => 0 })
