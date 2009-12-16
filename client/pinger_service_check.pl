@@ -1,4 +1,5 @@
-#!/usr/local/bin/perl -w
+#!/bin/env perl
+
 use lib qw(../lib);
 use strict;
 use warnings;
@@ -9,11 +10,10 @@ use English;
 use POSIX qw(strftime);
 use JSON::XS;
 
-use  Log::Log4perl  qw(:easy); 
+###use  Log::Log4perl  qw(:easy); 
 my $url = 'http://localhost:8075/perfSONAR_PS/services/pinger/ma';
 my ($debug, $help, $data);
 my $ok = GetOptions (
-                'debug|d'     => \$debug,       
                 'url=s'       => \$url,
 		'data'        => \$data,
                 'help|?|h'    => \$help
@@ -25,14 +25,14 @@ if(!$ok || !$url  || $help) {
     print " $0    --check - to return conclusion about health \n";
     exit 0;
 }
-my $level = $INFO;
+#my $level = $INFO;
+#
+#if ($debug) {
+#    $level = $DEBUG;    
+#}
 
-if ($debug) {
-    $level = $DEBUG;    
-}
-
-Log::Log4perl->easy_init($level);
-my $logger = get_logger("pinger_client");
+#Log::Log4perl->easy_init($level);
+#my $logger = get_logger("pinger_client");
   
 my ($result, $metaids);
 my $ma = new perfSONAR_PS::Client::PingER( { instance => $url } );
@@ -61,8 +61,6 @@ my $ptime = sub {strftime " %Y-%m-%d %H:%M", localtime(shift)};
 my %keys =();
 
 foreach  my $meta  (@metaids_arr) {
-    $logger->debug("Metadata: src=$metaids->{$meta}{src_name} dst=$metaids->{$meta}{dst_name}  packetSize=$metaids->{$meta}{packetSize}\nMetadata Key(s):");
-    map { $logger->debug(" $_ :")} @{$metaids->{$meta}{keys}};
     map {$keys{$_}++} @{$metaids->{$meta}{keys}};
 }
 unless(%keys) {
@@ -99,19 +97,8 @@ unless(@data_arr == @metaids_arr) {
     }
     health_failed({data => 'data incomplete, these E2E pairs recorded as metadata but are not returning any data:' . join(', ', keys %$metaids)});
 }
-foreach my $key_id  (@data_arr) {
-    $logger->debug("\n---- Key: $key_id");
-    foreach my $id ( keys %{$data_md->{$key_id}{data}}) {
-    	$logger->debug("---- MetaKey: $id");
-    	foreach my $timev   (sort {$a <=> $b} keys %{$data_md->{$key_id}{data}{$id}}) {
-    	    $logger->debug("Data: tm=" . $ptime->($timev) . " datums: ");
-    	    map { $logger->debug("$_ = $data_md->{$key_id}{data}{$id}{$timev}{$_} ")} keys %{$data_md->{$key_id}{data}{$id}{$timev}};
-        }
-    } 
-} 
 print encode_json {service => 'OK'};
 exit 0;
-
 
 sub health_failed {
     my $health = shift;
