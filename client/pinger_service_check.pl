@@ -1,8 +1,12 @@
 #!/bin/env perl
 
-use lib qw(../lib);
 use strict;
 use warnings;
+
+our $VERSION = 3.1.1;
+
+use FindBin qw($Bin);
+use lib "$Bin/../lib";
 use perfSONAR_PS::Client::PingER;
 use Data::Dumper;
 use Getopt::Long;
@@ -11,9 +15,10 @@ use POSIX qw(strftime);
 use JSON::XS;
 use Mail::Sender;
 use Sys::Hostname;
-use Pod::Usage; 
+use Pod::Usage;
+use Sys::Syslog qw(:DEFAULT);
 
-our $VERSION = 3.1.1;
+
 
 =head1 NAME
 
@@ -21,7 +26,8 @@ pinger_service_check.pl -  PingER MA service checker
 
 =head1 DESCRIPTION
 
-Connects to the PingER MA and check healths and either returns JSON encoded string with status or send email with notification if configured
+Connects to the PingER MA and check healths and either returns JSON encoded string with status or send email with notification if configured.
+Also, it logs any message into the syslog facility.
 
 =head1 SYNOPSIS
 
@@ -63,7 +69,7 @@ my $ok = GetOptions (
                 'url|u=s'  => \$url,
 		'mail|m=s' => \$email,
 		'smtp|s=s' =>  \$smtp,
-		'log|l=s'  => \$logfile,     
+		'log|l=s'  => \$logfile,
                 'help|?|h' => \$help
         ) or pod2usage(-verbose => 1);
 if($help || ($logfile && !(-e $logfile)) || ($email  && $email !~ /^[\w\.]+\@[\w\-\.]+$/)) {
@@ -142,7 +148,7 @@ unless(@data_arr == @metaids_arr) {
     }
     health_failed({data => 'data incomplete, these E2E pairs recorded as metadata but are not returning any data:' . join(', ', keys %$metaids)});
 }
-print encode_json {service => 'OK'} unless $MAIL;
+syslog('info', "PingER MA is OK !") unless $MAIL;
 exit 0;
 
 sub health_failed {
@@ -160,6 +166,7 @@ sub health_failed {
     } else {
         print  encode_json $health; 
     }
+    syslog('err', "PingER MA is  NOT OK !:" .  encode_json $health);
     exit 1;
 }
  
