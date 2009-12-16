@@ -149,7 +149,6 @@ sub health_failed {
     my $health = shift;
     $health->{service} = 'NOT OK';
     $Data::Dumper::Terse = 1;
-    print 'MAIL = ' . ref $MAIL;
     if($MAIL && ref $MAIL eq 'Mail::Sender') {  
           $MAIL->MailFile({to => $email,
 	                   subject => "PingER check FAILED on ". hostname(), 
