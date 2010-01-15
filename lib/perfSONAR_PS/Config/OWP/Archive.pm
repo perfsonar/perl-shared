@@ -31,6 +31,7 @@ use strict;
 use perfSONAR_PS::Config::OWP;
 use perfSONAR_PS::Config::OWP::Utils;
 use File::Path;
+use Math::Int64 qw(uint64);
 use DBI;
 
 $perfSONAR_PS::Config::OWP::Archive::REVISION = '$Id$';
@@ -86,8 +87,8 @@ sub add{
 	scalar %args || return 0;
 
 	my($start,$end);
-	$start = new Math::BigInt $args{'START'};
-	$end = new Math::BigInt $args{'END'};
+	$start = uint64( $args{'START'} );
+	$end = uint64( $args{'END'} );
 
 
 	my $newfile = "$self->{'ARCHDIR'}/".owptstampdnum($start)."/$args{'MESH'}_$args{'RECV'}_$args{'SEND'}";
@@ -118,8 +119,8 @@ sub rm{
 	%args = owpverify_args(\@argnames,\@argnames,%args);
 	%args || return 0;
 	my($start,$end);
-	$start = new Math::BigInt $args{'START'};
-	$end = new Math::BigInt $args{'END'};
+	$start = uint64( $args{'START'} );
+	$end = uint64( $args{'END'} );
 
 	my $sql = "
 		SELECT filename FROM pending_files
@@ -160,8 +161,8 @@ sub delete_range{
 	%args = owpverify_args(\@argnames,\@argnames,%args);
 	scalar %args || return 0;
 
-	my $from = new Math::BigInt $args{'FROM'};
-	my $to = new Math::BigInt $args{'TO'};
+	my $from = uint64( $args{'FROM'} );
+	my $to = uint64( $args{'TO'} );
 	my $sql = "
 		SELECT filename FROM pending_files
 		WHERE
@@ -197,7 +198,7 @@ sub validate{
 	%args = owpverify_args(\@argnames,\@argnames,%args);
 	scalar %args || return 0;
 
-	my $to = new Math::BigInt $args{'TO'};
+	my $to = uint64( $args{'TO'} );
 
 	my $sql = "
 		DELETE FROM pending_files

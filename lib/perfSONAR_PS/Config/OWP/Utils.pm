@@ -23,8 +23,8 @@ require 5.005;
 require Exporter;
 use strict;
 use vars qw(@ISA @EXPORT $VERSION);
-use Math::BigInt;
 use Math::BigFloat;
+use Math::Int64 qw(uint64 uint64_to_number);
 use POSIX;
 
 @ISA = qw(Exporter);
@@ -34,31 +34,31 @@ $perfSONAR_PS::Config::OWP::Utils::REVISION = '$Id$';
 $VERSION = $perfSONAR_PS::Config::OWP::Utils::VERSION='1.0';
 
 use constant JAN_1970 => 0x83aa7e80; # offset in seconds
-my $scale = new Math::BigInt 2**32;
+my $scale = uint64(2)**32;
 
 # Convert value return by time() into owamp-style (ASCII form
 # of the unsigned 64-bit integer [32.32]
 sub time2owptime {
-    my $bigtime = new Math::BigInt $_[0];
+    my $bigtime = uint64($_[0]);
     $bigtime = ($bigtime + JAN_1970) * $scale;
     $bigtime =~ s/^\+//;
     return $bigtime;
 }
 
 sub owptime2time{
-	my $bigtime = new Math::BigInt $_[0];
+	my $bigtime =uint64($_[0]);
 	$bigtime /= $scale;
-	return $bigtime - JAN_1970;
+	return uint64_to_number($bigtime - JAN_1970);
 }
 
 #
 # Add a number of seconds to an owamp-style number.
 #
 sub owptimeadd{
-	my $bigtime = new Math::BigInt shift;
+	my $bigtime = uint64(shift);
 
 	while($_ = shift){
-		my $add = new Math::BigInt $_;
+		my $add = uint64($_);
 		$bigtime += ($add * $scale);
 	}
 
@@ -67,20 +67,20 @@ sub owptimeadd{
 }
 
 sub owptstampi{
-	my $bigtime = new Math::BigInt shift;
-	return $bigtime>>32;
+	my $bigtime = uint64( shift );
+	return uint64_to_number($bigtime>>32);
 }
 
 sub owpi2owp{
-	my $bigtime = new Math::BigInt shift;
+	my $bigtime = uint64( shift );
 
 	return $bigtime<<32;
 }
 
 sub owpgmtime{
-	my $bigtime = new Math::BigInt shift;
+	my $bigtime = uint64 shift;
 
-	my $unixsecs = ($bigtime/$scale) - JAN_1970;
+	my $unixsecs = uint64_to_number(($bigtime/$scale) - JAN_1970);
 
 	return gmtime($unixsecs);
 }
@@ -103,12 +103,12 @@ sub pldatetime{
 }
 
 sub owptstamppldatetime{
-	my($tstamp) = new Math::BigInt shift;
+	my($tstamp) = uint64( shift );
 	my($frac) = new Math::BigFloat($tstamp);
 	# move fractional part to the right of the radix point.
 	$frac /= $scale;
 	# Now subtract away the integer portion
-	$frac -= ($tstamp/$scale);
+	$frac -= uint64_to_number($tstamp/$scale);
 	return pldatetime((perfSONAR_PS::Config::OWP::Utils::owpgmtime($tstamp))[0..7],$frac);
 }
 
@@ -132,17 +132,13 @@ sub owpgmstring{
 }
 
 sub owplocalstring{
-	my $bigtime = new Math::BigInt shift;
-
-	my $unixsecs = ($bigtime/$scale) - JAN_1970;
-
-        return strftime "%a %b %e %H:%M:%S %Z", localtime;
+    return strftime "%a %b %e %H:%M:%S %Z", owplocaltime(shift);
 }
 
 sub owplocaltime{
-	my $bigtime = new Math::BigInt shift;
+	my $bigtime = uint64(shift);
 
-	my $unixsecs = ($bigtime/$scale) - JAN_1970;
+	my $unixsecs = uint64_to_number(($bigtime/$scale) - JAN_1970);
 
 	return localtime($unixsecs);
 }
@@ -163,8 +159,8 @@ sub owptrange{
 			undef $$tstamp;
 		}
 		elsif(($first,$last) = ($$tstamp =~ m#^(\d*?)_(\d*)#o)){
-			$first = new Math::BigInt $first;
-			$last = new Math::BigInt $last;
+			$first = uint64($first);
+			$last = uint64($last);
 			if($first>$last){
 				$$fref = $last + 0;
 				$$lref = $first + 0;
@@ -175,30 +171,31 @@ sub owptrange{
 			}
 		}
 		else{
-			$$lref = new Math::BigInt $$tstamp;
+			$$lref = uint64($$tstamp);
 		}
 	}
 
 
 	if(!$$tstamp){
-		$$lref = new Math::BigInt time2owptime(time());
+		$$lref = uint64(time2owptime(time()));
 		$$tstamp='now';
 	}
 
 	if(!$$fref){
-		$$fref = new Math::BigInt owptimeadd($$lref,-$dur);
+		$$fref = uint64(owptimeadd($$lref,-$dur));
 	}
 
 	return 1;
 }
 
 sub owptime2exacttime{
-  my $bigtime = new Math::BigInt $_[0];
+  my $bigtime = uint64($_[0]);
   my $mantissa = $bigtime % $scale;
-  my $significand = ($bigtime / $scale) - JAN_1970;
+  my $significand = ($bigtime / $scale);
+  $significand -= JAN_1970;
+
   return ( $significand . "." . $mantissa );
 }
- 
 
 sub owpexactgmstring{
   my $time = perfSONAR_PS::Config::OWP::Utils::owptime2exacttime(shift);

@@ -23,6 +23,7 @@ package perfSONAR_PS::Config::OWP::Navigation;
 require 5.005;
 require Exporter;
 use strict;
+use Math::Int64 qw(uint64);
 
 our @ISA = qw(Exporter);
 our @EXPORT = qw(links timeselect);	# Symbols to be exported by default
@@ -182,7 +183,7 @@ sub timeselect {
 		$year -= 1900;
 		$first = owptimegm($sec,$min,$hour,$mday,$mon,$year) ||
 			goto BADINPUT;
-		$first = new Math::BigInt $first;
+		$first = uint64( $first );
 	
 		$sec = $q->param("TSec");
 		$min = $q->param("TMin");
@@ -201,7 +202,7 @@ sub timeselect {
 		$year -= 1900;
 		$last = owptimegm($sec,$min,$hour,$mday,$mon,$year) ||
 			goto BADINPUT;
-		$last = new Math::BigInt $last;
+		$last = uint64( $last );
 		if($first>$last){
 			my $t = $first + 0;
 			$first = $last + 0;
@@ -218,8 +219,8 @@ sub timeselect {
 				undef $tstamp;
 			}
 			elsif(($first,$last) = ($tstamp =~ m#(\d*)_(\d*)#o)){
-				$first = new Math::BigInt $first;
-				$last = new Math::BigInt $last;
+				$first = uint64( $first );
+				$last = uint64( $last );
 				$tstamptype = 'range';
 				if($first>$last){
 					my $t = $first + 0;
@@ -228,7 +229,7 @@ sub timeselect {
 				}
 			}
 			else{
-				$last = new Math::BigInt $tstamp;
+				$last = uint64( $tstamp );
 				$tstamptype = 'end';
 			}
 		}
@@ -237,7 +238,7 @@ sub timeselect {
 	
 	
 	if(!$tstamp){
-		$last = new Math::BigInt time2owptime(time());
+		$last = uint64( time2owptime(time()) );
 		$tstamptype = 'now';
 		$tstamp='now';
 	}
@@ -260,7 +261,7 @@ sub timeselect {
 	
 	
 	if(!$first){
-		$first = new Math::BigInt owptimeadd($last,-$duration);
+		$first = uint64( owptimeadd($last,-$duration) );
 	}
 	
 	my $currstr = owpgmstring(time2owptime(time()));

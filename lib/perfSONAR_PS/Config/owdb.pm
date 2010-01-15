@@ -33,6 +33,7 @@ use FindBin;
 use POSIX;
 use Fcntl qw(:flock);
 use FileHandle;
+use Math::Int64 qw(uint64);
 use perfSONAR_PS::Config::OWP;
 use perfSONAR_PS::Config::OWP::Utils;
 use vars qw(@ISA @EXPORT $VERSION);
@@ -193,9 +194,9 @@ sub owdb_fetch{
 			# Now initialize the values for the new current session.
 
 			$owdbh->{'OSTART'} =
-					new Math::BigInt($owdbh->{'START'});
+					uint64($owdbh->{'START'});
 			$owdbh->{'OEND'} =
-					new Math::BigInt($owdbh->{'END'});
+					uint64($owdbh->{'END'});
 			$owdbh->{'OSENT'} = $owdbh->{'SENT'};
 			$owdbh->{'OLOST'} = $owdbh->{'LOST'};
 			$owdbh->{'ODUPS'} = $owdbh->{'DUPS'};
@@ -277,7 +278,7 @@ sub owdb_plot_script{
                 $res = $lowest;
                 @reslist = ($res);
                 $range = $width * $res;
-                $$fref = new Math::BigInt owptimeadd($$lref,-$range);
+                $$fref = uint64( owptimeadd($$lref,-$range) );
         }
 
         my $nrecs = 0;
