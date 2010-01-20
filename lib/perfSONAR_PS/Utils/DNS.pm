@@ -64,8 +64,6 @@ dotted decimal or IPv6 colon-separated decimal form.
 sub reverse_dns {
     my ( $ip, $timeout ) = @_;
 
-    print STDERR "in reverse_dns()";
-
     my $tmp_ip = NetAddr::IP->new( $ip );
     unless ( $tmp_ip ) {
         return;
@@ -85,8 +83,6 @@ sub reverse_dns {
     if ($resolved_hostnames && $resolved_hostnames->{$ip}) {
         $hostname = $resolved_hostnames->{$ip};
     }
-
-    print STDERR "out reverse_dns()";
 
     return $hostname;
 }
