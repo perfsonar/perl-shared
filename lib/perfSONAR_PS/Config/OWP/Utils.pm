@@ -109,14 +109,14 @@ sub owptstamppldatetime{
 	$frac /= $scale;
 	# Now subtract away the integer portion
 	$frac -= uint64_to_number($tstamp/$scale);
-	return pldatetime((perfSONAR_PS::Config::OWP::Utils::owpgmtime($tstamp))[0..7],$frac);
+	return pldatetime((owpgmtime($tstamp))[0..7],$frac);
 }
 
 
 
 sub owptstampdnum{
 	my($sec,$min,$hour,$mday,$mon,$year,$wday,$yday) =
-		perfSONAR_PS::Config::OWP::Utils::owpgmtime(shift);
+		owpgmtime(shift);
 	return sprintf "%04d%02d%02d",$year+1900,$mon+1,$mday;
 }
 
@@ -126,7 +126,7 @@ my @mnames = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 
 sub owpgmstring{
 	my($sec,$min,$hour,$mday,$mon,$year,$wday,$yday) =
-		perfSONAR_PS::Config::OWP::Utils::owpgmtime(shift);
+		owpgmtime(shift);
 	$year += 1900;
 	return sprintf "$dnames[$wday] $mnames[$mon] $mday %02d:%02d:%02d UTC $year", $hour,$min,$sec;
 }
@@ -198,7 +198,7 @@ sub owptime2exacttime{
 }
 
 sub owpexactgmstring{
-  my $time = perfSONAR_PS::Config::OWP::Utils::owptime2exacttime(shift);
+  my $time = owptime2exacttime(shift);
   my @parts = split(/\./mx,$time);
   my($sec,$min,$hour,$mday,$mon,$year,$wday,$yday) = gmtime($time);
   $year += 1900;
