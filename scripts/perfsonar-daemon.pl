@@ -772,6 +772,8 @@ sub lockPIDFile {
     # file so that others can try their luck. XXX: there's a minor race
     # condition during the 'daemonize' call.
 
+    truncate( PIDFILE, 0 );
+    seek( PIDFILE, 0, 0 );
     print PIDFILE "$PROCESS_ID\n";
     flock( PIDFILE, LOCK_UN );
 
