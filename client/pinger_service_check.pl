@@ -9,6 +9,7 @@ use FindBin qw($Bin);
 use lib "$Bin/../lib";
 use perfSONAR_PS::Client::PingER;
 use Data::Dumper;
+use Carp;
 use Getopt::Long;
 use English '-no_match_vars';
 use POSIX qw(strftime);
@@ -17,9 +18,7 @@ use Mail::Sender;
 use Sys::Hostname;
 use Pod::Usage;
 use Sys::Syslog qw(:DEFAULT);
-
-
-
+ 
 =head1 NAME
 
 pinger_service_check.pl -  PingER MA service checker
@@ -59,7 +58,8 @@ This option B<ONLY> processed when I<--mail|-m> is set.
 
 =head2 C<--log|l> LOG file full filename
 
-specify full filename for the pinger log file to send with email 
+specify full filename for the pinger log file to send with email ( will send only last 300 lines to limit size of the message)
+defaults to /var/log/perfsonar/pinger.log
 
 =cut
 
@@ -75,13 +75,12 @@ my $ok = GetOptions (
 if($help || ($logfile && !(-e $logfile)) || ($email  && $email !~ /^[\w\.]+\@[\w\-\.]+$/)) {
     pod2usage(-verbose => 2);
 }
-if($email) {
-   
+if($email) {  
     $smtp ||= 'localhost';
     $MAIL = Mail::Sender->new({smtp => $smtp, 
                                from => 'pinger_ma@' . hostname()
 	  		     });
-    die $Mail::Sender::Error unless ref $MAIL;
+    croak($Mail::Sender::Error) unless ref $MAIL;
     $logfile ||= '/var/log/perfsonar/pinger.log';
 }
 
@@ -155,12 +154,24 @@ sub health_failed {
     my $health = shift;
     $health->{service} = 'NOT OK';
     $Data::Dumper::Terse = 1;
+    my $log_file_tail300 = '';
+    if($logfile && -e $logfile) {
+	open(FILE,  $logfile) or croak("$ERRNO  $logfile");
+	seek(FILE, 0, 2);#set EOF
+	my $counter = 0;
+	while ($counter < 300 && seek(FILE, -2, 1)) {
+            my $chr;
+            read(FILE, $chr, 1);
+	    $log_file_tail300  = $chr . $log_file_tail300;
+            $counter++ if ($chr eq "\n");
+	}    
+	close(FILE);
+    }
     if($MAIL && ref $MAIL eq 'Mail::Sender') {  
-          $MAIL->MailFile({to => $email,
+          $MAIL->MailMsg({to => $email,
 	                   subject => "PingER check FAILED on ". hostname(), 
 		           msg => "Health Monitor found a problem with PingER MA at $url - " . Dumper($health) . 
-			          "\n logfile is attached ",
-		           file => $logfile,
+			          "\n---- See below -------------\n\n $log_file_tail300",
 			   on_errors => 'die'
 			 });
     } else {
