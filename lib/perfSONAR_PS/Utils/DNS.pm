@@ -82,6 +82,10 @@ sub reverse_dns {
 
     if ($resolved_hostnames && $resolved_hostnames->{$ip}) {
         $hostname = $resolved_hostnames->{$ip};
+
+        if (ref $hostname eq "ARRAY") {
+            $hostname = $hostname->[0];
+        }
     }
 
     return $hostname;
