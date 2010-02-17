@@ -768,6 +768,13 @@ sub lockPIDFile {
         }
     }
 
+    # write the current process in if we're locking it, and then unlock the PID
+    # file so that others can try their luck. XXX: there's a minor race
+    # condition during the 'daemonize' call.
+
+    print PIDFILE "$PROCESS_ID\n";
+    flock( PIDFILE, LOCK_UN );
+
     return *PIDFILE;
 }
 
@@ -780,6 +787,8 @@ unlocks the file and closes it.
 
 sub unlockPIDFile {
     my ( $filehandle ) = @_;
+
+    flock( PIDFILE, LOCK_EX ) or croak( "Couldn't lock pidfile" );
 
     truncate( $filehandle, 0 );
     seek( $filehandle, 0, 0 );
