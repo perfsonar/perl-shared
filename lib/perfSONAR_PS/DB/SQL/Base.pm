@@ -275,7 +275,7 @@ sub getFromTable {
 accepts singel hashref param with keys:
       set => hashref { for example  'ip_name' => $ip_name, 'ip_number' => $ip_number },
       table =>  table_name
-      validate => array ref with list of names to use in the SET clause
+      validate => hashref with list of names to use in the SET clause instead of keys supplied in the "set" parameter
       where => where clause ( formatted as Rose::DB::Object query )
   
 returns        
@@ -290,11 +290,10 @@ sub updateTable {
         && ref( $param ) eq 'HASH'
         && $param->{table}
         && ( $param->{set}      && ref( $param->{set} )      eq 'HASH' )
-        && ( $param->{validate} && ref( $param->{validate} ) eq 'HASH' )
         && $param->{where}
         && ref( $param->{where} ) eq 'ARRAY' )
     {
-        $self->ERRORMSG( "updateTable  requires single HASH ref parameter with required set,table and where keys " );
+        $self->ERRORMSG( "updateTable  requires single HASH ref parameter with required set,table and where keys " . Dumper($param));
         return -1;
     }
     my $stringified_names = q{};
