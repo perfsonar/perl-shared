@@ -186,6 +186,7 @@ sub alive {
 =head2   getFromTable
 
 accepts single hash param with keys:
+       select => arrayref with names to return
       query => Rose::DB::Object::QueryBuilder type of query,
       table =>  table name
       validate => table validation HASHref constant
@@ -274,6 +275,7 @@ sub getFromTable {
 accepts singel hashref param with keys:
       set => hashref { for example  'ip_name' => $ip_name, 'ip_number' => $ip_number },
       table =>  table_name
+      validate => array ref with list of names to use in the SET clause
       where => where clause ( formatted as Rose::DB::Object query )
   
 returns        
@@ -292,15 +294,17 @@ sub updateTable {
         && $param->{where}
         && ref( $param->{where} ) eq 'ARRAY' )
     {
-        $self->ERRORMSG( "updateTable  requires single HASH ref parameter with required set,validate and where keys " );
+        $self->ERRORMSG( "updateTable  requires single HASH ref parameter with required set,table and where keys " );
         return -1;
     }
     my $stringified_names = q{};
-    my @array_of_names    = keys %{ $param->{validate} };
+    my @array_of_names    =  keys %{$param->{set}};
+    if( $param->{validate} ) {
+        @array_of_names    = keys %{ $param->{validate} };
+    }
     foreach my $key ( @array_of_names ) {
         $stringified_names .= " $key='" . $param->{set}->{$key} . "'," if defined $param->{set}->{$key};
     }
-
     my $query_sql = build_where_clause(
         {
             dbh           => $self->handle,
