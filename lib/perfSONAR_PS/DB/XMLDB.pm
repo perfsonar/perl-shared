@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.1;
 
-use fields 'ENVIRONMENT', 'CONTAINERFILE', 'NAMESPACES', 'ENV', 'MANAGER', 'CONTAINER', 'INDEX', 'LOGGER';
+use fields 'ENVIRONMENT', 'CONTAINERFILE', 'NAMESPACES', 'ENV', 'MANAGER', 'CONTAINER', 'INDEX', 'LOGGER', 'NETLOGGER';
 
 =head1 NAME
 
@@ -29,6 +29,7 @@ use English qw( -no_match_vars );
 use Params::Validate qw(:all);
 
 use perfSONAR_PS::Common;
+use perfSONAR_PS::Utils::NetLogger;
 use perfSONAR_PS::Utils::ParameterValidation;
 
 =head2 new($package, { env, cont, ns }) 
@@ -49,6 +50,7 @@ sub new {
 
     my $self = fields::new( $package );
     $self->{LOGGER} = get_logger( "perfSONAR_PS::DB::XMLDB" );
+    $self->{NETLOGGER} = get_logger( "NetLogger" );
     if ( exists $parameters->{env} and $parameters->{env} ) {
         $self->{ENVIRONMENT} = $parameters->{env};
     }
@@ -211,6 +213,9 @@ sub openDB {
         $dbTr   = $parameters->{txn};
         $atomic = 0;
     }
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.openDB.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
+
 
     eval {
         $self->{ENV} = new DbEnv( 0 );
@@ -242,6 +247,8 @@ sub openDB {
         $msg = escapeString( $msg );
         $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
+        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.openDB.end", {status=>-1,error=>$msg,});
+        $self->{NETLOGGER}->debug( $nlmsg );
         return -1;
     }
     elsif ( $e = catch DbException ) {
@@ -250,6 +257,8 @@ sub openDB {
         $msg = escapeString( $msg );
         $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
+        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.openDB.end", {status=>-1,error=>$msg,});
+        $self->{NETLOGGER}->debug( $nlmsg );
         return -1;
     }
     elsif ( $EVAL_ERROR ) {
@@ -258,9 +267,13 @@ sub openDB {
         $msg = escapeString( $msg );
         $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
+        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.openDB.end", {status=>-1,error=>$msg,});
+        $self->{NETLOGGER}->debug( $nlmsg );
         return -1;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.openDB.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 
@@ -275,6 +288,8 @@ for an atomic operation.  The error argument is optional.
 sub indexDB {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { txn => 0, error => 0 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.indexDB.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     my $dbTr   = q{};
     my $atomic = 1;
@@ -319,6 +334,8 @@ sub indexDB {
         return -1;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.indexDB.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 
@@ -389,6 +406,8 @@ Creates a new transaction object.  The error argument is optional.
 sub getTransaction {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { error => 0 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.getTransaction.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     my $dbTr = q{};
     eval {
@@ -422,6 +441,8 @@ sub getTransaction {
         return;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.getTransaction.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return $dbTr;
 }
 
@@ -434,6 +455,8 @@ Given a transaction object, commit it.  The error argument is optional.
 sub commitTransaction {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { txn => 0, error => 0 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.commitTransaction.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     eval {
         $parameters->{txn}->commit() if exists $parameters->{txn};
@@ -464,6 +487,8 @@ sub commitTransaction {
         return -1;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.commitTransaction.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 
@@ -518,6 +543,9 @@ Create a logging checkpoint.
 sub checkpoint {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { error => 0 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.checkpoint.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
+
     $self->{LOGGER}->debug( "Checkpoint started." );
     eval { $self->{ENV}->txn_checkpoint( 0, 0, Db::DB_FORCE ); };
     if ( my $e = catch std::exception ) {
@@ -546,6 +574,8 @@ sub checkpoint {
     }
     $self->{LOGGER}->debug( "Checkpoint complete." );
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.checkpoint.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 
@@ -574,6 +604,8 @@ sub query {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { query => 1, txn => 0, internal => 0, error => 0 } );
 
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.query.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
     my @resString = ();
     my $dbTr      = q{};
     my $atomic    = 1;
@@ -655,6 +687,8 @@ sub query {
         return;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.query.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return @resString;
 }
 
@@ -671,6 +705,8 @@ sub querySet {
     my $parameters = validateParams( @args, { query => 1, txn => 0, error => 0 } );
 
     my $res = new XML::LibXML::NodeList;
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.querySet.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     my $dbTr   = q{};
     my $atomic = 1;
@@ -752,10 +788,12 @@ sub querySet {
         return;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.querySet.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return $res;
 }
 
-=head2 queryByName($self, { query, txn, error }) 
+=head2 queryForName($self, { query, txn, error }) 
 
 Given a query, see if it exists in the container and return the document name.
 A transaction element may be passed in from the caller, or this argument can be
@@ -766,6 +804,8 @@ left blank for an atomic operation.  The error argument is optional.
 sub queryForName {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { query => 1, txn => 0, error => 0 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.queryForName.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     my @resString = ();
 
@@ -848,6 +888,8 @@ sub queryForName {
         return;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.queryForName.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return @resString;
 }
 
@@ -862,6 +904,8 @@ operation.  The error argument is optional.
 sub queryByName {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { name => 1, txn => 0, error => 0 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.queryByName.start", { name => $parameters->{name}, } );
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     my $content = q{};
 
@@ -921,6 +965,8 @@ sub queryByName {
         return;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.queryByName.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return $content;
 }
 
@@ -935,6 +981,8 @@ The error argument is optional.
 sub getDocumentByName {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { name => 1, txn => 0, error => 0 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.getDocumentByName.start",  { name => $parameters->{name}, });
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     my $content = q{};
 
@@ -997,6 +1045,8 @@ sub getDocumentByName {
         return;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.getDocumentByName.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return $content;
 }
 
@@ -1011,6 +1061,8 @@ error argument is optional.
 sub updateByName {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { content => 1, name => 1, txn => 0, error => 0 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.updateByName.start", {name=>$parameters->{name}, content=>$parameters->{content},} );
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     my $dbTr   = q{};
     my $atomic = 1;
@@ -1066,6 +1118,8 @@ sub updateByName {
         return -1;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.updateByName.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 
@@ -1082,6 +1136,8 @@ The error argument is optional.
 sub count {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { query => 1, txn => 0, error => 0 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.count.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     my $size = -1;
 
@@ -1148,6 +1204,8 @@ sub count {
         return;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.count.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return $size;
 }
 
@@ -1238,6 +1296,8 @@ for an atomic operation.  The error argument is optional.
 sub insertElement {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { query => 1, content => 1, txn => 0, error => 0 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.insertElement.start", {content=>$parameters->{content},});
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     my $dbTr   = q{};
     my $atomic = 1;
@@ -1299,6 +1359,8 @@ sub insertElement {
         return -1;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.insertElement.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 
@@ -1313,6 +1375,8 @@ The error argument is optional.
 sub remove {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { name => 1, txn => 0, error => 0 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.remove.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     my $dbTr   = q{};
     my $atomic = 1;
@@ -1369,6 +1433,8 @@ sub remove {
         return -1;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.remove.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 

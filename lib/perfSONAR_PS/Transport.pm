@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.1;
 
-use fields 'CONTACT_HOST', 'CONTACT_PORT', 'CONTACT_ENDPOINT';
+use fields 'CONTACT_HOST', 'CONTACT_PORT', 'CONTACT_ENDPOINT', 'NETLOGGER';
 
 =head1 NAME
 
@@ -29,6 +29,8 @@ use Log::Log4perl qw(get_logger :nowarn);
 use English qw( -no_match_vars );
 use perfSONAR_PS::Common;
 use perfSONAR_PS::Messages;
+use perfSONAR_PS::Utils::NetLogger;
+
 
 =head2 =head2 new($package, $contactHost, $contactPort, $contactEndPoint)
 
@@ -224,11 +226,15 @@ sub sendReceive {
     #    Should be configurable.
     $timeout = 30 unless $timeout;
     my $logger       = get_logger( "perfSONAR_PS::Transport" );
+    $self->{NETLOGGER} = get_logger( "NetLogger" );
     my $method_uri   = "http://ggf.org/ns/nmwg/base/2.0/message/";
     my $httpEndpoint = &getHttpURI( $self->{CONTACT_HOST}, $self->{CONTACT_PORT}, $self->{CONTACT_ENDPOINT} );
     my $userAgent    = LWP::UserAgent->new( 'timeout' => ( $timeout * 1000 ) );
 
     $logger->debug( "Sending information to \"" . $httpEndpoint . "\": $envelope" );
+    my $msg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Transport.sendReceive.start", { endpoint => $httpEndpoint, }  );
+    $self->{NETLOGGER}->debug( $msg );
+
 
     my $sendSoap = HTTP::Request->new( 'POST', $httpEndpoint, new HTTP::Headers, $envelope );
     $sendSoap->header( 'SOAPAction' => $method_uri );
@@ -257,6 +263,8 @@ sub sendReceive {
         my $responseContent = $httpResponse->content();
         $logger->debug( "Response returned: " . $responseContent );
         $$error = q{} if defined $error;
+        $msg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Transport.sendReceive.end" );
+        $self->{NETLOGGER}->debug( $msg );
         return $responseContent;
     }
 }

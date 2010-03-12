@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.1;
 
-use fields 'NAME', 'USER', 'PASS', 'SCHEMA', 'HANDLE', 'LOGGER';
+use fields 'NAME', 'USER', 'PASS', 'SCHEMA', 'HANDLE', 'LOGGER', 'NETLOGGER';
 
 =head1 NAME
 
@@ -27,6 +27,7 @@ use English qw( -no_match_vars );
 use Params::Validate qw(:all);
 
 use perfSONAR_PS::Common;
+use perfSONAR_PS::Utils::NetLogger;
 use perfSONAR_PS::Utils::ParameterValidation;
 
 =head2 new($package, $name, $user, $pass, $schema)
@@ -48,6 +49,7 @@ sub new {
 
     my $self = fields::new( $package );
     $self->{LOGGER} = get_logger( "perfSONAR_PS::DB::SQL" );
+    $self->{NETLOGGER} = get_logger( "NetLogger" );
     if ( exists $parameters->{name} and $parameters->{name} ) {
         $self->{NAME} = $parameters->{name};
     }
@@ -153,6 +155,9 @@ sub openDB {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, {} );
 
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.openDB.start" );
+    $self->{NETLOGGER}->debug( $nlmsg );
+
     eval {
         my %attr = ( RaiseError => 1, );
         $self->{HANDLE} = DBI->connect( $self->{NAME}, $self->{USER}, $self->{PASS}, \%attr ) or $self->{LOGGER}->error( "Database \"" . $self->{NAME} . "\" unavailable with user \"" . $self->{NAME} . "\" and password \"" . $self->{PASS} . "\"." );
@@ -161,6 +166,8 @@ sub openDB {
         $self->{LOGGER}->error( "Open error \"" . $EVAL_ERROR . "\"." );
         return -1;
     }
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.openDB.end" );
+    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 
@@ -191,6 +198,12 @@ Queries the database.
 sub query {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { query => 1 } );
+    # to include the SQL query in the netlogger event, use this one
+    # (makes the logs a lot bigger, but might be helpful for debugging)
+    # my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.query.start", { query => $parameters->{query}, } );
+    # otherwise use this one
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.query.start" );
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     my $results = ();
     if ( $parameters->{query} ) {
@@ -210,6 +223,8 @@ sub query {
         $self->{LOGGER}->error( "Query not found." );
         return -1;
     }
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.query.end" );
+    $self->{NETLOGGER}->debug( $nlmsg );
     return $results;
 }
 
@@ -222,6 +237,8 @@ Counts the number of results of a query in the database.
 sub count {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { query => 1 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.count.start" );
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     my $results = q{};
     if ( $parameters->{query} ) {
@@ -240,6 +257,8 @@ sub count {
         $self->{LOGGER}->error( "Query not found." );
         return -1;
     }
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.count.start" );
+    $self->{NETLOGGER}->debug( $nlmsg );
     return $#{$results} + 1;
 }
 
@@ -252,6 +271,8 @@ Inserts items in the database.
 sub insert {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { table => 1, argvalues => 1 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.insert.start" );
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     if ( $parameters->{table} and $parameters->{argvalues} ) {
         my %values = %{ $parameters->{argvalues} };
@@ -332,6 +353,8 @@ sub insert {
         $self->{LOGGER}->error( "Missing argument." );
         return -1;
     }
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.insert.end" );
+    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 
@@ -344,6 +367,8 @@ Updates items in the database.
 sub update {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { table => 1, wherevalues => 1, updatevalues => 1 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.update.start" );
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     if ( $parameters->{table} and $parameters->{wherevalues} and $parameters->{updatevalues} ) {
         my $first = q{};
@@ -382,6 +407,8 @@ sub update {
         $self->{LOGGER}->error( "Missing argument." );
         return -1;
     }
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.update.end" );
+    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 

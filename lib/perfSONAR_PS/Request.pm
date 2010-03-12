@@ -23,6 +23,7 @@ send the response.
 use Log::Log4perl qw(get_logger);
 use XML::LibXML;
 use English qw( -no_match_vars );
+use Socket;
 
 use perfSONAR_PS::Common;
 use perfSONAR_PS::Utils::NetLogger;
@@ -41,6 +42,7 @@ sub new {
     my $logger = get_logger( "perfSONAR_PS::Request" );
 
     my $self = fields::new( $package );
+    use perfSONAR_PS::Utils::NetLogger;
     $self->{NETLOGGER} = get_logger( "NetLogger" );
 
     $self->{"CALL"} = $call;
@@ -52,6 +54,10 @@ sub new {
     }
     my %empty = ();
     $self->{"NAMESPACES"} = \%empty;
+
+    perfSONAR_PS::Utils::NetLogger::reset_guid();    # reset guid for every new request
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Request.clientRequest.start", { remotehost => $self->{CALL}->peerhost(), } );
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     $self->{"RESPONSE"} = HTTP::Response->new();
     $self->{"RESPONSE"}->header( 'Content-Type' => 'text/xml' );
@@ -106,6 +112,9 @@ sub parse {
     my ( $self, $namespace_map, $error ) = @_;
     my $logger = get_logger( "perfSONAR_PS::Request" );
 
+    #my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Request.parse.start", { remotehost => $self->{CALL}->peerhost(), } );
+    #$self->{NETLOGGER}->debug( $nlmsg );
+
     unless ( exists $self->{REQUEST} ) {
         my $msg = "No request to parse";
         $logger->error( $msg );
@@ -115,8 +124,6 @@ sub parse {
 
     $logger->debug( "Parsing request: " . $self->{REQUEST}->content );
 
-    my $msg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Services.MA.clientRequest.start" );
-    $self->{NETLOGGER}->debug( $msg );
 
     my $parser = XML::LibXML->new();
     my $dom    = q{};
@@ -353,8 +360,8 @@ sub finish {
         delete $self->{CALL};
         $logger->debug( "Closing call." );
 
-        my $msg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Services.MA.clientRequest.end" );
-        $self->{NETLOGGER}->debug( $msg );
+        my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Request.clientRequest.end" );
+        $self->{NETLOGGER}->debug( $nlmsg );
 
     }
     return;
