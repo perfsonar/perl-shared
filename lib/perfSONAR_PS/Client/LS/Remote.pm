@@ -709,6 +709,7 @@ sub sendKeepalive {
     createData( $doc, "data." . genuid(), $mdID, q{}, undef );
     endMessage( $doc );
 
+    my $success = 0;
     foreach my $ls ( @{ $self->{LS_ORDER} } ) {
         next unless exists $lsHash{$ls} and $lsHash{$ls};
         my ( $host, $port, $endpoint ) = &perfSONAR_PS::Transport::splitURI( $ls );
@@ -723,8 +724,16 @@ sub sendKeepalive {
             $self->{LOGGER}->error( "Unable to keepalive data with LS \"" . $ls . "\"." );
             next;
         }
+
+	$success = 1;
     }
-    return;
+
+    unless ($success)  {
+        $self->{LOGGER}->error( "Unable to keepalive data with any LS" );
+	return -1;
+    }
+
+    return 0;
 }
 
 =head2 sendKey ($self)

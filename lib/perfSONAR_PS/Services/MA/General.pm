@@ -619,7 +619,7 @@ sub getFilterParameters {
     my @times = keys %time;
     if ( $#times > -1 ) {
         foreach my $t ( keys %time ) {
-            $time{$t} =~ s/(\n)|(\s+)//gmx;
+            $time{$t} =~ s/(\n)|(\s+)//gmx if (defined $time{$t});
         }
 
         if (    $time{"START"}
