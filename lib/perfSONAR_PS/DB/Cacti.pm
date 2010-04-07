@@ -132,7 +132,7 @@ sub openDB {
     }
 
     my $rrd = new perfSONAR_PS::DB::RRD( { path => $self->{"RRDTOOL"}, error => 1 } );
-    $rrd->openDB;
+    $rrd->openDB({});
     $self->{STORE} = $self->printHeader();
 
     $query = "select id, description, hostname from host order by id";
@@ -217,12 +217,8 @@ sub openDB {
     $dbh->disconnect();
     $self->{STORE} .= $self->printFooter();
     $rrd->closeDB;
-    if ( $len ) {
-        return 0;
-    }
-    else {
-        return -1;
-    }
+
+    return 0;
 }
 
 =head2 printHeader($self, { })

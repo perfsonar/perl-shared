@@ -626,6 +626,9 @@ sub maintenance {
     elsif ( exists $args->{"conf"}->{"perfsonarbuoy"}->{"maintenance_interval"} and $args->{"conf"}->{"perfsonarbuoy"}->{"maintenance_interval"} ) {
         $sleep_time = $args->{"conf"}->{"perfsonarbuoy"}->{"maintenance_interval"};
     }
+    elsif ( exists $args->{"conf"}->{"snmp"}->{"maintenance_interval"} and $args->{"conf"}->{"snmp"}->{"maintenance_interval"} ) {
+        $sleep_time = $args->{"conf"}->{"snmp"}->{"maintenance_interval"};
+    }
     else {
         $sleep_time = 1800;
     }

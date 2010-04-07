@@ -184,7 +184,13 @@ sub openDB {
     my $parameters = validateParams( @args, {} );
 
     if ( exists $self->{PATH} ) {
-        RRDp::start $self->{PATH};
+        eval {
+            RRDp::start $self->{PATH};
+        };
+        if ($@ !~ /already running/) {
+            $self->{LOGGER}->error( "Couldn't start RRD: ".$@ );
+            return -1;
+        }
         return 0;
     }
     else {
@@ -203,7 +209,7 @@ sub closeDB {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, {} );
 
-    if ( exists $self->{PATH} and exists $self->{NAME} ) {
+    if ( exists $self->{PATH} ) {
         my $status = RRDp::end;
         if ( $status ) {
             $self->{LOGGER}->error( $self->{PATH} . " has returned status \"" . $status . "\" on closing." );

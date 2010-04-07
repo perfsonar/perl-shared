@@ -248,12 +248,8 @@ sub openDB {
     }
     $self->{STORE} .= $self->printFooter();
     $rrd->closeDB;
-    if ( $counter ) {
-        return 0;
-    }
-    else {
-        return -1;
-    }
+
+    return 0;
 }
 
 =head2 printHeader($self, { })
