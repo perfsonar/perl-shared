@@ -207,14 +207,16 @@ sub collectMeasurements {
 
         # run the command, piping into @results
         # setup timeouts
-        $SIG{ALRM} = sub { die "timeout" };
         my @results = ();
+	my $CMD;
         eval {
+            local $SIG{ALRM} = sub { die "timeout" };
+
             alarm( $self->timeout() );
 
             # setup pipe
             my $err = undef;
-            open( CMD, $self->commandString() . " 2>&1 |" )
+            open( $CMD, $self->commandString() . " 2>&1 |" )
                 or $err = "Cannot open '" . $self->commandString() . "'";
 
             # failed!
@@ -224,11 +226,15 @@ sub collectMeasurements {
             }
 
             $logger->debug( "Running '" . $self->commandString() . "'... " );
-            @results = <CMD>;
-            close( CMD );
+            @results = <$CMD>;
+            $logger->debug( "Got result from '" . $self->commandString() . "'" );
+            close( $CMD );
+            $logger->debug( "Closed CMD for '" . $self->commandString() . "'" );
             alarm( 0 );
+            $logger->debug( "Unset alarm for '" . $self->commandString() . "'" );
         };
         if ( $@ =~ /timeout/ ) {
+	    close($CMD) if $CMD;
             $self->error( "Agent timed out (" . $self->timeout() . " seconds) running '" . $self->commandString() . "'" );
             $logger->fatal( $self->error );
             return -1;
