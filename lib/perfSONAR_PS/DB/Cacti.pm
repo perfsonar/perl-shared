@@ -150,6 +150,7 @@ sub openDB {
             ifDescr     => q{},
             ifName      => q{},
             ifSpeed     => q{},
+            ifHighSpeed => q{},
             ifIP        => q{}
         );
 
@@ -174,7 +175,7 @@ sub openDB {
             my $len2 = $#{$result2};
             for my $b ( 0 .. $len2 ) {
                 next unless $result2->[$b][1] and $result2->[$b][1] =~ m/^\d+$/;
-                my @list = ( "ifIndex", "ifDescr", "ifName", "ifSpeed", "ifIP" );
+                my @list = ( "ifIndex", "ifDescr", "ifName", "ifSpeed", "ifHighSpeed", "ifIP" );
                 my %lookup = ();
                 foreach my $l ( @list ) {
                     $query = "select field_value from host_snmp_cache where host_id = \"" . $result->[$a][0] . "\" and field_name = \"" . $l . "\" and snmp_index = \"" . $result2->[$b][1] . "\"";
@@ -184,6 +185,7 @@ sub openDB {
                     $md{$l} = $result4->[0][0];
                 }
                 $md{"ifIndex"} = $result2->[$b][1] if not $md{"ifIndex"};
+                $md{"ifHighSpeed"} *= 1000000 if $md{"ifHighSpeed"};
 
                 $query = "select rrd_name, rrd_path from poller_item where host_id = \"" . $result->[$a][0] . "\" and local_data_id = \"" . $result2->[$b][0] . "\"";
                 $sth   = $dbh->prepare( $query );
@@ -263,7 +265,12 @@ sub printPair {
     }
     $output .= "        <nmwgt:ifIndex>" . $parameters->{metadata}->{"ifIndex"} . "</nmwgt:ifIndex>\n"             if defined $parameters->{metadata}->{"ifIndex"};
     $output .= "        <nmwgt:direction>" . $parameters->{metadata}->{"ifDir"} . "</nmwgt:direction>\n"           if defined $parameters->{metadata}->{"ifDir"};
-    $output .= "        <nmwgt:capacity>" . $parameters->{metadata}->{"ifSpeed"} . "</nmwgt:capacity>\n"           if defined $parameters->{metadata}->{"ifSpeed"};
+    if ( exists $parameters->{metadata}->{"ifHighSpeed"} and $parameters->{metadata}->{"ifHighSpeed"} ) {
+        $output .= "        <nmwgt:capacity>" . $parameters->{metadata}->{"ifHighSpeed"} . "</nmwgt:capacity>\n"           if defined $parameters->{metadata}->{"ifHighSpeed"};
+    }
+    else {
+        $output .= "        <nmwgt:capacity>" . $parameters->{metadata}->{"ifSpeed"} . "</nmwgt:capacity>\n"           if defined $parameters->{metadata}->{"ifSpeed"};
+    }
     $output .= "        <nmwgt:description>" . $parameters->{metadata}->{"description"} . "</nmwgt:description>\n" if defined $parameters->{metadata}->{"description"};
     $output .= "        <nmwgt:ifDescription>" . $parameters->{metadata}->{"ifDescr"} . "</nmwgt:ifDescription>\n" if defined $parameters->{metadata}->{"ifDescr"};
     $output .= "      </nmwgt:interface>\n";
