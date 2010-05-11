@@ -170,8 +170,8 @@ $xml2tail .= "</nmwg:message>\n";
 
 if ( $src and $dst ) {
 
-    my $xml2mid = "        <nmwgt:src value=\"" . $src . "\" type=\"hostname\" />\n";
-    $xml2mid .= "        <nmwgt:dst value=\"" . $dst . "\" type=\"hostname\" />\n";
+    my $xml2mid = "        <nmwgt:src value=\"" . $src . "\" />\n";
+    $xml2mid .= "        <nmwgt:dst value=\"" . $dst . "\" />\n";
 
     $envelope = &perfSONAR_PS::Common::makeEnvelope( $xml2head . $xml2mid . $xml2tail );
     $error = q{};
@@ -181,6 +181,7 @@ if ( $src and $dst ) {
         print "perfSONAR Request Failed: $error\n";
         exit $NAGIOS_API_ECODES{CRITICAL};
     }
+
     &readPSB( { response => $responseContent } );
 }
 else {
