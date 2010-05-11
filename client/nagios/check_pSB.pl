@@ -17,7 +17,7 @@ the following command to '$NAGIOS/etc/commands.cfg':
 # 'check-perfSONAR-pSB' command definition
 define command{
         command_name    check-perfSONAR-pSB   
-        command_line    perl $USER1$/check_pSB.pl --server=$HOSTADDRESS$ --port=$_HOSTPORT$ --endpoint=$_HOSTENDPOINT$ --src=$_HOSTSRC$ --dst=$_HOSTDST$ --hours=$_HOSTHOURS$
+        command_line    perl $USER1$/check_pSB.pl --server=$HOSTADDRESS$ --port=$_HOSTPORT$ --endpoint=$_HOSTENDPOINT$ --src=$_SERVICESRC$ --dst=$_SERVICEDST$ --hours=$_SERVICEHOURS$
         }
 
 Then the test can be invoked for a given server/src/dst pair by adding the
@@ -29,9 +29,6 @@ define host{
 	use		    perf-hosttemplate
 	_port		8085
 	_endpoint	perfSONAR_PS/services/pSB
-	_src        lab253.internet2.edu
-	_dst        nms-rthr2.newy32aoa.net.internet2.edu
-	_hours      12
 	}
 
 define service{
@@ -49,6 +46,9 @@ define service{
 	notification_interval	960
 	notification_period	    24x7
 	process_perf_data 	    0
+	_src                    lab253.internet2.edu
+	_dst                    nms-rthr2.newy32aoa.net.internet2.edu
+	_hours                  12
     }
 
 =cut
@@ -95,7 +95,7 @@ my $port          = q{};
 my $endpoint      = q{};
 my $src           = q{};
 my $dst           = q{};
-my $hours         = q{};
+my $hours         = 24;
 
 if ( exists $opts{HOST} and $opts{HOST} ) {
     $host = $opts{HOST};
@@ -114,9 +114,6 @@ if ( exists $opts{DST} and $opts{DST} ) {
 }
 if ( exists $opts{HOURS} and $opts{HOURS} ) {
     $hours = $opts{HOURS};
-}
-else {
-    $hours = 24;
 }
 
 unless ( $host and $port and $endpoint ) {
