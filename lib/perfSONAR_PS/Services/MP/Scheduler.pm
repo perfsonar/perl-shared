@@ -1,7 +1,7 @@
 package perfSONAR_PS::Services::MP::Scheduler;
 
-#use strict;
-#use warnings;
+use strict;
+use warnings;
 
 use version;
 our $VERSION = 3.1;
@@ -38,10 +38,14 @@ use Time::HiRes qw ( &gettimeofday );
 use POSIX;
 
 use Log::Log4perl qw(get_logger);
-our $logger = get_logger( CLASS );
+
+
 use fields qw( SCHEDULE METADATA MAXCHILDREN );
 
 use constant CLASS => 'perfSONAR_PS::Services::MP::Scheduler';
+
+our $logger = get_logger( CLASS );
+
 
 # basename for configuration key
 our $basename = undef;
@@ -329,7 +333,6 @@ make sure we kill the forking manager also when a signal is sent
 =cut
 
 sub KILL {
-    my $logger = get_logger( CLASS );
     kill( "TERM", $MANAGER_PID );
     my $pid = undef;
     exit;
@@ -342,7 +345,6 @@ takes care of dead children
 =cut
 
 sub REAPER {
-    my $logger = get_logger( CLASS );
     $SIG{CHLD} = \&REAPER;
     my $pid = undef;
     while ( ( $pid = waitpid( -1, &WNOHANG ) ) > 0 ) {
@@ -400,7 +402,7 @@ sub run {
 
         # setup handler to exit children
         $SIG{INT} = sub {
-            my $logger = get_logger( CLASS );
+            ### my $logger = get_logger( CLASS );
             foreach my $pid ( keys %CHILD ) {
 
                 #$logger->fatal( "killing $pid ");
@@ -553,10 +555,6 @@ sub waitForNextTest {
 
         # we are behind schedule
     }
-    else {
-
-        # don't do anytthing
-    }
 
     return ( $time, $testid );
 }
@@ -608,8 +606,7 @@ sub doTest {
         $CHILDREN_OCCUPIED++;
 
         $self->unblockInterrupts( $sigset, 'fork' );
-
-        return;
+	return;
     }
     else {
 
@@ -617,27 +614,26 @@ sub doTest {
         $SIG{USR1} = 'DEFAULT';
         $SIG{USR2} = 'DEFAULT';
         $SIG{HUP}  = 'DEFAULT';
-
+        $SIG{TERM} = 'DEFAULT';
         # run the test
         my $test = $self->config()->getTestById( $testid );
-        $logger->debug( "RUN TEST: " . Data::Dumper::Dumper $test );
         my $agent = $self->getAgent( $test );
 
         # collector will return -1 if error occurs
         if ( $agent->collectMeasurements() < 0 ) {
 
             # error!
-            $logger->fatal( "Could not collect measurement for '$testid'" );
+            $logger->logdie("Could not collect measurement for '$testid'" );
 
         }
         else {
 
             # get the results out
             $logger->info( "Collecting measurements for '$testid'" );
-
             # write to teh stores
-            $self->storeData( $agent, $testid );
-
+            $logger->logdie("FATAL ERROR - Database is not connected") 
+	        if $self->storeData( $agent, $testid ) < 0;
+            
         }
         exit;
     }
