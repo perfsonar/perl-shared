@@ -13,7 +13,9 @@ use Carp;
 use Getopt::Long;
 use English '-no_match_vars';
 use POSIX qw(strftime);
-use JSON::XS;
+use JSON::XS; 
+use File::Slurp qw( slurp ) ;
+
 use Mail::Sender;
 use Sys::Hostname;
 use Pod::Usage;
@@ -32,12 +34,20 @@ Also, it logs any message into the syslog facility.
 
   #   check health of the PingER service at xenmon.fnal.gov:8075 and send notification to maxim@fnal.gov over smtp.fnal.gov if check failed
   #
- ./pinger_service_check.pl --url='http://xenmon.fnal.gov:8075/perfSONAR_PS/services/pinger/ma'--mail='maxim@fnal.gov' --smtp='smtp.fnal.gov'
+  pinger_service_check.pl --url='http://xenmon.fnal.gov:8075/perfSONAR_PS/services/pinger/ma'--mail='maxim@fnal.gov' --smtp='smtp.fnal.gov'
   
   #
   #    check health of the PingER service at xenmon.fnal.gov:8075 and print/return JSON encoded string
   #
-  ./pinger_service_check.pl --url='http://xenmon.fnal.gov:8075/perfSONAR_PS/services/pinger/ma'
+   pinger_service_check.pl --url='http://xenmon.fnal.gov:8075/perfSONAR_PS/services/pinger/ma'
+   
+   
+     #
+  #    check health of the PingER service at xenmon.fnal.gov:8075 and restart service in case of problem with data taking
+  #
+   pinger_service_check.pl --url='http://xenmon.fnal.gov:8075/perfSONAR_PS/services/pinger/ma' --restart
+   
+   
  
 =head1 OPTIONS
 
@@ -45,7 +55,11 @@ Also, it logs any message into the syslog facility.
 
 =head2 C<--url|-u>  URL
 
-URL of the PIngER MA to test, defaults to B<http://localhost:8075/perfSONAR_PS/services/pinger/ma>
+URL of the PingER MA to test, defaults to B<http://localhost:8075/perfSONAR_PS/services/pinger/ma>
+
+=head2 C<--restart|-r>
+
+attempt to restart PingER as /etc/init.d/PingER, has to be run as **** root ****
 
 =head2 C<--mail|-m> EMAIL address
 
@@ -64,13 +78,14 @@ defaults to /var/log/perfsonar/pinger.log
 =cut
 
 my $url = 'http://localhost:8075/perfSONAR_PS/services/pinger/ma';
-our ($MAIL, $email, $help, $smtp, $logfile);
+our ($MAIL, $email, $help, $smtp, $logfile, $restart);
 my $ok = GetOptions (
-                'url|u=s'  => \$url,
-		'mail|m=s' => \$email,
-		'smtp|s=s' =>  \$smtp,
-		'log|l=s'  => \$logfile,
-                'help|?|h' => \$help
+                'url|u=s'   => \$url,
+		'restart|r' => \$restart,
+		'mail|m=s'  => \$email,
+		'smtp|s=s'  =>  \$smtp,
+		'log|l=s'   => \$logfile,
+                'help|?|h'  => \$help
         ) or pod2usage(-verbose => 1);
 if($help || ($logfile && !(-e $logfile)) || ($email  && $email !~ /^[\w\.]+\@[\w\-\.]+$/)) {
     pod2usage(-verbose => 2);
@@ -81,7 +96,7 @@ if($email) {
                                from => 'pinger_ma@' . hostname()
 	  		     });
     croak($Mail::Sender::Error) unless ref $MAIL;
-    $logfile ||= '/var/log/perfsonar/pinger.log';
+    $logfile ||= '/var/log/perfSONAR/PingER.log';
 }
 
 my ($result, $metaids);
@@ -90,10 +105,10 @@ eval {
     $result = $ma->metadataKeyRequest();
 };
 if($EVAL_ERROR) {
-    health_failed({MDKrequest => $EVAL_ERROR});
+    health_failed({MDKrequest => $EVAL_ERROR, restart => 1});
 } 
 unless($result) {
-    health_failed({MDKrequest => 'No response from the service, its not running ?'});
+    health_failed({MDKrequest => 'No response from the service, its not running ?', restart => 1});
 }
 eval {
     $metaids = $ma->getMetaData($result);
@@ -107,7 +122,6 @@ unless(@metaids_arr) {
 }
 my $time_start =  time() -  1800;
 my $time_end   =  time();
-my $ptime = sub {strftime " %Y-%m-%d %H:%M", localtime(shift)};
 my %keys =();
 
 foreach  my $meta  (@metaids_arr) {
@@ -129,17 +143,17 @@ eval {
     }); 
 };
 if($EVAL_ERROR) {
-    health_failed({SDrequest => $EVAL_ERROR});
+    health_failed({SDrequest => $EVAL_ERROR, restart => 1});
 }
 eval {
     $data_md = $ma->getData($dresult);
 };
 if($EVAL_ERROR) {
-    health_failed({data => $EVAL_ERROR});
+    health_failed({data => $EVAL_ERROR, restart => 1});
 }
 my @data_arr = keys %{$data_md};
 unless( @data_arr ) {
-    health_failed({data => 'No data in the past 30 minutes, check if MP is running'});
+    health_failed({data => 'No data in the past 30 minutes, check if MP is running', restart => 1});
 }
 unless(@data_arr == @metaids_arr) {
     foreach my $meta (@data_arr) {
@@ -151,8 +165,20 @@ syslog('info', "PingER MA is OK !") unless $MAIL;
 exit 0;
 
 sub health_failed {
-    my $health = shift;
+    my ($health) = @_;
     $health->{service} = 'NOT OK';
+    my $restarted = '<>';
+    my $ptime = strftime "%Y%m%d_%H_%M_%S", localtime(time());
+     
+    if($restart && $health->{restart}) {
+        my $filelog = "/tmp/pinger_restart_at$ptime.log";
+        system("/etc/init.d/PingER.sh stop >  $filelog  2>&1");
+        sleep 10;
+        system("/etc/init.d/PingER.sh start >>  $filelog  2>&1");
+	$restarted = slurp( "/tmp/pinger_restart_at$ptime.log" );
+	unlink  $filelog  if -f $filelog;
+	$restarted = "---- Restarted PingER daemon:\n\n" . $restarted;
+    }
     $Data::Dumper::Terse = 1;
     my $log_file_tail300 = '';
     if($logfile && -e $logfile) {
@@ -170,8 +196,8 @@ sub health_failed {
     if($MAIL && ref $MAIL eq 'Mail::Sender') {  
           $MAIL->MailMsg({to => $email,
 	                   subject => "PingER check FAILED on ". hostname(), 
-		           msg => "Health Monitor found a problem with PingER MA at $url - " . Dumper($health) . 
-			          "\n---- See below -------------\n\n $log_file_tail300",
+		           msg => "Health Monitor found a problem with PingER MA at $url \n\n - $restarted\n\n" . Dumper($health) . 
+			          "\n---- Log file contents -------------\n\n $log_file_tail300",
 			   on_errors => 'die'
 			 });
     } else {
