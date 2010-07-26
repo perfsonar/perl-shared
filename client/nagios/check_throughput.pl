@@ -17,7 +17,7 @@ use constant BW_SCALE => 10e8;
 use constant BW_LABEL => 'Gbps';
 
 my $np = Nagios::Plugin->new( shortname => 'PS_CHECK_THROUGHPUT',
-                              usage => "Usage: %s -s|--service <service-url> -w|--warning <threshold> -c|--critical <threshold>" );
+                              usage => "Usage: %s -u|--url <service-url> -s|--source <source-addr> -d|--destination <dest-addr> -r <number-seconds-in-past> -w|--warning <threshold> -c|--critical <threshold>" );
 
 #get arguments
 $np->add_arg(spec => "u|url=s",

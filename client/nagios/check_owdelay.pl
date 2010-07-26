@@ -14,7 +14,7 @@ use perfSONAR_PS::Client::MA;
 use XML::LibXML;
 
 my $np = Nagios::Plugin->new( shortname => 'PS_CHECK_OWDELAY',
-                              usage => "Usage: %s -s|--service <service-url> -w|--warning <threshold> -c|--critical <threshold>" );
+                              usage => "Usage: %s -u|--url <service-url> -s|--source <source-addr> -d|--destination <dest-addr> -r <number-seconds-in-past> -w|--warning <threshold> -c|--critical <threshold>" );
 
 #get arguments
 $np->add_arg(spec => "u|url=s",
