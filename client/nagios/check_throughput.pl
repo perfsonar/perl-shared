@@ -38,10 +38,10 @@ $np->add_arg(spec => "r|range=i",
              help => "Time range (in seconds) in the past to look at data. i.e. 60 means look at last 60 seconds of data.",
              required => 1 );
 $np->add_arg(spec => "w|warning=s",
-             help => "threshold of service count that leads to WARNING status",
+             help => "threshold of bandwidth (in " . BW_LABEL . ") that leads to WARNING status",
              required => 1 );
 $np->add_arg(spec => "c|critical=s",
-             help => "threshold of service count that leads to CRITICAL status",
+             help => "threshold of bandwidth (in " . BW_LABEL . ") that leads to CRITICAL status",
              required => 1 );
 $np->getopts;                              
 
