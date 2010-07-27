@@ -14,12 +14,18 @@ use perfSONAR_PS::Client::MA;
 use XML::LibXML;
 
 use constant DELAY_LABEL => 'ms';
+use constant DELAY_FIELD => '@min_delay';
 use constant DELAY_SCALE => 1000;
+use constant DELAY_STRING => 'Minimum delay';
+use constant LOSS_LABEL => '';
+use constant LOSS_FIELD => '@loss';
+use constant LOSS_SCALE => 1;
+use constant LOSS_STRING => 'Loss';
 use constant HAS_METADATA => 1;
 use constant HAS_DATA => 2;
 
 my $np = Nagios::Plugin->new( shortname => 'PS_CHECK_OWDELAY',
-                              usage => "Usage: %s -u|--url <service-url> -s|--source <source-addr> -d|--destination <dest-addr> -b|--bidirectional -r <number-seconds-in-past> -w|--warning <threshold> -c|--critical <threshold>" );
+                              usage => "Usage: %s -u|--url <service-url> -s|--source <source-addr> -d|--destination <dest-addr> -b|--bidirectional -l|--loss -r <number-seconds-in-past> -w|--warning <threshold> -c|--critical <threshold>" );
 
 #get arguments
 $np->add_arg(spec => "u|url=s",
@@ -34,14 +40,17 @@ $np->add_arg(spec => "d|destination=s",
 $np->add_arg(spec => "b|bidirectional",
              help => "Indicates that test should be checked in each direction.",
              required => 0 );
+$np->add_arg(spec => "l|loss",
+             help => "Look at packet loss instead of delay.",
+             required => 0 );
 $np->add_arg(spec => "r|range=i",
              help => "Time range (in seconds) in the past to look at data. i.e. 60 means look at last 60 seconds of data.",
              required => 1 );
 $np->add_arg(spec => "w|warning=s",
-             help => "threshold of delay (" . DELAY_LABEL . ") that leads to WARNING status",
+             help => "threshold of delay (" . DELAY_LABEL . ") that leads to WARNING status. In loss mode this is percentage lost as a decimal.",
              required => 1 );
 $np->add_arg(spec => "c|critical=s",
-             help => "threshold of delay (" . DELAY_LABEL . ") that leads to CRITICAL status",
+             help => "threshold of delay (" . DELAY_LABEL . ") that leads to CRITICAL status. In loss mode this is percentage lost as a decimal.",
              required => 1 );
 $np->getopts;                              
 
@@ -50,8 +59,20 @@ my $ma_url = $np->opts->{'u'};
 my $ma = new perfSONAR_PS::Client::MA( { instance => $ma_url } );
 my $stats = Statistics::Descriptive::Sparse->new();
 
+#set metric
+my $metric = DELAY_FIELD;
+my $metric_label = DELAY_LABEL;
+my $metric_scale = DELAY_SCALE;
+my $metric_string = DELAY_STRING;
+if($np->opts->{'l'}){
+    $metric = LOSS_FIELD;
+    $metric_label = LOSS_LABEL;
+    $metric_scale = LOSS_SCALE;
+    $metric_string = LOSS_STRING;
+}
+
 #call client
-&send_data_request($ma, $np->opts->{'s'}, $np->opts->{'d'}, $np->opts->{'r'}, $np->opts->{'b'}, $stats);
+&send_data_request($ma, $np->opts->{'s'}, $np->opts->{'d'}, $np->opts->{'r'}, $metric, $np->opts->{'b'}, $stats);
 my $srcToDstResults = $stats->count();
 if($stats->count() == 0 ){
     my $errMsg = "No one-way delay data returned for direction where";
@@ -62,7 +83,7 @@ if($stats->count() == 0 ){
 
 #Grab the reverse direction if both source and destination provided
 if($np->opts->{'b'} && $np->opts->{'s'} && $np->opts->{'d'}){
-    &send_data_request($ma, $np->opts->{'d'}, $np->opts->{'s'}, $np->opts->{'r'}, $np->opts->{'b'}, $stats);
+    &send_data_request($ma, $np->opts->{'d'}, $np->opts->{'s'}, $np->opts->{'r'}, $metric, $np->opts->{'b'}, $stats);
     #If bidirectional, verify we got data from this direction
     if($srcToDstResults == $stats->count()){
         my $errMsg = "No one-way delay data returned for direction where";
@@ -79,30 +100,30 @@ $np->add_perfdata(
     );
 $np->add_perfdata(
         label => 'Min',
-        value => $stats->min() * DELAY_SCALE . DELAY_LABEL,
+        value => $stats->min() * $metric_scale . $metric_label,
     );
 $np->add_perfdata(
         label => 'Max',
-        value => $stats->max() * DELAY_SCALE . DELAY_LABEL,
+        value => $stats->max() * $metric_scale . $metric_label,
     );
 $np->add_perfdata(
         label => 'Average',
-        value => $stats->mean() * DELAY_SCALE . DELAY_LABEL,
+        value => $stats->mean() * $metric_scale . $metric_label,
     );
 $np->add_perfdata(
         label => 'Standard_Deviation',
-        value => $stats->standard_deviation() * DELAY_SCALE . DELAY_LABEL,
+        value => $stats->standard_deviation() * $metric_scale . $metric_label,
     );
 
 my $code = $np->check_threshold(
-     check => $stats->mean() * DELAY_SCALE,
+     check => $stats->mean() * $metric_scale,
      warning => $np->opts->{'w'},
      critical => $np->opts->{'c'},
    );
 
 my $msg = "";   
 if($code eq OK || $code eq WARNING || $code eq CRITICAL){
-    $msg = "Minimum Delay is " . ($stats->mean() * DELAY_SCALE) . DELAY_LABEL;
+    $msg = "$metric_string is " . ($stats->mean() * $metric_scale) . $metric_label;
 }else{
     $msg = "Error analyzing results";
 }
@@ -110,7 +131,7 @@ $np->nagios_exit($code, $msg);
 
 #### SUBROUTINES
 sub send_data_request() {
-    my ($ma, $src, $dst, $time_int, $bidir, $stats) = @_;
+    my ($ma, $src, $dst, $time_int, $metric, $bidir, $stats) = @_;
     
     # Define subject
     my $subject = "<owamp:subject xmlns:owamp=\"http://ggf.org/ns/nmwg/tools/owamp/2.0/\" id=\"subject\">\n";
@@ -212,9 +233,9 @@ sub send_data_request() {
             $np->nagios_die( "Could not find definition for test " . $mdIdMap{$mdIdRef} . ", but found reverse test." );
         }
         
-        my $owamp_data = find($doc->getDocumentElement, "./*[local-name()='datum']/\@min_delay", 0);
+        my $owamp_data = find($doc->getDocumentElement, "./*[local-name()='datum']/$metric", 0);
         if( !defined $owamp_data){
-            $np->nagios_die( "Error extracting min delay from MA response" );
+            $np->nagios_die( "Error extracting metric from MA response" );
         }
         
         foreach my $owamp_datum (@{$owamp_data}) {
