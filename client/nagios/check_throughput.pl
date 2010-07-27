@@ -54,7 +54,8 @@ my $stats = Statistics::Descriptive::Sparse->new();
 &send_data_request($ma, $np->opts->{'s'}, $np->opts->{'d'}, $np->opts->{'r'}, $np->opts->{'b'}, $stats);
 my $srcToDstResults = $stats->count();
 if($stats->count() == 0 ){
-    my $errMsg = "No throughput data returned for direction where";
+    my $errMsg = "No throughput data returned";
+    $errMsg .= " for direction where" if($np->opts->{'s'} || $np->opts->{'d'});
     $errMsg .= " src=" . $np->opts->{'s'} if($np->opts->{'s'});
     $errMsg .= " dst=" . $np->opts->{'d'} if($np->opts->{'d'});
     $np->nagios_die($errMsg);

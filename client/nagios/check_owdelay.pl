@@ -47,10 +47,10 @@ $np->add_arg(spec => "r|range=i",
              help => "Time range (in seconds) in the past to look at data. i.e. 60 means look at last 60 seconds of data.",
              required => 1 );
 $np->add_arg(spec => "w|warning=s",
-             help => "threshold of delay (" . DELAY_LABEL . ") that leads to WARNING status. In loss mode this is percentage lost as a decimal.",
+             help => "threshold of delay (" . DELAY_LABEL . ") that leads to WARNING status. In loss mode this is average packets lost as an integer.",
              required => 1 );
 $np->add_arg(spec => "c|critical=s",
-             help => "threshold of delay (" . DELAY_LABEL . ") that leads to CRITICAL status. In loss mode this is percentage lost as a decimal.",
+             help => "threshold of delay (" . DELAY_LABEL . ") that leads to CRITICAL status. In loss mode this is average packets lost as an integer.",
              required => 1 );
 $np->getopts;                              
 
@@ -75,7 +75,8 @@ if($np->opts->{'l'}){
 &send_data_request($ma, $np->opts->{'s'}, $np->opts->{'d'}, $np->opts->{'r'}, $metric, $np->opts->{'b'}, $stats);
 my $srcToDstResults = $stats->count();
 if($stats->count() == 0 ){
-    my $errMsg = "No one-way delay data returned for direction where";
+    my $errMsg = "No one-way delay data returned";
+    $errMsg .= " for direction where" if($np->opts->{'s'} || $np->opts->{'d'});
     $errMsg .= " src=" . $np->opts->{'s'} if($np->opts->{'s'});
     $errMsg .= " dst=" . $np->opts->{'d'} if($np->opts->{'d'});
     $np->nagios_die($errMsg);
