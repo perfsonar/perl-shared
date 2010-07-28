@@ -2,7 +2,7 @@
 
 # TODO: Determine how the build path will be set
 #use FindBin qw($RealBin);
-#use lib ("/usr/local/nagios/perl/lib");
+use lib ("/usr/local/nagios/perl/lib");
 #use lib ("/Users/sowmya/Desktop/perfSONAR-PS-client/lib");
 use Nagios::Plugin;
 use perfSONAR_PS::Common qw( find findvalue );
@@ -38,7 +38,7 @@ $np->add_arg(spec=> "v|verbose",
              help => "allow verbose mode for debugging",
              required => 0); 
              
-$np->add_arg(spec=> "i|initialConfig",
+$np->add_arg(spec=> "i|initialConfig=s",
              help => "initialConfig  file",
              required => 0); 
 
