@@ -12,15 +12,15 @@ use LWP::Simple;
 
 
 my $np = Nagios::Plugin->new( shortname => 'check_gls',
-                              usage => "Usage: %s -v|--verbose -h|--hintsURL <gls-hints-URL> -s|--serviceglsURL <serviceglsURL> -f|--hlsurlfile <hls url file> -k|--keyword <keyword search> -t|--type <type of service> -w|--warning <warning-threshold> -c|--critical <critical-threshold> -i|--initialConfig <config-file path>" );
+                              usage => "Usage: %s -v|--verbose -h|--hintsURL <gls-hints-URL> -u|--url <serviceglsURL> -f|--hlsurlfile <hls url file> -k|--keyword <keyword search> -t|--type <type of service> -w|--warning <warning-threshold> -c|--critical <critical-threshold> -i|--initialConfig <config-file path>" );
 
 #get arguments
 $np->add_arg(spec=> "h|hintsURL=s",
              help => "URL of the gls hints file",
              required => 0);
              
-$np->add_arg(spec=> "s|serviceglsURL=s",
-             help => "URL of the hls to find in gls",
+$np->add_arg(spec=> "u|url=s",
+             help => "URL of the gLS to contact",
              required => 0);
              
 $np->add_arg(spec=> "k|keyword=s",

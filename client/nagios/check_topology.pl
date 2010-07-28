@@ -11,10 +11,10 @@ use XML::LibXML;
 use LWP::Simple;
 
 my $np = Nagios::Plugin->new( shortname => 'check_topology',
-                              usage => "Usage: %s -v|--verbose -d|--domainName<domain-name> -u|--topologyURL <topology-service-URL> -i|--initialconfig<initial config file> -w|--warning <warning-threshold> -c|--critical <critical-threshold> -n|--namespace <namespace>" );
+                              usage => "Usage: %s -v|--verbose -d|--domainName<domain-name> -u|--url <topology-service-URL> -i|--initialconfig<initial config file> -w|--warning <warning-threshold> -c|--critical <critical-threshold> -n|--namespace <namespace>" );
 
 #get arguments
-$np->add_arg(spec=> "u|topologyURL=s",
+$np->add_arg(spec=> "u|url=s",
              help => "URL of the gls hints file",
              required => 1);
              

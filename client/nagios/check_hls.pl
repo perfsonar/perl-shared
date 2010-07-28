@@ -12,10 +12,10 @@ use LWP::Simple;
 
 
 my $np = Nagios::Plugin->new( shortname => 'PS_HLS_COUNT',
-                              usage => "Usage: %s -s|--service <HLS-service-url> -t|--type <service-type> -k|--keyword <keyword search> -g|--glsMode <glsURl or \"many\"> -h|--hintsURL<hintsURL> -i|--initialConfig <Config file for service mapping> -w|--warning <threshold> -c|--critical <threshold>" );
+                              usage => "Usage: %s -u|--url <HLS-service-url> -t|--type <service-type> -k|--keyword <keyword search> -g|--glsMode <glsURl or \"many\"> -h|--hintsURL<hintsURL> -i|--initialConfig <Config file for service mapping> -w|--warning <threshold> -c|--critical <threshold>" );
 
 #get arguments
-$np->add_arg(spec => "s|service=s",
+$np->add_arg(spec => "u|url=s",
              help => "URL of the lookup service(HLS) to contact. If more than one specify 'many' and use -f option",
              required => 0 );
 $np->add_arg(spec => "t|type=s",
