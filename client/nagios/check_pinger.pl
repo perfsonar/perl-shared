@@ -1,10 +1,7 @@
 #!/usr/bin/perl
 
-# TODO: Determine how the build path will be set
-#use FindBin qw($RealBin);
-#use lib ("/usr/local/nagios/perl/lib");
-#use lib ("/Users/sowmya/Desktop/perfSONAR-PS-client/lib");
-
+use FindBin qw($RealBin);
+use lib "$RealBin/../../lib/";
 use Nagios::Plugin;
 use Data::Validate::IP qw(is_ipv4 is_ipv6);
 use Statistics::Descriptive;
