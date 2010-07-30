@@ -54,7 +54,7 @@ $np->getopts;
 my $configPath = $np->opts->{'i'};                                                        
 my $hintsurl = $np->opts->{'h'};
 my $keywordsearch = $np->opts->{'k'};
-my $serviceglsURL = $np->opts->{'s'};
+my $serviceglsURL = $np->opts->{'u'};
 my $hlsurlfile = $np->opts->{'f'};
 my $wThresh = $np->opts->{'w'};
 my $cThresh = $np->opts->{'c'};

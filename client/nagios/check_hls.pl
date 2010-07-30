@@ -45,7 +45,7 @@ $np->add_arg(spec=> "h|hintsURL=s",
              required => 0);    
 $np->getopts;
 
-my $hls_url = $np->opts->{'s'};
+my $hls_url = $np->opts->{'u'};
 my $urlfile = $np->opts->{'f'};
 my $type = $np->opts->{'t'};
 my $keywordsearch = $np->opts->{'k'};

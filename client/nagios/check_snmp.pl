@@ -8,7 +8,6 @@ use perfSONAR_PS::Common qw( find findvalue );
 use perfSONAR_PS::Client::MA;
 use XML::LibXML;
 use LWP::Simple;
-use XML::Twig;
 
 my $np = Nagios::Plugin->new( shortname => 'check_snmp',
                               usage => "Usage: %s   -u|--url <pinger-MA-URL> -i|--interface<interface-address> -t|--timeInterval<time-interval-in-minutes> -d|--direction<traffic-direction> -w|--warning <warning-threshold> -c|--critical <critical-threshold> -v|--verbose" );
