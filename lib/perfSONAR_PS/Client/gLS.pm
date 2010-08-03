@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.1;
 
-use fields 'ROOTS', 'HINTS', 'LOGGER', 'FILE';
+use fields 'ROOTS', 'HINTS', 'LOGGER', 'FILE', 'NETLOGGER';
 
 =head1 NAME
 
@@ -32,6 +32,7 @@ use perfSONAR_PS::Utils::ParameterValidation;
 use perfSONAR_PS::Client::Echo;
 use perfSONAR_PS::Client::LS;
 use perfSONAR_PS::Common qw( genuid find extract );
+use perfSONAR_PS::Utils::NetLogger;
 
 =head2 new( $package, { url } )
 
@@ -54,6 +55,7 @@ sub new {
     $self->{ROOTS}  = \@temp;
     $self->{HINTS}  = ();
     $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::gLS" );
+    $self->{NETLOGGER} = get_logger( "NetLogger" );
     if ( exists $parameters->{"url"} and $parameters->{"url"} ) {
         if ( ref( $parameters->{"url"} ) eq "ARRAY" ) {
             my $complete = 0;
@@ -413,6 +415,9 @@ sub summaryToXQuery {
         }
     );
 
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.summaryToXQuery.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
+
     my $qflag = 0;
     my $query = "  declare namespace nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\";\n";
     $query .= "  for \$metadata in /nmwg:store[\@type=\"LSStore\"]/nmwg:metadata\n";
@@ -568,6 +573,10 @@ sub summaryToXQuery {
         $query .= ")";
     }
     $query .= "]\n";
+    
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.summaryToXQuery.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
+        
     return $query;
 }
 
@@ -595,10 +604,15 @@ sub getLSDiscoverRaw {
         }
     );
 
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSDiscoverRaw.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
+
     my $ls = perfSONAR_PS::Client::LS->new();
     if ( exists $parameters->{ls} and $parameters->{ls} =~ m/^http:\/\// ) {
         unless ( $self->verifyURL( { url => $parameters->{ls} } ) == 0 ) {
             $self->{LOGGER}->error( "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." );
+            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSDiscoverRaw.end", { status => -1, msg => "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." } );
+            $self->{NETLOGGER}->debug( $nlmsg );
             return;
         }
         $ls->setInstance( { instance => $parameters->{ls} } );
@@ -607,6 +621,8 @@ sub getLSDiscoverRaw {
         my $ls_instance = $self->getRoot();
         unless ( $ls_instance ) {
             $self->{LOGGER}->error( "gLS Root servers could not be contacted." );
+            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSDiscoverRaw.end", { status => -1, msg => "gLS Root servers could not be contacted." } );
+            $self->{NETLOGGER}->debug( $nlmsg );
             return;
         }
         $ls->setInstance( { instance => $ls_instance } );
@@ -614,6 +630,9 @@ sub getLSDiscoverRaw {
 
     my $eventType = "http://ogf.org/ns/nmwg/tools/org/perfsonar/service/lookup/discovery/xquery/2.0";
     my $result = $ls->queryRequestLS( { query => $parameters->{xquery}, format => 1, eventType => $eventType } );
+
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSDiscoverRaw.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return $result;
 }
 
@@ -637,17 +656,24 @@ sub getLSQueryRaw {
         }
     );
 
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSQueryRaw.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
+
     my $result;
     my $ls = perfSONAR_PS::Client::LS->new();
     if ( $parameters->{ls} =~ m/^http:\/\// ) {
         unless ( $self->verifyURL( { url => $parameters->{ls} } ) == 0 ) {
             $self->{LOGGER}->error( "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." );
+            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSQueryRaw.end", { status => -1, msg => "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." } );
+            $self->{NETLOGGER}->debug( $nlmsg );
             return;
         }
         $ls->setInstance( { instance => $parameters->{ls} } );
     }
     else {
         $self->{LOGGER}->error( "LS myst be of the form http://ADDRESS." );
+        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSQueryRaw.end", { status => -1, msg => "LS myst be of the form http://ADDRESS." } );
+        $self->{NETLOGGER}->debug( $nlmsg );
         return $result;
     }
 
@@ -657,6 +683,9 @@ sub getLSQueryRaw {
     }
 
     $result = $ls->queryRequestLS( { query => $parameters->{xquery}, format => 1, eventType => $eventType } );
+
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSQueryRaw.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return $result;
 }
 
@@ -711,10 +740,15 @@ sub getLSDiscovery {
         }
     );
 
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSDiscovery.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
+
     my $ls = perfSONAR_PS::Client::LS->new();
     if ( exists $parameters->{ls} and $parameters->{ls} =~ m/^http:\/\// ) {
         unless ( $self->verifyURL( { url => $parameters->{ls} } ) == 0 ) {
             $self->{LOGGER}->error( "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." );
+            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSDiscovery.end", { status => -1, msg => "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." } );
+            $self->{NETLOGGER}->debug( $nlmsg );
             return;
         }
         $ls->setInstance( { instance => $parameters->{ls} } );
@@ -723,6 +757,8 @@ sub getLSDiscovery {
         my $ls_instance = $self->getRoot();
         unless ( $ls_instance ) {
             $self->{LOGGER}->error( "gLS Root servers could not be contacted." );
+            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSDiscovery.end", { status => -1, msg => "gLS Root servers could not be contacted." } );
+            $self->{NETLOGGER}->debug( $nlmsg );
             return;
         }
         $ls->setInstance( { instance => $ls_instance } );
@@ -774,6 +810,9 @@ sub getLSDiscovery {
             }
         }
     }
+
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSDiscovery.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return \@urls;
 }
 
@@ -810,17 +849,24 @@ sub getLSQueryLocation {
         }
     );
 
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSQueryLocation.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
+
     my @service = ();
     my $ls      = perfSONAR_PS::Client::LS->new();
     if ( $parameters->{ls} =~ m/^http:\/\// ) {
         unless ( $self->verifyURL( { url => $parameters->{ls} } ) == 0 ) {
             $self->{LOGGER}->error( "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." );
+            my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSQueryLocation.start", { status => -1, msg => "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." } );
+            $self->{NETLOGGER}->debug( $nlmsg );
             return;
         }
         $ls->setInstance( { instance => $parameters->{ls} } );
     }
     else {
         $self->{LOGGER}->error( "LS myst be of the form http://ADDRESS." );
+        my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSQueryLocation.start", { status => -1, msg => "LS myst be of the form http://ADDRESS." } );
+        $self->{NETLOGGER}->debug( $nlmsg );
         return \@service;
     }
 
@@ -870,6 +916,9 @@ sub getLSQueryLocation {
         }
     }
 
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSQueryLocation.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
+
     return \@service;
 }
 
@@ -905,17 +954,24 @@ sub getLSQueryContent {
         }
     );
 
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSQueryContent.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
+
     my @metadata = ();
     my $ls       = perfSONAR_PS::Client::LS->new();
     if ( $parameters->{ls} =~ m/^http:\/\// ) {
         unless ( $self->verifyURL( { url => $parameters->{ls} } ) == 0 ) {
             $self->{LOGGER}->error( "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." );
+            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSQueryContent.end", { status => -1, msg => "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." } );
+            $self->{NETLOGGER}->debug( $nlmsg );
             return;
         }
         $ls->setInstance( { instance => $parameters->{ls} } );
     }
     else {
         $self->{LOGGER}->error( "LS myst be of the form http://ADDRESS." );
+        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSQueryContent.end", { status => -1, msg => "LS myst be of the form http://ADDRESS." } );
+        $self->{NETLOGGER}->debug( $nlmsg );
         return \@metadata;
     }
 
@@ -947,6 +1003,8 @@ sub getLSQueryContent {
         }
     }
 
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSQueryContent.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return \@metadata;
 }
 
@@ -1001,11 +1059,16 @@ sub getLSLocation {
         }
     );
 
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSLocation.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
+
     my @service = ();
     my $ls      = perfSONAR_PS::Client::LS->new();
     if ( exists $parameters->{ls} and $parameters->{ls} =~ m/^http:\/\// ) {
         unless ( $self->verifyURL( { url => $parameters->{ls} } ) == 0 ) {
             $self->{LOGGER}->error( "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." );
+            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSLocation.end", { status => -1, msg => "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." } );
+            $self->{NETLOGGER}->debug( $nlmsg );
             return;
         }
         $ls->setInstance( { instance => $parameters->{ls} } );
@@ -1014,6 +1077,8 @@ sub getLSLocation {
         my $ls_instance = $self->getRoot();
         unless ( $ls_instance ) {
             $self->{LOGGER}->error( "gLS Root servers could not be contacted." );
+            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSLocation.end", { status => -1, msg => "gLS Root servers could not be contacted." } );
+            $self->{NETLOGGER}->debug( $nlmsg );
             return;
         }
         $ls->setInstance( { instance => $ls_instance } );
@@ -1041,6 +1106,9 @@ sub getLSLocation {
         );
         push @service, @{$result} if $result;
     }
+
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSLocation.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     return \@service;
 }
@@ -1078,11 +1146,16 @@ sub getLSContent {
         }
     );
 
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSContent.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
+
     my @metadata = ();
     my $ls       = perfSONAR_PS::Client::LS->new();
     if ( exists $parameters->{ls} and $parameters->{ls} =~ m/^http:\/\// ) {
         unless ( $self->verifyURL( { url => $parameters->{ls} } ) == 0 ) {
             $self->{LOGGER}->error( "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." );
+            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSContent.end", { status => -1, msg => "Supplied server \"" . $parameters->{ls} . "\" could not be contacted." } );
+            $self->{NETLOGGER}->debug( $nlmsg );
             return;
         }
         $ls->setInstance( { instance => $parameters->{ls} } );
@@ -1091,6 +1164,8 @@ sub getLSContent {
         my $ls_instance = $self->getRoot();
         unless ( $ls_instance ) {
             $self->{LOGGER}->error( "gLS Root servers could not be contacted." );
+            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSContent.end", { status => -1, msg => "gLS Root servers could not be contacted." } );
+            $self->{NETLOGGER}->debug( $nlmsg );
             return;
         }
         $ls->setInstance( { instance => $ls_instance } );
@@ -1118,6 +1193,9 @@ sub getLSContent {
         );
         push @metadata, @{$result} if $result;
     }
+
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.gLS.getLSContent.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
 
     return \@metadata;
 }
@@ -1193,7 +1271,7 @@ __END__
 L<Log::Log4perl>, L<Params::Validate>, L<English>, L<LWP::Simple>, L<Net::Ping>,
 L<XML::LibXML>, L<Digest::MD5>, L<perfSONAR_PS::Utils::ParameterValidation>,
 L<perfSONAR_PS::Client::Echo>, L<perfSONAR_PS::Client::LS>,
-L<perfSONAR_PS::Common>
+L<perfSONAR_PS::Common>, L<perfSONAR_PS::Utils::NetLogger>
  
 To join the 'perfSONAR Users' mailing list, please visit:
 
