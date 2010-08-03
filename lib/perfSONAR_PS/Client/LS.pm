@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.1;
 
-use fields 'INSTANCE', 'LOGGER', 'ALIVE', 'NETLOGGER';
+use fields 'INSTANCE', 'LOGGER', 'ALIVE';
 
 =head1 NAME
 
@@ -28,7 +28,6 @@ use perfSONAR_PS::Common qw( genuid makeEnvelope find extract unescapeString );
 use perfSONAR_PS::Transport;
 use perfSONAR_PS::Client::Echo;
 use perfSONAR_PS::Utils::ParameterValidation;
-use perfSONAR_PS::Utils::NetLogger;
 
 =head2 new($package { instance })
 
@@ -44,7 +43,6 @@ sub new {
     my $self = fields::new( $package );
     $self->{ALIVE}  = 0;
     $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::LS" );
-    $self->{NETLOGGER} = get_logger( "NetLogger" );
     if ( exists $parameters->{"instance"} and $parameters->{"instance"} ) {
         if ( $parameters->{"instance"} =~ m/^http:\/\// ) {
             $self->{INSTANCE} = $parameters->{"instance"};
@@ -86,14 +84,8 @@ sub callLS {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { message => 1 } );
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.callLS.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     unless ( $self->{INSTANCE} ) {
         $self->{LOGGER}->error( "Instance not defined." );
-
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.callLS.end", { status => -1, msg => "Instance not defined." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
@@ -102,9 +94,6 @@ sub callLS {
         my ( $status, $res ) = $echo_service->ping();
         if ( $status == -1 ) {
             $self->{LOGGER}->error( "Ping to " . $self->{INSTANCE} . " failed: $res" );
-
-            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.callLS.end", { status => -1, msg => "Ping to " . $self->{INSTANCE} . " failed: $res" } );
-            $self->{NETLOGGER}->debug( $nlmsg );
             return;
         }
         $self->{ALIVE} = 1;
@@ -112,19 +101,12 @@ sub callLS {
 
     my ( $host, $port, $endpoint ) = perfSONAR_PS::Transport::splitURI( $self->{INSTANCE} );
     unless ( $host and $port and $endpoint ) {
-        my $msg = "Host, port, or endPoint not defined.";
-        $self->{LOGGER}->error( $msg );
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.callLS.end", { status => -1, msg => $msg } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
     my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint );
     unless ( $sender ) {
         $self->{LOGGER}->error( "LS \"" . $self->{INSTANCE} . "\" could not be contaced." );
-
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.callLS.end", { status => -1, msg => "LS \"" . $self->{INSTANCE} . "\" could not be contaced." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
@@ -133,9 +115,6 @@ sub callLS {
     if ( $error ) {
         $self->{ALIVE} = 0;
         $self->{LOGGER}->error( "sendReceive failed to LS \"" . $self->{INSTANCE} . "\": $error" );
-
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.callLS.end", { status => -1, msg => "sendReceive failed to LS \"" . $self->{INSTANCE} . "\": $error" } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
@@ -154,10 +133,6 @@ sub callLS {
     else {
         $self->{ALIVE} = 0;
     }
-    
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.callLS.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     return $msg;
 }
 
@@ -175,9 +150,6 @@ sub registerRequestLS {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { eventType => 0, service => 0, servicexml => 0, data => 1 } );
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.registerRequestLS.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     my $metadata = q{};
     my %ns       = (
         perfsonar => "http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/",
@@ -192,9 +164,6 @@ sub registerRequestLS {
     }
     else {
         $self->{LOGGER}->error( "Some type of service required to send message." );
-
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.registerRequestLS.end", { status => -1, msg => "Some type of service required to send message." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
@@ -213,9 +182,6 @@ sub registerRequestLS {
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSRegisterRequest", ns => \%ns, metadata => $metadata, data => $parameters->{data} } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
-
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.registerRequestLS.end", { status => -1, msg => "Message element not found in return." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
@@ -231,9 +197,6 @@ sub registerRequestLS {
             $result{"key"} = extract( find( $msg, "./nmwg:metadata/nmwg:key/nmwg:parameters/nmwg:parameter[\@name=\"lsKey\"]", 1 ), 0 );
         }
     }
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.registerRequestLS.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
     return \%result;
 }
 
@@ -251,9 +214,6 @@ sub registerUpdateRequestLS {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { eventType => 0, key => 1, data => 1 } );
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.registerUpdateRequestLS.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     my $metadata = q{};
     my %ns       = (
         perfsonar => "http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/",
@@ -267,9 +227,6 @@ sub registerUpdateRequestLS {
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSRegisterRequest", ns => \%ns, metadata => $metadata, data => $parameters->{data} } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
-
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.registerUpdateRequestLS.end", { status => -1, msg => "Message element not found in return." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
@@ -285,9 +242,6 @@ sub registerUpdateRequestLS {
             $result{"key"} = extract( find( $msg, "./nmwg:metadata/nmwg:key/nmwg:parameters/nmwg:parameter[\@name=\"lsKey\"]", 1 ), 0 );
         }
     }
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.registerUpdateRequestLS.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
     return \%result;
 }
 
@@ -307,9 +261,6 @@ sub registerClobberRequestLS {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { eventType => 0, service => 0, servicexml => 0, key => 1, data => 1 } );
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.registerClobberRequestLS.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     my $metadata = q{};
     my %ns       = (
         perfsonar => "http://ggf.org/ns/nmwg/tools/org/perfsonar/1.0/",
@@ -324,9 +275,6 @@ sub registerClobberRequestLS {
     }
     else {
         $self->{LOGGER}->error( "Some type of service required to send message." );
-
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.registerClobberRequestLS.end", { status => -1, msg => "Some type of service required to send message." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
@@ -345,9 +293,6 @@ sub registerClobberRequestLS {
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSRegisterRequest", ns => \%ns, metadata => $metadata, data => $parameters->{data} } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
-
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.registerClobberRequestLS.end", { status => -1, msg => "Message element not found in return." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
@@ -363,10 +308,6 @@ sub registerClobberRequestLS {
             $result{"key"} = extract( find( $msg, "./nmwg:metadata/nmwg:key/nmwg:parameters/nmwg:parameter[\@name=\"lsKey\"]", 1 ), 0 );
         }
     }
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.registerClobberRequestLS.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     return \%result;
 }
 
@@ -382,9 +323,6 @@ sub deregisterRequestLS {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { key => 1, data => 0, eventType => 0 } );
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.deregisterRequestLS.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     my $metadata = q{};
     $metadata .= $self->createKey( { key => $parameters->{key} } );
     if ( exists $parameters->{eventType} and $parameters->{eventType} ) {
@@ -394,8 +332,6 @@ sub deregisterRequestLS {
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSDeregisterRequest", metadata => $metadata, data => $parameters->{data} } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.deregisterRequestLS.end", { status => -1, msg => "Message element not found in return." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
@@ -408,9 +344,6 @@ sub deregisterRequestLS {
             $result{"response"} = extract( find( $msg, "./nmwg:data/nmwgr:datum", 1 ), 0 );
         }
     }
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.deregisterRequestLS.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
     return \%result;
 }
 
@@ -425,9 +358,6 @@ sub keepaliveRequestLS {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { key => 1, eventType => 0 } );
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.keepaliveRequestLS .start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     my $metadata = q{};
     $metadata .= $self->createKey( { key => $parameters->{key} } );
     if ( exists $parameters->{eventType} and $parameters->{eventType} ) {
@@ -437,8 +367,6 @@ sub keepaliveRequestLS {
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSKeepaliveRequest", metadata => $metadata } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.keepaliveRequestLS .end", { status => -1, msg => "Message element not found in return." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
@@ -451,9 +379,6 @@ sub keepaliveRequestLS {
             $result{"response"} = extract( find( $msg, "./nmwg:data/nmwgr:datum", 1 ), 0 );
         }
     }
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.keepaliveRequestLS .end");
-    $self->{NETLOGGER}->debug( $nlmsg );
     return \%result;
 }
 
@@ -470,9 +395,6 @@ hash of results for each metadata/data pair.  Note this should be used for all
 sub keyRequestLS {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { service => 0, servicexml => 0, eventType => 0 } );
-
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.keyRequestLS.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
 
     my $metadata = q{};
     my %ns       = (
@@ -497,9 +419,6 @@ sub keyRequestLS {
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSKeyRequest", ns => \%ns, metadata => $metadata } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
-
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.keyRequestLS.end", { status => -1, msg => "Message element not found in return." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
@@ -520,9 +439,6 @@ sub keyRequestLS {
     else {
         $result{"key"} = extract( find( $msg, "./nmwg:data/nmwg:key/nmwg:parameters/nmwg:parameter[\@name=\"lsKey\"]", 1 ), 0 );
     }
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.keyRequestLS.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
     return \%result;
 }
 
@@ -539,15 +455,10 @@ sub queryRequestLS {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { query => 0, subject => 0, format => 0, eventType => 0 } );
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.queryRequestLS.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     my $metadata = q{};
     my %ns       = ();
     if ( ( exists $parameters->{query} and $parameters->{query} ) and ( exists $parameters->{subject} and $parameters->{subject} ) ) {
         $self->{LOGGER}->error( "Choose either 'query' XOR 'subject' parameter." );
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.queryRequestLS.end", { status => -1, msg => "Choose either 'query' XOR 'subject' parameter." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
     elsif ( exists $parameters->{subject} and $parameters->{subject} ) {
@@ -588,16 +499,12 @@ sub queryRequestLS {
     }
     else {
         $self->{LOGGER}->error( "Choose either 'query' XOR 'subject' parameter." );
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.queryRequestLS.end", { status => -1, msg => "Choose either 'query' XOR 'subject' parameter." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
     my $msg = $self->callLS( { message => $self->createLSMessage( { type => "LSQueryRequest", ns => \%ns, metadata => $metadata } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.queryRequestLS.end", { status => -1, msg => "Message element not found in return." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return;
     }
 
@@ -633,9 +540,6 @@ sub queryRequestLS {
         my $datum = find( $msg, './*[local-name()="data"]/*[local-name()="datum"]', 1 );
         $result{"response"} = unescapeString( $datum->toString );
     }
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.queryRequestLS.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
     return \%result;
 }
 
@@ -906,7 +810,7 @@ __END__
 
 L<Log::Log4perl>, L<Params::Validate>, L<English>, L<perfSONAR_PS::Common>,
 L<perfSONAR_PS::Transport>, L<perfSONAR_PS::Client::Echo>,
-L<perfSONAR_PS::Utils::ParameterValidation>, L<perfSONAR_PS::Utils::NetLogger>
+L<perfSONAR_PS::Utils::ParameterValidation>
 
 To join the 'perfSONAR Users' mailing list, please visit:
 

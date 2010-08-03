@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.1;
 
-use fields 'LS_ORDER', 'LS_CONF', 'HINTS', 'LS', 'CONF', 'CHUNK', 'ALIVE', 'FIRST', 'LS_KEY', 'LOGGER', 'LIMIT', 'NETLOGGER';
+use fields 'LS_ORDER', 'LS_CONF', 'HINTS', 'LS', 'CONF', 'CHUNK', 'ALIVE', 'FIRST', 'LS_KEY', 'LOGGER', 'LIMIT';
 
 =head1 NAME
 
@@ -30,7 +30,6 @@ use perfSONAR_PS::Transport;
 use perfSONAR_PS::Messages;
 use perfSONAR_PS::Client::Echo;
 use perfSONAR_PS::Client::gLS;
-use perfSONAR_PS::Utils::NetLogger;
 
 =head2 new ($package, ( $uri | \@uri ), \%conf, ( $hints | \@hints ) ) 
 
@@ -63,7 +62,7 @@ sub new {
 
     undef $self->{LS};
     $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::LS::Remote" );
-    $self->{NETLOGGER} = get_logger( "NetLogger" );
+
     if ( defined $uri and $uri ) {
         if ( ref( $uri ) eq "ARRAY" ) {
             foreach my $u ( @{$uri} ) {
@@ -432,15 +431,10 @@ Given a message and a sender, contact an LS and parse the results.
 sub callLS {
     my ( $self, $sender, $message ) = @_;
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.callLS.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     my $error = q{};
     my $responseContent = $sender->sendReceive( makeEnvelope( $message ), q{}, \$error );
     if ( $error ) {
         $self->{LOGGER}->error( "sendReceive failed: $error" );
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.callLS.end", { status => -1, msg => "sendReceive failed: $error" } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return -1;
     }
 
@@ -450,8 +444,6 @@ sub callLS {
         eval { $doc = $parser->parse_string( $responseContent ); };
         if ( $EVAL_ERROR ) {
             $self->{LOGGER}->error( "Parser failed: " . $EVAL_ERROR );
-            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.callLS.end", { status => -1, msg => "Parser failed: " . $EVAL_ERROR  } );
-            $self->{NETLOGGER}->debug( $nlmsg );
             return -1;
         }
         else {
@@ -461,16 +453,11 @@ sub callLS {
                 if ( $eventType and $eventType =~ m/success/mx ) {
                     my $temp = extract( find( $msg, "./nmwg:metadata/nmwg:key/nmwg:parameters/nmwg:parameter[\@name=\"lsKey\"]", 1 ), 0 );
                     $self->{LS_KEY} = $temp if $temp;
-                    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.callLS.end" );
-                    $self->{NETLOGGER}->debug( $nlmsg );
                     return 0;
                 }
             }
         }
     }
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.callLS.end", { status => -1, msg => "Error" });
-    $self->{NETLOGGER}->debug( $nlmsg );
     return -1;
 }
 
@@ -486,15 +473,10 @@ worrying at all if something comes in that is new or goes away that is old.
 sub registerStatic {
     my ( $self, $data_ref ) = @_;
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.registerStatic.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     unless ( $self->{LS} and $self->{ALIVE} ) {
         $self->getLS();
         unless ( $self->{LS} and $self->{ALIVE} ) {
             $self->{LOGGER}->error( "LS cannot be reached, supply alternate or consult gLS." );
-            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.registerStatic.end", { status => -1, msg => "LS cannot be reached, supply alternate or consult gLS." } );
-            $self->{NETLOGGER}->debug( $nlmsg );
             return -1;
         }
     }
@@ -524,8 +506,6 @@ sub registerStatic {
                 if ( $status == -1 ) {
                     $self->{LOGGER}->error( "Unable to register data with LS." );
                     $self->{ALIVE} = 0;
-                    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.registerStatic.end", { status => -1, msg => "Unable to register data with LS." } );
-                    $self->{NETLOGGER}->debug( $nlmsg );
                     return -1;
                 }
             }
@@ -533,9 +513,6 @@ sub registerStatic {
     }
 
     $self->{FIRST} = 0 if $self->{FIRST};
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.registerStatic.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 
@@ -551,15 +528,10 @@ new with each registration.
 sub registerDynamic {
     my ( $self, $data_ref ) = @_;
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.registerDynamic.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     unless ( $self->{LS} and $self->{ALIVE} ) {
         $self->getLS();
         unless ( $self->{LS} and $self->{ALIVE} ) {
             $self->{LOGGER}->error( "LS cannot be reached, supply alternate or consult gLS." );
-            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.registerDynamic.end", { status => -1, msg => "LS cannot be reached, supply alternate or consult gLS." } );
-            $self->{NETLOGGER}->debug( $nlmsg );
             return -1;
         }
     }
@@ -594,17 +566,12 @@ sub registerDynamic {
             if ( $self->__register( $subject, $data_ref ) == -1 ) {
                 $self->{LOGGER}->error( "Unable to register data with LS." );
                 $self->{ALIVE} = 0;
-                $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.registerDynamic.end", { status => -1, msg => "Unable to register data with LS." } );
-                $self->{NETLOGGER}->debug( $nlmsg );
                 return -1;
             }
         }
     }
 
     $self->{FIRST} = 0 if ( $self->{FIRST} );
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.registerDynamic.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 
@@ -620,17 +587,12 @@ registration, it splits the data into chunks and registers each independently.
 sub __register {
     my ( $self, $subject, $data_ref ) = @_;
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.__register.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     my %lsHash = map { $_, 1 } @{ $self->{LS_CONF} };
 
     unless ( $self->{LS} and $self->{ALIVE} ) {
         $self->getLS();
         unless ( $self->{LS} and $self->{ALIVE} ) {
             $self->{LOGGER}->error( "LS cannot be reached, supply alternate or consult gLS." );
-            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.__register.end", { status => -1, msg => "LS cannot be reached, supply alternate or consult gLS." } );
-            $self->{NETLOGGER}->debug( $nlmsg );
             return -1;
         }
     }
@@ -670,9 +632,6 @@ sub __register {
             }
         }
     }
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.__register.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 
@@ -686,17 +645,12 @@ sub sendDeregister {
     my ( $self, $key ) = @_;
     $self->{LOGGER}->error( "Key value not supplied." ) and return -1 unless $key;
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.sendDeregister.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     my %lsHash = map { $_, 1 } @{ $self->{LS_CONF} };
 
     unless ( $self->{LS} and $self->{ALIVE} ) {
         $self->getLS();
         unless ( $self->{LS} and $self->{ALIVE} ) {
             $self->{LOGGER}->error( "LS cannot be reached, supply alternate or consult gLS." );
-            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.sendDeregister.end", { status => -1, msg => "LS cannot be reached, supply alternate or consult gLS." } );
-            $self->{NETLOGGER}->debug( $nlmsg );
             return -1;
         }
     }
@@ -724,9 +678,6 @@ sub sendDeregister {
             next;
         }
     }
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.sendDeregister.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
     return;
 }
 
@@ -740,17 +691,12 @@ sub sendKeepalive {
     my ( $self, $key ) = @_;
     $self->{LOGGER}->error( "Key value not supplied." ) and return -1 unless $key;
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.sendKeepalive.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     my %lsHash = map { $_, 1 } @{ $self->{LS_CONF} };
 
     unless ( $self->{LS} and $self->{ALIVE} ) {
         $self->getLS();
         unless ( $self->{LS} and $self->{ALIVE} ) {
             $self->{LOGGER}->error( "LS cannot be reached, supply alternate or consult gLS." );
-            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.sendKeepalive.end", { status => -1, msg => "LS cannot be reached, supply alternate or consult gLS." } );
-            $self->{NETLOGGER}->debug( $nlmsg );
             return -1;
         }
     }
@@ -781,16 +727,12 @@ sub sendKeepalive {
 
 	$success = 1;
     }
-    
+
     unless ($success)  {
         $self->{LOGGER}->error( "Unable to keepalive data with any LS" );
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.sendKeepalive.end", { status => -1 });
-        $self->{NETLOGGER}->debug( $nlmsg );
-        return -1;
+	return -1;
     }
-    
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.sendKeepalive.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
+
     return 0;
 }
 
@@ -803,15 +745,10 @@ Sends a key request message.
 sub sendKey {
     my ( $self ) = @_;
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.sendKey.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     unless ( $self->{LS} and $self->{ALIVE} ) {
         $self->getLS();
         unless ( $self->{LS} and $self->{ALIVE} ) {
             $self->{LOGGER}->error( "LS cannot be reached, supply alternate or consult gLS." );
-            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.sendKey.end", { status => -1, msg => "LS cannot be reached, supply alternate or consult gLS." } );
-            $self->{NETLOGGER}->debug( $nlmsg );
             return -1;
         }
     }
@@ -819,8 +756,6 @@ sub sendKey {
     my ( $host, $port, $endpoint ) = &perfSONAR_PS::Transport::splitURI( $self->{LS} );
     unless ( $host and $port and $endpoint ) {
         $self->{LOGGER}->error( "URI conversion error." );
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.sendKey.end", { status => -1, msg => "URI conversion error." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return -1;
     }
 
@@ -832,9 +767,6 @@ sub sendKey {
     createMetadata( $doc, $mdID, q{}, createService( $self ), undef );
     createData( $doc, "data." . genuid(), $mdID, q{}, undef );
     endMessage( $doc );
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.sendKey.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
 
     return callLS( $self, $sender, $doc->getValue() );
 }
@@ -855,15 +787,10 @@ sub query {
     my ( $self, $queries ) = @_;
     $self->{LOGGER}->error( "Query value not supplied." ) and return -1 unless $queries;
 
-    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.query.start");
-    $self->{NETLOGGER}->debug( $nlmsg );
-
     unless ( $self->{LS} and $self->{ALIVE} ) {
         $self->getLS();
         unless ( $self->{LS} and $self->{ALIVE} ) {
             $self->{LOGGER}->error( "LS cannot be reached, supply alternate or consult gLS." );
-            $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.query.end", { status => -1, msg => "LS cannot be reached, supply alternate or consult gLS." } );
-            $self->{NETLOGGER}->debug( $nlmsg );
             return -1;
         }
     }
@@ -871,8 +798,6 @@ sub query {
     my ( $host, $port, $endpoint ) = &perfSONAR_PS::Transport::splitURI( $self->{LS} );
     unless ( $host and $port and $endpoint ) {
         $self->{LOGGER}->error( "URI conversion error." );
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.query.end", { status => -1, msg => "URI conversion error." } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return -1;
     }
 
@@ -897,9 +822,6 @@ sub query {
     if ( $status != 0 ) {
         my $msg = "Error consulting LS: $res";
         $self->{LOGGER}->error( $msg );
-
-        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.query.end", { status => -1, msg => $msg } );
-        $self->{NETLOGGER}->debug( $nlmsg );
         return -1;
     }
 
@@ -943,9 +865,6 @@ sub query {
             }
         }
     }
-
-    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Client.LS.Remote.query.end");
-    $self->{NETLOGGER}->debug( $nlmsg );
     return ( 0, \%ret_structure );
 }
 
@@ -1041,8 +960,7 @@ __END__
 
 L<Log::Log4perl>, L<English>, L<LWP::Simple>, L<Net::Ping>, L<XML::LibXML>,
 L<perfSONAR_PS::Common>, L<perfSONAR_PS::Transport>, L<perfSONAR_PS::Messages>,
-L<perfSONAR_PS::Client::Echo>, L<perfSONAR_PS::Client::gLS>,
-L<perfSONAR_PS::Utils::NetLogger>
+L<perfSONAR_PS::Client::Echo>, L<perfSONAR_PS::Client::gLS>
 
 To join the 'perfSONAR Users' mailing list, please visit:
 
