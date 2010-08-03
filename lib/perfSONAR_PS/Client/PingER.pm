@@ -174,7 +174,7 @@ sub getMetaSubj {
         $md = Metadata->new();
         my $subject = MetaSubj->new( { id => "subj$metaid" } );
         if ( $parameters->{subject} ) {
-            $subject = MetaSubj->new( { xml => $subject } );
+            $subject = MetaSubj->new( { xml =>  $parameters->{subject} } );
         }
         else {
 
@@ -207,7 +207,7 @@ sub getMetaSubj {
     $md->set_id( "metaid" . $parameters->{id} );
     $md->set_metadataIdRef( "metaid" . $parameters->{idRef} ) if $parameters->{idRef};
     $md->set_eventType( $parameters->{eventType} );
-    $self->{LOGGER}->debug( " metamd= " . $md->asString );
+    $self->{LOGGER}->info( " metamd= " . $md->asString );
     return $md;
 
 }
