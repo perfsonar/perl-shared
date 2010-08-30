@@ -10,7 +10,7 @@ use XML::LibXML;
 use LWP::Simple;
 
 my $np = Nagios::Plugin->new( shortname => 'check_snmp',
-                              usage => "Usage: %s   -u|--url <pinger-MA-URL> -i|--interface<interface-address> -t|--timeInterval<time-interval-in-minutes> -d|--direction<traffic-direction> -w|--warning <warning-threshold> -c|--critical <critical-threshold> -v|--verbose" );
+                              usage => "Usage: %s   -u|--url <snmp-MA-URL> -i|--interface<interface-address> -t|--timeInterval<time-interval-in-minutes> -d|--direction<traffic-direction> -w|--warning <warning-threshold> -c|--critical <critical-threshold> -v|--verbose" );
 
 #get arguments 
 $np->add_arg(spec=> "u|url=s",
