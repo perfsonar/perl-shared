@@ -13,11 +13,11 @@ my $np = Nagios::Plugin->new( shortname => 'check_topology',
 
 #get arguments
 $np->add_arg(spec=> "u|url=s",
-             help => "URL of the gls hints file",
+             help => "URL of the topology service to contact",
              required => 1);
              
 $np->add_arg(spec=> "d|domainName=s",
-             help => "URL of the hls to find in gls",
+             help => "Domain name used in the topology",
              required => 1);
                                
 $np->add_arg(spec=> "w|warning=s",
