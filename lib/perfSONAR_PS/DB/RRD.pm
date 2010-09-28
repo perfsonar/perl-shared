@@ -187,7 +187,7 @@ sub openDB {
         eval {
             RRDp::start $self->{PATH};
         };
-        if ($@ !~ /already running/) {
+        if ($@ and $@ !~ /already running/) {
             $self->{LOGGER}->error( "Couldn't start RRD: ".$@ );
             return -1;
         }

@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.1;
 
-use fields 'LOGGER', 'CONF', 'FILE', 'VERSIONS', 'STORE', 'RRDTOOL';
+use fields 'LOGGER', 'DB_HOST', 'DB_USER', 'DB_PASS', 'DB_NAME', 'FILE', 'VERSIONS', 'STORE', 'RRDTOOL';
 
 =head1 NAME
 
@@ -35,18 +35,19 @@ known working cacti versions.
 
 sub new {
     my ( $package, @args ) = @_;
-    my $parameters = validateParams( @args, { conf => 0, file => 0 } );
+    my $parameters = validateParams( @args, { db_host => 0, db_user => 0, db_pass => 0, db_name => 0, file => 0 } );
 
     my $self = fields::new( $package );
     $self->{RRDTOOL} = "/usr/bin/rrdtool";
     $self->{LOGGER}  = get_logger( "perfSONAR_PS::DB::Cacti" );
-    @{ $self->{VERSIONS} } = ( "0.8.6i", "0.8.6j" );
-    if ( exists $parameters->{conf} and $parameters->{conf} ) {
-        $self->{CONF} = $parameters->{conf};
-    }
-    if ( exists $parameters->{file} and $parameters->{file} ) {
-        $self->{FILE} = $parameters->{file};
-    }
+    @{ $self->{VERSIONS} } = ( "0.8.6i", "0.8.6j", "0.8.7e" );
+    $self->{FILE} = $parameters->{file} if ( $parameters->{file} );
+
+    $self->{DB_HOST} = $parameters->{db_host} if ( $parameters->{db_host} );
+    $self->{DB_PASS} = $parameters->{db_pass} if ( $parameters->{db_pass} );
+    $self->{DB_USER} = $parameters->{db_user} if ( $parameters->{db_user} );
+    $self->{DB_NAME} = $parameters->{db_name} if ( $parameters->{db_name} );
+
     return $self;
 }
 
@@ -101,16 +102,9 @@ sub openDB {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, {} );
 
-    my %config = ();
-    unless ( -f $self->{CONF} ) {
-        $self->{LOGGER}->error( "Cannot find config file \"" . $self->{CONF} . "\", aborting." );
-        return -1;
-    }
-    %config = ParseConfig( $self->{CONF} );
-
     my %attr = ( RaiseError => 1, );
-    my $dbh = DBI->connect( "DBI:mysql:database=" . $config{"DB_Database"} . ";host=" . $config{"DB_Host"}, $config{"DB_User"}, $config{"DB_Pass"}, \%attr )
-        or print "Database \"" . $config{"DB_Host"} . ":" . $config{"DB_Database"} . "\" unavailable with user \"" . $config{"DB_User"} . "\" and password \"" . $config{DB_Pass} . "\".\n";
+    my $dbh = DBI->connect( "DBI:mysql:database=" . $self->{DB_NAME} . ";host=" . $self->{DB_HOST}, $self->{DB_USER}, $self->{DB_PASS}, \%attr )
+        or print "Database \"" . $self->{DB_NAME} . ":" . $self->{DB_NAME} . "\" unavailable\n";
 
     my $query = "select cacti from version";
     my $sth   = $dbh->prepare( $query );

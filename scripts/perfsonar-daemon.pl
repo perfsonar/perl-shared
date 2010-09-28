@@ -621,6 +621,15 @@ sub registerLS {
         if ( $EVAL_ERROR ) {
             $logger->error( "Problem running register LS: " . $EVAL_ERROR );
         }
+
+        if ( $service->can( "inline_maintenance" ) ) {
+            $logger->debug( "Calling inline maintance function" );
+            eval { $service->inline_maintenance(); };
+            if ( $EVAL_ERROR ) {
+                $logger->error( "Failure in inline maintenance: $EVAL_ERROR" );
+            }
+        }
+
         $logger->debug( "Sleeping for $sleep_time" );
         sleep( $sleep_time );
     }
