@@ -96,7 +96,7 @@ if($email) {
                                from => 'pinger_ma@' . hostname()
 	  		     });
     croak($Mail::Sender::Error) unless ref $MAIL;
-    $logfile ||= '/var/log/perfSONAR/PingER.log';
+    $logfile ||= '/var/log/perfsonar/PingER.log';
 }
 
 my ($result, $metaids);
@@ -172,9 +172,9 @@ sub health_failed {
      
     if($restart && $health->{restart}) {
         my $filelog = "/tmp/pinger_restart_at$ptime.log";
-        system("/etc/init.d/PingER.sh stop >  $filelog  2>&1");
+        system("/etc/init.d/PingER stop >  $filelog  2>&1");
         sleep 10;
-        system("/etc/init.d/PingER.sh start >>  $filelog  2>&1");
+        system("/etc/init.d/PingER start >>  $filelog  2>&1");
 	$restarted = slurp( "/tmp/pinger_restart_at$ptime.log" );
 	unlink  $filelog  if -f $filelog;
 	$restarted = "---- Restarted PingER daemon:\n\n" . $restarted;
