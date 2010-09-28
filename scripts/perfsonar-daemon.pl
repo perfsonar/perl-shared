@@ -223,6 +223,11 @@ unless ( exists $conf{"max_worker_processes"} and $conf{"max_worker_processes"} 
     $conf{"max_worker_processes"} = 32;
 }
 
+unless ( exists $conf{"listener_queue_size"} and $conf{"listener_queue_size"} ) {
+    $logger->warn( "Setting listener queue size to 100" );
+    $conf{"listener_queue_size"} = 100;
+}
+
 unless ( exists $conf{"ls_registration_interval"} and $conf{"ls_registration_interval"} ) {
     $logger->warn( "Setting LS registration interval at 60 minutes" );
     $conf{"ls_registration_interval"} = 3600;
@@ -275,6 +280,7 @@ foreach my $port ( keys %{ $conf{"port"} } ) {
         LocalPort => $port,
         ReuseAddr => 1,
         Timeout   => $port_conf{"reaper_interval"},
+        Listen    => $port_conf{"listener_queue_size"},
     );
     if ( not defined $listener != 0 ) {
         $logger->error( "Couldn't start daemon on port $port" );
