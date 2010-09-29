@@ -3,7 +3,7 @@ package perfSONAR_PS::RequestHandler;
 use strict;
 use warnings;
 
-our $VERSION = 0.09;
+our $VERSION = 3.2;
 
 use fields 'EV_HANDLERS', 'EV_REGEX_HANDLERS', 'MSG_HANDLERS', 'FULL_MSG_HANDLERS', 'MERGE_HANDLERS', 'EVENTEQUIVALENCECHECKERS', 'LOGGER';
 
@@ -1024,9 +1024,9 @@ L<perfSONAR_PS::XML::Document>, L<perfSONAR_PS::Messages>,
 L<perfSONAR_PS::Error_compat>, L<perfSONAR_PS::EventTypeEquivalenceHandler>,
 L<perfSONAR_PS::Utils::ParameterValidation>, 
 
-To join the 'perfSONAR Users' mailing list, please visit:
+To join the 'perfSONAR-PS Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/perfsonar-user
+  https://lists.internet2.edu/sympa/info/perfsonar-ps-users
 
 The perfSONAR-PS subversion repository is located at:
 
@@ -1053,7 +1053,7 @@ with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2009, Internet2 and the University of Delaware
+Copyright (c) 2004-2010, Internet2 and the University of Delaware
 
 All rights reserved.
 

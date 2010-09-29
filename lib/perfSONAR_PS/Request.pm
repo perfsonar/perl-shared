@@ -3,7 +3,7 @@ package perfSONAR_PS::Request;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.2;
 
 use fields 'REQUEST', 'REQUESTDOM', 'RESPONSE', 'RESPONSEMESSAGE', 'START_TIME', 'CALL', 'NAMESPACES', 'NETLOGGER';
 
@@ -61,7 +61,7 @@ sub new {
 
     $self->{"RESPONSE"} = HTTP::Response->new();
     $self->{"RESPONSE"}->header( 'Content-Type' => 'text/xml' );
-    $self->{"RESPONSE"}->header( 'user-agent'   => 'perfSONAR-PS/1.0b' );
+    $self->{"RESPONSE"}->header( 'user-agent'   => 'perfSONAR-PS/3.2' );
     $self->{"RESPONSE"}->code( "200" );
 
     $self->{"START_TIME"} = [Time::HiRes::gettimeofday];
@@ -376,9 +376,9 @@ __END__
 L<Log::Log4perl>, L<XML::LibXML>, L<English>, L<perfSONAR_PS::Common>,
 L<perfSONAR_PS::Utils::NetLogger>
 
-To join the 'perfSONAR Users' mailing list, please visit:
+To join the 'perfSONAR-PS Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/perfsonar-user
+  https://lists.internet2.edu/sympa/info/perfsonar-ps-users
 
 The perfSONAR-PS subversion repository is located at:
 
@@ -406,7 +406,7 @@ along with this software.  If not, see
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2009, Internet2 and the University of Delaware
+Copyright (c) 2004-2010, Internet2 and the University of Delaware
 
 All rights reserved.
 

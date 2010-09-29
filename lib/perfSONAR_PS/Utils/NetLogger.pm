@@ -3,7 +3,7 @@ package perfSONAR_PS::Utils::NetLogger;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.2;
 
 =head1 NAME
      
@@ -122,9 +122,9 @@ __END__
 
 L<Time::HiRes>, L<Data::UUID>
 
-To join the 'perfSONAR Users' mailing list, please visit:
+To join the 'perfSONAR-PS Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/perfsonar-user
+  https://lists.internet2.edu/sympa/info/perfsonar-ps-users
 
 The perfSONAR-PS subversion repository is located at:
 
@@ -149,7 +149,7 @@ See: http://dsd.lbl.gov/NetLoggerWiki/index.php/Licensing
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2007, Internet2, Lawrenence Berkeley National Lab, and the
+Copyright (c) 2004-2010, Internet2, Lawrenence Berkeley National Lab, and the
 University of California.
 
 All rights reserved.

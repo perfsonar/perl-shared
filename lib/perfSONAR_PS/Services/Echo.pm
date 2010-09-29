@@ -3,7 +3,7 @@ package perfSONAR_PS::Services::Echo;
 use warnings;
 use strict;
 
-our $VERSION = 3.1;
+our $VERSION = 3.2;
 
 =head1 NAME
 
@@ -131,13 +131,13 @@ __END__
 L<Log::Log4perl>, L<Params::Validate>, L<perfSONAR_PS::Common>,
 L<perfSONAR_PS::Messages>, L<perfSONAR_PS::Utils::ParameterValidation>
 
-To join the 'perfSONAR-PS' mailing list, please visit:
+To join the 'perfSONAR-PS Users' mailing list, please visit:
 
-https://mail.internet2.edu/wws/info/i2-perfsonar
+  https://lists.internet2.edu/sympa/info/perfsonar-ps-users
 
 The perfSONAR-PS subversion repository is located at:
 
-https://svn.internet2.edu/svn/perfSONAR-PS
+  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
 Questions and comments can be directed to the author, or the mailing list.
 
@@ -157,7 +157,7 @@ with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2007, Internet2 and the University of Delaware
+Copyright (c) 2004-2010, Internet2 and the University of Delaware
 
 All rights reserved.
 

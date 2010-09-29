@@ -3,7 +3,7 @@ package perfSONAR_PS::XML::Document;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.2;
 
 use fields 'OPEN_TAGS', 'DEFINED_PREFIXES', 'FH', 'LOGGER';
 
@@ -425,9 +425,9 @@ __END__
 L<Log::Log4perl>, L<Params::Validate>, L<perfSONAR_PS::Utils::ParameterValidation>,
 L<English>, L<IO::File>
 
-To join the 'perfSONAR Users' mailing list, please visit:
+To join the 'perfSONAR-PS Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/perfsonar-user
+  https://lists.internet2.edu/sympa/info/perfsonar-ps-users
 
 The perfSONAR-PS subversion repository is located at:
 
@@ -455,7 +455,7 @@ along with this software.  If not, see
 
 =head1 COPYRIGHT
 
-Copyright (c) 2004-2009, Internet2 and the University of Delaware
+Copyright (c) 2004-2010, Internet2 and the University of Delaware
 
 All rights reserved.
 

@@ -3,7 +3,7 @@ package perfSONAR_PS::Client::Echo;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.2;
 
 use fields 'URI', 'EVENT_TYPE';
 
@@ -189,9 +189,9 @@ __END__
 L<Log::Log4perl>, L<perfSONAR_PS::Common>, L<perfSONAR_PS::Transport>,
 L<perfSONAR_PS::Messages>, L<perfSONAR_PS::XML::Document>
 
-To join the 'perfSONAR Users' mailing list, please visit:
+To join the 'perfSONAR-PS Users' mailing list, please visit:
 
-  https://mail.internet2.edu/wws/info/perfsonar-user
+  https://lists.internet2.edu/sympa/info/perfsonar-ps-users
 
 The perfSONAR-PS subversion repository is located at:
 
@@ -218,7 +218,7 @@ with this software.  If not, see <http://www.internet2.edu/membership/ip.html>
 
 =head1 COPYRIGHT
  
-Copyright (c) 2004-2009, Internet2 and the University of Delaware
+Copyright (c) 2004-2010, Internet2 and the University of Delaware
 
 All rights reserved.
 
