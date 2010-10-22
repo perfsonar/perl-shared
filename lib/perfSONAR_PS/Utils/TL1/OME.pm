@@ -314,7 +314,7 @@ an array of hashes with each hash describing a different alarm.
 sub get_alarms {
     my ( $self ) = @_;
 
-    if ( $self->{ALARMS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
+    if ( not $self->{ALARMS_CACHE_TIME} or $self->{ALARMS_CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
         my @alarms = ();
 
         $self->{LOGGER}->debug( "looking up alarms" );

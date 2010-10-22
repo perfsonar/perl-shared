@@ -58,19 +58,15 @@ sub get_alarms {
     my ( $self ) = shift;
     my %args = @_;
 
-    my $do_reload_stats = 0;
-
-    unless ( $self->{READ_ALARMS} ) {
-        $do_reload_stats = 1;
-        $self->{READ_ALARMS} = 1;
-    }
-
-    if ( $self->{CACHE_TIME} + $self->{CACHE_DURATION} < time or $do_reload_stats ) {
-        $self->readStats();
+    if ( not $self->{READ_ALARMS} or $self->{CACHE_TIME} + $self->{CACHE_DURATION} < time ) {
+        $self->{LOGGER}->debug("Calling readAlarms()");
+        $self->readAlarms();
     }
 
     unless ( $self->{ALARMS} ) {
-        return ( -1, "No alarms" );
+        my $msg = "No alarms for host";
+        $self->{LOGGER}->error($msg);
+        return ( -1, $msg );
     }
 
     my @ret_alarms = ();
@@ -93,22 +89,6 @@ sub get_alarms {
     return ( 0, \@ret_alarms );
 }
 
-=head2 readStats()
-
-TBD
-
-=cut
-
-sub readStats {
-    my ( $self ) = @_;
-
-    if ( $self->{READ_ALARMS} ) {
-        $self->readAlarms();
-    }
-
-    return;
-}
-
 =head2 readAlarms()
 
 TBD
@@ -117,6 +97,8 @@ TBD
 
 sub readAlarms {
     my ( $self ) = @_;
+
+    $self->{LOGGER}->debug("readAlarms()");
 
     my @alarms = ();
 

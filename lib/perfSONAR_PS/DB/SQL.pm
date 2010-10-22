@@ -332,6 +332,7 @@ sub insert {
             if ( not $self->{SCHEMA} ) {
                 my $x = 0;
                 foreach my $name ( sort keys %values ) {
+                    print "Binding ".($x + 1).": $name => ".$values{$name}."\n";
                     $sth->bind_param( $x + 1, $values{$name} );
                     $x++;
                 }
@@ -375,28 +376,28 @@ sub update {
         my %w     = %{ $parameters->{wherevalues} };
         my %v     = %{ $parameters->{updatevalues} };
 
-        my $where = q{};
-        foreach my $var ( keys %w ) {
-            $where .= " and " if ( $where );
-            $where .= $var . " = " . $w{$var};
-        }
+        my @execute_args = ();
 
         my $values = q{};
         foreach my $var ( sort keys %v ) {
             $values .= ", " if ( $values );
             $values .= $var . " = ?";
+            push @execute_args, $v{$var};
         }
+
+        my $where = q{};
+        foreach my $var ( keys %w ) {
+            $where .= " and " if ( $where );
+            $where .= $var . "=?";
+            push @execute_args, $w{$var};
+        }
+
 
         my $sql = "update " . $parameters->{table} . " set " . $values . " where " . $where;
         $self->{LOGGER}->debug( "Update \"" . $sql . "\" prepared." );
         eval {
             my $sth = $self->{HANDLE}->prepare( $sql );
-            my $x   = 0;
-            foreach my $name ( sort keys %v ) {
-                $sth->bind_param( $x + 1, $v{$name} );
-                $x++;
-            }
-            $sth->execute() or $self->{LOGGER}->error( "Update error on statement \"" . $sql . "\"." );
+            $sth->execute(@execute_args) or $self->{LOGGER}->error( "Update error on statement \"" . $sql . "\"." );
         };
         if ( $EVAL_ERROR ) {
             $self->{LOGGER}->error( "Update error \"" . $EVAL_ERROR . "\" on statement \"" . $sql . "\"." );

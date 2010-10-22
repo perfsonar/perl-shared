@@ -632,8 +632,14 @@ the device, and what time it saw. Returns it as a human-readable string.
 sub getMachineTime {
     my ( $self ) = @_;
 
-    my $diff       = time - $self->{LOCAL_MACHINE_TIME};
-    my $machine_ts = $self->{MACHINE_TIME} + $diff;
+    my $machine_ts; 
+    if ($self->{MACHINE_TIME}) {
+        my $diff = time - $self->{LOCAL_MACHINE_TIME};
+        $machine_ts = $self->{MACHINE_TIME} + $diff;
+    }
+    else {
+        $machine_ts = time;
+    }
 
     my ( $sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst ) = localtime( $machine_ts );
 
