@@ -400,6 +400,7 @@ sub waitMessage {
         }
 
         if ( $status == 0 and defined $lines ) {
+            $self->{LOGGER}->debug( "Lines: " . join("\n", @$lines) );
             $self->processMessage( $lines );
             $self->{LOGGER}->debug( "Processed Message: " . Dumper( $self->{MESSAGES} ) );
         }
@@ -429,6 +430,8 @@ sub readMessage {
         return ( -1, undef );
     }
 
+    $self->{LOGGER}->debug("Waiting for prompt: "."/^" . $self->{PROMPT} . "/gm");
+
     my ( $prematch, $prompt );
     if ( $args->{timeout} ) {
         ( $prematch, $prompt ) = $self->{TELNET}->waitfor(
@@ -443,6 +446,9 @@ sub readMessage {
             Errmode => "return",
         );
     }
+
+    $self->{LOGGER}->debug("Prematch: $prematch");
+    $self->{LOGGER}->debug("Prompt: $prompt");
 
     my $retStatus;
 

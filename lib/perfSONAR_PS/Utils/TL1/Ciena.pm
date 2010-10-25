@@ -130,10 +130,13 @@ sub readAlarms {
     foreach my $line ( @$results ) {
         $self->{LOGGER}->debug( "ALM LINE: " . $line . "\n" );
 
+        # "ETH10G-1-2-2,ETH10G:CR,LOS,SA,01-29,19-03-54,NEND,RCV:\"Loss Of Signal\",NONE:0100000141-0008-0673,:YEAR=2006,MODE=NONE"
+        # "ETH10G-1-2-2,ETH10G:CR,LOS,SA,01-29,19-03-54,NEND,RCV:\"Loss Of Signal\",NONE:0100000141-0008-0673,:YEAR=2006,MODE=NONE"
+
         #    "system,COM:MJ,LOGBUFOVFL-CMD,NSA,10-28,14-5-12:\"Log buffer overflow- cmd\""
         #    "oc192-1-4b-1,EQPT:MN,DATAFLT,NSA,10-26,21-44-14:\"Data integrity fault\""
 
-        if ( $line =~ /"([^,]*),([^:]*):([^,]*),([^,]*),([^,]*),([^,]*),([^:]*):(.*)"/ ) {
+        if ( $line =~ /"([^,]*),([^:]*):([^,]*),([^,]*),([^,]*),([^,]*),([^:,]*)(,[^:,]*)?(,[^:,]*)?:([^,]*),?([^:]*):([^,]*),?([^:]*):?(YEAR=([0-9])*)?,?(MODE=.*)?"/ ) {
             $self->{LOGGER}->debug( "Found a good line\n" );
 
             my $facility         = $1;
@@ -143,7 +146,14 @@ sub readAlarms {
             my $serviceAffecting = $5;
             my $date             = $6;
             my $time             = $7;
-            my $description      = $8;
+            my $nend             = $8;
+            my $rcv              = $9;
+            my $description      = $10;
+            my $something        = $11;
+            my $something2       = $12;
+            my $something3       = $13;
+            my $year             = $14;
+            my $mode             = $15;
 
             $self->{LOGGER}->debug( "DESCRIPTION: '$description'\n" );
             $description =~ s/\\"//g;
@@ -165,7 +175,33 @@ sub readAlarms {
     }
 
     $self->{ALARMS} = \@alarms;
+
     return;
+}
+
+sub login {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { inhibit_messages => { type => SCALAR, optional => 1, default => 1 }, } );
+
+    #    my ($status, $lines) = $self->waitMessage({ type => "other" });
+    #    if ($status != 0 or not defined $lines) {
+    #        $self->{LOGGER}->debug("login failed");
+    #        return -1;
+    #    }
+
+    $self->{LOGGER}->debug( "PASSWORD: $self->{PASSWORD}\n" );
+
+    my ( $status, $lines ) = $self->send_cmd( "ACT-USER::" . $self->{USERNAME} . ":" . $self->{CTAG} . "::\"" . $self->{PASSWORD} . "\";" );
+
+    if ( $status != 1 ) {
+        return 0;
+    }
+
+    if ( $parameters->{inhibit_messages} ) {
+        $self->send_cmd( "INH-MSG-ALL:::" . $self->{CTAG} . ";" );
+    }
+
+    return 1;
 }
 
 1;

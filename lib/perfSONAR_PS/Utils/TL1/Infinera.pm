@@ -187,6 +187,24 @@ sub readAlarms {
     return;
 }
 
+sub login {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { inhibit_messages => { type => SCALAR, optional => 1, default => 1 }, } );
+
+    $self->readMessage();
+
+    my ( $status, $lines ) = $self->send_cmd( "ACT-USER::" . $self->{USERNAME} . ":" . $self->{CTAG} . "::" . $self->{PASSWORD} . ";" );
+
+    if ( $status != 1 ) {
+        return 0;
+    }
+
+    if ( $parameters->{inhibit_messages} ) {
+        $self->send_cmd( "INH-MSG-ALL:::" . $self->{CTAG} . ";" );
+    }
+
+    return 1;
+}
 1;
 
 __END__
