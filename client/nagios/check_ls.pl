@@ -31,7 +31,6 @@ Display:
 use FindBin qw($RealBin);
 use lib "$RealBin/../../lib/";
 
-use lib "/home/jason/release/trunk/Shared/lib";
 use perfSONAR_PS::Common qw( find findvalue );
 use perfSONAR_PS::Client::LS;
 use perfSONAR_PS::Transport;
