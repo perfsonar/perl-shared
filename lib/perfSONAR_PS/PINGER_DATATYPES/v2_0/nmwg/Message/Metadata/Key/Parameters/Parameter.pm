@@ -366,13 +366,13 @@ sub  querySQL {
                     foreach my $classes (@{$query->{$table}{$entry}}) {
                          if($classes && $classes eq 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwg::Message::Metadata::Key::Parameters::Parameter') {
         
-                            if    ($self->get_value && ( (  ( ($self->get_name eq 'protocol')  && $entry eq 'protocol') or  ( ($self->get_name eq 'count')  && $entry eq 'count') or  ( ($self->get_name eq 'transport')  && $entry eq 'transport') or  ( ($self->get_name eq 'packetSize')  && $entry eq 'packetSize') or  ( ($self->get_name eq 'keyword')  && $entry eq 'project') or  ( ($self->get_name eq 'ttl')  && $entry eq 'ttl') or  ( ($self->get_name eq 'packetInterval')  && $entry eq 'packetInterval')) || (  ( ($self->get_name eq 'resolution')  && $entry eq 'resolution') or  ( ($self->get_name eq 'consolidationFunction')  && $entry eq 'cf') or  ( ($self->get_name eq 'startTime')  && $entry eq 'start') or  ( ($self->get_name eq 'endTime')  && $entry eq 'end')) || (  ( ($self->get_name eq 'setLimit')  && $entry eq 'setLimit')) )) {
+                            if    ($self->get_value && ( (  (( ($self->get_name eq 'protocol') ) && $entry eq 'protocol') or  (( ($self->get_name eq 'count') ) && $entry eq 'count') or  (( ($self->get_name eq 'transport') ) && $entry eq 'transport') or  (( ($self->get_name eq 'packetSize') ) && $entry eq 'packetSize') or  (( ($self->get_name eq 'keyword') ) && $entry eq 'project') or  (( ($self->get_name eq 'ttl') ) && $entry eq 'ttl') or  (( ($self->get_name eq 'packetInterval') ) && $entry eq 'packetInterval')) || (  (( ($self->get_name eq 'resolution') ) && $entry eq 'resolution') or  (( ($self->get_name eq 'consolidationFunction') ) && $entry eq 'cf') or  (( ($self->get_name eq 'startTime') ) && $entry eq 'start') or  (( ($self->get_name eq 'endTime') ) && $entry eq 'end')) || (  (( ($self->get_name eq 'setLimit') ) && $entry eq 'setLimit')) )) {
                                 $query->{$table}{$entry} =  $self->get_value;
                                 $self->get_LOGGER->debug(" Got value for SQL query $table.$entry: " . $self->get_value);
                                 last;  
                             }
 
-                            elsif ($self->get_text && ( (  ( ($self->get_name eq 'protocol')  && $entry eq 'protocol') or  ( ($self->get_name eq 'count')  && $entry eq 'count') or  ( ($self->get_name eq 'transport')  && $entry eq 'transport') or  ( ($self->get_name eq 'packetSize')  && $entry eq 'packetSize') or  ( ($self->get_name eq 'keyword')  && $entry eq 'project') or  ( ($self->get_name eq 'ttl')  && $entry eq 'ttl') or  ( ($self->get_name eq 'packetInterval')  && $entry eq 'packetInterval')) || (  ( ($self->get_name eq 'resolution')  && $entry eq 'resolution') or  ( ($self->get_name eq 'consolidationFunction')  && $entry eq 'cf') or  ( ($self->get_name eq 'startTime')  && $entry eq 'start') or  ( ($self->get_name eq 'endTime')  && $entry eq 'end')) || (  ( ($self->get_name eq 'setLimit')  && $entry eq 'setLimit')) )) {
+                            elsif ($self->get_text && ( (  (( ($self->get_name eq 'protocol') ) && $entry eq 'protocol') or  (( ($self->get_name eq 'count') ) && $entry eq 'count') or  (( ($self->get_name eq 'transport') ) && $entry eq 'transport') or  (( ($self->get_name eq 'packetSize') ) && $entry eq 'packetSize') or  (( ($self->get_name eq 'keyword') ) && $entry eq 'project') or  (( ($self->get_name eq 'ttl') ) && $entry eq 'ttl') or  (( ($self->get_name eq 'packetInterval') ) && $entry eq 'packetInterval')) || (  (( ($self->get_name eq 'resolution') ) && $entry eq 'resolution') or  (( ($self->get_name eq 'consolidationFunction') ) && $entry eq 'cf') or  (( ($self->get_name eq 'startTime') ) && $entry eq 'start') or  (( ($self->get_name eq 'endTime') ) && $entry eq 'end')) || (  (( ($self->get_name eq 'setLimit') ) && $entry eq 'setLimit')) )) {
                                 $query->{$table}{$entry} =  $self->get_text;
                                 $self->get_LOGGER->debug(" Got value for SQL query $table.$entry: " . $self->get_text);
                                 last;  
@@ -472,13 +472,13 @@ __END__
 
 =head1  SEE ALSO
 
-To join the 'perfSONAR-PS Users' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://lists.internet2.edu/sympa/info/perfsonar-ps-users
+   https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+   http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
 Questions and comments can be directed to the author, or the mailing list.
 Bugs, feature requests, and improvements can be directed here:
@@ -492,7 +492,7 @@ Maxim Grigoriev
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008-2010, Fermi Research Alliance (FRA)
+Copyright (c) 2011, Fermi Research Alliance (FRA)
 
 =head1 LICENSE
 

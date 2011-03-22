@@ -23,7 +23,7 @@ periodicity and offset times for running measurements by an MP.
 =cut
 
 use Log::Log4perl qw(get_logger);
-our $logger = Log::Log4perl::get_logger( 'perfSONAR_PS::Services::MP::Agent::Ping' );
+our $logger = Log::Log4perl::get_logger( 'perfSONAR_PS::Services::MP::Agent::Schedule' );
 
 =head2 new
 

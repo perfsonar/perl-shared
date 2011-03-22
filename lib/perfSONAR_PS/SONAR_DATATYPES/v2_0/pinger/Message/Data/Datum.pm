@@ -565,7 +565,7 @@ sub  querySQL {
                                 last;  
                             }
 
-                            elsif ($self->get_value && ( (  ( ($self->get_name eq 'minRtt')  && $entry eq 'minRtt') or  ( ($self->get_name eq 'maxRtt')  && $entry eq 'maxRtt') or  ( ($self->get_name eq 'outOfOrder')  && $entry eq 'outOfOrder') or  ($entry eq 'rtts') or  ( ($self->get_name eq 'medianRtt')  && $entry eq 'medianRtt') or  ( ($self->get_name eq 'clp')  && $entry eq 'clp') or  ( ($self->get_name eq 'meanRtt')  && $entry eq 'meanRtt') or  ( ($self->get_name eq 'maxIpd')  && $entry eq 'maxIpd') or  ( ($self->get_name eq 'duplicates')  && $entry eq 'duplicates') or  ( ($self->get_name eq 'minIpd')  && $entry eq 'minIpd') or  ( ($self->get_name eq 'meanIpd')  && $entry eq 'meanIpd') or  ( ($self->get_name eq 'iqrIpd')  && $entry eq 'iqrIpd') or  ( ($self->get_name eq 'lossPercent')  && $entry eq 'lossPercent')) )) {
+                            elsif ($self->get_value && ( (  (( ($self->get_name eq 'minRtt') ) && $entry eq 'minRtt') or  (( ($self->get_name eq 'maxRtt') ) && $entry eq 'maxRtt') or  (( ($self->get_name eq 'outOfOrder') ) && $entry eq 'outOfOrder') or  ($entry eq 'rtts') or  (( ($self->get_name eq 'medianRtt') ) && $entry eq 'medianRtt') or  (( ($self->get_name eq 'clp') ) && $entry eq 'clp') or  (( ($self->get_name eq 'meanRtt') ) && $entry eq 'meanRtt') or  (( ($self->get_name eq 'maxIpd') ) && $entry eq 'maxIpd') or  (( ($self->get_name eq 'duplicates') ) && $entry eq 'duplicates') or  (( ($self->get_name eq 'minIpd') ) && $entry eq 'minIpd') or  (( ($self->get_name eq 'meanIpd') ) && $entry eq 'meanIpd') or  (( ($self->get_name eq 'iqrIpd') ) && $entry eq 'iqrIpd') or  (( ($self->get_name eq 'lossPercent') ) && $entry eq 'lossPercent')) )) {
                                 $query->{$table}{$entry} =  $self->get_value;
                                 $self->get_LOGGER->debug(" Got value for SQL query $table.$entry: " . $self->get_value);
                                 last;  
@@ -577,7 +577,7 @@ sub  querySQL {
                                 last;  
                             }
 
-                            elsif ($self->get_text && ( (  ( ($self->get_name eq 'minRtt')  && $entry eq 'minRtt') or  ( ($self->get_name eq 'maxRtt')  && $entry eq 'maxRtt') or  ( ($self->get_name eq 'outOfOrder')  && $entry eq 'outOfOrder') or  ( ($self->get_name eq 'medianRtt')  && $entry eq 'medianRtt') or  ( ($self->get_name eq 'clp')  && $entry eq 'clp') or  ( ($self->get_name eq 'meanRtt')  && $entry eq 'meanRtt') or  ( ($self->get_name eq 'duplicates')  && $entry eq 'duplicates') or  ( ($self->get_name eq 'maxIpd')  && $entry eq 'maxIpd') or  ( ($self->get_name eq 'minIpd')  && $entry eq 'minIpd') or  ( ($self->get_name eq 'meanIpd')  && $entry eq 'meanIpd') or  ( ($self->get_name eq 'iqrIpd')  && $entry eq 'iqrIpd') or  ( ($self->get_name eq 'lossPercent')  && $entry eq 'lossPercent')) )) {
+                            elsif ($self->get_text && ( (  (( ($self->get_name eq 'minRtt') ) && $entry eq 'minRtt') or  (( ($self->get_name eq 'maxRtt') ) && $entry eq 'maxRtt') or  (( ($self->get_name eq 'outOfOrder') ) && $entry eq 'outOfOrder') or  (( ($self->get_name eq 'medianRtt') ) && $entry eq 'medianRtt') or  (( ($self->get_name eq 'clp') ) && $entry eq 'clp') or  (( ($self->get_name eq 'meanRtt') ) && $entry eq 'meanRtt') or  (( ($self->get_name eq 'duplicates') ) && $entry eq 'duplicates') or  (( ($self->get_name eq 'maxIpd') ) && $entry eq 'maxIpd') or  (( ($self->get_name eq 'minIpd') ) && $entry eq 'minIpd') or  (( ($self->get_name eq 'meanIpd') ) && $entry eq 'meanIpd') or  (( ($self->get_name eq 'iqrIpd') ) && $entry eq 'iqrIpd') or  (( ($self->get_name eq 'lossPercent') ) && $entry eq 'lossPercent')) )) {
                                 $query->{$table}{$entry} =  $self->get_text;
                                 $self->get_LOGGER->debug(" Got value for SQL query $table.$entry: " . $self->get_text);
                                 last;  
@@ -713,7 +713,7 @@ Maxim Grigoriev
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008, Fermi Research Alliance (FRA)
+Copyright (c) 2011, Fermi Research Alliance (FRA)
 
 =head1 LICENSE
 

@@ -21,7 +21,7 @@ perfSONAR-PS webservices.
 =cut
 
 use English qw( -no_match_vars);
-use XML::RelaxNG::Compact::PXB 0.14;
+use XML::RelaxNG::Compact::PXB 0.15;
 use POD::Credentials;
 use Data::Dumper;
 use FindBin qw($Bin);
@@ -184,7 +184,7 @@ Bugs, feature requests, and improvements can be directed here:
    },
 					                                        author=> 'Maxim Grigoriev', 
 				     						license=> 'You should have received a copy of the Fermitool license along with this software.',
-									        copyright => 'Copyright (c) 2008, Fermi Research Alliance (FRA)'})
+									        copyright => 'Copyright (c) 2011, Fermi Research Alliance (FRA)'})
 						             });
         $api_builder->buildAPI({ name =>  $MODELS{$type}->{name}, element  =>  ${$MODELS{$type}->{element}} })
     };
@@ -231,7 +231,7 @@ along with this software.
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008-2009, Fermi Research Alliance (FRA)
+Copyright (c) 2008-2011, Fermi Research Alliance (FRA)
 
 All rights reserved.
 

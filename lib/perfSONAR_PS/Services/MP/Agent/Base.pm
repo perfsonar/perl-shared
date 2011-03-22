@@ -160,9 +160,9 @@ sub source {
     return $self->{'OPTIONS'}->{source};
 }
 
-=head2 destinationIp( $string )
+=head2  sourceIp( $string )
 
-accessor/mutator method to set the destination ip to ping to
+accessor/mutator method to set the  source ip to ping to
 
 =cut
 
@@ -175,6 +175,23 @@ sub sourceIp {
     }
 
     return $self->{'OPTIONS'}->{sourceIp};
+}
+
+=head2  sourceIp6( $string )
+
+accessor/mutator method to set the  source ip for IPv6 to ping to
+
+=cut
+
+sub sourceIp6 {
+    my $self = shift;
+    my $src  = shift;
+
+    if ( $src ) {
+        $self->{'OPTIONS'}->{sourceIp6} = $src;
+    }
+
+    return $self->{'OPTIONS'}->{sourceIp6};
 }
 
 =head2 destination( $string )
@@ -192,6 +209,23 @@ sub destination {
     }
 
     return $self->{'OPTIONS'}->{destination};
+}
+
+=head2 destination_type  $string )
+
+accessor/mutator method to set the destination_type - ipv4, ipv6
+
+=cut
+
+sub destination_type{
+    my $self = shift;
+    my $dest = shift;
+
+    if ( $dest ) {
+        $self->{'OPTIONS'}->{destination_type} = $dest;
+    }
+
+    return $self->{'OPTIONS'}->{destination_type};
 }
 
 =head2 destinationIp( $string )

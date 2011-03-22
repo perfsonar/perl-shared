@@ -144,7 +144,7 @@ sub getDOM {
 
                                                      ['value' =>  $self->get_value],
 
-                                           ['type' =>  (($self->get_type    =~ m/(hostname|ipv4)$/)?$self->get_type:undef)],
+                                           ['type' =>  (($self->get_type    =~ m/(hostname|ipv4|ipv6)$/)?$self->get_type:undef)],
 
                                                      ['port' =>  $self->get_port],
 
@@ -364,11 +364,9 @@ sub set_port {
 sub  querySQL {
     my ($self, $query) = @_;
 
-     my %defined_table = ( 'metaData' => [   'ip_name_src',    'ip_name_dst',  ],  'host' => [   'ip_name',    'ip_number',  ],  );
-     $query->{metaData}{ip_name_dst}= [ 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Dst' ] if!(defined $query->{metaData}{ip_name_dst}) || ref($query->{metaData}{ip_name_dst});
+     my %defined_table = ( 'host' => [   'ip_type',    'ip_name',    'ip_number',  ],  );
      $query->{host}{ip_name}= [ 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Dst' ] if!(defined $query->{host}{ip_name}) || ref($query->{host}{ip_name});
      $query->{host}{ip_number}= [ 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Dst' ] if!(defined $query->{host}{ip_number}) || ref($query->{host}{ip_number});
-     $query->{metaData}{ip_name_dst}= [ 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Dst' ] if!(defined $query->{metaData}{ip_name_dst}) || ref($query->{metaData}{ip_name_dst});
      $query->{host}{ip_name}= [ 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Dst' ] if!(defined $query->{host}{ip_name}) || ref($query->{host}{ip_name});
      $query->{host}{ip_number}= [ 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Dst' ] if!(defined $query->{host}{ip_number}) || ref($query->{host}{ip_number});
 
@@ -379,13 +377,13 @@ sub  querySQL {
                     foreach my $classes (@{$query->{$table}{$entry}}) {
                          if($classes && $classes eq 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Dst') {
         
-                            if    ($self->get_value && ( (  ($entry eq 'ip_name_dst')) || (  ($entry eq 'ip_name') or  ( ($self->get_type eq 'ipv4')  && $entry eq 'ip_number')) )) {
+                            if    ($self->get_value && ( (  ($entry eq 'ip_name') or  (( ($self->get_type eq 'ipv4')  ||  ($self->get_type eq 'ipv6') ) && $entry eq 'ip_number')) )) {
                                 $query->{$table}{$entry} =  $self->get_value;
                                 $self->get_LOGGER->debug(" Got value for SQL query $table.$entry: " . $self->get_value);
                                 last;  
                             }
 
-                            elsif ($self->get_text && ( (  ($entry eq 'ip_name_dst')) || (  ($entry eq 'ip_name') or  ( ($self->get_type eq 'ipv4')  && $entry eq 'ip_number')) )) {
+                            elsif ($self->get_text && ( (  ($entry eq 'ip_name') or  (( ($self->get_type eq 'ipv4')  ||  ($self->get_type eq 'ipv6') ) && $entry eq 'ip_number')) )) {
                                 $query->{$table}{$entry} =  $self->get_text;
                                 $self->get_LOGGER->debug(" Got value for SQL query $table.$entry: " . $self->get_text);
                                 last;  
@@ -469,7 +467,7 @@ sub fromDOM {
     $self->set_value($dom->getAttribute('value')) if($dom->getAttribute('value'));
 
     $self->get_LOGGER->debug("Attribute value= ". $self->get_value) if $self->get_value;
-    $self->set_type($dom->getAttribute('type')) if($dom->getAttribute('type') && ($dom->getAttribute('type')   =~ m/(hostname|ipv4)$/));
+    $self->set_type($dom->getAttribute('type')) if($dom->getAttribute('type') && ($dom->getAttribute('type')   =~ m/(hostname|ipv4|ipv6)$/));
 
     $self->get_LOGGER->debug("Attribute type= ". $self->get_type) if $self->get_type;
     $self->set_port($dom->getAttribute('port')) if($dom->getAttribute('port'));
@@ -508,7 +506,7 @@ Maxim Grigoriev
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008, Fermi Research Alliance (FRA)
+Copyright (c) 2011, Fermi Research Alliance (FRA)
 
 =head1 LICENSE
 

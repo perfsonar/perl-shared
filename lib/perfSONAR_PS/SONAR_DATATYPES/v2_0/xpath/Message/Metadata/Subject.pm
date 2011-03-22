@@ -401,7 +401,7 @@ Maxim Grigoriev
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008, Fermi Research Alliance (FRA)
+Copyright (c) 2011, Fermi Research Alliance (FRA)
 
 =head1 LICENSE
 

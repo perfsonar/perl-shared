@@ -224,13 +224,13 @@ sub sendReceive {
 
     # XXX 3/17 - JZ
     #    Should be configurable.
-    $timeout = 30 unless $timeout;
+    $timeout = 10 unless $timeout;
     my $logger       = get_logger( "perfSONAR_PS::Transport" );
     $self->{NETLOGGER} = get_logger( "NetLogger" );
     my $method_uri   = "http://ggf.org/ns/nmwg/base/2.0/message/";
     my $httpEndpoint = &getHttpURI( $self->{CONTACT_HOST}, $self->{CONTACT_PORT}, $self->{CONTACT_ENDPOINT} );
-    my $userAgent    = LWP::UserAgent->new( 'timeout' => ( $timeout * 1000 ) );
-
+    my $userAgent    = LWP::UserAgent->new( 'timeout' =>  $timeout  );
+    $userAgent->timeout(5);
     $logger->debug( "Sending information to \"" . $httpEndpoint . "\": $envelope" );
     my $msg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Transport.sendReceive.start", { endpoint => $httpEndpoint, }  );
     $self->{NETLOGGER}->debug( $msg );
@@ -242,31 +242,19 @@ sub sendReceive {
     $sendSoap->content_length( length( $envelope ) );
 
     my $httpResponse;
-    eval {
-        local $SIG{ALRM} = sub { die "alarm\n" };
-        alarm $timeout;
-        $httpResponse = $userAgent->request( $sendSoap );
-        alarm 0;
-    };
-    if ( $EVAL_ERROR ) {
-        $logger->error( "Connection to \"" . $httpEndpoint . "\" terminiated due to alarm after \"" . $timeout . "\" seconds." ) unless $EVAL_ERROR eq "alarm\n";
-        $$error = "Connection to \"" . $httpEndpoint . "\" terminiated due to alarm after \"" . $timeout . "\" seconds.";
+    $httpResponse = $userAgent->request( $sendSoap );
+    unless ( $httpResponse->is_success ) {
+        $logger->debug( "Send to \"" . $httpEndpoint . "\" failed: " . $httpResponse->status_line );
+        $$error = $httpResponse->status_line if defined $error;
         return;
     }
-    else {
-        unless ( $httpResponse->is_success ) {
-            $logger->debug( "Send to \"" . $httpEndpoint . "\" failed: " . $httpResponse->status_line );
-            $$error = $httpResponse->status_line if defined $error;
-            return;
-        }
-        my $responseCode    = $httpResponse->code();
-        my $responseContent = $httpResponse->content();
-        $logger->debug( "Response returned: " . $responseContent );
-        $$error = q{} if defined $error;
-        $msg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Transport.sendReceive.end" );
-        $self->{NETLOGGER}->debug( $msg );
-        return $responseContent;
-    }
+    my $responseCode	= $httpResponse->code();
+    my $responseContent = $httpResponse->content();
+    $logger->debug( "Response returned: " . $responseContent );
+    $$error = q{} if defined $error;
+    $msg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Transport.sendReceive.end" );
+    $self->{NETLOGGER}->debug( $msg );
+    return $responseContent;
 }
 
 1;

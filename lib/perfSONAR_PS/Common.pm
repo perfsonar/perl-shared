@@ -809,7 +809,7 @@ sub consultArchive {
     my $envelope = makeEnvelope( $request );
     my $error;
     my $start_time = time;
-    $timeout = 30 unless $timeout;    # 30 secondtimeout
+    $timeout = 120 unless $timeout;    # 30 secondtimeout
     my $response = $sender->sendReceive( $envelope, $timeout, \$error );
     my $end_time = time;
 

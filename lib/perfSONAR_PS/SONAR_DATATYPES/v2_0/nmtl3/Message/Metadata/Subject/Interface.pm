@@ -615,12 +615,11 @@ sub set_capacity {
 sub  querySQL {
     my ($self, $query) = @_;
 
-     my %defined_table = ( 'metaData' => [   'transport',    'ip_name_src',    'ip_name_dst',  ],  'host' => [   'ip_name',    'ip_number',  ],  );
+     my %defined_table = ( 'metaData' => [   'transport',  ],  'host' => [   'ip_type',    'ip_name',    'ip_number',  ],  );
      $query->{metaData}{transport}= [     'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::Interface::IpAddress',     ];
      $query->{host}{ip_number}= [     'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::Interface::IpAddress',     ];
-     $query->{metaData}{ip_name_src}= [ 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::Interface' ] if!(defined $query->{metaData}{ip_name_src}) || ref($query->{metaData}{ip_name_src});
-     $query->{metaData}{ip_name_dst}= [ 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::Interface' ] if!(defined $query->{metaData}{ip_name_dst}) || ref($query->{metaData}{ip_name_dst});
      $query->{host}{ip_name}= [ 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::Interface' ] if!(defined $query->{host}{ip_name}) || ref($query->{host}{ip_name});
+     $query->{host}{ip_type}= [ 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::Interface' ] if!(defined $query->{host}{ip_type}) || ref($query->{host}{ip_type});
 
     foreach my $subname (qw/ipAddress ifAddress/) {
         if($self->{$subname} && (ref($self->{$subname}) eq 'ARRAY' ||  blessed $self->{$subname})) {
@@ -816,7 +815,7 @@ Maxim Grigoriev
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008, Fermi Research Alliance (FRA)
+Copyright (c) 2011, Fermi Research Alliance (FRA)
 
 =head1 LICENSE
 

@@ -433,17 +433,14 @@ sub set_interface {
 sub  querySQL {
     my ($self, $query) = @_;
 
-     my %defined_table = ( 'metaData' => [   'transport',    'ip_name_src',    'ip_name_dst',  ],  'host' => [   'ip_name',    'ip_number',  ],  );
+     my %defined_table = ( 'metaData' => [   'transport',  ],  'host' => [   'ip_type',    'ip_name',    'ip_number',  ],  );
      $query->{metaData}{transport}= [     'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::Interface',     ];
-     $query->{metaData}{ip_name_src}= [     'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::Interface',     ];
-     $query->{metaData}{ip_name_dst}= [     'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::Interface',     ];
      $query->{host}{ip_name}= [     'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::Interface',     ];
      $query->{host}{ip_number}= [     'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::Interface',     ];
      $query->{metaData}{transport}= [     'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl4::Message::Metadata::Subject::EndPointPair::EndPoint::Address',     ];
-     $query->{metaData}{ip_name_src}= [     'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl4::Message::Metadata::Subject::EndPointPair::EndPoint::Address',     ];
-     $query->{metaData}{ip_name_dst}= [     'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl4::Message::Metadata::Subject::EndPointPair::EndPoint::Address',     ];
      $query->{host}{ip_name}= [     'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl4::Message::Metadata::Subject::EndPointPair::EndPoint::Address',     ];
      $query->{host}{ip_number}= [     'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl4::Message::Metadata::Subject::EndPointPair::EndPoint::Address',     ];
+     $query->{host}{ip_type}= [ 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl4::Message::Metadata::Subject::EndPointPair::EndPoint' ] if!(defined $query->{host}{ip_type}) || ref($query->{host}{ip_type});
 
     foreach my $subname (qw/address interface/) {
         if($self->{$subname} && (ref($self->{$subname}) eq 'ARRAY' ||  blessed $self->{$subname})) {
@@ -459,6 +456,26 @@ sub  querySQL {
         }
     }
          
+
+    eval {
+        foreach my $table  ( keys %defined_table) {
+            foreach my $entry (@{$defined_table{$table}}) {
+                if(ref($query->{$table}{$entry}) eq 'ARRAY') {
+                    foreach my $classes (@{$query->{$table}{$entry}}) {
+                         if($classes && $classes eq 'perfSONAR_PS::SONAR_DATATYPES::v2_0::nmtl4::Message::Metadata::Subject::EndPointPair::EndPoint') {
+        
+
+                         }
+                     }
+                 }
+             }
+        }
+    };
+    if($EVAL_ERROR) {
+            $self->get_LOGGER->logdie("SQL query building is failed  here " . $EVAL_ERROR);
+    }
+
+        
     return $query;
 }
 
@@ -617,7 +634,7 @@ Maxim Grigoriev
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008, Fermi Research Alliance (FRA)
+Copyright (c) 2011, Fermi Research Alliance (FRA)
 
 =head1 LICENSE
 

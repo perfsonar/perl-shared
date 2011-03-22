@@ -340,13 +340,12 @@ sub set_dst {
 sub  querySQL {
     my ($self, $query) = @_;
 
-     my %defined_table = ( 'metaData' => [   'ip_name_src',    'ip_name_dst',  ],  'host' => [   'ip_name',    'ip_number',  ],  );
-     $query->{metaData}{ip_name_src}= [     'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Src',     ];
+     my %defined_table = ( 'host' => [   'ip_type',    'ip_name',    'ip_number',  ],  );
      $query->{host}{ip_name}= [     'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Src',     ];
      $query->{host}{ip_number}= [     'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Src',     ];
-     $query->{metaData}{ip_name_dst}= [     'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Dst',     ];
      $query->{host}{ip_name}= [     'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Dst',     ];
      $query->{host}{ip_number}= [     'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair::Dst',     ];
+     $query->{host}{ip_type}= [ 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair' ] if!(defined $query->{host}{ip_type}) || ref($query->{host}{ip_type});
 
     foreach my $subname (qw/src dst/) {
         if($self->{$subname} && (ref($self->{$subname}) eq 'ARRAY' ||  blessed $self->{$subname})) {
@@ -362,6 +361,26 @@ sub  querySQL {
         }
     }
          
+
+    eval {
+        foreach my $table  ( keys %defined_table) {
+            foreach my $entry (@{$defined_table{$table}}) {
+                if(ref($query->{$table}{$entry}) eq 'ARRAY') {
+                    foreach my $classes (@{$query->{$table}{$entry}}) {
+                         if($classes && $classes eq 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmwgt::Message::Metadata::Subject::EndPointPair') {
+        
+
+                         }
+                     }
+                 }
+             }
+        }
+    };
+    if($EVAL_ERROR) {
+            $self->get_LOGGER->logdie("SQL query building is failed  here " . $EVAL_ERROR);
+    }
+
+        
     return $query;
 }
 
@@ -491,13 +510,13 @@ __END__
 
 =head1  SEE ALSO
 
-To join the 'perfSONAR-PS Users' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://lists.internet2.edu/sympa/info/perfsonar-ps-users
+   https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+   http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
 Questions and comments can be directed to the author, or the mailing list.
 Bugs, feature requests, and improvements can be directed here:
@@ -511,7 +530,7 @@ Maxim Grigoriev
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008-2010, Fermi Research Alliance (FRA)
+Copyright (c) 2011, Fermi Research Alliance (FRA)
 
 =head1 LICENSE
 

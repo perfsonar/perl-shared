@@ -615,11 +615,9 @@ sub set_capacity {
 sub  querySQL {
     my ($self, $query) = @_;
 
-     my %defined_table = ( 'metaData' => [   'transport',    'ip_name_src',    'ip_name_dst',  ],  'host' => [   'ip_name',    'ip_number',  ],  );
+     my %defined_table = ( 'metaData' => [   'transport',  ],  'host' => [   'ip_type',    'ip_name',    'ip_number',  ],  );
      $query->{metaData}{transport}= [     'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::EndPointPair::EndPoint::Interface::IpAddress',     ];
      $query->{host}{ip_number}= [     'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::EndPointPair::EndPoint::Interface::IpAddress',     ];
-     $query->{metaData}{ip_name_src}= [ 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::EndPointPair::EndPoint::Interface' ] if!(defined $query->{metaData}{ip_name_src}) || ref($query->{metaData}{ip_name_src});
-     $query->{metaData}{ip_name_dst}= [ 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::EndPointPair::EndPoint::Interface' ] if!(defined $query->{metaData}{ip_name_dst}) || ref($query->{metaData}{ip_name_dst});
      $query->{host}{ip_name}= [ 'perfSONAR_PS::PINGER_DATATYPES::v2_0::nmtl3::Message::Metadata::Subject::EndPointPair::EndPoint::Interface' ] if!(defined $query->{host}{ip_name}) || ref($query->{host}{ip_name});
 
     foreach my $subname (qw/ipAddress ifAddress/) {
@@ -796,13 +794,13 @@ __END__
 
 =head1  SEE ALSO
 
-To join the 'perfSONAR-PS Users' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://lists.internet2.edu/sympa/info/perfsonar-ps-users
+   https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+   http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
 Questions and comments can be directed to the author, or the mailing list.
 Bugs, feature requests, and improvements can be directed here:
@@ -816,7 +814,7 @@ Maxim Grigoriev
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008-2010, Fermi Research Alliance (FRA)
+Copyright (c) 2011, Fermi Research Alliance (FRA)
 
 =head1 LICENSE
 

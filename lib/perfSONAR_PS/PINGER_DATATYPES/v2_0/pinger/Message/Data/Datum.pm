@@ -565,7 +565,7 @@ sub  querySQL {
                                 last;  
                             }
 
-                            elsif ($self->get_value && ( (  ( ($self->get_name eq 'minRtt')  && $entry eq 'minRtt') or  ( ($self->get_name eq 'maxRtt')  && $entry eq 'maxRtt') or  ( ($self->get_name eq 'outOfOrder')  && $entry eq 'outOfOrder') or  ($entry eq 'rtts') or  ( ($self->get_name eq 'medianRtt')  && $entry eq 'medianRtt') or  ( ($self->get_name eq 'clp')  && $entry eq 'clp') or  ( ($self->get_name eq 'meanRtt')  && $entry eq 'meanRtt') or  ( ($self->get_name eq 'maxIpd')  && $entry eq 'maxIpd') or  ( ($self->get_name eq 'duplicates')  && $entry eq 'duplicates') or  ( ($self->get_name eq 'minIpd')  && $entry eq 'minIpd') or  ( ($self->get_name eq 'meanIpd')  && $entry eq 'meanIpd') or  ( ($self->get_name eq 'iqrIpd')  && $entry eq 'iqrIpd') or  ( ($self->get_name eq 'lossPercent')  && $entry eq 'lossPercent')) )) {
+                            elsif ($self->get_value && ( (  (( ($self->get_name eq 'minRtt') ) && $entry eq 'minRtt') or  (( ($self->get_name eq 'maxRtt') ) && $entry eq 'maxRtt') or  (( ($self->get_name eq 'outOfOrder') ) && $entry eq 'outOfOrder') or  ($entry eq 'rtts') or  (( ($self->get_name eq 'medianRtt') ) && $entry eq 'medianRtt') or  (( ($self->get_name eq 'clp') ) && $entry eq 'clp') or  (( ($self->get_name eq 'meanRtt') ) && $entry eq 'meanRtt') or  (( ($self->get_name eq 'maxIpd') ) && $entry eq 'maxIpd') or  (( ($self->get_name eq 'duplicates') ) && $entry eq 'duplicates') or  (( ($self->get_name eq 'minIpd') ) && $entry eq 'minIpd') or  (( ($self->get_name eq 'meanIpd') ) && $entry eq 'meanIpd') or  (( ($self->get_name eq 'iqrIpd') ) && $entry eq 'iqrIpd') or  (( ($self->get_name eq 'lossPercent') ) && $entry eq 'lossPercent')) )) {
                                 $query->{$table}{$entry} =  $self->get_value;
                                 $self->get_LOGGER->debug(" Got value for SQL query $table.$entry: " . $self->get_value);
                                 last;  
@@ -577,7 +577,7 @@ sub  querySQL {
                                 last;  
                             }
 
-                            elsif ($self->get_text && ( (  ( ($self->get_name eq 'minRtt')  && $entry eq 'minRtt') or  ( ($self->get_name eq 'maxRtt')  && $entry eq 'maxRtt') or  ( ($self->get_name eq 'outOfOrder')  && $entry eq 'outOfOrder') or  ( ($self->get_name eq 'medianRtt')  && $entry eq 'medianRtt') or  ( ($self->get_name eq 'clp')  && $entry eq 'clp') or  ( ($self->get_name eq 'meanRtt')  && $entry eq 'meanRtt') or  ( ($self->get_name eq 'duplicates')  && $entry eq 'duplicates') or  ( ($self->get_name eq 'maxIpd')  && $entry eq 'maxIpd') or  ( ($self->get_name eq 'minIpd')  && $entry eq 'minIpd') or  ( ($self->get_name eq 'meanIpd')  && $entry eq 'meanIpd') or  ( ($self->get_name eq 'iqrIpd')  && $entry eq 'iqrIpd') or  ( ($self->get_name eq 'lossPercent')  && $entry eq 'lossPercent')) )) {
+                            elsif ($self->get_text && ( (  (( ($self->get_name eq 'minRtt') ) && $entry eq 'minRtt') or  (( ($self->get_name eq 'maxRtt') ) && $entry eq 'maxRtt') or  (( ($self->get_name eq 'outOfOrder') ) && $entry eq 'outOfOrder') or  (( ($self->get_name eq 'medianRtt') ) && $entry eq 'medianRtt') or  (( ($self->get_name eq 'clp') ) && $entry eq 'clp') or  (( ($self->get_name eq 'meanRtt') ) && $entry eq 'meanRtt') or  (( ($self->get_name eq 'duplicates') ) && $entry eq 'duplicates') or  (( ($self->get_name eq 'maxIpd') ) && $entry eq 'maxIpd') or  (( ($self->get_name eq 'minIpd') ) && $entry eq 'minIpd') or  (( ($self->get_name eq 'meanIpd') ) && $entry eq 'meanIpd') or  (( ($self->get_name eq 'iqrIpd') ) && $entry eq 'iqrIpd') or  (( ($self->get_name eq 'lossPercent') ) && $entry eq 'lossPercent')) )) {
                                 $query->{$table}{$entry} =  $self->get_text;
                                 $self->get_LOGGER->debug(" Got value for SQL query $table.$entry: " . $self->get_text);
                                 last;  
@@ -693,13 +693,13 @@ __END__
 
 =head1  SEE ALSO
 
-To join the 'perfSONAR-PS Users' mailing list, please visit:
+To join the 'perfSONAR Users' mailing list, please visit:
 
-  https://lists.internet2.edu/sympa/info/perfsonar-ps-users
+   https://mail.internet2.edu/wws/info/perfsonar-user
 
 The perfSONAR-PS subversion repository is located at:
 
-  http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
+   http://anonsvn.internet2.edu/svn/perfSONAR-PS/trunk
 
 Questions and comments can be directed to the author, or the mailing list.
 Bugs, feature requests, and improvements can be directed here:
@@ -713,7 +713,7 @@ Maxim Grigoriev
 
 =head1 COPYRIGHT
 
-Copyright (c) 2008-2010, Fermi Research Alliance (FRA)
+Copyright (c) 2011, Fermi Research Alliance (FRA)
 
 =head1 LICENSE
 

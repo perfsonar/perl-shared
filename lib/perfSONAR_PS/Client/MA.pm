@@ -34,6 +34,9 @@ to be contacted for interaction.  This can also be set via 'setInstance'.
 
 =cut
 
+my $TIMEOUT = 60;
+
+
 sub new {
     my ( $package, @args ) = @_;
     my $parameters = validateParams( @args, { instance => 0 } );
@@ -183,10 +186,10 @@ sub metadataKeyRequest {
         $content .= "  <nmwg:data id=\"" . $dId . "\" metadataIdRef=\"" . $mdId . "\"/>\n";
     }
 
-    my $msg = $self->callMA( { timeout => 30, message => $self->createMAMessage( { type => "MetadataKeyRequest", content => $content } ) } );
+    my $msg = $self->callMA( { timeout => $TIMEOUT, message => $self->createMAMessage( { type => "MetadataKeyRequest", content => $content } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
-        return;
+	return  {data => [], metadata => []};
     }
 
     my %result = ();
@@ -242,7 +245,7 @@ sub dataInfoRequest {
 
     $content .= "  <nmwg:data id=\"" . $dId . "\" metadataIdRef=\"" . $mdId . "\"/>\n";
 
-    my $msg = $self->callMA( { timeout => 30, message => $self->createMAMessage( { type => "DataInfoRequest", content => $content } ) } );
+    my $msg = $self->callMA( { timeout => $TIMEOUT, message => $self->createMAMessage( { type => "DataInfoRequest", content => $content } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
         return;
@@ -333,7 +336,7 @@ sub setupDataRequest {
         $content .= "  <nmwg:data id=\"" . $dId . "\" metadataIdRef=\"" . $mdId . "\"/>\n";
     }
 
-    my $msg = $self->callMA( { timeout => 30, message => $self->createMAMessage( { type => "SetupDataRequest", content => $content } ) } );
+    my $msg = $self->callMA( { timeout => $TIMEOUT, message => $self->createMAMessage( { type => "SetupDataRequest", content => $content } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
         return;

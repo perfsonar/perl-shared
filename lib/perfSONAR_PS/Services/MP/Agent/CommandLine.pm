@@ -19,10 +19,6 @@ be able to format the command line output in a well understood data structure.
 
 =cut
 
-use Net::Domain qw(hostfqdn);
-use Socket qw(:DEFAULT);
-use IO::Socket;
-use IO::Interface qw(:flags);
 
 # derive from teh base agent class
 use perfSONAR_PS::Services::MP::Agent::Base;
@@ -125,46 +121,7 @@ Check to see that the command exists
 
 sub init {
     my $self = shift;
-    my ( $cmd, @other ) = split /\s+/, $self->command();
-    if ( !-e $cmd ) {
-        $self->error( "Executable '$cmd' not found." );
-        return -1;
-    }
-
-    my $s              = IO::Socket::INET->new( Proto => 'tcp' );
-    my @ret_interfaces = ();
-    my @interfaces     = $s->if_list;
-    foreach my $if ( @interfaces ) {
-        my $if_flags = $s->if_flags( $if );
-        next if ( $if_flags & IO::Interface::IFF_LOOPBACK );
-        next if ( not( $if_flags & IO::Interface::IFF_RUNNING ) );
-        push @ret_interfaces, $s->if_addr( $if );
-    }
-    unless ( scalar( @ret_interfaces ) ) {
-        $self->error( " No interfaces ???" );
-        return -1;
-    }
-    my $iaddr = Socket::inet_aton( $ret_interfaces[0] );
-    $self->source( gethostbyaddr( $iaddr, Socket::AF_INET ) );
-
-    # TODO: check to make sure we pick up correct ip
-    $self->sourceIp( $ret_interfaces[0] );
-
-    # XXX - JZ 7/10
-    #
-    # Fails for machines with a hostname different than a fqdn.
-    #
-    #	# work out dns and ip address of source (ie this host)
-    #	my $src = Net::Domain::hostfqdn;
-    #	#use Data::Dumper;
-    #	#$logger->fatal( Dumper $src );
-    #	$self->source( $src  );
-    #	# TODO: check to make sure we pick up correct ip
-    #	$self->sourceIp( Socket::inet_ntoa(
-    #    	scalar gethostbyname( $self->source() || 'localhost' )
-    #    ));
-
-    #$logger->fatal( "\n\n\n\nSOURCE: " . $self->source() . '  ' . $self->sourceIp() . "\n\n\n");
+   
     return 0;
 }
 
@@ -346,12 +303,15 @@ $Id$
 =head1 AUTHOR
 
 Yee-Ting Li <ytl@slac.stanford.edu>
+Maxim Grigoriev maxim_fnal_gov - redone the whole ip addresses identification
 
 =head1 LICENSE
 
 You should have received a copy of the Internet2 Intellectual Property Framework
 along with this software.  If not, see
 <http://www.internet2.edu/membership/ip.html>
+
+
 
 =head1 COPYRIGHT
 
