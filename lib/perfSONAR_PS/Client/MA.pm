@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.2;
 
-use fields 'INSTANCE', 'LOGGER', 'ALIVE';
+use fields 'INSTANCE', 'LOGGER', 'ALIVE', 'TIMEOUT', 'ALARM_DISABLED';
 
 =head1 NAME
 
@@ -27,27 +27,71 @@ use perfSONAR_PS::Transport;
 use perfSONAR_PS::Client::Echo;
 use perfSONAR_PS::Utils::ParameterValidation;
 
-=head2 new($package { instance })
+=head2 new($package { instance => <instance>, timeout => <timeout>, alarm_disabled => <1|0> })
 
-Constructor for object.  Optional argument of 'instance' is the LS instance
-to be contacted for interaction.  This can also be set via 'setInstance'.
+Constructor for object.  Optional arguments:
+
+=head2   instance
+
+LS instance to be contacted for interaction.  This can also be set via 'setInstance'.
+
+=head2 timeout
+
+timeout value to be used in the low level call
+
+=head2 alarm_disabled
+
+if not set then hard timeout enabled by alarm will be used on the call, if set then timeout
+will be set only in the LWP  UserAgent
 
 =cut
 
-my $TIMEOUT = 60;
+my $TIMEOUT = 60; # default timeout
 
 
 sub new {
     my ( $package, @args ) = @_;
-    my $parameters = validateParams( @args, { instance => 0 } );
+    my $parameters = validateParams( @args, { instance => 0, timeout => 0, alarm_disabled => 0} );
 
     my $self = fields::new( $package );
     $self->{ALIVE}  = 0;
     $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::MA" );
-    if ( exists $parameters->{"instance"} and $parameters->{"instance"} ) {
-        $self->{INSTANCE} = $parameters->{"instance"};
+    foreach my $param (qw/instance timeout alarm_disabled/) {
+        if ( exists $parameters->{$param} and $parameters->{$param} ) {
+             $self->{"\U$param"} = $parameters->{$param};
+        }
     }
+    $self->{TIMEOUT} ||= $TIMEOUT;
+    $self->{ALARM_DISABLED} = 0 unless exists $self->{ALARM_DISABLED};
     return $self;
+}
+
+=head2 setAlarmDisabled($self { alarmDisabled})  
+
+ Disable alarm codition on LWP call if set 
+
+=cut
+
+sub setAlarmDisabled  {
+    my ( $self,  @args ) = @_;
+    my $parameters = validateParams( @args, { alarm_disabled => 1 } );
+    $self->{ALIVE} = 0;
+    $self->{ALARM_DISABLED} =  $parameters->{alarm_disabled};
+    return;
+}
+
+=head2 setTimeout($self { timeout})
+
+Required argument 'timeout' is timeout value for the call
+
+=cut
+
+sub setTimeout {
+    my ( $self, @args ) = @_;
+    my $parameters = validateParams( @args, { timeout => 1 } );
+    $self->{ALIVE}    = 0;
+    $self->{TIMEOUT} = $parameters->{timeout};
+    return;
 }
 
 =head2 setInstance($self { instance })
@@ -59,7 +103,6 @@ Required argument 'instance' is the LS instance to be contacted for queries.
 sub setInstance {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { instance => 1 } );
-
     $self->{ALIVE}    = 0;
     $self->{INSTANCE} = $parameters->{"instance"};
     return;
@@ -74,7 +117,7 @@ Calls the MA instance with the sent message and returns the response (if any).
 sub callMA {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { message => 1, timeout => 0 } );
-
+    $self->setTimeout(timeout =>  $parameters->{timeout}) if $parameters->{timeout};
     unless ( $self->{INSTANCE} ) {
         $self->{LOGGER}->error( "Instance not defined." );
         return;
@@ -95,14 +138,14 @@ sub callMA {
         return;
     }
 
-    my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint );
+    my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint, $self->{ALARM_DISABLED});
     unless ( $sender ) {
         $self->{LOGGER}->error( "LS could not be contaced." );
         return;
     }
 
     my $error = q{};
-    my $responseContent = $sender->sendReceive( makeEnvelope( $parameters->{message} ), $parameters->{timeout}, \$error );
+    my $responseContent = $sender->sendReceive( makeEnvelope( $parameters->{message} ), $self->{TIMEOUT}, \$error );
     if ( $error ) {
         $self->{ALIVE} = 0;
         $self->{LOGGER}->error( "sendReceive failed: $error" );
@@ -186,7 +229,7 @@ sub metadataKeyRequest {
         $content .= "  <nmwg:data id=\"" . $dId . "\" metadataIdRef=\"" . $mdId . "\"/>\n";
     }
 
-    my $msg = $self->callMA( { timeout => $TIMEOUT, message => $self->createMAMessage( { type => "MetadataKeyRequest", content => $content } ) } );
+    my $msg = $self->callMA( {  message => $self->createMAMessage( { type => "MetadataKeyRequest", content => $content } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
 	return  {data => [], metadata => []};
@@ -221,7 +264,7 @@ Perform a DataInfoRequest, the results are returned as a data/metadata pair.
 
 sub dataInfoRequest {
     my ( $self, @args ) = @_;
-    my $parameters = validateParams( @args, { subject => 1, eventTypes => 1, parameters => 0 } );
+    my $parameters = validateParams( @args, { subject => 1, eventTypes => 1,   parameters => 0 } );
 
     my $mdId    = "metadata." . genuid();
     my $dId     = "data." . genuid();
@@ -245,7 +288,7 @@ sub dataInfoRequest {
 
     $content .= "  <nmwg:data id=\"" . $dId . "\" metadataIdRef=\"" . $mdId . "\"/>\n";
 
-    my $msg = $self->callMA( { timeout => $TIMEOUT, message => $self->createMAMessage( { type => "DataInfoRequest", content => $content } ) } );
+    my $msg = $self->callMA( { message => $self->createMAMessage( { type => "DataInfoRequest", content => $content } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
         return;
@@ -280,7 +323,9 @@ Perform a SetupDataRequest, the results are returned as a data/metadata pair.
 
 sub setupDataRequest {
     my ( $self, @args ) = @_;
-    my $parameters = validateParams( @args, { subject => 0, eventTypes => 1, parameterblock => 0, parameters => 0, start => 0, end => 0, resolution => 0, consolidationFunction => 0 } );
+    my $parameters = validateParams( @args, { subject => 0, eventTypes => 1, parameterblock => 0, 
+                                              parameters => 0, start => 0, end => 0,
+					      resolution => 0, consolidationFunction => 0 } );
 
     my $mdId    = "metadata." . genuid();
     my $dId     = "data." . genuid();
@@ -336,7 +381,7 @@ sub setupDataRequest {
         $content .= "  <nmwg:data id=\"" . $dId . "\" metadataIdRef=\"" . $mdId . "\"/>\n";
     }
 
-    my $msg = $self->callMA( { timeout => $TIMEOUT, message => $self->createMAMessage( { type => "SetupDataRequest", content => $content } ) } );
+    my $msg = $self->callMA( { message => $self->createMAMessage( { type => "SetupDataRequest", content => $content } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
         return;
@@ -407,7 +452,7 @@ __END__
     $metadata .= "  <nmwg:data id=\"d1\" metadataIdRef=\"m1\"/>\n";
 
     my $ma = new perfSONAR_PS::Client::MA(
-      { instance => "http://packrat.internet2.edu:8082/perfSONAR_PS/services/snmpMA"}
+      { instance => "http://packrat.internet2.edu:8082/perfSONAR_PS/services/snmpMA", timeout => 100}
     );
 
     my $subject = "    <netutil:subject xmlns:netutil=\"http://ggf.org/ns/nmwg/characteristic/utilization/2.0/\" id=\"s-in-16\">\n";
@@ -425,7 +470,7 @@ __END__
     my ( $sec, $frac ) = Time::HiRes::gettimeofday;
 
     my $result = $ma->metadataKeyRequest( { 
-      consolidationFunction => "AVERAGE", 
+      consolidationFunction => "AVERAGE",
       resolution => 30,
       start => ($sec-300), 
       end => $sec, 

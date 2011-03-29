@@ -257,7 +257,7 @@ sub sendReceive {
     $sendSoap->content_length( length( $envelope ) );
 
     my $httpResponse;
-    if($self->{ALARM_DISABLED}) {
+    if(exists $self->{ALARM_DISABLED} && $self->{ALARM_DISABLED}) {
         $httpResponse = $userAgent->request( $sendSoap );
     } 
     else {
