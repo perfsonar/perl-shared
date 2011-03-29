@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.2;
 
-use fields 'CONTACT_HOST', 'CONTACT_PORT', 'CONTACT_ENDPOINT', 'NETLOGGER';
+use fields 'CONTACT_HOST', 'CONTACT_PORT', 'CONTACT_ENDPOINT', 'NETLOGGER', 'ALARM_DISABLED';
 
 =head1 NAME
 
@@ -32,7 +32,7 @@ use perfSONAR_PS::Messages;
 use perfSONAR_PS::Utils::NetLogger;
 
 
-=head2 =head2 new($package, $contactHost, $contactPort, $contactEndPoint)
+=head2 =head2 new($package, $contactHost, $contactPort, $contactEndPoint, $alarmDisabled )
 
 The 'contactHost', 'contactPort', and 'contactEndPoint' set the values that are
 used to send information to a remote host.  All values can be left blank and
@@ -41,7 +41,7 @@ set via the various set functions.
 =cut
 
 sub new {
-    my ( $package, $contactHost, $contactPort, $contactEndPoint ) = @_;
+    my ( $package, $contactHost, $contactPort, $contactEndPoint, $alarmDisabled ) = @_;
 
     my $self = fields::new( $package );
 
@@ -53,6 +53,9 @@ sub new {
     }
     if ( defined $contactEndPoint and $contactEndPoint ) {
         $self->{"CONTACT_ENDPOINT"} = $contactEndPoint;
+    }
+   if ( defined $alarmDisabled ) {
+        $self->{"ALARM_DISABLED"} = $alarmDisabled;
     }
 
     return $self;
@@ -93,6 +96,19 @@ sub setContactPort {
     else {
         $logger->error( "Missing argument." );
     }
+    return;
+}
+
+=head2 setAlarmDisabled($self,  $alarmDisabled)  
+
+ Disable alarm codition on LWP call if set 
+
+=cut
+
+sub setAlarmDisabled  {
+    my ( $self, $alarmDisabled ) = @_;
+    my $logger = get_logger( "perfSONAR_PS::Transport" );
+    $self->{ALARM_DISABLED} =  $alarmDisabled;
     return;
 }
 
@@ -220,11 +236,11 @@ that message. If not, it is filled with "".
 =cut
 
 sub sendReceive {
-    my ( $self, $envelope, $timeout, $error ) = @_;
+    my ( $self, $envelope, $timeout, $error  ) = @_;
 
     # XXX 3/17 - JZ
     #    Should be configurable.
-    $timeout = 10 unless $timeout;
+    $timeout = 30 unless $timeout;
     my $logger       = get_logger( "perfSONAR_PS::Transport" );
     $self->{NETLOGGER} = get_logger( "NetLogger" );
     my $method_uri   = "http://ggf.org/ns/nmwg/base/2.0/message/";
@@ -241,7 +257,22 @@ sub sendReceive {
     $sendSoap->content_length( length( $envelope ) );
 
     my $httpResponse;
-    $httpResponse = $userAgent->request( $sendSoap );
+    if($self->{ALARM_DISABLED}) {
+        $httpResponse = $userAgent->request( $sendSoap );
+    } 
+    else {
+        eval {
+           local $SIG{ALRM} = sub { die "alarm\n" };
+           alarm $timeout;
+           $httpResponse = $userAgent->request( $sendSoap );
+           alarm 0;
+        };
+        if ( $EVAL_ERROR ) {
+            $logger->error( "Connection to \"" . $httpEndpoint . "\" terminiated due to alarm after \"" . $timeout . "\" seconds." ) unless $EVAL_ERROR eq "alarm\n";
+            $$error = "Connection to \"" . $httpEndpoint . "\" terminiated due to alarm after \"" . $timeout . "\" seconds.";
+            return;
+        }
+    }
     unless ( $httpResponse->is_success ) {
         $logger->debug( "Send to \"" . $httpEndpoint . "\" failed: " . $httpResponse->status_line );
         $$error = $httpResponse->status_line if defined $error;
