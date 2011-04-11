@@ -246,6 +246,7 @@ sub sendReceive {
     my $method_uri   = "http://ggf.org/ns/nmwg/base/2.0/message/";
     my $httpEndpoint = &getHttpURI( $self->{CONTACT_HOST}, $self->{CONTACT_PORT}, $self->{CONTACT_ENDPOINT} );
     my $userAgent    = LWP::UserAgent->new( 'timeout' =>  $timeout  );
+    $userAgent->env_proxy();
     $logger->debug( "Sending information to \"" . $httpEndpoint . "\": $envelope" );
     my $msg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.Transport.sendReceive.start", { endpoint => $httpEndpoint, }  );
     $self->{NETLOGGER}->debug( $msg );
