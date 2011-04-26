@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.2;
 
-use fields 'ENVIRONMENT', 'CONTAINERFILE', 'NAMESPACES', 'ENV', 'MANAGER', 'CONTAINER', 'INDEX', 'LOGGER', 'NETLOGGER';
+use fields 'ENVIRONMENT', 'CONTAINERFILE', 'NAMESPACES', 'ENV', 'MANAGER', 'CONTAINER', 'INDEX', 'LOGGER', 'NETLOGGER', 'DISABLETXN';
 
 =head1 NAME
 
@@ -32,13 +32,15 @@ use perfSONAR_PS::Common;
 use perfSONAR_PS::Utils::NetLogger;
 use perfSONAR_PS::Utils::ParameterValidation;
 
-=head2 new($package, { env, cont, ns }) 
+=head2 new($package, { env, cont, ns, disableTxn }) 
 
 Create a new XMLDB object.  All arguments are optional:
 
  * env - path to the xmldb data directory
  * cont - name of the 'container' inside of the xmldb
  * ns - hash reference of namespace values to register
+ * disableTxn - boolean that will allow the user (when set to '1' to proceed
+                without using dbxml transactions
 
 The arguments can be set (and re-set) via the appropriate function calls.  
 
@@ -46,11 +48,15 @@ The arguments can be set (and re-set) via the appropriate function calls.
 
 sub new {
     my ( $package, @args ) = @_;
-    my $parameters = validateParams( @args, { env => 0, cont => 0, ns => 0 } );
+    my $parameters = validateParams( @args, { env => 0, cont => 0, ns => 0, disableTxn => 0 } );
 
     my $self = fields::new( $package );
     $self->{LOGGER} = get_logger( "perfSONAR_PS::DB::XMLDB" );
     $self->{NETLOGGER} = get_logger( "NetLogger" );
+    $self->{DISABLETXN} = 0;
+    if ( exists $parameters->{disableTxn} and $parameters->{disableTxn} ) {
+        $self->{DISABLETXN} = 1;
+    }
     if ( exists $parameters->{env} and $parameters->{env} ) {
         $self->{ENVIRONMENT} = $parameters->{env};
     }
@@ -61,6 +67,25 @@ sub new {
         $self->{NAMESPACES} = \%{ $parameters->{ns} };
     }
     return $self;
+}
+
+=head2 setDisableTxn($self, { disableTxn })
+
+(Re-)Sets the "disableTxn" flag - preventing the use of XMLDB transactions for 
+all database operations.  
+
+=cut
+
+sub setDisableTxn {
+    my ( $self, @args ) = @_;
+    my $parameters = validateParams( @args, { disableTxn => 1 } );
+
+    if ( exists $parameters->{disableTxn} and $parameters->{disableTxn} ) {
+        $self->{DISABLETXN} = 1;
+        return 0;
+    }
+    $self->{LOGGER}->error( "Cannot set disableTxn flag." );
+    return -1;
 }
 
 =head2 setEnvironment($self, { env })
@@ -136,35 +161,58 @@ sub prep {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { txn => 0, error => 0 } );
 
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.prep.start");
+    $self->{NETLOGGER}->debug( $nlmsg );
+
     my $dbTr   = q{};
     my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
     eval {
         $self->{ENV} = new DbEnv( 0 );
 
-        # XXX: JZ 11/7/2008 - These options were removed: Db::DB_JOINENV | Db::DB_REGISTER
-        $self->{ENV}->open( $self->{ENVIRONMENT}, Db::DB_CREATE | Db::DB_RECOVER | Db::DB_JOINENV | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL | Db::DB_INIT_TXN );
+        if ( $self->{DISABLETXN} == 1 ) {
+            # XXX: JZ 11/7/2008 - These options were removed: Db::DB_JOINENV | Db::DB_REGISTER
+            $self->{ENV}->open( $self->{ENVIRONMENT}, Db::DB_CREATE | Db::DB_RECOVER | Db::DB_JOINENV | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL );
 
-        # XXX: JZ 11/7/2008 - These options were removed: DbXml::DBXML_ALLOW_EXTERNAL_ACCESS | DbXml::DBXML_ALLOW_AUTO_OPEN
-        $self->{MANAGER} = new XmlManager( $self->{ENV} );
+            # XXX: JZ 11/7/2008 - These options were removed: DbXml::DBXML_ALLOW_EXTERNAL_ACCESS | DbXml::DBXML_ALLOW_AUTO_OPEN
+            $self->{MANAGER} = new XmlManager( $self->{ENV} );
 
-        $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+            # XXX: JZ 11/7/2008 - This option was removed: Db::DB_DIRTY_READ
+            $self->{CONTAINER} = $self->{MANAGER}->openContainer( $self->{CONTAINERFILE}, Db::DB_CREATE | DbXml::DBXML_TRANSACTIONAL );
 
-        # XXX: JZ 11/7/2008 - This option was removed: Db::DB_DIRTY_READ
-        $self->{CONTAINER} = $self->{MANAGER}->openContainer( $dbTr, $self->{CONTAINERFILE}, Db::DB_CREATE | DbXml::DBXML_TRANSACTIONAL );
+            # XXX: JZ 11/7/2008 - Disable index for now
+            #        unless ( $self->{CONTAINER}->getIndexNodes ) {
+            #            my $dbUC = $self->{MANAGER}->createUpdateContext();
+            #            $self->{INDEX} = $self->{CONTAINER}->addIndex( "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
+            #        }
+        }
+        else {
+            # XXX: JZ 11/7/2008 - These options were removed: Db::DB_JOINENV | Db::DB_REGISTER
+            $self->{ENV}->open( $self->{ENVIRONMENT}, Db::DB_CREATE | Db::DB_RECOVER | Db::DB_JOINENV | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL | Db::DB_INIT_TXN );
 
-        # XXX: JZ 11/7/2008 - Disable index for now
-        #        unless ( $self->{CONTAINER}->getIndexNodes ) {
-        #            my $dbUC = $self->{MANAGER}->createUpdateContext();
-        #            $self->{INDEX} = $self->{CONTAINER}->addIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
-        #        }
+            # XXX: JZ 11/7/2008 - These options were removed: DbXml::DBXML_ALLOW_EXTERNAL_ACCESS | DbXml::DBXML_ALLOW_AUTO_OPEN
+            $self->{MANAGER} = new XmlManager( $self->{ENV} );
 
-        if ( $atomic ) {
-            $dbTr->commit;
-            undef $dbTr;
+            $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+
+            # XXX: JZ 11/7/2008 - This option was removed: Db::DB_DIRTY_READ
+            $self->{CONTAINER} = $self->{MANAGER}->openContainer( $dbTr, $self->{CONTAINERFILE}, Db::DB_CREATE | DbXml::DBXML_TRANSACTIONAL );
+
+            # XXX: JZ 11/7/2008 - Disable index for now
+            #        unless ( $self->{CONTAINER}->getIndexNodes ) {
+            #            my $dbUC = $self->{MANAGER}->createUpdateContext();
+            #            $self->{INDEX} = $self->{CONTAINER}->addIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
+            #        }
+
+            if ( $atomic ) {
+                $dbTr->commit;
+                undef $dbTr;
+            }
         }
     };
     if ( my $e = catch std::exception ) {
@@ -173,6 +221,8 @@ sub prep {
         $msg = escapeString( $msg );
         $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
+        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.prep.end", {status=>-1,error=>$msg,});
+        $self->{NETLOGGER}->debug( $nlmsg );
         return -1;
     }
     elsif ( $e = catch DbException ) {
@@ -181,6 +231,8 @@ sub prep {
         $msg = escapeString( $msg );
         $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
+        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.prep.end", {status=>-1,error=>$msg,});
+        $self->{NETLOGGER}->debug( $nlmsg );
         return -1;
     }
     elsif ( $EVAL_ERROR ) {
@@ -189,9 +241,13 @@ sub prep {
         $msg = escapeString( $msg );
         $self->{LOGGER}->error( $msg );
         ${ $parameters->{error} } = $msg if exists $parameters->{error};
+        $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.prep.end", {status=>-1,error=>$msg,});
+        $self->{NETLOGGER}->debug( $nlmsg );
         return -1;
     }
     ${ $parameters->{error} } = q{} if exists $parameters->{error};
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.prep.end");
+    $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
 }
 
@@ -207,38 +263,56 @@ sub openDB {
     my ( $self, @args ) = @_;
     my $parameters = validateParams( @args, { txn => 0, error => 0 } );
 
-    my $dbTr   = q{};
-    my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
-    }
     my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.openDB.start");
     $self->{NETLOGGER}->debug( $nlmsg );
 
-
+    my $dbTr   = q{};
+    my $atomic = 1;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
+    }
     eval {
         $self->{ENV} = new DbEnv( 0 );
 
-        $self->{ENV}->open( $self->{ENVIRONMENT}, Db::DB_CREATE | Db::DB_JOINENV | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL | Db::DB_INIT_TXN );
+        if ( $self->{DISABLETXN} == 1 ) {
+            $self->{ENV}->open( $self->{ENVIRONMENT}, Db::DB_CREATE | Db::DB_JOINENV | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL );
 
-        # XXX: JZ 11/7/2008 - These options were removed: DbXml::DBXML_ALLOW_EXTERNAL_ACCESS | DbXml::DBXML_ALLOW_AUTO_OPEN
-        $self->{MANAGER} = new XmlManager( $self->{ENV} );
+            # XXX: JZ 11/7/2008 - These options were removed: DbXml::DBXML_ALLOW_EXTERNAL_ACCESS | DbXml::DBXML_ALLOW_AUTO_OPEN
+            $self->{MANAGER} = new XmlManager( $self->{ENV} );
 
-        $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+            # XXX: JZ 11/7/2008 - These options were removed: Db::DB_DIRTY_READ
+            $self->{CONTAINER} = $self->{MANAGER}->openContainer( $self->{CONTAINERFILE}, Db::DB_CREATE | DbXml::DBXML_TRANSACTIONAL );
 
-        # XXX: JZ 11/7/2008 - These options were removed: Db::DB_DIRTY_READ
-        $self->{CONTAINER} = $self->{MANAGER}->openContainer( $dbTr, $self->{CONTAINERFILE}, Db::DB_CREATE | DbXml::DBXML_TRANSACTIONAL );
+            # XXX: JZ 11/7 - Disable index for now
+            #        unless ( $self->{CONTAINER}->getIndexNodes ) {
+            #            my $dbUC = $self->{MANAGER}->createUpdateContext();
+            #            $self->{INDEX} = $self->{CONTAINER}->addIndex( "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
+            #        }
+        }
+        else {
+            $self->{ENV}->open( $self->{ENVIRONMENT}, Db::DB_CREATE | Db::DB_JOINENV | Db::DB_INIT_LOG | Db::DB_INIT_LOCK | Db::DB_INIT_MPOOL | Db::DB_INIT_TXN );
 
-        # XXX: JZ 11/7 - Disable index for now
-        #        unless ( $self->{CONTAINER}->getIndexNodes ) {
-        #            my $dbUC = $self->{MANAGER}->createUpdateContext();
-        #            $self->{INDEX} = $self->{CONTAINER}->addIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
-        #        }
+            # XXX: JZ 11/7/2008 - These options were removed: DbXml::DBXML_ALLOW_EXTERNAL_ACCESS | DbXml::DBXML_ALLOW_AUTO_OPEN
+            $self->{MANAGER} = new XmlManager( $self->{ENV} );
 
-        if ( $atomic ) {
-            $dbTr->commit;
-            undef $dbTr;
+            $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+
+            # XXX: JZ 11/7/2008 - These options were removed: Db::DB_DIRTY_READ
+            $self->{CONTAINER} = $self->{MANAGER}->openContainer( $dbTr, $self->{CONTAINERFILE}, Db::DB_CREATE | DbXml::DBXML_TRANSACTIONAL );
+
+            # XXX: JZ 11/7 - Disable index for now
+            #        unless ( $self->{CONTAINER}->getIndexNodes ) {
+            #            my $dbUC = $self->{MANAGER}->createUpdateContext();
+            #            $self->{INDEX} = $self->{CONTAINER}->addIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
+            #        }
+
+            if ( $atomic ) {
+                $dbTr->commit;
+                undef $dbTr;
+            }
         }
     };
     if ( my $e = catch std::exception ) {
@@ -293,20 +367,31 @@ sub indexDB {
 
     my $dbTr   = q{};
     my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
 
     eval {
-        unless ( $self->{CONTAINER}->getIndexNodes and $self->{INDEX} )
-        {
-            my $dbUC = $self->{MANAGER}->createUpdateContext();
-            $self->{INDEX} = $self->{CONTAINER}->addIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
+        if ( $self->{DISABLETXN} == 1 ) {
+            unless ( $self->{CONTAINER}->getIndexNodes and $self->{INDEX} )
+            {
+                my $dbUC = $self->{MANAGER}->createUpdateContext();
+                $self->{INDEX} = $self->{CONTAINER}->addIndex( "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
+            }
         }
-        if ( $atomic ) {
-            $dbTr->commit;
-            undef $dbTr;
+        else {
+            unless ( $self->{CONTAINER}->getIndexNodes and $self->{INDEX} )
+            {
+                my $dbUC = $self->{MANAGER}->createUpdateContext();
+                $self->{INDEX} = $self->{CONTAINER}->addIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
+            }
+            if ( $atomic ) {
+                $dbTr->commit;
+                undef $dbTr;
+            }
         }
     };
     if ( my $e = catch std::exception ) {
@@ -353,20 +438,30 @@ sub deIndexDB {
 
     my $dbTr   = q{};
     my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
 
     eval {
         my $dbUC = $self->{MANAGER}->createUpdateContext();
-        if ( $self->{CONTAINER}->getIndexNodes and $self->{INDEX} ) {
-            my $dbUC = $self->{MANAGER}->createUpdateContext();
-            $self->{INDEX} = $self->{CONTAINER}->deleteIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
+        if ( $self->{DISABLETXN} == 1 ) { 
+            if ( $self->{CONTAINER}->getIndexNodes and $self->{INDEX} ) {
+                my $dbUC = $self->{MANAGER}->createUpdateContext();
+                $self->{INDEX} = $self->{CONTAINER}->deleteIndex( "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
+            }
         }
-        if ( $atomic ) {
-            $dbTr->commit;
-            undef $dbTr;
+        else {    
+            if ( $self->{CONTAINER}->getIndexNodes and $self->{INDEX} ) {
+                my $dbUC = $self->{MANAGER}->createUpdateContext();
+                $self->{INDEX} = $self->{CONTAINER}->deleteIndex( $dbTr, "http://ggf.org/ns/nmwg/base/2.0/", "store", "node-element-equality-string", $dbUC );
+            }
+            if ( $atomic ) {
+                $dbTr->commit;
+                undef $dbTr;
+            }
         }
     };
     if ( my $e = catch std::exception ) {
@@ -411,9 +506,14 @@ sub getTransaction {
 
     my $dbTr = q{};
     eval {
-        if ( exists $self->{MANAGER} and $self->{MANAGER} )
-        {
-            $dbTr = $self->{MANAGER}->createTransaction();
+        if ( $self->{DISABLETXN} == 0 ) {
+            if ( exists $self->{MANAGER} and $self->{MANAGER} )
+            {
+                $dbTr = $self->{MANAGER}->createTransaction();
+            }
+        }
+        else {
+            $self->{LOGGER}->error( "Tranactions have been disabled, returned transaction object will be NULL." );
         }
     };
     if ( my $e = catch std::exception ) {
@@ -459,8 +559,13 @@ sub commitTransaction {
     $self->{NETLOGGER}->debug( $nlmsg );
 
     eval {
-        $parameters->{txn}->commit() if exists $parameters->{txn};
-        undef $parameters->{txn};
+        if ( $self->{DISABLETXN} == 0 ) {
+            $parameters->{txn}->commit() if exists $parameters->{txn};
+            undef $parameters->{txn};
+        }
+        else {
+            $self->{LOGGER}->error( "Tranactions have been disabled, will not commit transaction." );
+        }
     };
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
@@ -503,8 +608,13 @@ sub abortTransaction {
     my $parameters = validateParams( @args, { txn => 0, error => 0 } );
 
     eval {
-        $parameters->{txn}->abort() if exists $parameters->{txn};
-        undef $parameters->{txn};
+        if ( $self->{DISABLETXN} == 0 ) {
+            $parameters->{txn}->abort() if exists $parameters->{txn};
+            undef $parameters->{txn};
+        }
+        else {
+            $self->{LOGGER}->error( "Tranactions have been disabled, will not abort transaction." );
+        }
     };
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
@@ -546,8 +656,15 @@ sub checkpoint {
     my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.checkpoint.start");
     $self->{NETLOGGER}->debug( $nlmsg );
 
-    $self->{LOGGER}->debug( "Checkpoint started." );
-    eval { $self->{ENV}->txn_checkpoint( 0, 0, Db::DB_FORCE ); };
+    eval {
+        if ( $self->{DISABLETXN} == 0 ) {
+            $self->{LOGGER}->debug( "Checkpoint started." );
+            $self->{ENV}->txn_checkpoint( 0, 0, Db::DB_FORCE ); 
+        }
+        else {
+            $self->{LOGGER}->error( "Tranactions have been disabled, will not create checkpoint." );
+        }
+    };
     if ( my $e = catch std::exception ) {
         my $msg = "Error \"" . $e->what() . "\".";
         $msg =~ s/(\n+|\s+)/ /gmx;
@@ -607,11 +724,14 @@ sub query {
     my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.xmldb.query.start");
     $self->{NETLOGGER}->debug( $nlmsg );
     my @resString = ();
-    my $dbTr      = q{};
-    my $atomic    = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+
+    my $dbTr   = q{};
+    my $atomic = 1;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
 
     if ( exists $parameters->{query} and $parameters->{query} ) {
@@ -622,7 +742,6 @@ sub query {
             my $contName = $self->{CONTAINER}->getName();
 
             unless ( exists $parameters->{internal} and $parameters->{internal} ) {
-
                 # make sure the query is clean
                 $parameters->{query} =~ s/&/&amp;/gmx;
                 $parameters->{query} =~ s/</&lt;/gmx;
@@ -644,15 +763,24 @@ sub query {
                 $dbQC->setNamespace( $prefix, $self->{NAMESPACES}->{$prefix} );
             }
 
-            $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
-            $results = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
-            while ( $results->next( $value ) ) {
-                push @resString, $value;
-                undef $value;
+            if ( $self->{DISABLETXN} == 1 ) { 
+                $results = $self->{MANAGER}->query( $fullQuery, $dbQC );
+                while ( $results->next( $value ) ) {
+                    push @resString, $value;
+                    undef $value;
+                }
             }
-            if ( $atomic ) {
-                $dbTr->commit;
-                undef $dbTr;
+            else {
+                $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+                $results = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
+                while ( $results->next( $value ) ) {
+                    push @resString, $value;
+                    undef $value;
+                }
+                if ( $atomic ) {
+                    $dbTr->commit;
+                    undef $dbTr;
+                }
             }
         };
         if ( my $e = catch std::exception ) {
@@ -692,7 +820,7 @@ sub query {
     return @resString;
 }
 
-=head2 queryForName($self, { query, txn, error }) 
+=head2 querySet($self, { query, txn, error }) 
 
 Given a query, return the 'name' of the container.  A transaction element may
 be passed in from the caller, or this argument can be left blank for an atomic
@@ -710,9 +838,11 @@ sub querySet {
 
     my $dbTr   = q{};
     my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
 
     if ( exists $parameters->{query} and $parameters->{query} ) {
@@ -742,18 +872,30 @@ sub querySet {
                 $dbQC->setNamespace( $prefix, $self->{NAMESPACES}->{$prefix} );
             }
 
-            $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
-            $results = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
-            my $parser = XML::LibXML->new();
-            while ( $results->next( $value ) ) {
-                my $node = $parser->parse_string( $value );
-                $res->push( $node->getDocumentElement );
-                undef $value;
-                undef $node;
+            if ( $self->{DISABLETXN} == 1 ) {
+                $results = $self->{MANAGER}->query( $fullQuery, $dbQC );
+                my $parser = XML::LibXML->new();
+                while ( $results->next( $value ) ) {
+                    my $node = $parser->parse_string( $value );
+                    $res->push( $node->getDocumentElement );
+                    undef $value;
+                    undef $node;
+                }
             }
-            if ( $atomic ) {
-                $dbTr->commit;
-                undef $dbTr;
+            else {
+                $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+                $results = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
+                my $parser = XML::LibXML->new();
+                while ( $results->next( $value ) ) {
+                    my $node = $parser->parse_string( $value );
+                    $res->push( $node->getDocumentElement );
+                    undef $value;
+                    undef $node;
+                }
+                if ( $atomic ) {
+                    $dbTr->commit;
+                    undef $dbTr;
+                }
             }
         };
         if ( my $e = catch std::exception ) {
@@ -811,9 +953,11 @@ sub queryForName {
 
     my $dbTr   = q{};
     my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
 
     if ( exists $parameters->{query} and $parameters->{query} ) {
@@ -843,17 +987,28 @@ sub queryForName {
                 $dbQC->setNamespace( $prefix, $self->{NAMESPACES}->{$prefix} );
             }
 
-            $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
-            $results = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
-            $doc = $self->{MANAGER}->createDocument();
-            while ( $results->next( $doc ) ) {
-                push @resString, $doc->getName;
+            if ( $self->{DISABLETXN} == 1 ) { 
+                $results = $self->{MANAGER}->query( $fullQuery, $dbQC );
+                $doc = $self->{MANAGER}->createDocument();
+                while ( $results->next( $doc ) ) {
+                    push @resString, $doc->getName;
+                }
+                undef $doc;
+                undef $results;
             }
-            undef $doc;
-            undef $results;
-            if ( $atomic ) {
-                $dbTr->commit;
-                undef $dbTr;
+            else {
+                $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+                $results = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
+                $doc = $self->{MANAGER}->createDocument();
+                while ( $results->next( $doc ) ) {
+                    push @resString, $doc->getName;
+                }
+                undef $doc;
+                undef $results;
+                if ( $atomic ) {
+                    $dbTr->commit;
+                    undef $dbTr;
+                }
             }
         };
         if ( my $e = catch std::exception ) {
@@ -911,21 +1066,30 @@ sub queryByName {
 
     my $dbTr   = q{};
     my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
 
     if ( $parameters->{name} ) {
         eval {
-            $self->{LOGGER}->debug( "Query for name \"" . $parameters->{name} . "\" received." );
-            $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
-            my $document = $self->{CONTAINER}->getDocument( $dbTr, $parameters->{name} );
-            $content = $document->getName;
-            $self->{LOGGER}->debug( "Document found." );
-            if ( $atomic ) {
-                $dbTr->commit;
-                undef $dbTr;
+            $self->{LOGGER}->debug( "Query for name \"" . $parameters->{name} . "\" received." );            
+            if ( $self->{DISABLETXN} == 1 ) { 
+                my $document = $self->{CONTAINER}->getDocument( $parameters->{name} );
+                $content = $document->getName;
+                $self->{LOGGER}->debug( "Document found." );
+            }
+            else {
+                $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+                my $document = $self->{CONTAINER}->getDocument( $dbTr, $parameters->{name} );
+                $content = $document->getName;
+                $self->{LOGGER}->debug( "Document found." );
+                if ( $atomic ) {
+                    $dbTr->commit;
+                    undef $dbTr;
+                }
             }
         };
         if ( my $e = catch std::exception ) {
@@ -988,21 +1152,31 @@ sub getDocumentByName {
 
     my $dbTr   = q{};
     my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
 
     if ( exists $parameters->{name} and $parameters->{name} ) {
         eval {
-            $self->{LOGGER}->debug( "Query for name \"" . $parameters->{name} . "\" received." );
-            $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
-            my $document = $self->{CONTAINER}->getDocument( $dbTr, $parameters->{name} );
-            $content = $document->getContent;
-            $self->{LOGGER}->debug( "Document found." );
-            if ( $atomic ) {
-                $dbTr->commit;
-                undef $dbTr;
+            if ( $self->{DISABLETXN} == 1 ) { 
+                $self->{LOGGER}->debug( "Query for name \"" . $parameters->{name} . "\" received." );
+                my $document = $self->{CONTAINER}->getDocument( $parameters->{name} );
+                $content = $document->getContent;
+                $self->{LOGGER}->debug( "Document found." );
+            }
+            else {
+                $self->{LOGGER}->debug( "Query for name \"" . $parameters->{name} . "\" received." );
+                $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+                my $document = $self->{CONTAINER}->getDocument( $dbTr, $parameters->{name} );
+                $content = $document->getContent;
+                $self->{LOGGER}->debug( "Document found." );
+                if ( $atomic ) {
+                    $dbTr->commit;
+                    undef $dbTr;
+                }
             }
         };
         if ( my $e = catch std::exception ) {
@@ -1066,9 +1240,11 @@ sub updateByName {
 
     my $dbTr   = q{};
     my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
 
     if ( exists $parameters->{content} and exists $parameters->{name} and $parameters->{content} and $parameters->{name} ) {
@@ -1078,12 +1254,17 @@ sub updateByName {
             $myXMLDoc->setContent( $parameters->{content} );
             $myXMLDoc->setName( $parameters->{name} );
 
-            $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
             my $dbUC = $self->{MANAGER}->createUpdateContext();
-            $self->{CONTAINER}->updateDocument( $dbTr, $myXMLDoc, $dbUC );
-            if ( $atomic ) {
-                $dbTr->commit;
-                undef $dbTr;
+            if ( $self->{DISABLETXN} == 1 ) { 
+                $self->{CONTAINER}->updateDocument( $myXMLDoc, $dbUC );
+            }
+            else {
+                $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+                $self->{CONTAINER}->updateDocument( $dbTr, $myXMLDoc, $dbUC );
+                if ( $atomic ) {
+                    $dbTr->commit;
+                    undef $dbTr;
+                }
             }
         };
         if ( my $e = catch std::exception ) {
@@ -1143,9 +1324,11 @@ sub count {
 
     my $dbTr   = q{};
     my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
 
     if ( exists $parameters->{query} and $parameters->{query} ) {
@@ -1164,12 +1347,18 @@ sub count {
                 $dbQC->setNamespace( $prefix, $self->{NAMESPACES}->{$prefix} );
             }
 
-            $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
-            $results = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
-            $size = $results->size();
-            if ( $atomic ) {
-                $dbTr->commit;
-                undef $dbTr;
+            if ( $self->{DISABLETXN} == 1 ) { 
+                $results = $self->{MANAGER}->query( $fullQuery, $dbQC );
+                $size = $results->size();
+            }
+            else {
+                $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+                $results = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
+                $size = $results->size();
+                if ( $atomic ) {
+                    $dbTr->commit;
+                    undef $dbTr;
+                }
             }
         };
         if ( my $e = catch std::exception ) {
@@ -1223,9 +1412,11 @@ sub insertIntoContainer {
 
     my $dbTr   = q{};
     my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
 
     if ( $parameters->{content} and $parameters->{name} ) {
@@ -1235,12 +1426,18 @@ sub insertIntoContainer {
             $myXMLDoc->setContent( $parameters->{content} );
             $myXMLDoc->setName( $parameters->{name} );
 
-            $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
-            my $dbUC = $self->{MANAGER}->createUpdateContext();
-            $self->{CONTAINER}->putDocument( $dbTr, $myXMLDoc, $dbUC, 0 );
-            if ( $atomic ) {
-                $dbTr->commit;
-                undef $dbTr;
+            if ( $self->{DISABLETXN} == 1 ) { 
+                my $dbUC = $self->{MANAGER}->createUpdateContext();
+                $self->{CONTAINER}->putDocument( $myXMLDoc, $dbUC, 0 );
+            }
+            else {
+                $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+                my $dbUC = $self->{MANAGER}->createUpdateContext();
+                $self->{CONTAINER}->putDocument( $dbTr, $myXMLDoc, $dbUC, 0 );
+                if ( $atomic ) {
+                    $dbTr->commit;
+                    undef $dbTr;
+                }
             }
         };
         if ( my $e = catch std::exception ) {
@@ -1301,9 +1498,11 @@ sub insertElement {
 
     my $dbTr   = q{};
     my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
 
     if ( exists $parameters->{content} and exists $parameters->{query} and $parameters->{content} and $parameters->{query} ) {
@@ -1314,17 +1513,27 @@ sub insertElement {
             foreach my $prefix ( keys %{ $self->{NAMESPACES} } ) {
                 $dbQC->setNamespace( $prefix, $self->{NAMESPACES}->{$prefix} );
             }
-
-            $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
-            my $results        = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
-            my $myXMLMod       = $self->{MANAGER}->createModify();
-            my $myXMLQueryExpr = $self->{MANAGER}->prepare( $dbTr, $fullQuery, $dbQC );
-            $myXMLMod->addAppendStep( $myXMLQueryExpr, $myXMLMod->Element, q{}, $parameters->{content}, -1 );
-            my $dbUC = $self->{MANAGER}->createUpdateContext();
-            $myXMLMod->execute( $dbTr, $results, $dbQC, $dbUC );
-            if ( $atomic ) {
-                $dbTr->commit;
-                undef $dbTr;
+            
+            if ( $self->{DISABLETXN} == 1 ) { 
+                my $results        = $self->{MANAGER}->query( $fullQuery, $dbQC );
+                my $myXMLMod       = $self->{MANAGER}->createModify();
+                my $myXMLQueryExpr = $self->{MANAGER}->prepare( $fullQuery, $dbQC );
+                $myXMLMod->addAppendStep( $myXMLQueryExpr, $myXMLMod->Element, q{}, $parameters->{content}, -1 );
+                my $dbUC = $self->{MANAGER}->createUpdateContext();
+                $myXMLMod->execute( $results, $dbQC, $dbUC );
+            }
+            else {
+                $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+                my $results        = $self->{MANAGER}->query( $dbTr, $fullQuery, $dbQC );
+                my $myXMLMod       = $self->{MANAGER}->createModify();
+                my $myXMLQueryExpr = $self->{MANAGER}->prepare( $dbTr, $fullQuery, $dbQC );
+                $myXMLMod->addAppendStep( $myXMLQueryExpr, $myXMLMod->Element, q{}, $parameters->{content}, -1 );
+                my $dbUC = $self->{MANAGER}->createUpdateContext();
+                $myXMLMod->execute( $dbTr, $results, $dbQC, $dbUC );
+                if ( $atomic ) {
+                    $dbTr->commit;
+                    undef $dbTr;
+                }
             }
         };
         if ( my $e = catch std::exception ) {
@@ -1380,20 +1589,28 @@ sub remove {
 
     my $dbTr   = q{};
     my $atomic = 1;
-    if ( exists $parameters->{txn} and $parameters->{txn} ) {
-        $dbTr   = $parameters->{txn};
-        $atomic = 0;
+    if ( $self->{DISABLETXN} == 0 ) {
+        if ( exists $parameters->{txn} and $parameters->{txn} ) {
+            $dbTr   = $parameters->{txn};
+            $atomic = 0;
+        }
     }
 
     if ( $parameters->{name} ) {
         eval {
             $self->{LOGGER}->debug( "Remove \"" . $parameters->{name} . "\" received." );
-            $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
-            my $dbUC = $self->{MANAGER}->createUpdateContext();
-            $self->{CONTAINER}->deleteDocument( $dbTr, $parameters->{name}, $dbUC );
-            if ( $atomic ) {
-                $dbTr->commit;
-                undef $dbTr;
+            if ( $self->{DISABLETXN} == 1 ) { 
+                my $dbUC = $self->{MANAGER}->createUpdateContext();
+                $self->{CONTAINER}->deleteDocument( $parameters->{name}, $dbUC );
+            }
+            else {
+                $dbTr = $self->{MANAGER}->createTransaction() if $atomic;
+                my $dbUC = $self->{MANAGER}->createUpdateContext();
+                $self->{CONTAINER}->deleteDocument( $dbTr, $parameters->{name}, $dbUC );
+                if ( $atomic ) {
+                    $dbTr->commit;
+                    undef $dbTr;
+                }
             }
         };
         if ( my $e = catch std::exception ) {
@@ -1499,18 +1716,21 @@ __END__
       snmp => "http://ggf.org/ns/nmwg/tools/snmp/2.0/"    
     );
   
-    my $db = new perfSONAR_PS::DB::XMLDB(
-      "/home/jason/Netradar/MP/SNMP/xmldb", 
-      "snmpstore.dbxml",
-      \%ns
+    my $db = new perfSONAR_PS::DB::XMLDB( {
+        env => "/home/jason/Netradar/MP/SNMP/xmldb",
+        cont => "snmpstore.dbxml",
+        ns => \%ns,
+        disableTxn => 0
+      }
     );
 
     # or also:
     # 
     # my $db = new perfSONAR_PS::DB::XMLDB;
-    # $db->setEnvironment("/home/jason/Netradar/MP/SNMP/xmldb");
-    # $db->setContainer("snmpstore.dbxml");
-    # $db->setNamespaces(\%ns);    
+    # $db->setEnvironment( { env => "/home/jason/Netradar/MP/SNMP/xmldb" } );
+    # $db->setContainer( { cont => "snmpstore.dbxml" } );
+    # $db->setNamespaces( { ns => \%ns } );    
+    # $db->setDisableTxn( { disableTxn => 1 } );  
     
     if ($db->openDB == -1) {
       print "Error opening database\n";
