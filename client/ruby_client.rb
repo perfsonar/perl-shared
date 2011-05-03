@@ -52,8 +52,8 @@ SOAP_HEAD = %{ <SOAP-ENV:Envelope xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soa
 SOAP_FOOT = %{ </SOAP-ENV:Body></SOAP-ENV:Envelope> }
 
 http = Net::HTTP.new(uri.host, uri.port)
-http.open_timeout = 3 # in seconds
-http.read_timeout = 3 # in seconds
+http.open_timeout = 30 # in seconds
+http.read_timeout = 30 # in seconds
 
 request = Net::HTTP::Post.new(uri.request_uri)
 request.initialize_http_header({"Content-Type" => "text/xml"})
