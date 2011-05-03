@@ -55,7 +55,7 @@ http = Net::HTTP.new(uri.host, uri.port)
 http.open_timeout = 3 # in seconds
 http.read_timeout = 3 # in seconds
 
-request = Net::HTTP::Get.new(uri.request_uri)
+request = Net::HTTP::Post.new(uri.request_uri)
 request.initialize_http_header({"Content-Type" => "text/xml"})
 request.body = SOAP_HEAD + xml + SOAP_FOOT
 
