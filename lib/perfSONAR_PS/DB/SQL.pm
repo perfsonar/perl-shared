@@ -228,6 +228,40 @@ sub query {
     return $results;
 }
 
+=head2 execute($self, { query })
+
+Executes a statement that does not return any results.
+
+=cut
+
+sub execute {
+    my ( $self, @args ) = @_;
+    my $parameters = validateParams( @args, { query => 1 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.execute.start" );
+    $self->{NETLOGGER}->debug( $nlmsg );
+
+    my $results = ();
+    if ( $parameters->{query} ) {
+        $self->{LOGGER}->debug( "Query \"" . $parameters->{query} . "\" received." );
+        eval {
+            my $sth = $self->{HANDLE}->prepare( $parameters->{query} );
+            $sth->execute() or $self->{LOGGER}->error( "Query error on statement \"" . $parameters->{query} . "\"." );
+        };
+        if ( $EVAL_ERROR ) {
+            $self->{LOGGER}->error( "Error executing \"" . $EVAL_ERROR . "\" on statement \"" . $parameters->{query} . "\"." );
+            return -1;
+        }
+    }
+    else {
+        $self->{LOGGER}->error( "Query not found." );
+        return -1;
+    }
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.execute.end" );
+    $self->{NETLOGGER}->debug( $nlmsg );
+    
+    return 0;
+}
+
 =head2 count($self, { query })
 
 Counts the number of results of a query in the database.
@@ -357,6 +391,23 @@ sub insert {
     $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.insert.end" );
     $self->{NETLOGGER}->debug( $nlmsg );
     return 0;
+}
+
+=head2 last_insert_id()
+
+Returns auto-generaed id from last insert
+
+=cut
+
+sub lastInsertId {
+    my ($self, @args) = @_;
+    my $parameters = validateParams( @args, { table => 1, field => 1 } );
+    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.lastInsertId.start" );
+    $self->{NETLOGGER}->debug( $nlmsg );
+    my $id = $self->{HANDLE}->last_insert_id(undef, undef, $parameters->{table}, $parameters->{field});
+    $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.sql.lastInsertId.end", {'table' => $parameters->{table}, 'field' => $parameters->{field}, 'last_id' => $id} );
+    $self->{NETLOGGER}->debug( $nlmsg );
+    return $id;
 }
 
 =head2 update($self, { table, wherevalues, updatevalues })
