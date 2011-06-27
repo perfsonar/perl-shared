@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.2;
 
-use fields 'OPEN_TAGS', 'DEFINED_PREFIXES', 'FH', 'LOGGER';
+use fields 'OPEN_TAGS', 'DEFINED_PREFIXES', 'FH', 'LOGGER', 'NETLOGGER';
 
 =head1 NAME
 
@@ -25,6 +25,8 @@ use Params::Validate qw(:all);
 use perfSONAR_PS::Utils::ParameterValidation;
 use English qw( -no_match_vars );
 use IO::File;
+use perfSONAR_PS::Utils::NetLogger;
+#use Devel::Size qw(size total_size);
 
 my $pretty_print = 0;
 
@@ -39,10 +41,10 @@ sub new {
     my $self = fields::new( $package );
 
     $self->{LOGGER} = get_logger( "perfSONAR_PS::XML::Document" );
-
+    $self->{NETLOGGER} = get_logger( "NetLogger" );
     $self->{OPEN_TAGS}        = ();
     $self->{DEFINED_PREFIXES} = ();
-    $self->{FH}               = IO::File->new_tmpfile;
+    $self->{FH}               = ();
     return $self;
 }
 
@@ -91,7 +93,7 @@ sub startElement {
         {
             prefix           => { type => SCALAR,          regex    => qr/^[a-z0-9]/ },
             namespace        => { type => SCALAR,          regex    => qr/^http/ },
-            tag              => { type => SCALAR,          regex    => qr/^[a-z0-9]/ },
+            tag              => { type => SCALAR,          regex    => qr/^[a-zA-Z0-9]/ },
             attributes       => { type => HASHREF | UNDEF, optional => 1 },
             extra_namespaces => { type => HASHREF | UNDEF, optional => 1 },
             content          => { type => SCALAR | UNDEF,  optional => 1 }
@@ -104,8 +106,15 @@ sub startElement {
     my $attributes       = $args->{"attributes"};
     my $extra_namespaces = $args->{"extra_namespaces"};
     my $content          = $args->{"content"};
-
+	
+	
+	my $constructedTag = "";
+    
     $self->{LOGGER}->debug( "Starting tag: $tag" );
+    #my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.XML.startElement.start" );
+    #$self->{NETLOGGER}->debug( $nlmsg );
+    #my  $nlmsg = perfSONAR_PS::Utils::NetLogger::format("org.perfSONAR.XML.Document.startElement.start");
+    #$self->{NETLOGGER}->debug( $nlmsg );
 
     $namespace = getNormalizedURI( $namespace );
 
@@ -133,11 +142,13 @@ sub startElement {
 
     if ( $pretty_print ) {
         foreach my $node ( @{ $self->{OPEN_TAGS} } ) {
-            print { $self->{FH} } "  ";
+            #print { $self->{FH} } "  ";
+            $constructedTag .= "  ";
         }
     }
 
-    print { $self->{FH} } "<$prefix:$tag";
+    #print { $self->{FH} } "<$prefix:$tag";
+    $constructedTag .= "<$prefix:$tag";
 
     foreach my $prefix ( keys %namespaces ) {
         my $require_defintion = 0;
@@ -162,28 +173,42 @@ sub startElement {
 
         if ( $require_defintion ) {
             push @{ $node_info{"defined_prefixes"} }, $prefix;
-            print { $self->{FH} } " xmlns:$prefix=\"" . $namespaces{$prefix} . "\"";
+            #print { $self->{FH} } " xmlns:$prefix=\"" . $namespaces{$prefix} . "\"";
+        	$constructedTag .= " xmlns:$prefix=\"" . $namespaces{$prefix} . "\"";
         }
     }
 
     if ( defined $attributes ) {
         for my $attr ( keys %{$attributes} ) {
-            print { $self->{FH} } " " . $attr . "=\"" . $attributes->{$attr} . "\"";
+            #print { $self->{FH} } " " . $attr . "=\"" . $attributes->{$attr} . "\"";
+            $constructedTag .= " " . $attr . "=\"" . $attributes->{$attr} . "\"";
         }
     }
 
-    print { $self->{FH} } ">";
+    #print { $self->{FH} } ">";
+    $constructedTag .= ">";
 
     if ( $pretty_print ) {
-        print { $self->{FH} } "\n";
+        #print { $self->{FH} } "\n";
+        $constructedTag .= "\n";
     }
 
     if ( defined $content and $content ) {
-        print { $self->{FH} } $content;
-        print { $self->{FH} } "\n" if ( $pretty_print );
+        #print { $self->{FH} } $content;
+        #print { $self->{FH} } "\n" if ( $pretty_print );
+        $constructedTag .= $content;
+        
+        if ( $pretty_print ){
+        	$constructedTag .= "\n";
+        }
+        
     }
-
+	
+	push @{$self->{FH}}, $constructedTag;
     push @{ $self->{OPEN_TAGS} }, \%node_info;
+    
+    #$nlmsg = perfSONAR_PS::Utils::NetLogger::format("org.perfSONAR.XML.Document.startElement.end");
+    #$self->{NETLOGGER}->debug( $nlmsg );
 
     return 0;
 }
@@ -203,12 +228,15 @@ sub createElement {
         {
             prefix           => { type => SCALAR,          regex    => qr/^[a-z0-9]/ },
             namespace        => { type => SCALAR,          regex    => qr/^http/ },
-            tag              => { type => SCALAR,          regex    => qr/^[a-z0-9]/ },
+            tag              => { type => SCALAR,          regex    => qr/^[a-zA-Z0-9]/ },
             attributes       => { type => HASHREF | UNDEF, optional => 1 },
             extra_namespaces => { type => HASHREF | UNDEF, optional => 1 },
             content          => { type => SCALAR | UNDEF,  optional => 1 }
         }
     );
+   #my $nlmsg = perfSONAR_PS::Utils::NetLogger::format("org.perfSONAR.XML.Document.createElement.start");
+   #$self->{NETLOGGER}->debug( $nlmsg );
+
 
     my $prefix           = $args->{"prefix"};
     my $namespace        = $args->{"namespace"};
@@ -218,6 +246,7 @@ sub createElement {
     my $content          = $args->{"content"};
 
     #	$namespace = getNormalizedURI($namespace);
+    my $constructedTag ="";
 
     my %namespaces = ();
     $namespaces{$prefix} = $namespace;
@@ -239,11 +268,13 @@ sub createElement {
 
     if ( $pretty_print ) {
         foreach my $node ( @{ $self->{OPEN_TAGS} } ) {
-            print { $self->{FH} } "  ";
+            #print { $self->{FH} } "  ";
+            $constructedTag .= "  ";
         }
     }
 
-    print { $self->{FH} } "<$prefix:$tag";
+    #print { $self->{FH} } "<$prefix:$tag";
+    $constructedTag .= "<$prefix:$tag";
 
     foreach my $prefix ( keys %namespaces ) {
         my $require_defintion = 0;
@@ -264,46 +295,102 @@ sub createElement {
         }
 
         if ( $require_defintion ) {
-            print { $self->{FH} } " xmlns:$prefix=\"" . $namespaces{$prefix} . "\"";
+            #print { $self->{FH} } " xmlns:$prefix=\"" . $namespaces{$prefix} . "\"";
+            $constructedTag .= " xmlns:$prefix=\"" . $namespaces{$prefix} . "\"";
         }
     }
 
     if ( defined $attributes ) {
         for my $attr ( keys %{$attributes} ) {
-            print { $self->{FH} } " " . $attr . "=\"" . $attributes->{$attr} . "\"";
+            #print { $self->{FH} } " " . $attr . "=\"" . $attributes->{$attr} . "\"";
+            $constructedTag .= " " . $attr . "=\"" . $attributes->{$attr} . "\"";
         }
     }
 
     if ( not defined $content or $content eq q{} ) {
-        print { $self->{FH} } " />";
+        #print { $self->{FH} } " />";
+        $constructedTag .= " />";
     }
     else {
-        print { $self->{FH} } ">";
+        #print { $self->{FH} } ">";
+        $constructedTag .= ">";
 
         if ( $pretty_print ) {
-            print { $self->{FH} } "\n" if ( $content =~ /\n/ );
+            #print { $self->{FH} } "\n" if ( $content =~ /\n/ );
+            if ( $content =~ /\n/ ){
+            	$constructedTag .= "\n";
+            }
+            
         }
 
-        print { $self->{FH} } $content;
+        #print { $self->{FH} } $content;
+        $constructedTag .= $content;
 
         if ( $pretty_print ) {
             if ( $content =~ /\n/ ) {
-                print { $self->{FH} } "\n";
+                #print { $self->{FH} } "\n";
+                $constructedTag .= "\n";
                 foreach my $node ( @{ $self->{OPEN_TAGS} } ) {
-                    print { $self->{FH} } "  ";
+                    #print { $self->{FH} } "  ";
+                    $constructedTag .= "  ";
                 }
             }
         }
 
-        print { $self->{FH} } "</" . $prefix . ":" . $tag . ">";
+        #print { $self->{FH} } "</" . $prefix . ":" . $tag . ">";
+        $constructedTag .= "</" . $prefix . ":" . $tag . ">";
     }
 
     if ( $pretty_print ) {
-        print { $self->{FH} } "\n";
+        #print { $self->{FH} } "\n";
+        $constructedTag .= "\n";
     }
 
-    print { $self->{FH} } $output if $output;
+    #print { $self->{FH} } $output if $output;
+    
+    if($output){
+    	$constructedTag .= $output;
+    }
+    
+    push @{$self->{FH}}, $constructedTag;
+    #$nlmsg = perfSONAR_PS::Utils::NetLogger::format("org.perfSONAR.XML.Document.createElement.end");
+    #$self->{NETLOGGER}->debug( $nlmsg );
+    return 0;
+}
 
+sub fastCreateElement{
+	my $self = shift;
+    my $args = validateParams(
+        @_,
+        {
+            prefix           => { type => SCALAR,          regex    => qr/^[a-z0-9]/ },
+            tag              => { type => SCALAR,          regex    => qr/^[a-zA-Z0-9]/ },
+            attributes       => { type => HASHREF | UNDEF, optional => 1 },
+            content          => { type => SCALAR | UNDEF,  optional => 1 }
+        }
+    );
+    
+    my $prefix           = $args->{"prefix"};
+    my $tag              = $args->{"tag"};
+    my $attributes       = $args->{"attributes"};
+    my $content          = $args->{"content"};
+    
+    my $constructedTag="<$prefix:$tag";
+    if ( defined $attributes ) {
+        for my $attr ( keys %{$attributes} ) {
+            #print { $self->{FH} } " " . $attr . "=\"" . $attributes->{$attr} . "\"";
+            $constructedTag .= " " . $attr . "=\"" . $attributes->{$attr} . "\"";
+        }
+    }
+    
+    if(defined $content){
+    	$constructedTag .= ">";
+    	$constructedTag .= $content;
+    	$constructedTag .= "</" . $prefix . ":" . $tag . ">";
+    }else{
+    	$constructedTag .= " />";
+    }
+    push @{$self->{FH}}, $constructedTag;
     return 0;
 }
 
@@ -319,8 +406,12 @@ sub endElement {
     my ( $self, $tag ) = @_;
 
     $self->{LOGGER}->debug( "Ending tag: $tag" );
+     #my $nlmsg = perfSONAR_PS::Utils::NetLogger::format( "org.perfSONAR.XML.Document.endElement.start");
+    #$self->{NETLOGGER}->debug( $nlmsg );
 
     my @tags = @{ $self->{OPEN_TAGS} };
+    
+    my $constructedTag ="";
 
     if ( $#tags == -1 ) {
         $self->{LOGGER}->error( "Tried to close tag $tag but no current open tags" );
@@ -339,15 +430,26 @@ sub endElement {
 
     if ( $pretty_print ) {
         foreach my $node ( @{ $self->{OPEN_TAGS} } ) {
-            print { $self->{FH} } "  ";
+            #print { $self->{FH} } "  ";
+            $constructedTag .= "  ";
         }
     }
 
-    print { $self->{FH} } "</" . $tags[-1]->{"prefix"} . ":" . $tag . ">";
+    #print { $self->{FH} } "</" . $tags[-1]->{"prefix"} . ":" . $tag . ">";
+    $constructedTag .= "</" . $tags[-1]->{"prefix"} . ":" . $tag . ">";
 
     if ( $pretty_print ) {
-        print { $self->{FH} } "\n";
+        #print { $self->{FH} } "\n";
+        $constructedTag .= "\n";
     }
+    
+    push @{$self->{FH}}, $constructedTag;
+
+
+    #$nlmsg = perfSONAR_PS::Utils::NetLogger::format("org.perfSONAR.XML.Document.endElement.end");
+    #$self->{NETLOGGER}->debug( $nlmsg );
+
+    
     return 0;
 }
 
@@ -362,9 +464,11 @@ sub addExistingXMLElement {
 
     my $elm = $element->cloneNode( 1 );
     $elm->unbindNode();
+	
+	
+    #print { $self->{FH} } $elm->toString();
 
-    print { $self->{FH} } $elm->toString();
-
+	push @{$self->{FH}}, $elm->toString();;
     return 0;
 }
 
@@ -377,7 +481,9 @@ This function adds arbitrary data to the current document.
 sub addOpaque {
     my ( $self, $data ) = @_;
 
-    print { $self->{FH} } $data;
+    #print { $self->{FH} } $data;
+    
+    push @{$self->{FH}}, $data;
 
     return 0;
 }
@@ -407,12 +513,15 @@ sub getValue {
     }
 
     my $value;
-    seek( $self->{FH}, 0, 0 );
-    $value = do { local ( $INPUT_RECORD_SEPARATOR ); my $file = $self->{FH}; <$file> };
-    seek( $self->{FH}, 0, 2 );
-
+    #seek( $self->{FH}, 0, 0 );
+    #$value = do { local ( $INPUT_RECORD_SEPARATOR ); my $file = $self->{FH}; <$file> };
+    #seek( $self->{FH}, 0, 2 );
+    $value = join("", @{$self->{FH}});
     $self->{LOGGER}->debug( "Construction Results: " . $value ) if $value;
-
+#    my $xmlbytes = total_size($value); 
+#    my $xmlsize = scalar @{$self->{FH}};
+#    my $nlmsg = perfSONAR_PS::Utils::NetLogger::format("org.perfSONAR.XML.Document.getValue.start Tags=$xmlsize, Bytes=$xmlbytes");
+#    $self->{NETLOGGER}->debug( $nlmsg );
     return $value;
 }
 
