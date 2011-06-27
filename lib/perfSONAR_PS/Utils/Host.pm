@@ -32,14 +32,19 @@ IP addresses.
 =cut
 
 sub get_ips {
-    my @ret_interfaces = ();
+    my $parameters = validate( @_, { by_interface => 0, } );
+    my $by_interface = $parameters->{by_interface};
+
+    my %ret_interfaces = ();
 
     my $IFCONFIG;
     open( $IFCONFIG, "-|", "/sbin/ifconfig" ) or return;
     my $is_eth = 0;
+    my $curr_interface;
     while ( <$IFCONFIG> ) {
-        if ( /Link encap:([^ ]+)/ ) {
-            if ( lc( $1 ) eq "ethernet" ) {
+        if ( /^(\S+)\s*Link encap:([^ ]+)/ ) {
+            $curr_interface = $1;
+            if ( lc( $2 ) eq "ethernet" ) {
                 $is_eth = 1;
             }
             else {
@@ -49,16 +54,29 @@ sub get_ips {
 
         next unless $is_eth;
 
+        unless ($ret_interfaces{$curr_interface}) {
+            $ret_interfaces{$curr_interface} = [];
+        }
+
         if ( /inet addr:(\d+\.\d+\.\d+\.\d+)/ ) {
-            push @ret_interfaces, $1;
+            push @{ $ret_interfaces{$curr_interface} }, $1;
         }
         elsif ( /inet6 addr: (\d*:[^\/ ]*)(\/\d+)? +Scope:Global/ ) {
-            push @ret_interfaces, $1;
+            push @{ $ret_interfaces{$curr_interface} }, $1;
         }
     }
     close( $IFCONFIG );
 
-    return @ret_interfaces;
+    if ($by_interface) {
+        return \%ret_interfaces;
+    }
+    else {
+        my @ret_values = ();
+	foreach my $value (values %ret_interfaces) {
+            push @ret_values, @$value;
+        }
+        return @ret_values;
+    }
 }
 
 sub get_ethernet_interfaces {
@@ -81,34 +99,16 @@ sub get_ethernet_interfaces {
 
 sub get_interface_addresses {
     my $parameters = validate( @_, { interface => 1, } );
+    my $interface = $parameters->{interface};
 
-    my @ret_interfaces = ();
+    my $ips = get_ips({ by_interface => 1 });
 
-    my $IFCONFIG;
-    open( $IFCONFIG, "-|", "/sbin/ifconfig" ) or return;
-    my $in_iface = 0;
-    while ( <$IFCONFIG> ) {
-        if ( /^(\S*).*Link encap:([^ ]+)/ ) {
-            if ( $1 eq $parameters->{interface} ) {
-                $in_iface = 1;
-            }
-            else {
-                $in_iface = 0;
-            }
-        }
-
-        next unless ( $in_iface );
-
-        if ( /inet addr:(\d+\.\d+\.\d+\.\d+)/ ) {
-            push @ret_interfaces, $1;
-        }
-        elsif ( /inet6 addr: (\d*:[^\/ ]*)(\/\d+)? +Scope:Global/ ) {
-            push @ret_interfaces, $1;
-        }
+    if ($ips->{$interface}) {
+        return @{ $ips->{$interface} };
     }
-    close( $IFCONFIG );
-
-    return @ret_interfaces;
+    else {
+        return [];
+    }
 }
 
 1;
