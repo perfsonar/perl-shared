@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.1;
 
-use fields 'URI_STRING', 'LOGGER';
+use fields 'URI_STRING', 'LOGGER', 'TIMEOUT';
 
 =head1 NAME
 
@@ -37,8 +37,10 @@ specifies which TS to interact with.
 
 =cut
 
+my $TIMEOUT = 60; # default timeout
+
 sub new {
-    my ( $package, $uri_string ) = @_;
+    my ( $package, $uri_string, $timeout ) = @_;
 
     my $self = fields::new( $package );
 
@@ -47,6 +49,12 @@ sub new {
     if ( defined $uri_string and $uri_string ) {
         $self->{"URI_STRING"} = $uri_string;
     }
+    $self->{TIMEOUT} = $TIMEOUT;
+    if ( defined $timeout and $timeout ) {
+        $self->{"TIMEOUT"} = $timeout;
+    }
+    
+    
     return $self;
 }
 
@@ -192,7 +200,7 @@ sub xQuery {
         return ( -1, $msg );
     }
 
-    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request );
+    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request, $self->{"TIMEOUT"} );
     if ( $status != 0 ) {
         my $msg = "Error consulting archive: $res";
         $self->{LOGGER}->error( $msg );
@@ -251,7 +259,7 @@ sub getAll {
         return ( -1, $msg );
     }
 
-    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request );
+    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request, $self->{"TIMEOUT"} );
     if ( $status != 0 ) {
         my $msg = "Error consulting archive: $res";
         $self->{LOGGER}->error( $msg );
@@ -308,7 +316,7 @@ sub changeTopology {
         return ( -1, $msg );
     }
 
-    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request );
+    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request, $self->{"TIMEOUT"} );
     if ( $status != 0 ) {
         my $msg = "Error consulting archive: $res";
         $self->{LOGGER}->error( $msg );
