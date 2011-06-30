@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.2;
 
-use fields 'URI', 'EVENT_TYPE';
+use fields 'URI', 'EVENT_TYPE', 'TIMEOUT', 'ALARM_DISABLED';
 
 =head1 NAME
 
@@ -37,9 +37,9 @@ eventType argument which can be used if a service only supports a specific echo
 request event type.
 
 =cut
-
+my $DEFAULT_TIMEOUT = 15; # default timeout
 sub new {
-    my ( $package, $uri_string, $eventType ) = @_;
+    my ( $package, $uri_string, $eventType, $timeout, $alarm_disabled ) = @_;
 
     my $self = fields::new( $package );
 
@@ -49,7 +49,15 @@ sub new {
     if ( not defined $eventType or $eventType eq q{} ) {
         $eventType = "http://schemas.perfsonar.net/tools/admin/echo/2.0";
     }
-
+    if ( not defined $timeout or $timeout eq q{} ) {
+         $timeout = $DEFAULT_TIMEOUT;
+    }
+    if ( not defined $alarm_disabled or $alarm_disabled eq q{} ) {
+         $alarm_disabled = 0;
+    }
+    
+    $self->{TIMEOUT} = $timeout;
+    $self->{ALARM_DISABLED} = $alarm_disabled;
     $self->{"EVENT_TYPE"} = $eventType;
     return $self;
 }
@@ -82,6 +90,32 @@ sub setURIString {
     my $logger = get_logger( "perfSONAR_PS::Client::Echo" );
 
     $self->{URI} = $uri_string if defined $uri_string and $uri_string;
+    return;
+}
+
+=head2 setAlarmDisabled($self { alarmDisabled})  
+
+ Disable alarm codition on LWP call if set 
+
+=cut
+
+sub setAlarmDisabled  {
+    my ( $self,  @args ) = @_;
+    my $parameters = validateParams( @args, { alarm_disabled => 1 } );
+    $self->{ALARM_DISABLED} =  $parameters->{alarm_disabled};
+    return;
+}
+
+=head2 setTimeout($self { timeout})
+
+Required argument 'timeout' is timeout value for the call
+
+=cut
+
+sub setTimeout {
+    my ( $self, @args ) = @_;
+    my $parameters = validateParams( @args, { timeout => 1 } );
+    $self->{TIMEOUT} = $parameters->{timeout};
     return;
 }
 
@@ -134,8 +168,7 @@ sub ping {
     my $doc = perfSONAR_PS::XML::Document->new();
     $self->createEchoRequest( $doc );
 
-    my $timeout = 15;
-    my ( $status, $res ) = consultArchive( $host, $port, $endpoint, $doc->getValue(), $timeout );
+    my ( $status, $res ) = consultArchive( $host, $port, $endpoint, $doc->getValue(), $self->{TIMEOUT}, $self->{ALARM_DISABLED} );
     if ( $status != 0 ) {
         my $msg = "Error contacting service \"" . $self->{URI} . "\" : $res";
         $logger->error( $msg );

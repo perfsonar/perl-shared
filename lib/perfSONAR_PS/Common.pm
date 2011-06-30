@@ -800,11 +800,11 @@ success and an error message on failure.
 =cut
 
 sub consultArchive {
-    my ( $host, $port, $endpoint, $request, $timeout ) = @_;
+    my ( $host, $port, $endpoint, $request, $timeout, $alarm_disabled ) = @_;
     my $logger = get_logger( "perfSONAR_PS::Common" );
 
     # start a transport agent
-    my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint );
+    my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint, $alarm_disabled );
 
     my $envelope = makeEnvelope( $request );
     my $error;

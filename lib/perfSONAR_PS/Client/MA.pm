@@ -124,7 +124,7 @@ sub callMA {
     }
 
     unless ( $self->{ALIVE} ) {
-        my $echo_service = perfSONAR_PS::Client::Echo->new( $self->{INSTANCE} );
+        my $echo_service = perfSONAR_PS::Client::Echo->new( $self->{INSTANCE}, q{}, q{}, $self->{ALARM_DISABLED} );
         my ( $status, $res ) = $echo_service->ping();
         if ( $status == -1 ) {
             $self->{LOGGER}->error( "Ping to " . $self->{INSTANCE} . " failed: $res" );
@@ -137,7 +137,7 @@ sub callMA {
     unless ( defined $host and defined $port and defined $endpoint ) {
         return;
     }
-
+    
     my $sender = new perfSONAR_PS::Transport( $host, $port, $endpoint, $self->{ALARM_DISABLED});
     unless ( $sender ) {
         $self->{LOGGER}->error( "LS could not be contaced." );
@@ -386,7 +386,7 @@ sub setupDataRequest {
         $self->{LOGGER}->error( "Message element not found in return." );
         return;
     }
-
+    
     my %result = ();
     my $list   = find( $msg, "./nmwg:metadata", 0 );
     my @mdList = ();

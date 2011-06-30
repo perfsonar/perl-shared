@@ -132,7 +132,7 @@ sub callLS {
     }
 
     unless ( $self->{ALIVE} ) {
-        my $echo_service = perfSONAR_PS::Client::Echo->new( $self->{INSTANCE} );
+        my $echo_service = perfSONAR_PS::Client::Echo->new( $self->{INSTANCE}, q{}, q{}, $self->{ALARM_DISABLED} );
         my ( $status, $res ) = $echo_service->ping();
         if ( $status == -1 ) {
             $self->{LOGGER}->error( "Ping to " . $self->{INSTANCE} . " failed: $res" );

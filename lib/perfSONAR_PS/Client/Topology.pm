@@ -5,7 +5,7 @@ use warnings;
 
 our $VERSION = 3.1;
 
-use fields 'URI_STRING', 'LOGGER', 'TIMEOUT';
+use fields 'URI_STRING', 'LOGGER', 'TIMEOUT', 'ALARM_DISABLED';
 
 =head1 NAME
 
@@ -40,7 +40,7 @@ specifies which TS to interact with.
 my $TIMEOUT = 60; # default timeout
 
 sub new {
-    my ( $package, $uri_string, $timeout ) = @_;
+    my ( $package, $uri_string, $timeout, $alarm_disabled ) = @_;
 
     my $self = fields::new( $package );
 
@@ -52,6 +52,10 @@ sub new {
     $self->{TIMEOUT} = $TIMEOUT;
     if ( defined $timeout and $timeout ) {
         $self->{"TIMEOUT"} = $timeout;
+    }
+    $self->{ALARM_DISABLED} = 0;
+    if ( defined $alarm_disabled and $alarm_disabled ) {
+        $self->{"ALARM_DISABLED"} = $alarm_disabled;
     }
     
     
@@ -200,7 +204,7 @@ sub xQuery {
         return ( -1, $msg );
     }
 
-    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request, $self->{"TIMEOUT"} );
+    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request, $self->{"TIMEOUT"}, $self->{"ALARM_DISABLED"} );
     if ( $status != 0 ) {
         my $msg = "Error consulting archive: $res";
         $self->{LOGGER}->error( $msg );
@@ -259,7 +263,7 @@ sub getAll {
         return ( -1, $msg );
     }
 
-    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request, $self->{"TIMEOUT"} );
+    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request, $self->{"TIMEOUT"}, $self->{"ALARM_DISABLED"} );
     if ( $status != 0 ) {
         my $msg = "Error consulting archive: $res";
         $self->{LOGGER}->error( $msg );
@@ -316,7 +320,7 @@ sub changeTopology {
         return ( -1, $msg );
     }
 
-    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request, $self->{"TIMEOUT"} );
+    ( $status, $res ) = consultArchive( $host, $port, $endpoint, $request, $self->{"TIMEOUT"}, $self->{"ALARM_DISABLED"} );
     if ( $status != 0 ) {
         my $msg = "Error consulting archive: $res";
         $self->{LOGGER}->error( $msg );
