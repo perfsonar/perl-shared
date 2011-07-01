@@ -648,7 +648,7 @@ sub maintenance {
     my $service    = $args->{"service"};
     my $sleep_time = q{};
     my $error      = q{};
-
+    my $init_wait  = q{};
     if ( exists $args->{"conf"}->{"gls"}->{"maintenance_interval"} and $args->{"conf"}->{"gls"}->{"maintenance_interval"} ) {
         $sleep_time = $args->{"conf"}->{"gls"}->{"maintenance_interval"};
     }
@@ -669,7 +669,27 @@ sub maintenance {
         $logger->error( "Service Maintenance Disabled." );
         return;
     }
-
+    
+    if ( exists $args->{"conf"}->{"gls"}->{"maintenance_init_wait"} and $args->{"conf"}->{"gls"}->{"maintenance_init_wait"} ) {
+        $init_wait = $args->{"conf"}->{"gls"}->{"maintenance_init_wait"};
+    }
+    elsif ( exists $args->{"conf"}->{"ls"}->{"maintenance_init_wait"} and $args->{"conf"}->{"ls"}->{"maintenance_init_wait"} ) {
+        $init_wait = $args->{"conf"}->{"ls"}->{"maintenance_init_wait"};
+    }
+    elsif ( exists $args->{"conf"}->{"perfsonarbuoy"}->{"maintenance_init_wait"} and $args->{"conf"}->{"perfsonarbuoy"}->{"maintenance_init_wait"} ) {
+        $init_wait = $args->{"conf"}->{"perfsonarbuoy"}->{"maintenance_init_wait"};
+    }
+    elsif ( exists $args->{"conf"}->{"snmp"}->{"maintenance_init_wait"} and $args->{"conf"}->{"snmp"}->{"maintenance_init_wait"} ) {
+        $init_wait = $args->{"conf"}->{"snmp"}->{"maintenance_init_wait"};
+    }
+    else {
+        $init_wait = 0;
+    }
+    
+    #wait an initial period before doing first maintenance run (e.g. wait for services to register)
+    $logger->info( "Waiting $init_wait seconds for first maintenance run" );
+    sleep $init_wait;
+    
     while ( 1 ) {
         if ( $service->can( "cleanLS" ) or $service->can( "summarizeLS" ) ) {
             my $cleanStatus = 0;
