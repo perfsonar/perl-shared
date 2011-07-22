@@ -161,6 +161,41 @@ unless ( $PIDFILE ) {
 
 my $pidfile = lockPIDFile( $PIDDIR, $PIDFILE );
 
+# Pre-load all the modules since switching uids causes 'taint' mode to be
+# enabled.
+my %modules_loaded = ();
+foreach my $port ( keys %{ $conf{"port"} } ) {
+    my %port_conf = %{ mergeConfig( \%conf, $conf{"port"}->{$port} ) };
+
+    next if $port_conf{"disabled"};
+
+    next unless ( $conf{"port"}->{$port}->{"endpoint"} );
+
+    foreach my $key ( keys %{ $conf{"port"}->{$port}->{"endpoint"} } ) {
+        my %endpoint_conf = %{ mergeConfig( \%port_conf, $conf{"port"}->{$port}->{"endpoint"}->{$key} ) };
+
+        next if $endpoint_conf{"disabled"};
+
+        next unless $endpoint_conf{"module"};
+
+        my @endpoint_modules = ();
+
+        if ( ref $endpoint_conf{"module"} eq "ARRAY" ) {
+            @endpoint_modules = @{ $endpoint_conf{"module"} };
+        }
+        else {
+            push @endpoint_modules, $endpoint_conf{"module"};
+        }
+
+        foreach my $module ( @endpoint_modules ) {
+            unless ( exists $modules_loaded{$module} and $modules_loaded{$module} ) {
+                load $module;
+                $modules_loaded{$module} = 1;
+            }
+        }
+    }
+}
+
 # Check if the daemon should run as a specific user/group and then switch to
 # that user/group.
 unless ( $RUNAS_GROUP ) {
@@ -253,7 +288,6 @@ my $echo_module    = "perfSONAR_PS::Services::Echo";
 my %handlers        = ();
 my %services        = ();
 my %listeners       = ();
-my %modules_loaded  = ();
 my %port_configs    = ();
 my %service_configs = ();
 
@@ -936,7 +970,8 @@ sub setids {
             return -1;
         }
 
-        $EFFECTIVE_GROUP_ID = $REAL_GROUP_ID = $gid;
+        $EFFECTIVE_GROUP_ID = "$gid $gid";
+        $REAL_GROUP_ID = $gid;
     }
 
     # Now set UID
