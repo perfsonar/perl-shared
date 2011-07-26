@@ -112,10 +112,14 @@ sub resolve_address_multi {
     my @socket_map = ();
 
     foreach my $addr (@{ $parameters->{addresses} }) {
+        #v4 Lookup
         my $bgsock = $res->bgsend($addr);
-
         my %pair = ( socket => $bgsock, address => $addr );
         push @socket_map, \%pair;
+        #v6 Lookup
+        my $bgsock6 = $res->bgsend($addr, 'AAAA');
+        my %pair6 = ( socket => $bgsock6, address => $addr );
+        push @socket_map, \%pair6;
     }
 
     my %results = ();
@@ -145,13 +149,13 @@ sub resolve_address_multi {
             next unless ($addr);
 
             my $query = $res->bgread($sock);
-
+            
+            $results{$addr} = () if(!$results{$addr});
             my @addresses = ();
             foreach my $ans ( $query->answer ) {
-                next if ( $ans->type ne "A" );
-                push @addresses, $ans->address;
+                next if ( $ans->type ne "A" && $ans->type ne "AAAA");
+                push @{ $results{$addr} }, $ans->address;
             }
-            $results{$addr} = \@addresses;
 
             # Create a new socket map
             my @new_socket_map = ();
