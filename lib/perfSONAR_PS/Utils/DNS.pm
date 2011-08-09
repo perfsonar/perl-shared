@@ -112,6 +112,8 @@ sub resolve_address_multi {
     my @socket_map = ();
 
     foreach my $addr (@{ $parameters->{addresses} }) {
+        next unless ($addr);
+
         #v4 Lookup
         my $bgsock = $res->bgsend($addr);
         my %pair = ( socket => $bgsock, address => $addr );
@@ -192,6 +194,8 @@ sub reverse_dns_multi {
     my @socket_map = ();
 
     foreach my $addr (@{ $parameters->{addresses} }) {
+        next unless ($addr);
+
         my $bgsock = $res->bgsend($addr);
 
         my %pair = ( socket => $bgsock, address => $addr );
