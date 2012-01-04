@@ -14,7 +14,7 @@ perfSONAR_PS::Client::MA
 =head1 DESCRIPTION
 
 API for calling an MA from a client or another service. Module with a very basic
-API to some common MA functions. It supports single and multiple subjects in the request.
+API to some common MA functions. It supports single and multiple metadata ( md + select md + data per request).
 
 =cut
 
@@ -253,14 +253,13 @@ sub metadataKeyRequest {
                                               start => 0, end => 0, resolution => 0, consolidationFunction => 0 } );
     { 
        no strict 'refs';
-       map {("perfSONAR_PS::Client::MA::set\u$_")->($self, { $_ => $parameters->{$_}}) 
-           if $parameters->{$_} }  qw/subject eventTypes parameters/;  
+       map { ("perfSONAR_PS::Client::MA::set\u$_")->($self, { $_ => $parameters->{$_}}) 
+                if $parameters->{$_} }  qw/subject eventTypes parameters/;  
     }
     my $pass_params = {};
     map { $pass_params->{$_} = $parameters->{$_} if  $parameters->{$_} } qw/start end resolution consolidationFunction/;
     my $content = ''; 
     my $data_content = '';
-    my $chain_content = $self->_get_chain_start($pass_params);
     my $eventtype_content = '';
     $eventtype_content= join (' ', ( map { "<nmwg:eventType>$_</nmwg:eventType>" } @{$self->getEventTypes} ))
         if $self->getEventTypes && @{$self->getEventTypes};
@@ -272,7 +271,7 @@ sub metadataKeyRequest {
         }
         $parameterblock_content .= "    </nmwg:parameters>\n";
     } 
-    my $request_content = $self->_add_content($content, $data_content, $parameterblock_content, $eventtype_content, $chain_content);
+    my $request_content = $self->_add_content($content, $data_content, $parameterblock_content, $eventtype_content );
     my $msg = $self->callMA( {  message => $self->createMAMessage( { type => "MetadataKeyRequest", content => $request_content  } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
@@ -320,7 +319,7 @@ sub dataInfoRequest {
         }
         $parameterblock_content .= "    </nmwg:parameters>\n";
     }
-    my $request_content = $self->_add_content($content, $data_content, $parameterblock_content, $eventtype_content, '');
+    my $request_content = $self->_add_content($content, $data_content, $parameterblock_content, $eventtype_content);
     my $msg = $self->callMA( { message => $self->createMAMessage( { type => "DataInfoRequest", content => $request_content } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
@@ -383,32 +382,31 @@ sub _get_chain_start {
 }
 
 sub _add_content {
-    my ($self, $content, $pass_params, $data_content, $parameterblock_content, $eventtype_content, $chain_content) = @_;
+    my ($self, $content, $pass_params, $data_content, $parameterblock_content, $eventtype_content) = @_;
+    my $chain_content = '';
     foreach my $subj (@{$self->getSubject}) {
 	my $mdId    = "metadata." . genuid();
 	my $dId     = "data." . genuid();
+	my $chain_md = $self->_get_chain_start($pass_params);
 	$content .= "  <nmwg:metadata xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\" id=\"$mdId\">\n";
         $content .= $subj if $subj;
         $content .=  $eventtype_content if $eventtype_content;
 	$content .= $parameterblock_content if $parameterblock_content;
 	$content .= "  </nmwg:metadata>\n";
         my $data_idref = $mdId;
-	if($chain_content) {
-	    $chain_content->{content} .= "    <select:subject id=\"subject." . genuid() . 
+	if($chain_md) {
+	    $chain_md->{content} .= "    <select:subject id=\"subject." . genuid() . 
 	                                   "\" metadataIdRef=\"$mdId\" xmlns:select=\"http://ggf.org/ns/nmwg/ops/select/2.0/\"/> ";
-	    $data_idref =  $chain_content->{id} . '.chain';
- 	    $data_content = "  <nmwg:data id=\"$dId\" metadataIdRef=\"$data_idref\"/> ";
+	    $data_idref =  $chain_md->{id} . '.chain';
+ 	    $data_content .= "  <nmwg:data id=\"$dId\" metadataIdRef=\"$data_idref\"/> ";
+            $chain_md->{content}  = $self->_addChainedMd($pass_params, $chain_md->{content});
+	    $chain_content .= $chain_md->{content};
 	} 
 	else {
 	    $data_content .= " <nmwg:data id=\"$dId\" metadataIdRef=\"$data_idref\"/> ";
 	}
     }
-    #  chain 
-    #
-    if($chain_content) {
-        $chain_content->{content}  = $self->_addChainedMd($pass_params, $chain_content->{content});
-    }
-    return $content . $chain_content->{content} . $data_content;
+    return $content . $chain_content  . $data_content;
     
 }
 =head2 setupDataRequest($self, { subject, eventTypes, parameters, start, end, resolution, consolidationFunction })
@@ -433,7 +431,6 @@ sub setupDataRequest {
     my $pass_params = {};
     map { $pass_params->{$_} = $parameters->{$_} if  $parameters->{$_} } qw/start end resolution consolidationFunction/;
     my $content = '';
-    my $chain_content = $self->_get_chain_start($pass_params);
     my $data_content = '';
     my $eventtype_content = '';
     $eventtype_content = join (' ', ( map { "<nmwg:eventType>$_</nmwg:eventType>" } @{$self->getEventTypes} ))
@@ -449,7 +446,7 @@ sub setupDataRequest {
         }
         $parameterblock_content .= "    </nmwg:parameters>\n";
     }
-    my $request_content = $self->_add_content($content, $pass_params, $data_content, $parameterblock_content, $eventtype_content, $chain_content);
+    my $request_content = $self->_add_content($content, $pass_params, $data_content, $parameterblock_content, $eventtype_content);
     my $msg = $self->callMA( { message => $self->createMAMessage( { type => "SetupDataRequest", content => $request_content } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
