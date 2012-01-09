@@ -111,7 +111,7 @@ sub setEventTypes {
 sub setSubject {
     my ( $self,  @args ) = @_;
     my $parameters = validateParams( @args, { subject =>   1 } );
-    $parameters->{subject} = [$parameters->{subject} ]
+    $parameters->{subject} = [ $parameters->{subject} ]
                  unless ref $parameters->{subject} eq ref [];
     $self->{SUBJECT} =	 $parameters->{subject};
     return  $self->{SUBJECT};
@@ -254,7 +254,7 @@ sub metadataKeyRequest {
     { 
        no strict 'refs';
        map { ("perfSONAR_PS::Client::MA::set\u$_")->($self, { $_ => $parameters->{$_}}) 
-                if $parameters->{$_} }  qw/subject eventTypes parameters/;  
+                if   $parameters->{$_} }  qw/subject eventTypes parameters/;  
     }
     my $pass_params = {};
     map { $pass_params->{$_} = $parameters->{$_} if  $parameters->{$_} } qw/start end resolution consolidationFunction/;
@@ -271,7 +271,7 @@ sub metadataKeyRequest {
         }
         $parameterblock_content .= "    </nmwg:parameters>\n";
     } 
-    my $request_content = $self->_add_content($content, $data_content, $parameterblock_content, $eventtype_content );
+    my $request_content = $self->_add_content($content, $pass_params, $data_content, $parameterblock_content, $eventtype_content );
     my $msg = $self->callMA( {  message => $self->createMAMessage( { type => "MetadataKeyRequest", content => $request_content  } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
@@ -319,7 +319,7 @@ sub dataInfoRequest {
         }
         $parameterblock_content .= "    </nmwg:parameters>\n";
     }
-    my $request_content = $self->_add_content($content, $data_content, $parameterblock_content, $eventtype_content);
+    my $request_content = $self->_add_content($content, undef,  $data_content, $parameterblock_content, $eventtype_content);
     my $msg = $self->callMA( { message => $self->createMAMessage( { type => "DataInfoRequest", content => $request_content } ) } );
     unless ( $msg ) {
         $self->{LOGGER}->error( "Message element not found in return." );
@@ -387,7 +387,7 @@ sub _add_content {
     foreach my $subj (@{$self->getSubject}) {
 	my $mdId    = "metadata." . genuid();
 	my $dId     = "data." . genuid();
-	my $chain_md = $self->_get_chain_start($pass_params);
+	my $chain_md = ($pass_params && %{$pass_params})?$self->_get_chain_start($pass_params):'';
 	$content .= "  <nmwg:metadata xmlns:nmwg=\"http://ggf.org/ns/nmwg/base/2.0/\" id=\"$mdId\">\n";
         $content .= $subj if $subj;
         $content .=  $eventtype_content if $eventtype_content;
@@ -426,7 +426,7 @@ sub setupDataRequest {
     {
        no strict 'refs';
        map {("perfSONAR_PS::Client::MA::set\u$_")->($self, { $_ => $parameters->{$_}}) 
-           if exists $parameters->{$_} }  qw/subject eventTypes parameters/;
+           if  $parameters->{$_} }  qw/subject eventTypes parameters/;
     } 
     my $pass_params = {};
     map { $pass_params->{$_} = $parameters->{$_} if  $parameters->{$_} } qw/start end resolution consolidationFunction/;
