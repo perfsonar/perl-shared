@@ -187,9 +187,15 @@ sub owptime2exacttime{
   my $bigtime = uint64($_[0]);
   my $mantissa = $bigtime % $scale;
   my $significand = ($bigtime / $scale);
-  $significand -= JAN_1970;
-
-  return ( $significand . "." . $mantissa );
+  $significand -= JAN_1970;  
+  #calculate decimal value where highest bit is 1/2, next is 1/4, then 1/8, etc
+  my $fraction = 0;
+  foreach my $bit(1..32){
+    $fraction += 1.0/(2**$bit) if(($mantissa & (2**(32-$bit))) > 0 );
+  }
+  $fraction =~ s/\d*\.//g;
+  
+  return ( $significand . "." . $fraction );
 }
 
 sub owpexactgmstring{
