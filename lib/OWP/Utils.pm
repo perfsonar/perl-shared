@@ -193,6 +193,7 @@ sub owptime2exacttime{
   foreach my $bit(1..32){
     $fraction += 1.0/(2**$bit) if(($mantissa & (2**(32-$bit))) > 0 );
   }
+  $fraction = sprintf("%.9f", $fraction);
   $fraction =~ s/\d*\.//g;
   
   return ( $significand . "." . $fraction );
