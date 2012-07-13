@@ -22,7 +22,7 @@ use LWP;
 use Log::Log4perl qw( get_logger );
 use Params::Validate qw( :all );
 use URI;
-use DateTime::Format::ISO8601
+use DateTime::Format::ISO8601;
 
 use perfSONAR_PS::Utils::ParameterValidation;
 
@@ -90,7 +90,8 @@ sub register {
     
     # Pass request to the user agent and get a response back
     my $res = $ua->request($req);
-
+    $self->{LOGGER}->debug($req->as_string);
+    
     # Check the outcome of the response
     if ($res->is_success) {
         my $jsonResp = decode_json($res->content);
@@ -126,7 +127,8 @@ sub renew {
     
     # Pass request to the user agent and get a response back
     my $res = $ua->request($req);
-
+    $self->{LOGGER}->debug($req->as_string);
+    
     # Check the outcome of the response
     if ($res->is_success) {
         my $jsonResp = decode_json($res->content);
@@ -162,7 +164,8 @@ sub unregister {
     
     # Pass request to the user agent and get a response back
     my $res = $ua->request($req);
-
+    $self->{LOGGER}->debug($req->as_string);
+    
     # Check the outcome of the response
     if ($res->is_success) {
         my $jsonResp = decode_json($res->content);
