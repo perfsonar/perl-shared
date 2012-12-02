@@ -21,6 +21,7 @@ use JSON qw( encode_json decode_json);
 use LWP;
 use Params::Validate qw( :all );
 use URI;
+use DateTime::Format::ISO8601;
 
 
 use fields 'INSTANCE', 'LOGGER', 'TIMEOUT', 'CONNECTIONTYPE', 'DATA', 'URL';
@@ -29,7 +30,7 @@ my $TIMEOUT = 60; # default timeout
 
 my $CONNECTIONTYPE = 'GET'; #default connection type
 
-my $DATA = ''; #default empty data
+my $DATA; #default empty data
 
 =head2 new($package { timeout => <timeout> })
 
@@ -44,11 +45,17 @@ connectionType: type of connectio
 
 =cut
 sub new {
-    my ( $package, @args ) = @_;
-    my %parameters = validate( @args, { url=>1, timeout => 0, connectionType => 0, data => 0 } );
-
+    my $package = shift;
+   
     my $self = fields::new( $package );
-    my @names = qw(url timeout connectionType data);
+   
+    return $self;
+}
+
+sub init{
+	my ($self, @args) = @_;
+	 my %parameters = validate( @args, { url=>1, timeout => 0, connectionType => 0, data => 0 } );
+	  my @names = qw(url timeout connectionType data);
     foreach my $param (@names) {
         if ( exists $parameters{$param} and $parameters{$param} ) {
              $self->{"\U$param"} = $parameters{$param};
@@ -60,7 +67,6 @@ sub new {
     
     $self->{DATA} ||= $DATA;
     
-    return $self;
 }
 
 =head2 setTimeout($self { timeout})
@@ -105,15 +111,27 @@ sub getData {
     return $self->{DATA};
 }
 
+sub setUrl {
+    my ( $self, @args ) = @_;
+    my %parameters = validate( @args, { url => 1 } );
+    $self->{URL} = $parameters{url};
+    return;
+}
+
+sub getUrl {
+    my ( $self, @args ) = @_;
+    return $self->{URL};
+}
+
 
 
 sub connect{
     my ( $self, @args ) = @_;
-   
+    
     my $ua = LWP::UserAgent->new;
     $ua->timeout($self->{TIMEOUT});
     $ua->env_proxy();
-    
+  
     # Create a request
     my $req = HTTP::Request->new($self->{CONNECTIONTYPE} => $self->{URL});
     $req->content_type('application/json');
@@ -124,6 +142,17 @@ sub connect{
     
     # Check the outcome of the response
     return $res;
+}
+
+=head2 _isoToUnix($self { uri, base})
+
+Converts a given ISO 8601 date string to a unix timestamp
+
+=cut
+sub _isoToUnix {
+    my ($self, $str) = @_;
+    my $dt = DateTime::Format::ISO8601->parse_datetime($str);
+    return $dt->epoch();
 }
 
 1;

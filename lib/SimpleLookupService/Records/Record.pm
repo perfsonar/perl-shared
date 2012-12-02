@@ -107,8 +107,21 @@ sub _makeArray {
 sub addField {
     my ( $self, @args ) = @_;
     my %parameters = validate( @args, { key => 1, value => 1 } );
-    
+    unless(ref($parameters{value}) eq 'ARRAY'){
+    	$parameters{value} = [$parameters{value}];
+    }
     $self->{RECORD_HASH}->{$parameters{key}} = $parameters{value}; 
+}
+
+sub getValue {
+    my ( $self, $key ) = @_;
+    
+    if(defined $self->{RECORD_HASH}->{$key}){
+    	return $self->{RECORD_HASH}->{$key};
+    }else{
+    	return (undef) ;
+    }
+    
 }
 
 sub getRecordHash {
