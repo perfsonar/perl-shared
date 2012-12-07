@@ -1,13 +1,12 @@
-package SimpleLookupService::Records::Network::Service;
+package SimpleLookupService::Records::Directory::Person;
 
 =head1 NAME
 
-SimpleLookupService::Records::Network::Service - Class that deals records that are network services
+SimpleLookupService::Records::Network::Interface - Class that deals records that are network interfaces
 
 =head1 DESCRIPTION
 
-A base class for network services. it defines fields like service-name, service-locator, host and so on. host and contact details 
-are references to other records.
+A base class for network interface. it defines fields like interface-name, address, mac address, capacity, etc.
 
 =cut
 
@@ -20,85 +19,60 @@ use base 'SimpleLookupService::Records::Record';
 
 use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);
-use SimpleLookupService::Keywords::KeyNames;
-use SimpleLookupService::Keywords::Values;
-
 
 sub init {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, { serviceLocator => 1, serviceType => 1 } );
+    my %parameters = validate( @args, {personName => 1, personEmails => 1 } );
     
-    $self->SUPER::init(type=>(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_SERVICE)); 
+    $self->SUPER::init(type=>(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_PERSON)); 
     
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_TYPE), value=>$parameters{serviceType}  );
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_LOCATOR), value=>$parameters{serviceLocator}  );
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_PERSON_NAME), value=>$parameters{personName});
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_PERSON_EMAILS), value=>$parameters{personEmails});
     
     return 0;
 }
 
- sub getServiceName {
+sub getPersonName {
     my $self = shift;
-    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_NAME)};
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_PERSON_NAME)};
 }
 
-sub setServiceName {
+sub setPersonName {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_NAME), value=>$value  );
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_PERSON_NAME), value=>$value  );
     
 }
 
-sub getServiceType{
+sub getEmailAddresses {
     my $self = shift;
-    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_TYPE)};
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_PERSON_EMAILS)};
 }
 
-sub setServiceType {
+sub setEmailAddresses {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_TYPE), value=>$value  );
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_PERSON_EMAILS), value=>$value  );
     
 }
 
-sub getServiceVersion{
+sub getPhoneNumbers {
     my $self = shift;
-    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_VERSION)};
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_PERSON_PHONENUMBERS)};
 }
 
-sub setServiceVersion {
+sub setPhoneNumbers {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_VERSION), value=>$value  );
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_PERSON_PHONENUMBERS), value=>$value  );
     
-}  
-    
-sub getServiceLocator{
+}
+
+sub getOrganization {
     my $self = shift;
-    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_LOCATOR)};
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_PERSON_ORGANIZATION)};
 }
 
-sub setServiceLocator {
+sub setOrganization {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_LOCATOR), value=>$value  );
-    
-}   
-
-sub getServiceAdministrators{
-    my $self = shift;
-    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_ADMINISTRATORS)};
-}
-
-sub setServiceAdministrators{
-    my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_ADMINISTRATORS), value=>$value  );
-    
-}   
-    
-sub getDNSDomains{
-    my $self = shift;
-    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_GROUP_DOMAINS)};
-}
-
-sub setDNSDomains {
-    my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_GROUP_DOMAINS), value=>$value  );
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_PERSON_ORGANIZATION), value=>$value  );
     
 }
 

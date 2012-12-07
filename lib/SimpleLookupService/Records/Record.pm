@@ -19,15 +19,9 @@ our $VERSION = 3.2;
 
 use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);
+use SimpleLookupService::Keywords::KeyNames;
 
 use fields 'RECORD_HASH';
-
-use constant {
-    LS_KEY_TYPE => "type",
-    LS_KEY_EXPIRES => "expires",
-    LS_KEY_TTL => "ttl",
-    LS_KEY_URI => "uri",
-};
 
 sub new {
     my $package = shift;
@@ -46,9 +40,8 @@ sub init {
     }else{
     	$parameters{type} = [$parameters{type}];
     }
-    
     $self->{RECORD_HASH} = {
-            (LS_KEY_TYPE) => $parameters{type}
+            (SimpleLookupService::Keywords::KeyNames::LS_KEY_TYPE) => $parameters{type}
     }; 
     return 0;
 }
@@ -63,7 +56,7 @@ sub create{
     	$parameters{type} = [$parameters{type}];
     }
      $self->{RECORD_HASH} = {
-            (LS_KEY_TYPE) => $parameters{type}
+            (SimpleLookupService::Keywords::KeyNames::LS_KEY_TYPE) => $parameters{type}
     };
     
     if(defined $parameters{expires}){
@@ -72,7 +65,7 @@ sub create{
     	}else{
     		$parameters{expires} = [$parameters{expires}];
     	}
-    	$self->{RECORD_HASH}->{(LS_KEY_EXPIRES)} = $parameters{expires};
+    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)} = $parameters{expires};
     } 
     
     if(defined $parameters{uri}){
@@ -81,7 +74,7 @@ sub create{
     	}else{
     		$parameters{uri} = [$parameters{uri}];
     	}
-    	$self->{RECORD_HASH}->{(LS_KEY_URI)} = $parameters{uri};
+    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_URI)} = $parameters{uri};
     }
     
     if(defined $parameters{ttl}){
@@ -90,7 +83,7 @@ sub create{
     	}else{
     		$parameters{ttl} = [$parameters{ttl}];
     	}
-    	$self->{RECORD_HASH}->{(LS_KEY_TTL)} = $parameters{ttl};
+    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = $parameters{ttl};
     }  
    
     return 0;
@@ -131,7 +124,7 @@ sub getRecordHash {
 
 sub getRecordType {
     my $self = shift;
-    return $self->{RECORD_HASH}->{(LS_KEY_TYPE)};
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TYPE)};
 }
 
 sub setRecordType {
@@ -140,12 +133,12 @@ sub setRecordType {
     if(ref($value) eq 'ARRAY'){
     	$value = [$value->[0]];
     }
-    $self->{RECORD_HASH}->{(LS_KEY_TYPE)} = $value;
+    $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TYPE)} = $value;
 }
 
 sub getRecordUri {
     my $self = shift;
-    return $self->{RECORD_HASH}->{(LS_KEY_URI)};
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_URI)};
 }
 
 sub setRecordUri {
@@ -153,12 +146,12 @@ sub setRecordUri {
     if(ref($value) eq 'ARRAY'){
     	$value = [$value->[0]];
     }
-    $self->{RECORD_HASH}->{(LS_KEY_URI)} = $value;
+    $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_URI)} = $value;
 }
 
 sub getRecordTtl {
     my $self = shift;
-    return $self->{RECORD_HASH}->{(LS_KEY_TTL)};
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)};
 }
 
 sub setRecordTtl {
@@ -166,12 +159,12 @@ sub setRecordTtl {
     if(ref($value) eq 'ARRAY'){
     	$value = [$value->[0]];
     }
-    $self->{RECORD_HASH}->{(LS_KEY_TTL)} = $value;
+    $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = $value;
 }
 
 sub getRecordExpires {
     my $self = shift;
-    return $self->{RECORD_HASH}->{(LS_KEY_EXPIRES)};
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)};
 }
 
 sub setRecordExpires {
@@ -179,7 +172,7 @@ sub setRecordExpires {
     if(ref($value) eq 'ARRAY'){
     	$value = [$value->[0]];
     }
-   $self->{RECORD_HASH}->{(LS_KEY_EXPIRES)} = $value;
+   $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)} = $value;
 }
 
 
