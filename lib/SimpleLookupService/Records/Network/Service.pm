@@ -33,7 +33,7 @@ sub init {
     $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_TYPE), value=>$parameters{serviceType}  );
     $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_LOCATOR), value=>$parameters{serviceLocator}  );
     
-    return 0;
+    return $self;
 }
 
  sub getServiceName {

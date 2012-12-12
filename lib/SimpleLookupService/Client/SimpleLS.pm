@@ -67,6 +67,8 @@ sub init{
     
     $self->{DATA} ||= $DATA;
     
+    return $self;
+    
 }
 
 =head2 setTimeout($self { timeout})

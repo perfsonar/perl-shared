@@ -18,7 +18,7 @@ sub instantiate {
 
     	return $class->new(@_);
     }else{
-    	return(-1,{"Undefined record-type"});
+    	return(-1,{message=>"Undefined record-type"});
     }
    
 }

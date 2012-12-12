@@ -20,11 +20,12 @@ our $VERSION = 3.2;
 
 use Params::Validate qw( :all );
 use JSON qw(encode_json decode_json);
+use SimpleLookupService::Keywords::KeyNames;
 use SimpleLookupService::Records::Record;
 use SimpleLookupService::Records::RecordFactory;
 use SimpleLookupService::Keywords::RecordTypeMapping;
-
 use Data::Dumper;
+
 use base 'SimpleLookupService::Client::SimpleLS';
 
 sub init  {
@@ -67,7 +68,7 @@ sub register{
     if ($result->is_success) {
         my $jsonResp = decode_json($result->content);
         #print $jsonResp;
-        my $rType = $jsonResp->{'type'}->[0];
+        my $rType = $jsonResp->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TYPE)}->[0];
         my $resultRecord = SimpleLookupService::Records::RecordFactory->instantiate($rType);
         $resultRecord->fromHashRef($jsonResp);
 		return (0, $resultRecord);
