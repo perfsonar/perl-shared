@@ -175,8 +175,21 @@ sub setRecordExpires {
    $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)} = $value;
 }
 
-
 sub toJson(){
 	my $self = shift;
 	return encode_json($self->getRecordHash());
+}
+
+sub fromJson(){
+	my ($self, $jsonData) = @_;
+	my $perlDS = decode_json($jsonData);
+}
+
+sub fromHashRef(){
+	my ($self, $perlDS) = @_;
+	print "\n inside Record.pm...\n";
+	
+	foreach my $key (keys %{$perlDS}){
+		$self->{RECORD_HASH}->{$key} = ${perlDS}->{$key};
+	}
 }

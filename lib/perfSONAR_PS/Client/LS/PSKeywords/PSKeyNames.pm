@@ -11,11 +11,18 @@ use constant {
 # psservice keys
 use constant {
     LS_KEY_PSSERVICE_EVENTTYPES => "psservice-eventtypes",
-    LS_KEY_MA_TYPE => "ma-type",
-    LS_KEY_MA_TESTS => "ma-tests",
-    LS_KEY_TS_DOMAINS => "ts-domains",
 };
 
+# ma keys
+use constant {
+    LS_KEY_MA_TYPE => "ma-type",
+    LS_KEY_MA_TESTS => "ma-tests"
+};
+
+#topologyservice keys
+use constant {
+    LS_KEY_TS_DOMAINS => "ts-domains"
+};
 #pshost keys
 use constant {
     LS_KEY_PSHOST_TOOLKITVERSION => "pshost-toolkitversion",

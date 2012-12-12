@@ -48,8 +48,12 @@ sub renew{
 	my $result = $self->SUPER::connect();
 	 if ($result->is_success) {
         my $jsonResp = decode_json($result->content);
-        print $result->content;
-        return (0, $jsonResp);
+        my $rType = $jsonResp->{'type'}->[0];
+        my $resultRecord = SimpleLookupService::Records::RecordFactory->instantiate($rType);
+        $resultRecord->fromHashRef($jsonResp);
+		return (0, $resultRecord);
+        #print $result->content;
+        #return (0, $jsonResp);
     } else {
         return (-1, { message => $result->status_line });
     }
@@ -61,8 +65,12 @@ sub delete{
 	my $result = $self->SUPER::connect();
 	 if ($result->is_success) {
         my $jsonResp = decode_json($result->content);
-        print $result->content;
-        return (0, $jsonResp);
+        my $rType = $jsonResp->{'type'}->[0];
+        my $resultRecord = SimpleLookupService::Records::RecordFactory->instantiate($rType);
+        $resultRecord->fromHashRef($jsonResp);
+		return (0, $resultRecord);
+        #print $result->content;
+        #return (0, $jsonResp);
     } else {
         return (-1, { message => $result->status_line });
     }
@@ -74,8 +82,12 @@ sub getRecord{
 	my $result = $self->SUPER::connect();
 	 if ($result->is_success) {
         my $jsonResp = decode_json($result->content);
-        print $result->content;
-        return (0, $jsonResp);
+        #print $result->content;
+        #return (0, $jsonResp);
+        my $rType = $jsonResp->{'type'}->[0];
+        my $resultRecord = SimpleLookupService::Records::RecordFactory->instantiate($rType);
+        $resultRecord->fromHashRef($jsonResp);
+		return (0, $resultRecord);
     } else {
         return (-1, { message => $result->status_line });
     }

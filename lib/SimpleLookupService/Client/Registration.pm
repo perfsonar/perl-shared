@@ -21,6 +21,8 @@ our $VERSION = 3.2;
 use Params::Validate qw( :all );
 use JSON qw(encode_json decode_json);
 use SimpleLookupService::Records::Record;
+use SimpleLookupService::Records::RecordFactory;
+use SimpleLookupService::Keywords::RecordTypeMapping;
 
 use Data::Dumper;
 use base 'SimpleLookupService::Client::SimpleLS';
@@ -64,10 +66,11 @@ sub register{
         # Check the outcome of the response
     if ($result->is_success) {
         my $jsonResp = decode_json($result->content);
-        print $result->content;
-        #my $expires_unixtime = $self->SUPER::_isoToUnix($jsonResp->{'expires'});
-        #return (0, {expires => $jsonResp->{'expires'}, expires_unixtime => $expires_unixtime, uri => $jsonResp->{'uri'}});
-        return (0, $jsonResp);
+        #print $jsonResp;
+        my $rType = $jsonResp->{'type'}->[0];
+        my $resultRecord = SimpleLookupService::Records::RecordFactory->instantiate($rType);
+        $resultRecord->fromHashRef($jsonResp);
+		return (0, $resultRecord);
     } else {
         return (-1, { message => $result->status_line });
     }
