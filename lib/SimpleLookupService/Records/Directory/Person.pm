@@ -2,11 +2,11 @@ package SimpleLookupService::Records::Directory::Person;
 
 =head1 NAME
 
-SimpleLookupService::Records::Network::Interface - Class that deals records that are network interfaces
+SimpleLookupService::Records::Directory::Person - User records
 
 =head1 DESCRIPTION
 
-A base class for network interface. it defines fields like interface-name, address, mac address, capacity, etc.
+A base class for user records. it is used to store contact details
 
 =cut
 

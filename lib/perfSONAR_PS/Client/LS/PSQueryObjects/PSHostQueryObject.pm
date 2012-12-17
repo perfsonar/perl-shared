@@ -1,12 +1,12 @@
-package perfSONAR_PS::Client::LS::PSRecords::PSHost;
+package perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject;
 
 =head1 NAME
 
-perfSONAR_PS::Client::LS::PSRecords::PSHost - Defines perfSONAR network host record
+perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject - Defines query object for perfSONAR host
 
 =head1 DESCRIPTION
 
-A base class for perfSONAR services. It inherits SimpleLookupService::Records::Network::Host. It defines few perfSONAR
+A base query class for perfSONAR services. It inherits SimpleLookupService::QueryObjects::Network::HostQueryObject. It defines few perfSONAR
 specific keys
 
 =cut
@@ -16,7 +16,7 @@ use warnings;
 
 our $VERSION = 3.2;
 
-use base 'SimpleLookupService::Records::Network::HostQueryObject';
+use base 'SimpleLookupService::QueryObjects::Network::HostQueryObject';
 
 use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);
@@ -25,12 +25,11 @@ use perfSONAR_PS::Client::LS::PSKeywords::PSKeyValues;
 
 
 sub init {
-    my ( $self, @args ) = @_;
-    my %parameters = validate( @args, { hostName => 1} );
+ my ( $self, @args ) = @_;
     
-    $self->SUPER::init(%parameters); 
+    $self->SUPER::init(); 
     
-    return 0;
+    return $self;
 }
 
 sub getToolkitVersion {

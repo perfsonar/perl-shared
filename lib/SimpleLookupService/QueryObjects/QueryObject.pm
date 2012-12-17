@@ -2,13 +2,11 @@ package SimpleLookupService::QueryObjects::QueryObject;
 
 =head1 NAME
 
-SimpleLookupService::QueryObjects::QueryObject - The base class for Lookup Service Records
+SimpleLookupService::QueryObjects::QueryObject - The base class for Query Object
 
 =head1 DESCRIPTION
 
-A base class for Lookup Service records. It defines the fields used by all 
-records. service,interface, host and person records are direct subclasses of this class. It 
-allows for any key to be added with the addField function.
+The base class for Query Object
 
 =cut
 
@@ -103,7 +101,7 @@ sub _makeArray {
     }
 }
 
-sub _convertToArray {
+sub _convertToURLArray {
     my ($self, $var) = @_;
   	my $result ='';
     if(ref($var) eq 'ARRAY'){
@@ -206,9 +204,9 @@ sub toURLParameters {
 	my $curCount = 1;
 	foreach my $key (keys %recordHash){
 		if($curCount >= $keysCount){
-			$paramString .= $key."=". _convertToArray($recordHash{$key})."&";
+			$paramString .= $key."=". _convertToURLArray($recordHash{$key})."&";
 		}else{
-			$paramString .= $key."=". _convertToArray($recordHash{$key});
+			$paramString .= $key."=". _convertToURLArray($recordHash{$key});
 		}		
 	}
 	return $paramString;
