@@ -22,18 +22,121 @@ use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);
 use SimpleLookupService::Keywords::KeyNames;
 use SimpleLookupService::Keywords::Values;
+use Carp qw(cluck);
 
 
 sub init {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, { serviceLocator => 1, serviceType => 1 } );
+    my %parameters = validate( @args, { serviceLocator => 1, serviceType => 1, 
+    									serviceName => 0, serviceVersion => 0, 
+    									domains => 0, administrators => 0, 
+    									siteName => 0 , city => 0, region => 0,
+    									country => 0, zipCode => 0, latitude =>0, longitude => 0 } );
     
     $self->SUPER::init(type=>(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_SERVICE)); 
     
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_TYPE), value=>$parameters{serviceType}  );
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_LOCATOR), value=>$parameters{serviceLocator}  );
+    my $returnVal = $self->setServiceType($parameters{serviceType});
+    if($returnVal <0){
+    		cluck "Error initializing Service record";
+    		return $returnVal;
+    }
     
-    return $self;
+    $returnVal = 0;
+    $returnVal = $self->setServiceLocators($parameters{serviceLocator});
+    if($returnVal <0){
+    		cluck "Error initializing Service record";
+    		return $returnVal;
+    }
+    
+    if(defined $parameters{serviceName}){
+    	my $ret = $self->setServiceName($parameters{serviceName});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{serviceVersion}){
+    	my $ret = $self->setServiceVersion($parameters{serviceVersion});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{domains}){
+    	my $ret = $self->setDNSDomains($parameters{domains});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{administrators}){
+    	my $ret = $self->setServiceAdministrators($parameters{administrators});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{siteName}){
+    	my $ret = $self->setSiteName($parameters{siteName});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{city}){
+    	my $ret = $self->setCity($parameters{city});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{region}){
+    	my $ret = $self->setRegion($parameters{region});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{country}){
+    	my $ret = $self->setCountry($parameters{country});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{zipCode}){
+    	my $ret = $self->setZipCode($parameters{zipCode});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{latitude}){
+    	my $ret = $self->setLatitude($parameters{latitude});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{longitude}){
+    	my $ret = $self->setLongitude($parameters{longitude});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    return 0;
 }
 
  sub getServiceName {
@@ -43,7 +146,18 @@ sub init {
 
 sub setServiceName {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_NAME), value=>$value  );
+    
+    if(ref($value) eq 'ARRAY' && scalar @{$value} > 1){
+    		cluck "Service Name array size cannot be > 1";
+    		return -1;
+    }
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    	
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_NAME), value=>$value  );
+
     
 }
 
@@ -54,8 +168,18 @@ sub getServiceType{
 
 sub setServiceType {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_TYPE), value=>$value  );
     
+    if(ref($value) eq 'ARRAY' && scalar @{$value} > 1){
+    		cluck "Service Type size cannot be > 1";
+    		return -1;
+    }
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_TYPE), value=>$value  );
+
 }
 
 sub getServiceVersion{
@@ -65,18 +189,35 @@ sub getServiceVersion{
 
 sub setServiceVersion {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_VERSION), value=>$value  );
+    
+    if(ref($value) eq 'ARRAY' && scalar @{$value} > 1){
+    		cluck "Service Version array size cannot be > 1";
+    		return -1;
+    }
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_VERSION), value=>$value  );
+
     
 }  
     
-sub getServiceLocator{
+sub getServiceLocators{
     my $self = shift;
     return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_LOCATOR)};
 }
 
-sub setServiceLocator {
+sub setServiceLocators {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_LOCATOR), value=>$value  );
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_LOCATOR), value=>$value  );
+
     
 }   
 
@@ -87,7 +228,12 @@ sub getServiceAdministrators{
 
 sub setServiceAdministrators{
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_ADMINISTRATORS), value=>$value  );
+
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_ADMINISTRATORS), value=>$value  );
+
     
 }   
     
@@ -98,7 +244,13 @@ sub getDNSDomains{
 
 sub setDNSDomains {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_GROUP_DOMAINS), value=>$value  );
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_GROUP_DOMAINS), value=>$value  );
+
     
 }
 
@@ -109,7 +261,18 @@ sub getSiteName{
 
 sub setSiteName {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_SITENAME), value=>$value  );
+    
+    if(ref($value) eq 'ARRAY' && scalar @{$value} > 1){
+    		cluck "Site Name array size cannot be > 1";
+    		return -1;
+    }
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_SITENAME), value=>$value  );
+
     
 }    
 
@@ -120,7 +283,18 @@ sub getCity{
 
 sub setCity {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_CITY), value=>$value  );
+    
+    if(ref($value) eq 'ARRAY' && scalar @{$value} > 1){
+    		cluck "City array size cannot be > 1";
+    		return -1;
+    }
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_CITY), value=>$value  );
+
     
 }
 
@@ -131,7 +305,18 @@ sub getRegion{
 
 sub setRegion {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_STATE), value=>$value  );
+    
+    if(ref($value) eq 'ARRAY' && scalar @{$value} > 1){
+    		cluck "Region array size cannot be > 1";
+    		return -1;
+    }
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_STATE), value=>$value  );
+    
     
 }
 
@@ -142,7 +327,21 @@ sub getCountry{
 
 sub setCountry {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_COUNTRY), value=>$value  );
+        if(ref($value) eq 'ARRAY' && scalar @{$value} > 1){
+    		cluck "Country array size cannot be > 1";
+    		return -1;
+    }
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    
+    if(length $value->[0] > 2){
+    	cluck "Country should be 2 digit ISO 3166 code";
+    	return -1;
+    }
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_COUNTRY), value=>$value  );
+    
     
 }
 
@@ -153,7 +352,17 @@ sub getZipCode{
 
 sub setZipCode {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_CODE), value=>$value  );
+    
+        if(ref($value) eq 'ARRAY' && scalar @{$value} > 1){
+    		cluck "Zip Code array size cannot be > 1";
+    		return -1;
+    }
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_CODE), value=>$value  );
     
 }
 
@@ -164,7 +373,22 @@ sub getLatitude{
 
 sub setLatitude {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_LATITUDE), value=>$value  );
+    
+    if(ref($value) eq 'ARRAY' && scalar @{$value} > 1){
+    		cluck "Latitude array size cannot be > 1";
+    		return -1;
+    }
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    
+    unless($value->[0]>= -90 && $value->[0]<=90){
+    	cluck "Latitude should be between -90 to 90";
+    	return -1;
+    }
+    
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_LATITUDE), value=>$value  );
     
 }
 
@@ -175,7 +399,22 @@ sub getLongitude{
 
 sub setLongitude {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_LONGITUDE), value=>$value  );
+    
+        if(ref($value) eq 'ARRAY' && scalar @{$value} > 1){
+    		cluck "Longitude array size cannot be > 1";
+    		return -1;
+    }
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    
+    unless($value->[0]>= -180 && $value->[0]<=180){
+    	cluck "Longitude should be between -180 to 180";
+    	return -1;
+    }
+    
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_LONGITUDE), value=>$value  );
     
 }
 1;

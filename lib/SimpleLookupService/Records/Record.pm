@@ -223,7 +223,13 @@ sub getRecordUri {
 
 sub toJson(){
 	my $self = shift;
-	return encode_json($self->getRecordHash());
+	
+	if(defined $self->getRecordHash()){
+		return encode_json($self->getRecordHash());
+	}else{
+		return undef;
+	}
+	
 }
 
 #creates record object from json
