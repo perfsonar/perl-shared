@@ -11,11 +11,15 @@ sub instantiate {
    
     my $class = SimpleLookupService::Keywords::RecordTypeMapping::RECORDMAP->{$requested_type};
     
-    print $class;
     
     if(defined $class){
-    	my $location       = "$class.pm";
+    	#my $location       = "$class.pm";
+	    my $location = $class;
+	    
+	    $location =~ s/::/\//g;
 
+	    $location .= ".pm";
+	    require $location;
     	return $class->new(@_);
     }else{
     	return(-1,{message=>"Undefined record-type"});

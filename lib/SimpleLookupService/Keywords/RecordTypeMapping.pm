@@ -12,7 +12,7 @@ use constant {
 					(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_SERVICE) => "SimpleLookupService::Records::Network::Service",
    					(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_HOST) => "SimpleLookupService::Records::Network::Host",
                     (SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_INTERFACE) => "SimpleLookupService::Records::Network::Interface",
-                    (SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_PERSON) => "SimpleLookupService::Records::Network::Person",
+                    (SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_PERSON) => "SimpleLookupService::Records::Directory::Person",
 				}
 		
 };
