@@ -20,17 +20,62 @@ use base 'SimpleLookupService::Records::Record';
 use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);
 use SimpleLookupService::Keywords::KeyNames;
+use SimpleLookupService::Keywords::Values;
+use Carp qw(cluck);
 
 
 sub init {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, {interfaceName => 1, interfaceAddresses => 1 } );
+    my %parameters = validate( @args, {interfaceName => 1, interfaceAddresses => 1, subnet => 0, capacity => 0, macAddress=>0, domains=>0 } );
     
     $self->SUPER::init(type=>(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_INTERFACE)); 
+        
+    my $returnVal = $self->setInterfaceName($parameters{interfaceName});
+    if($returnVal <0){
+    		cluck "Error initializing Service record";
+    		return $returnVal;
+    }
     
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_NAME), value=>$parameters{interfaceName});
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_ADDRESSES), value=>$parameters{interfaceAddress});
+    $returnVal = 0;
+    $returnVal = $self->setInterfaceAddresses($parameters{interfaceAddresses});
+    if($returnVal <0){
+    		cluck "Error initializing Service record";
+    		return $returnVal;
+    }
     
+    
+    if(defined $parameters{subnet}){
+    	my $ret = $self->setInterfaceSubnet($parameters{subnet});
+    	if($ret <0){
+    		cluck "Error initializing Interface record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{capacity}){
+    	my $ret = $self->setInterfaceCapacity($parameters{capacity});
+    	if($ret <0){
+    		cluck "Error initializing Interface record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{macAddress}){
+    	my $ret = $self->setInterfaceMacAddress($parameters{macAddress});
+    	if($ret <0){
+    		cluck "Error initializing Interface record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{domains}){
+    	my $ret = $self->setDNSDomains($parameters{domains});
+    	if($ret <0){
+    		cluck "Error initializing Interface record";
+    		return $ret;
+    	}
+    }
+     
     return 0;
 }
 
@@ -41,7 +86,11 @@ sub getInterfaceName {
 
 sub setInterfaceName {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_NAME), value=>$value  );
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_NAME), value=>$value  );
+    return $ret;
     
 }
 
@@ -52,8 +101,11 @@ sub getInterfaceAddresses {
 
 sub setInterfaceAddresses {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_ADDRESSES), value=>$value  );
-    
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_ADDRESSES), value=>$value  );
+    return $ret;
 }
 
 sub getInterfaceSubnet {
@@ -63,8 +115,11 @@ sub getInterfaceSubnet {
 
 sub setInterfaceSubnet {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_SUBNET), value=>$value  );
-    
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_SUBNET), value=>$value  );
+    return $ret;
 }
 
 sub getInterfaceCapacity {
@@ -74,8 +129,8 @@ sub getInterfaceCapacity {
 
 sub setInterfaceCapacity {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_CAPACITY), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_CAPACITY), value=>$value  );
+    return $ret;
 }
 
 sub getInterfaceMacAddress {
@@ -85,8 +140,8 @@ sub getInterfaceMacAddress {
 
 sub setInterfaceMacAddress {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_MAC), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_MAC), value=>$value  );
+    return $ret;
 }
 
 sub getDNSDomains{
@@ -96,6 +151,6 @@ sub getDNSDomains{
 
 sub setDNSDomains {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_GROUP_DOMAINS), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_GROUP_DOMAINS), value=>$value  );
+    return $ret;
 }
