@@ -353,9 +353,7 @@ sub setHostAdministrators{
     unless(ref($value) eq 'ARRAY'){
     	$value = [$value];
     }
-    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_ADMINISTRATORS), value=>$value  );
-
-    
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_ADMINISTRATORS), value=>$value  );   
     
 }   
 
