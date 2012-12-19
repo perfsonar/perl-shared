@@ -16,3 +16,4 @@ use constant {
     LS_VALUE_TYPE_PSTEST => "pstest"
     
 };
+1;

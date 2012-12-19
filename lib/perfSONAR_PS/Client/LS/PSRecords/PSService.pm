@@ -21,16 +21,20 @@ use base 'SimpleLookupService::Records::Network::Service';
 use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);
 use perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames;
-use perfSONAR_PS::Client::LS::PSKeywords::PSKeyValues;
+use perfSONAR_PS::Client::LS::PSKeywords::PSValues;
 
 
 sub init {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, { serviceLocator => 1, serviceType => 1 } );
+    my %parameters = validate( @args, { serviceLocator => 1, serviceType => 1, 
+    									serviceName => 0, serviceVersion => 0, 
+    									domains => 0, administrators => 0, 
+    									siteName => 0 , city => 0, region => 0,
+    									country => 0, zipCode => 0, latitude =>0, longitude => 0 } );
     
-    $self->SUPER::init(%parameters); 
+    my $res = $self->SUPER::init(%parameters); 
     
-    return 0;
+    return $res;
 }
 
 sub getServiceEventType {
