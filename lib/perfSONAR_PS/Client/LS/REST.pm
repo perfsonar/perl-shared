@@ -22,6 +22,7 @@ use LWP;
 use Log::Log4perl qw( get_logger );
 use Params::Validate qw( :all );
 use URI;
+use URI::Escape;
 use DateTime::Format::ISO8601;
 
 use perfSONAR_PS::Utils::ParameterValidation;
@@ -44,7 +45,7 @@ sub new {
     my $parameters = validateParams( @args, { timeout => 0 } );
 
     my $self = fields::new( $package );
-    $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::LS" );
+    $self->{LOGGER} = get_logger( "perfSONAR_PS::Client::LS::REST" );
     foreach my $param (qw/timeout/) {
         if ( exists $parameters->{$param} and $parameters->{$param} ) {
              $self->{"\U$param"} = $parameters->{$param};
@@ -174,6 +175,58 @@ sub unregister {
         return (-1, { message => $res->status_line });
     }
 }
+
+=head2 query($self { uri, search_params})
+
+Queries the lookup service at the given URI using the optional set of search 
+parameters
+
+=cut
+sub query {
+    my ( $self, @args ) = @_;
+    my $parameters = validateParams( @args, { uri => 1, search_params => 0 } );
+    
+    #Build URI string
+    my $uri = $parameters->{'uri'};
+    my $i = 0;
+    if($parameters->{'search_params'}){
+		foreach my $search_param_key(keys %{$parameters->{'search_params'}}){
+		    my $search_param = $parameters->{'search_params'}->{$search_param_key};
+		    if(ref($search_param) eq 'ARRAY'){
+		        $search_param = join(',', @{$search_param});
+		    }
+			if($i == 0 && $uri !~ /\?$/){
+				$uri .= '?';
+			}elsif($i > 0){
+				$uri .= '&';
+			}
+			$uri .= (uri_escape($search_param_key) . '=' . uri_escape($search_param));
+			$i++;
+		}
+	}
+    print "$uri\n";
+    
+    my $ua = LWP::UserAgent->new;
+    $ua->timeout($self->{TIMEOUT});
+    $ua->env_proxy();
+    
+    # Create a request
+    my $req = HTTP::Request->new(GET => $uri);
+    $req->content_type('application/json');
+    
+    # Pass request to the user agent and get a response back
+    my $res = $ua->request($req);
+    $self->{LOGGER}->debug($req->as_string);
+    
+    # Check the outcome of the response
+    if ($res->is_success) {
+        my $jsonResp = decode_json($res->content);
+        return (0, $jsonResp);
+    } else {
+        return (-1, { message => $res->status_line });
+    }
+}
+
 
 =head2 _buildURI($self { uri, base})
 

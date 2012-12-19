@@ -521,15 +521,13 @@ sub psService {
 
     $max_worker_processes = $service_config->{"max_worker_processes"};
 
-    while ( 1 ) {
-        if ( $max_worker_processes > 0 ) {
-            while ( %child_pids and scalar( keys %child_pids ) >= $max_worker_processes ) {
-                $logger->debug( "Waiting for a slot to open" );
-                my $kid = waitpid( -1, 0 );
-                delete $child_pids{$kid} if $kid > 0;
-            }
-        }
+    $max_worker_processes = 100 unless $max_worker_processes;
 
+    $logger->debug( "Max worker processes: ".$max_worker_processes);
+
+    while ( 1 ) {
+
+CLEAN_CHILDREN:
         if ( %child_pids ) {
             my $time = time;
 
@@ -556,6 +554,12 @@ sub psService {
                     $child_pids{$pid}->{"listener"}->close();
                 }
             }
+        }
+
+        if ( scalar( keys %child_pids ) >= $max_worker_processes ) {
+            $logger->debug( "Waiting for a slot to open" );
+            sleep(1);
+            goto CLEAN_CHILDREN;
         }
 
         my $handle = $listener->accept;

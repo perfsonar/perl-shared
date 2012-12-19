@@ -417,34 +417,11 @@ sub config_perfsonarbuoy_ma {
     $amiconfdir                            = $config->{"perfsonarbuoy"}->{"owmesh"};
     $config->{"perfsonarbuoy"}->{"legacy"} = "0";
 
-    $config->{"perfsonarbuoy"}->{"metadata_db_type"} = &ask( "Enter the database type to read from (file or xmldb) ", "file", $config->{"perfsonarbuoy"}->{"metadata_db_type"}, '(file|xmldb)' );
+    $config->{"perfsonarbuoy"}->{"metadata_db_type"} ='file';
 
     if ( $config->{"perfsonarbuoy"}->{"metadata_db_type"} eq "file" ) {
         delete $config->{"perfsonarbuoy"}->{"metadata_db_file"} if $config->{"perfsonarbuoy"}->{"metadata_db_file"} and $config->{"perfsonarbuoy"}->{"metadata_db_file"} =~ m/dbxml$/mx;
         $config->{"perfsonarbuoy"}->{"metadata_db_file"} = &ask( "Enter the filename of the XML file ", $amiconfdir . "/psb-store.xml", $config->{"perfsonarbuoy"}->{"metadata_db_file"}, '\.xml$' );
-    }
-    elsif ( $config->{"perfsonarbuoy"}->{"metadata_db_type"} eq "xmldb" ) {
-        $config->{"perfsonarbuoy"}->{"metadata_db_name"} = &ask( "Enter the directory of the XML database ", $amiconfdir . "/psb-xmldb", $config->{"perfsonarbuoy"}->{"metadata_db_name"}, '.+' );
-        $config->{"perfsonarbuoy"}->{"metadata_db_name"} .= "/" unless $config->{"perfsonarbuoy"}->{"metadata_db_name"} =~ m/\/$/;
-        unless ( -d $config->{"perfsonarbuoy"}->{"metadata_db_name"} ) {
-            system( "mkdir " . $config->{"perfsonarbuoy"}->{"metadata_db_name"} );
-        }
-
-        unless ( -e $config->{"perfsonarbuoy"}->{"metadata_db_name"} . "DB_CONFIG" ) {
-            my $RUN = q{};
-            open( $RUN, "perl " . $dirname . "makeDBConfig.pl |" );
-            my @result = <$RUN>;
-            close($RUN);
-            if ( $result[0] ) {
-                system( "mv " . $result[0] . " " . $config->{"perfsonarbuoy"}->{"metadata_db_name"} . "DB_CONFIG" );
-            }
-            else {
-                return -1;
-            }
-        }
-
-        delete $config->{"perfsonarbuoy"}->{"metadata_db_file"} if $config->{"perfsonarbuoy"}->{"metadata_db_file"} and $config->{"perfsonarbuoy"}->{"metadata_db_file"} =~ m/\.xml$/mx;
-        $config->{"perfsonarbuoy"}->{"metadata_db_file"} = "psbstore.dbxml";
     }
 
     $config->{"perfsonarbuoy"}->{"enable_registration"} = &ask( "Will this service register with an LS (0 for no, 1 for yes)", "0", $config->{"perfsonarbuoy"}->{"enable_registration"}, '^[01]$' );
