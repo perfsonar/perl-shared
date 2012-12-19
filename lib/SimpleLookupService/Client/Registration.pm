@@ -25,41 +25,57 @@ use SimpleLookupService::Records::Record;
 use SimpleLookupService::Records::RecordFactory;
 use SimpleLookupService::Keywords::RecordTypeMapping;
 use Data::Dumper;
+use Carp qw(cluck);
 
 use base 'SimpleLookupService::Client::SimpleLS';
 
 sub init  {
     my ( $self, @args ) = @_;
     my %parameters = validate( @args, { url => 1, timeout=> 0, record => 0} );
+    
+    my $res;
     my $data;
-    if(defined $parameters{'record'}){
-    	$data = $parameters{'record'}->toJson();
-    	return $self->SUPER::init({
+    if(defined $parameters{'timeout'}){
+    	$res =  $self->SUPER::init({
            url => $parameters{'url'},
            timeout => $parameters{'timeout'},
-           connectionType => 'POST',
-           data => $data
+           connectionType => 'POST'
     	});
     }else{
-    	return $self->SUPER::init({
+    	$res = $self->SUPER::init({
            url => $parameters{'url'},
-           timeout => $parameters{'timeout'},
-           connectionType => 'POST',
+           connectionType => 'POST'
     	});
     }
+    
+    if($res != 0){
+    	cluck "Error initializing client";
+    	return -1;
+    }
+    
+    if (defined $parameters{'record'}){
+    	my $r = $self->_setRecord($parameters{'record'});
+    	if($r != 0){
+    		cluck "Error initializing client. Record could not be set.";
+    		return -1;
+    	}
+    }    
+    
+    return 0;
     
 }
 
 sub register{
 	my ($self, $parameter) = @_;
-	print Dumper $self;
+	#print Dumper $self;
     if (defined $parameter){
     	
     	$self->_setRecord($parameter);
     }
     
     if(!defined $self->{DATA}){
-    	die "Record not defined";
+    	cluck "Record not defined";
+    	return -1;
     }
     
     my $result = $self->SUPER::connect();
@@ -78,13 +94,26 @@ sub register{
     
 } 
 
+
 sub _setRecord{
 	my ($self, $record) = @_;
 	if($record->isa('SimpleLookupService::Records::Record')){
+		#check if record type is set
+		my $type = $record->getRecordType();
+		if(!defined $type){
+			cluck "Record should contain record-type";
+			return -1;
+		}
 		my $data = $record->toJson();
 		$self->SUPER::setData({data => $data});
 	}else{
-		die "Record should be of type SimpleLookupService::Records::Record or its subclass ";
+		cluck "Record should be of type SimpleLookupService::Records::Record or its subclass ";
+		return -1;
+		
 	}
 	
+	return 0;
+	
 }
+
+1;

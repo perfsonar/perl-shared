@@ -24,7 +24,7 @@ use URI;
 use DateTime::Format::ISO8601;
 
 
-use fields 'INSTANCE', 'LOGGER', 'TIMEOUT', 'CONNECTIONTYPE', 'DATA', 'URL';
+use fields 'INSTANCE', 'LOGGER', 'TIMEOUT', 'CONNECTIONTYPE', 'DATA', 'URL', 'ERRORMESSAGE';
 
 my $TIMEOUT = 60; # default timeout
 
@@ -67,7 +67,7 @@ sub init{
     
     $self->{DATA} ||= $DATA;
     
-    return $self;
+    return 0;
     
 }
 
@@ -81,7 +81,7 @@ sub setTimeout {
     my ( $self, @args ) = @_;
     my %parameters = validate( @args, { timeout => 1 } );
     $self->{TIMEOUT} = $parameters{timeout};
-    return;
+    return 0;
 }
 
 sub getTimeout {
@@ -93,7 +93,7 @@ sub setConnectionType {
     my ( $self, @args ) = @_;
     my %parameters = validate( @args, { connectionType => 1 } );
     $self->{CONNECTIONTYPE} = $parameters{connectionType};
-    return;
+    return 0;
 }
 
 sub getConnectionType {
@@ -105,7 +105,7 @@ sub setData {
     my ( $self, @args ) = @_;
     my %parameters = validate( @args, { data => 1 } );
     $self->{DATA} = $parameters{data};
-    return;
+    return 0;
 }
 
 sub getData {
@@ -142,7 +142,7 @@ sub connect{
     # Pass request to the user agent and get a response back
     my $res = $ua->request($req);
     
-    # Check the outcome of the response
+    # Return response
     return $res;
 }
 
