@@ -11,6 +11,14 @@ use constant {
     LS_KEY_URI => "uri",
 };
 
+#General keys
+
+use constant {
+    LS_KEY_OPERATOR => "operator",
+    LS_KEY_OPERATOR_SUFFIX => "-operator"
+};
+
+
 #location keys
 use constant {
 	LS_KEY_LOCATION_SITENAME => "location-sitename",

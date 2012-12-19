@@ -18,6 +18,7 @@ our $VERSION = 3.2;
 use Params::Validate qw( :all );
 use JSON qw(encode_json decode_json);
 use SimpleLookupService::Keywords::KeyNames;
+use Carp qw(cluck);
 
 use fields 'RECORD_HASH', 'URLPARAMETERS';
 
@@ -31,66 +32,49 @@ sub new{
 
 sub init {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, { type => 0 } );
-    
-    if(defined $parameters{type}){
-    	if (ref($parameters{type}) eq 'ARRAY'){
-    		$parameters{type} = [ $parameters{type}[0]];
-    	}else{
-    		$parameters{type} = [$parameters{type}];
-    	}
-    } 
-    $self->{RECORD_HASH} = {
-            (SimpleLookupService::Keywords::KeyNames::LS_KEY_TYPE) => $parameters{type}
-    }; 
-    return 0;
-}
-
-sub create{
-	my ( $self, @args ) = @_;
     my %parameters = validate( @args, { type => 0, uri=>0, expires=>0, ttl=>0 } );
     
+    
     if(defined $parameters{type}){
-    	if (ref($parameters{type}) eq 'ARRAY'){
-    		$parameters{type} = [ $parameters{type}[0]];
-    	}else{
-    		$parameters{type} = [$parameters{type}];
+    	my $res = $self->setRecordType($parameters{type});
+    	
+    	if($res != 0){
+    		cluck "Error initializing QueryObject";
+    		return $res;
     	}
-    } 
-    $self->{RECORD_HASH} = {
-            (SimpleLookupService::Keywords::KeyNames::LS_KEY_TYPE) => $parameters{type}
-    };
+    }
+    
     
     if(defined $parameters{expires}){
-    	if(ref($parameters{expires}) eq 'ARRAY'){
-    		$parameters{expires} = [ $parameters{expires}[0]];
-    	}else{
-    		$parameters{expires} = [$parameters{expires}];
+    	
+    	my $res = $self->setRecordExpires($parameters{expires});
+    	if($res != 0){
+    		cluck "Error initializing QueryObject";
+    		return $res;
     	}
-    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)} = $parameters{expires};
+    	
     } 
     
-    if(defined $parameters{uri}){
-    	if(ref($parameters{uri}) eq 'ARRAY'){
-    		$parameters{uri} = [ $parameters{uri}[0]];
-    	}else{
-    		$parameters{uri} = [$parameters{uri}];
+    if(defined $parameters{uri} ){
+    	
+    	my $res = $self->setRecordUri($parameters{uri});
+    	if($res != 0){
+    		cluck "Error initializing QueryObject";
+    		return $res;
     	}
-    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_URI)} = $parameters{uri};
     }
     
     if(defined $parameters{ttl}){
-    	if(ref($parameters{ttl}) eq 'ARRAY'){
-    		$parameters{ttl} = [ $parameters{ttl}[0]];
-    	}else{
-    		$parameters{ttl} = [$parameters{ttl}];
+    	
+    	my $res = $self->setRecordTtl($parameters{ttl});
+    	if($res != 0){
+    		cluck "Error initializing QueryObject";
+    		return $res;
     	}
-    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = $parameters{ttl};
-    }  
-    
-    $self->{URLPARAMETERS} = toURLParameters();
-   
-    return ;
+    	
+    }
+     
+    return 0;
 }
 
 sub _makeArray {
@@ -104,6 +88,10 @@ sub _makeArray {
 sub _convertToURLArray {
     my ($self, $var) = @_;
   	my $result ='';
+  	
+  	if(!defined $var){
+  		return $result;
+  	}
     if(ref($var) eq 'ARRAY'){
     	my $totalCount = scalar @{$var};
     	my $curCount = 0;
@@ -115,16 +103,23 @@ sub _convertToURLArray {
         	}
         	$curCount++;
         }
+    }else{
+    	$result = $var;
     }
+    
+    return $result;
 }
 
 sub addField {
     my ( $self, @args ) = @_;
     my %parameters = validate( @args, { key => 1, value => 1 } );
+    
     unless(ref($parameters{value}) eq 'ARRAY'){
     	$parameters{value} = [$parameters{value}];
     }
     $self->{RECORD_HASH}->{$parameters{key}} = $parameters{value}; 
+    
+    return 0;
 }
 
 sub getValue {
@@ -151,10 +146,12 @@ sub getRecordType {
 sub setRecordType {
     my ( $self, $value ) = @_;
     
-    if(ref($value) eq 'ARRAY'){
-    	$value = [$value->[0]];
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
     }
     $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TYPE)} = $value;
+    
+    return 0;
 }
 
 sub getRecordUri {
@@ -164,10 +161,12 @@ sub getRecordUri {
 
 sub setRecordUri {
     my ( $self, $value ) = @_;
-    if(ref($value) eq 'ARRAY'){
-    	$value = [$value->[0]];
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
     }
     $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_URI)} = $value;
+    
+    return 0;
 }
 
 sub getRecordTtl {
@@ -177,10 +176,12 @@ sub getRecordTtl {
 
 sub setRecordTtl {
     my ( $self, $value ) = @_;
-    if(ref($value) eq 'ARRAY'){
-    	$value = [$value->[0]];
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
     }
     $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = $value;
+    
+    return 0;
 }
 
 sub getRecordExpires {
@@ -190,42 +191,132 @@ sub getRecordExpires {
 
 sub setRecordExpires {
     my ( $self, $value ) = @_;
-    if(ref($value) eq 'ARRAY'){
-    	$value = [$value->[0]];
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
     }
    $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)} = $value;
+   return 0;
+}
+
+
+sub setKeyOperator{
+	my ( $self, @args ) = @_;
+    my %parameters = validate( @args, { key => 1, operator => 1 } );
+    
+    if (defined $self->{RECORD_HASH}->{$parameters{key}}){
+    	
+    	if($parameters{operator} =~ m/all|any/i){
+    		my $key = $parameters{key};
+    		$key .= SimpleLookupService::Keywords::KeyNames::LS_KEY_OPERATOR_SUFFIX;
+    		$self->addField({key=>$key, value=>$parameters{operator}});
+    	}else{
+    		cluck "Operator should be ALL or ANY";
+    		return -1;
+    	}
+    	
+    	
+    }else {
+    	cluck "Setting operator for a non-existent key";
+    	return -1;
+    }
+
+    return 0;
+	
+}
+
+
+sub getKeyOperator{
+	my ( $self, $value ) = @_;
+    if(ref($value) eq 'ARRAY' && scalar(@{$value}) > 1){
+    	cluck "Key array size cannot be > 1";
+    	return -1;
+    }
+    
+    my $key = '';
+    if(ref($value) eq 'ARRAY'){
+    	$key = $value->[0];
+    }else{
+    	$key = $value;
+    }
+    
+    if (defined $self->{RECORD_HASH}->{$key}){  	
+    	if($key =~ m/all|any/i){
+    		my $opkey = $key.(SimpleLookupService::Keywords::KeyNames::LS_KEY_OPERATOR_SUFFIX);
+    		return $self->getValue($opkey);
+    	}else{
+    		cluck "Operator should be ALL or ANY";
+    		return -1;
+    	}
+    }else{
+    	cluck "Getting operator for a non-existent key";
+    	return -1;
+    }
+
+    return 0;
+	
+}
+
+
+sub setOperator{
+	my ( $self, $value ) = @_;
+    
+    
+    if(ref($value) eq 'ARRAY' && scalar(@{$value}) > 1){
+    	cluck "Record Type array size cannot be > 1";
+    	return -1;
+    }
+    
+    my $op = '';
+    if(ref($value) eq 'ARRAY'){
+    	$op = $value->[0];
+    }else{
+    	$op = $value;
+    }
+    
+    if($op =~ m/all|any/i){
+    	return $self->addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_OPERATOR), value=>[$op]);
+    }else{
+    	cluck "Operator should be ALL or ANY";
+        return -1;
+    }
+
+}
+
+sub getOperator{
+	my $self = shift;
+	return $self->getValue(SimpleLookupService::Keywords::KeyNames::LS_KEY_OPERATOR);
 }
 
 sub toURLParameters {
 	my $self = shift;
 	my $paramString = '?';
-	my %recordHash = %{$self->{RECORD_HASH}};
-	my $keysCount = keys %recordHash;
-	my $curCount = 1;
-	foreach my $key (keys %recordHash){
-		if($curCount >= $keysCount){
-			$paramString .= $key."=". _convertToURLArray($recordHash{$key})."&";
-		}else{
-			$paramString .= $key."=". _convertToURLArray($recordHash{$key});
-		}		
+	
+	if(defined $self->{RECORD_HASH}){
+		my %recordHash = %{$self->{RECORD_HASH}};
+		my $keysCount = keys %recordHash;
+		my $curCount = 1;
+		foreach my $key (keys %recordHash){
+			my $val = '';
+			
+			$val = $self->{RECORD_HASH}->{$key};
+			
+			$paramString .= $key."=";
+			$paramString .=  $self->_convertToURLArray($val);
+			if($curCount < $keysCount){
+				$paramString .= "&";
+			}
+		    $curCount++;		
+		}
+		return $paramString;
+	}else{
+		return '';
 	}
-	return $paramString;
+
 }
 
-sub toJson{
-	my $self = shift;
-	return encode_json($self->getRecordHash());
-}
-
-sub fromJson{
-	my ($self, $jsonData) = @_;
-	my $perlDS = decode_json($jsonData);
-	return $perlDS;
-}
 
 sub fromHashRef{
 	my ($self, $perlDS) = @_;
-	print "\n inside Record.pm...\n";
 	
 	foreach my $key (keys %{$perlDS}){
 		$self->{RECORD_HASH}->{$key} = ${perlDS}->{$key};
