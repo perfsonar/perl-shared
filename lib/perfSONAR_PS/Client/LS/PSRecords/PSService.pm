@@ -30,7 +30,7 @@ sub init {
     									serviceName => 0, serviceVersion => 0, 
     									domains => 0, administrators => 0, 
     									siteName => 0 , city => 0, region => 0,
-    									country => 0, zipCode => 0, latitude =>0, longitude => 0 } );
+    									country => 0, zipCode => 0, latitude =>0, longitude => 0} );
     
     my $res = $self->SUPER::init(%parameters); 
     
@@ -44,8 +44,7 @@ sub getServiceEventType {
 
 sub setServiceEventType {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSSERVICE_EVENTTYPES), value=>$value  );
-    
+    return $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSSERVICE_EVENTTYPES), value=>$value  );
 }
 
 # to be used only with MA
@@ -56,7 +55,7 @@ sub getMAType{
 
 sub setMAType{
  	my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_MA_TYPE), value=>$value  );
+    return $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_MA_TYPE), value=>$value  );
     
 }
 
@@ -67,7 +66,7 @@ sub getMATests{
 
 sub setMATests{
  	my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_MA_TESTS), value=>$value  );
+    return $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_MA_TESTS), value=>$value  );
     
 }
 
@@ -80,6 +79,6 @@ sub getTopologyDomain{
 
 sub setTopologyDomain{
  	my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_TS_DOMAINS), value=>$value  );
+    return $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_TS_DOMAINS), value=>$value  );
     
 }
