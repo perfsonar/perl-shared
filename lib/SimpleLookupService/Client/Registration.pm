@@ -31,7 +31,7 @@ use base 'SimpleLookupService::Client::SimpleLS';
 
 sub init  {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, { url => 1, timeout=> 0, record => 0} );
+    my %parameters = validate( @args, { LS => 1, record => 1} );
     
     my $res;
     my $data;

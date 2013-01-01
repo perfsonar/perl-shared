@@ -22,7 +22,7 @@ sub instantiate {
 	    require $location;
     	return $class->new(@_);
     }else{
-    	return(-1,{message=>"Undefined record-type"});
+    	return SimpleLookupService::Records::Record->new(@_);
     }
    
 }

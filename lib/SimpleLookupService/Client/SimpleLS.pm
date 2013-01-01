@@ -24,6 +24,7 @@ use URI;
 use DateTime::Format::ISO8601;
 
 
+
 use fields 'INSTANCE', 'LOGGER', 'TIMEOUT', 'CONNECTIONTYPE', 'DATA', 'URL', 'ERRORMESSAGE';
 
 my $TIMEOUT = 60; # default timeout
@@ -31,6 +32,7 @@ my $TIMEOUT = 60; # default timeout
 my $CONNECTIONTYPE = 'GET'; #default connection type
 
 my $DATA; #default empty data
+
 
 =head2 new($package { timeout => <timeout> })
 
@@ -40,7 +42,7 @@ Constructor for object.  Optional arguments:
 
 timeout value to be used in the low level call
 
-connectionType: type of connectio
+connectionType: type of connection
 
 
 =cut
@@ -52,6 +54,9 @@ sub new {
     return $self;
 }
 
+
+#initializes a SimpleLS client class
+# url - http://<servername:portnumber>
 sub init{
 	my ($self, @args) = @_;
 	 my %parameters = validate( @args, { url=>1, timeout => 0, connectionType => 0, data => 0 } );
@@ -126,8 +131,24 @@ sub getUrl {
 }
 
 
-
+#establishes a logical connection and checks if host is alive by pinging the host
+#Status and Latency results are recorded
 sub connect{
+	
+}
+
+#tears down the logical connection
+sub disconnect{
+	
+}
+
+
+#getStatus - returns the status if host is alive or not
+
+#getLatency - returns the RTT
+
+# establishes a HTTP connection and sends the message
+sub send{
     my ( $self, @args ) = @_;
     
     my $ua = LWP::UserAgent->new;

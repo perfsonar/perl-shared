@@ -27,12 +27,6 @@ use Carp qw(cluck);
 
 use fields 'RECORD_HASH';
 
-use constant {
-	RECORD_MAX_TTL => 43200,
-	RECORD_DEFAULT_TTL => 120,
-	RECORD_MIN_TTL => 30
-};
-
 sub new {
     my $package = shift;
 
@@ -100,7 +94,8 @@ sub init {
     	if($self->_is_iso($tmp)){
     		$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [$tmp];
     	}else{
-    		$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [$self->_minutes_to_iso($tmp)];
+    		cluck "Record TTL should be iso";
+    		return -1;
     	}
     	
     } 
@@ -162,7 +157,51 @@ sub setRecordType {
     return 0;
 }
 
-sub getRecordTtl {
+sub getRecordTtlAsIso {
+    my $self = shift;
+    my $value = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)}->[0];
+    
+    if(defined $value){
+	    if($self->_is_iso($value)){
+	    	return [$value];
+	    	
+	    }else{
+	    	my $tmp = $self->_minutes_to_iso($value);
+	
+	    	return [$tmp];
+	    }
+    }
+    
+    return undef;
+    
+}
+
+sub setRecordTtlAsIso {
+    my ( $self, $value ) = @_;
+    
+    if(ref($value) eq 'ARRAY' && scalar(@{$value}) > 1){
+    	cluck "Record Ttl array size cannot be > 1";
+    	return -1;
+    }
+    
+    my $ttl = 0;
+    if(ref($value) eq 'ARRAY'){
+    	$ttl = $value->[0];
+    }else{
+    	$ttl = $value;
+    }
+    
+    if($self->_is_iso($ttl)){
+    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [$ttl];
+    }else{
+    	cluck "Record Ttl not in ISO 8601 format";
+    	return -1;
+    }  
+    
+    return 0;
+}
+
+sub getRecordTtlInMinutes {
     my $self = shift;
     my $value = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)}->[0];
     
@@ -180,11 +219,12 @@ sub getRecordTtl {
     
 }
 
-sub setRecordTtl {
+
+sub setRecordTtlInMinutes {
     my ( $self, $value ) = @_;
     
     if(ref($value) eq 'ARRAY' && scalar(@{$value}) > 1){
-    	cluck "Record Type array size cannot be > 1";
+    	cluck "Record Ttl array size cannot be > 1";
     	return -1;
     }
     
@@ -196,30 +236,72 @@ sub setRecordTtl {
     }
     
     if($self->_is_iso($ttl)){
-    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [$ttl];
+    	cluck "Record Ttl should be in minutes (integer)";
+    	return -1;
     }else{
+    	
     	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [$self->_minutes_to_iso($ttl)];
     }  
     
     return 0;
 }
 
-sub getRecordExpires {
+
+sub getRecordExpiresAsUnixTS {
     my $self = shift;
     my $expires = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)}->[0];
     
-    if(defined $expires){
-    	my $unixTS = $self->_isoToUnix($expires);
-    	return [$unixTS];
+    if (defined $expires){
+    	my $unixts = $self->_isoToUnix($expires);
+    	return [$unixts];
+    }else{
+    	return undef;
     }
+   
+}
+
+sub getRecordExpires {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)};
+   
+}
+
+sub setRecordExpires {
+    my ( $self, $value ) = @_;
     
-    return undef;
+    if(ref($value) eq 'ARRAY' && scalar(@{$value}) > 1){
+    	cluck "Record Type array size cannot be > 1";
+    	return -1;
+    }
+
+	unless (ref($value) eq 'ARRAY'){
+		$value  = [$value];
+	}
+	
+    $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)} = $value;
+    return 0;
 }
 
 sub getRecordUri {
     my $self = shift;
     return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_URI)};
 }
+
+sub setRecordUri {
+    my ( $self, $value ) = @_;
+        if(ref($value) eq 'ARRAY' && scalar(@{$value}) > 1){
+    	cluck "Record Type array size cannot be > 1";
+    	return -1;
+    }
+
+	unless (ref($value) eq 'ARRAY'){
+		$value  = [$value];
+	}
+    $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_URI)} = $value;
+    return 0;
+}
+
+
 
 sub toJson(){
 	my $self = shift;
@@ -235,17 +317,33 @@ sub toJson(){
 #creates record object from json
 sub fromJson(){
 	my ($self, $jsonData) = @_;
-	my $perlDS = decode_json($jsonData);
-	fromHashRef($perlDS);
+	
+	if(defined $jsonData && $jsonData ne ''){
+		my $perlDS = decode_json($jsonData);
+		$self->fromHashRef($perlDS);
+		return 0;
+	}else{
+		cluck "Error creating record. empty data";
+		return -1;
+	}
+	
 }
 
 #creates record object from perl data structure
 sub fromHashRef(){
 	my ($self, $perlDS) = @_;
 	
-	foreach my $key (keys %{$perlDS}){
-		$self->{RECORD_HASH}->{$key} = ${perlDS}->{$key};
+	if(defined $perlDS){
+		foreach my $key (keys %{$perlDS}){
+			$self->{RECORD_HASH}->{$key} = ${perlDS}->{$key};
+		}
+	}else{
+		cluck "Error creating record. Empty hash";
+		return -1;
 	}
+	
+	
+	return 0;
 }
 
 
@@ -257,12 +355,18 @@ sub _is_iso{
 
 sub _minutes_to_iso{
 	my ($self, $ttl) = @_;
-	
-	unless($ttl >= (RECORD_MIN_TTL) && $ttl<= (RECORD_MAX_TTL)){
-    	$ttl = RECORD_DEFAULT_TTL;
+    
+    if(defined $ttl && $ttl eq ''){
+    	cluck "Empty ttl";
+    	return undef;
     }
     
     my $isottl;
+   
+    if($ttl =~ m/P\w*T/){
+    	cluck "Found iso format";
+    	return undef;
+    }
     $isottl = "PT". $ttl ."M";
     
     return $isottl;
@@ -272,7 +376,7 @@ sub _iso_to_minutes{
 	my ($self, $value) = @_;
 	
 	if(!defined $value){
-		return -1;
+		return undef;
 	}
 	my @splitDuration = split(/T/, $value);
 	
@@ -303,7 +407,7 @@ sub _iso_to_minutes{
 		}
 	}
 	
-	($minutes>0)?return int($minutes+0.5):return -1;	
+	($minutes>0)?return int($minutes+0.5):return undef;	
 	
 }
 
@@ -319,18 +423,4 @@ sub _isoToUnix {
     return $dt->epoch();
 }
 
-#sub setRecordUri {
-#    my ( $self, $value ) = @_;
-#    if(ref($value) eq 'ARRAY'){
-#    	$value = [$value->[0]];
-#    }
-#    $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_URI)} = $value;
-#}
 
-#sub setRecordExpires {
-#    my ( $self, $value ) = @_;
-#    if(ref($value) eq 'ARRAY'){
-#    	$value = [$value->[0]];
-#    }
-#    $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)} = $value;
-#}

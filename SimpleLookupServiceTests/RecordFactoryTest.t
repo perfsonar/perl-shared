@@ -11,7 +11,7 @@ use Test::Deep;
 
 use SimpleLookupService::Records::RecordFactory;
 
-my $types = ['service', 'person', 'interface', 'host'];
+my $types = ['service', 'person', 'interface', 'host', 'sometype'];
 
 foreach my $type (@{$types}){
 	print $type,"\n";
