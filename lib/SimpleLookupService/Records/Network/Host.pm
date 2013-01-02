@@ -129,7 +129,7 @@ sub init {
     }
     
     if(defined $parameters{tcpAutoMaxBuffer}){
-    	my $ret = $self->setAutotuneTcpMaxBuffer($parameters{tcpAutoMaxBuffer});
+    	my $ret = $self->setTcpAutotuneMaxBuffer($parameters{tcpAutoMaxBuffer});
     	if($ret <0){
     		cluck "Error initializing Host record";
     		return $ret;

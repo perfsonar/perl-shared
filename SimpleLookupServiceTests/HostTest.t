@@ -23,6 +23,15 @@ ok( $host->isa('SimpleLookupService::Records::Network::Host'), "class type");
 $host = SimpleLookupService::Records::Network::Host->new();
 is($host->init({hostName=>'wash-pt1.es.net'}), 0, "init - basic test");
 
+$host = SimpleLookupService::Records::Network::Host->new();
+is($host->init({hostName=>'wash-pt1.es.net', memory => 4, 
+    									processorSpeed =>1, processorCount =>4, processorCore => 8,
+    									osName=>'CentOS', osVersion=>'6', osKernel => '2.6.32', 
+    									interfaces =>['http://localhost:8080/lookup/interface/abcd-e45-5466777'], tcpCongestionAlgorithm =>'CUBIC',
+    									 tcpMaxBuffer =>1024, tcpAutoMaxBuffer =>1024, 
+    									 administrators=>['http://localhost:8080/lookup/person/abcd-e45-5466777'], domains =>['es.net', 'lbl.gov'],
+    									 siteName => 'LBL' , city => 'Berkeley', region => 'CA',
+    									 country => 'US', zipCode => 94514, latitude =>28, longitude => -18}), 0, "init - all parameters");
 
 #setHostName
 $var = 'albu-pt1.es.net';

@@ -28,7 +28,7 @@ sub init {
     
     $self->SUPER::init(type=>(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_HOST)); 
     
-    return $self;
+    return 0;
 }
 
 sub getHostName {
@@ -38,7 +38,8 @@ sub getHostName {
 
 sub setHostName {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NAME), value=>$value  );
+    my $ret =  $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NAME), value=>$value  );
+    return $ret;
     
 }
 
@@ -49,8 +50,8 @@ sub getHardwareMemory {
 
 sub setHardwareMemory {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_HARDWARE_MEMORY), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_HARDWARE_MEMORY), value=>$value  );
+    return $ret;
 }
 
 sub getProcessorSpeed {
@@ -60,8 +61,8 @@ sub getProcessorSpeed {
 
 sub setProcessorSpeed {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_HARDWARE_PROCESSORSPEED), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_HARDWARE_PROCESSORSPEED), value=>$value  );
+    return $ret;
 }
 
 sub getProcessorCount {
@@ -71,8 +72,8 @@ sub getProcessorCount {
 
 sub setProcessorCount {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_HARDWARE_PROCESSORCOUNT), value=>$value  );
-    
+    my $ret  = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_HARDWARE_PROCESSORCOUNT), value=>$value  );
+    return $ret;
 }
 
 sub getProcessorCore {
@@ -82,8 +83,8 @@ sub getProcessorCore {
 
 sub setProcessorCore {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_HARDWARE_PROCESSORCORE), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_HARDWARE_PROCESSORCORE), value=>$value  );
+    return $ret;
 }
 
 sub getOSName {
@@ -93,8 +94,8 @@ sub getOSName {
 
 sub setOSName {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_NAME), value=>$value  );
-    
+    my $ret  = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_NAME), value=>$value  );
+    return $ret;
 }
 
 sub getOSVersion {
@@ -104,8 +105,8 @@ sub getOSVersion {
 
 sub setOSVersion {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_VERSION), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_VERSION), value=>$value  );
+    return $ret;
 }
 
 sub getOSKernel {
@@ -115,8 +116,8 @@ sub getOSKernel {
 
 sub setOSKernel {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_KERNEL), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_KERNEL), value=>$value  );
+    return $ret;
 }
 
 sub getInterfaces {
@@ -126,8 +127,8 @@ sub getInterfaces {
 
 sub setInterfaces {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_INTERFACES), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_INTERFACES), value=>$value  );
+    return $ret;
 }
 
 sub getTcpCongestionAlgorithm {
@@ -137,8 +138,8 @@ sub getTcpCongestionAlgorithm {
 
 sub setTcpCongestionAlgorithm {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_CONGESTIONALGORITHM), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_CONGESTIONALGORITHM), value=>$value  );
+    return $ret;
 }
 
 sub getTcpMaxBuffer {
@@ -148,8 +149,8 @@ sub getTcpMaxBuffer {
 
 sub setTcpMaxBuffer {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXBUFFER), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXBUFFER), value=>$value  );
+    return $ret;
 }
 
 sub getTcpAutotuneMaxBuffer {
@@ -159,8 +160,8 @@ sub getTcpAutotuneMaxBuffer {
 
 sub setTcpAutotuneMaxBuffer {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER), value=>$value  );
+    return $ret;
 }
 
 sub getHostAdministrators{
@@ -170,8 +171,8 @@ sub getHostAdministrators{
 
 sub setHostAdministrators{
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_ADMINISTRATORS), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_ADMINISTRATORS), value=>$value  );
+    return $ret;
 }   
     
 sub getDNSDomains{
@@ -181,8 +182,8 @@ sub getDNSDomains{
 
 sub setDNSDomains {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_GROUP_DOMAINS), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_GROUP_DOMAINS), value=>$value  );
+    return $ret;
 }
 
 sub getSiteName{
@@ -192,8 +193,8 @@ sub getSiteName{
 
 sub setSiteName {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_SITENAME), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_SITENAME), value=>$value  );
+    return $ret;
 }    
 
 sub getCity{
@@ -203,8 +204,8 @@ sub getCity{
 
 sub setCity {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_CITY), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_CITY), value=>$value  );
+    return $ret;
 }
 
 sub getRegion{
@@ -214,8 +215,8 @@ sub getRegion{
 
 sub setRegion {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_STATE), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_STATE), value=>$value  );
+    return $ret;
 }
 
 sub getCountry{
@@ -225,8 +226,8 @@ sub getCountry{
 
 sub setCountry {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_COUNTRY), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_COUNTRY), value=>$value  );
+    return $ret;
 }
 
 sub getZipCode{
@@ -236,8 +237,8 @@ sub getZipCode{
 
 sub setZipCode {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_CODE), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_CODE), value=>$value  );
+    return $ret;
 }
 
 sub getLatitude{
@@ -247,8 +248,8 @@ sub getLatitude{
 
 sub setLatitude {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_LATITUDE), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_LATITUDE), value=>$value  );
+    return $ret;
 }
 
 sub getLongitude{
@@ -258,7 +259,7 @@ sub getLongitude{
 
 sub setLongitude {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_LONGITUDE), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_LOCATION_LONGITUDE), value=>$value  );
+    return $ret;
 }
 1;
