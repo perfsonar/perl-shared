@@ -21,6 +21,10 @@ ok( $person->isa('SimpleLookupService::Records::Directory::Person'), "class type
 $person = SimpleLookupService::Records::Directory::Person->new();
 is($person->init({personName=>'Adam', emails => 'adam@es.net'}), 0, "init - basic test");
 
+$person = SimpleLookupService::Records::Directory::Person->new();
+is($person->init({personName=>'Adam', emails => 'adam@es.net', phoneNumbers => '408123456', organization => 'LBL',
+    									siteName => 'LBL' , city => 'Berkeley', region => 'CA',
+    									country => 'US', zipCode => '94720', latitude =>'-18', longitude => '-180'}), 0, "init - all parameters");
 
 #setPersonName
 $var = 'Bill';
