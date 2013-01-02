@@ -26,22 +26,38 @@ use SimpleLookupService::Records::Record;
 use SimpleLookupService::Records::RecordFactory;
 use SimpleLookupService::Keywords::RecordTypeMapping;
 
-use base 'SimpleLookupService::Client::SimpleLS';
+use SimpleLookupService::Client::SimpleLS;
+
+use fields 'INSTANCE', 'LOGGER', 'SERVER', 'QUERY';
 
 sub init  {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, { url => 1, timeout=> 0, query => 0} );
+    my %parameters = validate( @args, { server => 1, query => 0} );
+    
+    my $res;
     my $data;
-    $self->SUPER::init({
-           url => $parameters{'url'},
-           timeout => $parameters{'timeout'},
-           connectionType => 'GET',
-    	});
-    if(defined $parameters{'query'}){
-    	_setQuery($parameters{'query'});
+    
+    my $server = $parameters{server};
+    if(! $server->isa('SimpleLookupService::Client::SimpleLS')){
+    	cluck "Error initializing client. Server is not SimpleLookupService::Client::SimpleLS server";
+    	return -1;
     }
     
-    return $self;
+    $self->{SERVER} = $server;
+    $self->{SERVER}->connect();
+    
+    
+    
+    if (defined $parameters{'query'}){
+    	my $ret = _setQuery($parameters{'query'});
+    	if($ret != 0){
+    		cluck "Error initializing client.";
+    		return -1;
+    	}
+    	
+    }    
+    
+    return 0;
     
 }
 
@@ -50,11 +66,13 @@ sub query{
 	
     if (defined $parameter){
     	
-    	$self->_setRQuery($parameter);
+    	$self->_setQuery($parameter);
     }
     
-    
-    my $result = $self->SUPER::connect();
+    $self->{SERVER}->setConnectionType('GET');
+    my $modifiedUrl = "lookup/records/".$self->{QUERY};
+    my $result = $self->{SERVER}->send(resourceLocator => $modifiedUrl);
+   
     
         # Check the outcome of the response
     if ($result->is_success) {
@@ -66,6 +84,10 @@ sub query{
         my @resObjArray = ();
         foreach my $result (@resultArray){
         	my $tmpType = $result->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TYPE)}->[0];
+        	
+        	if(defined $tmpType){
+        		
+        	}
         	my $resultRecord = SimpleLookupService::Records::RecordFactory->instantiate($tmpType);
         	$resultRecord->fromHashRef($result);
         	push @resObjArray, $resultRecord;
@@ -85,12 +107,11 @@ sub _setQuery{
 		if($qObject->isa('SimpleLookupService::Records::QueryObject')){
 			my $data = $qObject->toURLParameter;
 		
-			my $url = $self->SUPER::getUrl();
-		
-			$url .= $data;
-			$self->SUPER::setUrl({url => $url});
+			$self->{QUERY} = $data;
+			return 0;
 		}else{
-			die "Query should be of type SimpleLookupService::QueryObjects::QueryObject or its subclass ";
+			cluck "Query should be of type SimpleLookupService::QueryObjects::QueryObject or its subclass ";
+			return -1;
 		}
 	}
 	
