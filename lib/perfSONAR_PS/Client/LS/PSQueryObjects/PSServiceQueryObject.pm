@@ -21,7 +21,7 @@ use base 'SimpleLookupService::QueryObjects::Network::ServiceQueryObject';
 use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);
 use perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames;
-use perfSONAR_PS::Client::LS::PSKeywords::PSKeyValues;
+use perfSONAR_PS::Client::LS::PSKeywords::PSValues;
 
 
 sub init {
@@ -29,7 +29,7 @@ sub init {
     
     $self->SUPER::init(); 
     
-    return $self;
+    return 0;
 }
 
 sub getServiceEventType {
@@ -39,8 +39,8 @@ sub getServiceEventType {
 
 sub setServiceEventType {
     my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSSERVICE_EVENTTYPES), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSSERVICE_EVENTTYPES), value=>$value  );
+    return $ret;
 }
 
 # to be used only with MA
@@ -51,8 +51,8 @@ sub getMAType{
 
 sub setMAType{
  	my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_MA_TYPE), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_MA_TYPE), value=>$value  );
+    return $ret;
 }
 
 sub getMATests{
@@ -62,8 +62,8 @@ sub getMATests{
 
 sub setMATests{
  	my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_MA_TESTS), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_MA_TESTS), value=>$value  );
+    return $ret;
 }
 
 # to be used only with topology service
@@ -75,6 +75,6 @@ sub getTopologyDomain{
 
 sub setTopologyDomain{
  	my ( $self, $value ) = @_;
-    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_TS_DOMAINS), value=>$value  );
-    
+    my $ret = $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_TS_DOMAINS), value=>$value  );
+    return $ret;
 }
