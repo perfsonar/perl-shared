@@ -22,6 +22,11 @@ ok( $service->isa('perfSONAR_PS::Client::LS::PSRecords::PSService'), "class type
 #init() test
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
 is($service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'}), 0, "init - basic test");
+is($service->init({serviceLocator => 'wash-pt1.es.net', serviceType =>'ping', serviceName => 'Wash ping', serviceVersion => '3.2', 
+    									domains => ['es.net', 'lbl.gov'], administrators => ['http://localhost:8080/lookup/person/abcd-e45-5466777'], 
+    									siteName => 'LBL' , city => 'Berkeley', region => 'CA',
+    									country => 'US', zipCode => '94720', latitude =>['-18'], longitude => ['18']}), 0, "init - optional parameters");
+cmp_deeply($service->toJson(), '{"service-administrators":["http://localhost:8080/lookup/person/abcd-e45-5466777"],"location-city":["Berkeley"],"group-domains":["es.net","lbl.gov"],"location-longitude":["18"],"location-state":["CA"],"service-version":["3.2"],"service-name":["Wash ping"],"location-sitename":["LBL"],"location-code":["94720"],"location-country":["US"],"location-latitude":["-18"],"type":["service"],"service-type":["ping"],"service-locator":["wash-pt1.es.net"]}', "toJson()" ) ;
 
 
 #setServiceName
