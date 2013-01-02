@@ -28,7 +28,7 @@ sub init {
     
     $self->SUPER::init(type=>(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_INTERFACE)); 
     
-    return $self;
+    return 0;
 }
 
 

@@ -154,4 +154,3 @@ sub setDNSDomains {
     my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_GROUP_DOMAINS), value=>$value  );
     return $ret;
 }
-1;

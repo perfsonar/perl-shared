@@ -23,6 +23,8 @@ ok( $interface->isa('SimpleLookupService::Records::Network::Interface'), "class 
 $interface = SimpleLookupService::Records::Network::Interface->new();
 is($interface->init({interfaceName=>'wash-pt1.es.net', interfaceAddresses => '192.0.0.1'}), 0, "init - basic test");
 
+$interface = SimpleLookupService::Records::Network::Interface->new();
+is($interface->init({interfaceName=>'wash-pt1.es.net', interfaceAddresses => '192.0.0.1', subnet => '192.0.0.1', capacity => 10000, macAddress=>'01:23:45:67:89:ab', domains=>"es.net"}), 0, "init - all parameters");
 
 #setInterfaceName
 my $interfaceName = 'wash-pt1.es.net';
@@ -177,24 +179,24 @@ cmp_deeply($interface->getInterfaceCapacity(), $var, "getInterfaceCapacity - int
 
 
 #setInterfaceMacAddress
-$var = '192.0.0.2';
+$var = '01:23:45:67:89:ab';
 $interface = SimpleLookupService::Records::Network::Interface->new();
 $interface->init({interfaceName=>'wash-pt1.es.net', interfaceAddresses => '192.0.0.1'});
 is($interface->setInterfaceMacAddress($var), 0, "setInterfaceMacAddress - string");
 
-$var = ['192.0.0.2'];
+$var = ['01:23:45:67:89:ab'];
 $interface = SimpleLookupService::Records::Network::Interface->new();
 $interface->init({interfaceName=>'wash-pt1.es.net', interfaceAddresses => '192.0.0.1'});
 is($interface->setInterfaceMacAddress($var), 0, "setInterfaceMacAddress - array");
 
-$var = ['192.0.0.2', '192.0.0.3'];
+$var = ['01:23:45:67:89:ab', '01:23:45:67:89:ab'];
 $interface = SimpleLookupService::Records::Network::Interface->new();
 $interface->init({interfaceName=>'wash-pt1.es.net', interfaceAddresses => '192.0.0.1'});
 is($interface->setInterfaceMacAddress($var), 0, "setInterfaceMacAddress - array > 1");
 
 
 #getInterfaceMacAddress 
-$var = ['192.0.0.2'];
+$var = ['01:23:45:67:89:ab'];
 $interface = SimpleLookupService::Records::Network::Interface->new();
 $interface->init({interfaceName=>'wash-pt1.es.net', interfaceAddresses => '192.0.0.1'});
 $interface->setInterfaceMacAddress($var);
