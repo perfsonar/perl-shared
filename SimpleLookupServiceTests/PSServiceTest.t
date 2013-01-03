@@ -629,3 +629,43 @@ cmp_deeply($service->getMATests(),$var, "getMATests - array > 1" );
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
 $service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
 cmp_deeply($service->getMATests(), undef, "getMATests - undef" );
+
+
+#setCommunities
+$var = 'es.net';
+$service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'});
+is($service->setCommunities($var), 0, "setCommunities - string");
+
+$var = ['es.net'];
+$service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'});
+is($service->setCommunities($var), 0, "setCommunities - array");
+
+$var = ['es.net', 'lbl.gov'];
+$service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'});
+is($service->setCommunities($var), 0, "setCommunities - array > 1");
+
+
+#getCommunities
+$var = 'ESnet';
+$service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'});
+$service->setCommunities($var);
+cmp_deeply($service->getCommunities(), ['ESnet'], "getCommunities - string");
+
+$var = ['ESnet'];
+$service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'});
+$service->setCommunities($var);
+cmp_deeply($service->getCommunities(), $var, "getCommunities - array");
+
+$var = ['ESnet', 'LBL'];
+$service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'});
+$service->setCommunities($var);
+cmp_deeply($service->getCommunities(), $var, "getCommunities - array > 1");
+
+$service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
+cmp_deeply($service->getCommunities(), undef, "getCommunities - returns null");

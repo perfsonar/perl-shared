@@ -82,3 +82,14 @@ sub setTopologyDomain{
     return $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_TS_DOMAINS), value=>$value  );
     
 }
+
+sub getCommunities {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_GROUP_COMMUNITIES)};
+}
+
+sub setCommunities {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_GROUP_COMMUNITIES), value=>$value  );  
+	return $ret;
+}
