@@ -16,19 +16,18 @@ use warnings;
 
 our $VERSION = 3.2;
 
-use base 'SimpleLookupService::Records::Network::HostQueryObject';
+use base 'SimpleLookupService::Records::Network::Host';
 
 use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);
 use perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames;
-use perfSONAR_PS::Client::LS::PSKeywords::PSKeyValues;
+use perfSONAR_PS::Client::LS::PSKeywords::PSValues;
 
 
 sub init {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, { hostName => 1} );
     
-    $self->SUPER::init(%parameters); 
+    $self->SUPER::init(@args); 
     
     return 0;
 }

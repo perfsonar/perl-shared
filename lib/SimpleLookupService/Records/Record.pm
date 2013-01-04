@@ -249,7 +249,7 @@ sub setRecordTtlInMinutes {
 
 sub getRecordExpiresAsUnixTS {
     my $self = shift;
-    my $expires = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)}->[0];
+    my $expires = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)};
     
     if (defined $expires){
     	my $unixts = $self->_isoToUnix($expires);

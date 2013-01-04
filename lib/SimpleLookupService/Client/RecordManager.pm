@@ -141,7 +141,7 @@ sub getKeyInRecord{
         	}else{
         		return (-1, { message => $jsonResp});
         	}
-   	 	
+   	 	}
     }else{
     	return (-1, { message => "key not defined"});
     }
