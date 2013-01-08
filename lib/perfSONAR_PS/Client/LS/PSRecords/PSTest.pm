@@ -34,6 +34,10 @@ sub init {
     
     $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSTEST_SOURCE), value=>$parameters{source}  );
     $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSTEST_DESTINATION), value=>$parameters{destination}  );
+    $self->setTestName($parameters{testname}) if($parameters{testname});
+    $self->setEventTypes($parameters{eventType}) if($parameters{eventType});
+    $self->setCommunities($parameters{communities}) if($parameters{communities});
+    $self->setDNSDomains($parameters{domains}) if($parameters{domains});
     
     return 0;
 }

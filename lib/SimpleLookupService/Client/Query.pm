@@ -18,6 +18,7 @@ use Scalar::Util qw(blessed);
 
 our $VERSION = 3.2;
 
+use Carp qw(cluck);
 use Params::Validate qw( :all );
 use JSON qw(encode_json decode_json);
 use SimpleLookupService::QueryObjects::QueryObject;
@@ -29,6 +30,14 @@ use SimpleLookupService::Keywords::RecordTypeMapping;
 use SimpleLookupService::Client::SimpleLS;
 
 use fields 'INSTANCE', 'LOGGER', 'SERVER', 'QUERY';
+
+sub new {
+    my $package = shift;
+   
+    my $self = fields::new( $package );
+   
+    return $self;
+}
 
 sub init  {
     my ( $self, @args ) = @_;
@@ -49,7 +58,7 @@ sub init  {
     
     
     if (defined $parameters{'query'}){
-    	my $ret = _setQuery($parameters{'query'});
+    	my $ret = $self->_setQuery($parameters{'query'});
     	if($ret != 0){
     		cluck "Error initializing client.";
     		return -1;
@@ -104,9 +113,8 @@ sub _setQuery{
 	my ($self, $qObject) = @_;
 	
 	if(defined $qObject){
-		if($qObject->isa('SimpleLookupService::Records::QueryObject')){
-			my $data = $qObject->toURLParameter;
-		
+		if($qObject->isa('SimpleLookupService::QueryObjects::QueryObject')){
+			my $data = $qObject->toURLParameters();
 			$self->{QUERY} = $data;
 			return 0;
 		}else{
