@@ -104,7 +104,7 @@ sub register {
             $self->{LOGGER}->debug("Unable to find $host_interface, registering");
             my $iface = new perfSONAR_PS::Client::LS::PSRecords::PSInterface();
             $iface->init(
-                interfaceName => "pSB_MA:" . $host_interface, 
+                interfaceName => "MA:" . $host_interface, 
                 interfaceAddresses => [$host_interface], 
             );
             my $reg_result =  $self->_register($iface);
@@ -373,7 +373,7 @@ sub _build_service_registration {
     $service->setMATests($service_params->{'maTests'}) if($service_params->{'maTests'});
     $service->setCommunities($service_params->{'communities'}) if($service_params->{'communities'});
     $service->setDNSDomains($service_params->{'domains'}) if($service_params->{'domains'});
-    $service->getSiteName($service_params->{'site_name'}) if($service_params->{'site_name'});
+    $service->setSiteName($service_params->{'site_name'}) if($service_params->{'site_name'});
     $service->setCity($service_params->{'city'}) if($service_params->{'city'});
     $service->setRegion($service_params->{'region'}) if($service_params->{'region'});
     $service->setCountry($service_params->{'country'}) if($service_params->{'country'});
