@@ -32,6 +32,7 @@ use Module::Load;
 use HTTP::Daemon;
 use English '-no_match_vars';
 use Carp;
+use Cache::Memcached;
 
 use FindBin qw($Bin);
 use lib "$Bin/../lib";
@@ -290,6 +291,8 @@ my %services        = ();
 my %listeners       = ();
 my %port_configs    = ();
 my %service_configs = ();
+
+my $memd = Cache::Memcached->new({ servers => [ '127.0.0.1:11211']});
 
 unless ( exists $conf{"port"} and $conf{"port"} ) {
     $logger->error( "No ports defined" );
