@@ -21,7 +21,7 @@ use base 'SimpleLookupService::QueryObjects::QueryObject';
 use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);
 use perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames;
-use perfSONAR_PS::Client::LS::PSKeywords::PSValues;
+use perfSONAR_PS::Client::LS::PSKeywords::PSKeyValues;
 use SimpleLookupService::Keywords::KeyNames;
 
 use Carp qw(cluck);
@@ -30,7 +30,7 @@ use Carp qw(cluck);
 sub init {
     my ( $self, @args ) = @_;
     
-    $self->SUPER::init(type=>(perfSONAR_PS::Client::LS::PSKeywords::PSValues::LS_VALUE_TYPE_PSTEST)); 
+    $self->SUPER::init(type=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyValues::LS_VALUE_TYPE_PSTEST)); 
     
     return 0;
 }

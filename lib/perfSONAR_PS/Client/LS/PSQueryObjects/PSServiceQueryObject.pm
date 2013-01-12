@@ -21,7 +21,7 @@ use base 'SimpleLookupService::QueryObjects::Network::ServiceQueryObject';
 use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);
 use perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames;
-use perfSONAR_PS::Client::LS::PSKeywords::PSValues;
+use perfSONAR_PS::Client::LS::PSKeywords::PSKeyValues;
 
 
 sub init {

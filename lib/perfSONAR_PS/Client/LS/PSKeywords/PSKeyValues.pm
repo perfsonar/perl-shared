@@ -1,4 +1,4 @@
-package perfSONAR_PS::Client::LS::PSKeywords::PSValues;
+package perfSONAR_PS::Client::LS::PSKeywords::PSKeyValues;
 
 use strict;
 use warnings;

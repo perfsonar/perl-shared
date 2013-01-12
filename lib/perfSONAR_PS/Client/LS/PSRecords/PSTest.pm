@@ -22,7 +22,7 @@ use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);
 use SimpleLookupService::Keywords::KeyNames;
 use perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames;
-use perfSONAR_PS::Client::LS::PSKeywords::PSValues;
+use perfSONAR_PS::Client::LS::PSKeywords::PSKeyValues;
 use Carp qw(cluck);
 
 
@@ -30,7 +30,7 @@ sub init {
     my ( $self, @args ) = @_;
     my %parameters = validate( @args, { eventType => 1, source => 1, destination => 1, testname => 0, domains => 0, communities => 0 } );
     
-    $self->SUPER::init(type=>(perfSONAR_PS::Client::LS::PSKeywords::PSValues::LS_VALUE_TYPE_PSTEST)); 
+    $self->SUPER::init(type=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyValues::LS_VALUE_TYPE_PSTEST)); 
     
     $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSTEST_SOURCE), value=>$parameters{source}  );
     $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSTEST_DESTINATION), value=>$parameters{destination}  );
