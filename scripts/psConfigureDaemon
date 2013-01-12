@@ -516,7 +516,7 @@ sub config_snmp_ma {
         }
     }
 
-    $config->{"snmp"}->{"metadata_db_type"} = 'file';
+    $config->{"snmp"}->{"metadata_db_type"} = &ask( "Enter the internal database type to read from (file or xmldb) ", "file", $config->{"snmp"}->{"metadata_db_type"}, '(file|xmldb)' );
 
     if ( $config->{"snmp"}->{"metadata_db_type"} eq "file" ) {
         delete $config->{"snmp"}->{"metadata_db_file"} if $config->{"snmp"}->{"metadata_db_file"} and $config->{"snmp"}->{"metadata_db_file"} =~ m/dbxml$/mx;
@@ -530,6 +530,43 @@ sub config_snmp_ma {
         delete $config->{"snmp"}->{"db_autoload"}               if $config->{"snmp"}->{"db_autoload"};
         delete $config->{"snmp"}->{"autoload_metadata_db_file"} if $config->{"snmp"}->{"autoload_metadata_db_file"};
         delete $config->{"snmp"}->{"metadata_db_name"}          if $config->{"snmp"}->{"metadata_db_name"};
+    }
+    elsif ( $config->{"snmp"}->{"metadata_db_type"} eq "xmldb" ) {
+        $config->{"snmp"}->{"metadata_db_name"} = &ask( "Enter the directory of the XML database ", $confdir . "/snmp-xmldb", $config->{"snmp"}->{"metadata_db_name"}, '.+' );
+        $config->{"snmp"}->{"metadata_db_name"} .= "/" unless $config->{"snmp"}->{"metadata_db_name"} =~ m/\/$/;
+        unless ( -d $config->{"snmp"}->{"metadata_db_name"} ) {
+            system( "mkdir " . $config->{"snmp"}->{"metadata_db_name"} );
+        }
+
+        unless ( -e $config->{"snmp"}->{"metadata_db_name"} . "DB_CONFIG" ) {
+            my $RUN = q{};
+            open( $RUN, "perl " . $dirname . "makeDBConfig.pl |" );
+            my @result = <$RUN>;
+            close($RUN);
+            if ( $result[0] ) {
+                system( "mv " . $result[0] . " " . $config->{"snmp"}->{"metadata_db_name"} . "DB_CONFIG" );
+            }
+            else {
+                return -1;
+            }
+        }
+
+        delete $config->{"snmp"}->{"metadata_db_file"} if $config->{"snmp"}->{"metadata_db_file"} and $config->{"snmp"}->{"metadata_db_file"} =~ m/\.xml$/mx;
+        $config->{"snmp"}->{"metadata_db_file"} = "snmpstore.dbxml";
+        if ( $result[0] ) {
+            $config->{"snmp"}->{"db_autoload"} = 1;
+            $config->{"snmp"}->{"autoload_metadata_db_file"} = &ask( "Enter the filename of the base XML file to load ", $confdir . "/snmp-store.xml", $config->{"snmp"}->{"autoload_metadata_db_file"}, '\.xml$' );
+            if ( -f $config->{"snmp"}->{"autoload_metadata_db_file"} ) {
+                system( "mv " . $config->{"snmp"}->{"autoload_metadata_db_file"} . " " . $config->{"snmp"}->{"autoload_metadata_db_file"} . "~" );
+            }
+            system( "mv " . $result[0] . " " . $config->{"snmp"}->{"autoload_metadata_db_file"} );
+        }
+        else {
+            $config->{"snmp"}->{"db_autoload"} = &ask( "Would you like to auto-load the database [non-destructive] ? (0 for no, 1 for yes) ", "1", $config->{"snmp"}->{"db_autoload"}, '^[01]$' );
+            if ( $config->{"snmp"}->{"db_autoload"} eq "1" ) {
+                $config->{"snmp"}->{"autoload_metadata_db_file"} = &ask( "Enter the filename of the base XML file to load ", $confdir . "/store.xml", $config->{"snmp"}->{"autoload_metadata_db_file"}, '\.xml$' );
+            }
+        }
     }
 
     $config->{"snmp"}->{"enable_registration"} = &ask( "Will this service register with an LS (0 for no, 1 for yes)", "0", $config->{"snmp"}->{"enable_registration"}, '^[01]$' );
