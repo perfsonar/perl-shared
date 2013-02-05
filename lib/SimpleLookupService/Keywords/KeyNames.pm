@@ -59,8 +59,11 @@ use constant {
     LS_KEY_HOST_OS_KERNEL => "host-os-kernel",
     
     LS_KEY_HOST_NET_TCP_CONGESTIONALGORITHM => "host-net-tcp-congestionalgorithm",
-    LS_KEY_HOST_NET_TCP_MAXBUFFER => "host-net-tcp-maxbuffer",
-    LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER => "host-net-tcp-autotunemaxbuffer",
+    LS_KEY_HOST_NET_TCP_MAXBUFFER_SEND => "host-net-tcp-maxbuffer-send",
+    LS_KEY_HOST_NET_TCP_MAXBUFFER_RECV => "host-net-tcp-maxbuffer-recv",
+    LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER_SEND => "host-net-tcp-autotunemaxbuffer-send",
+    LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER_RECV => "host-net-tcp-autotunemaxbuffer-recv",
+    LS_KEY_HOST_NET_TCP_MAXBACKLOG => "host-net-tcp-maxbacklog",
     LS_KEY_HOST_NET_TCP_INTERFACES => "host-net-interfaces",
     
     LS_KEY_HOST_ADMINISTRATORS => "host-administrators"
