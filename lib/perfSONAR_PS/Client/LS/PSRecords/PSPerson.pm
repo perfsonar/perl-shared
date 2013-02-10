@@ -13,7 +13,7 @@ perfSONAR specfic Person record. it inherits SimpleLookupService::Records::Direc
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use base 'SimpleLookupService::Records::Directory::Person';
 

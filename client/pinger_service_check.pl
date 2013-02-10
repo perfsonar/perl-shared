@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = 3.1.1;
+our $VERSION = 3.3;
 
 use FindBin qw($Bin);
 use lib "$Bin/../lib";

@@ -3,7 +3,7 @@ package perfSONAR_PS::Utils::TL1::Infinera;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.3;
 
 =head1 NAME
 

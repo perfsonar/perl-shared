@@ -3,7 +3,7 @@ package perfSONAR_PS::DB::RRD;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.3;
 
 use fields 'LOGGER', 'PATH', 'NAME', 'DATASOURCES', 'COMMIT';
 

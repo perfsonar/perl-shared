@@ -14,7 +14,7 @@ are references to other records.
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use base 'SimpleLookupService::Records::Record';
 

@@ -3,7 +3,7 @@ package perfSONAR_PS::Collectors::TL1::Agent::HDXc;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.3;
 
 use fields 'AGENT', 'LOGGER', 'AID_TYPE', 'AID', 'COUNTER';
 

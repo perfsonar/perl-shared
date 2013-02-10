@@ -3,7 +3,7 @@ package perfSONAR_PS::Utils::OSCARS;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.3;
 
 use fields 'IDC_URL', 'CLIENT_DIR';
 

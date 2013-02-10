@@ -3,7 +3,7 @@ package perfSONAR_PS::Client::LS::Remote;
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use fields 'LS_ORDER', 'LS_CONF', 'HINTS', 'LS', 'CONF', 'CHUNK', 'ALIVE', 'FIRST', 'LS_KEY', 'LOGGER', 'LIMIT';
 

@@ -13,7 +13,7 @@ The base class for Query Object
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use Params::Validate qw( :all );
 use JSON qw(encode_json decode_json);

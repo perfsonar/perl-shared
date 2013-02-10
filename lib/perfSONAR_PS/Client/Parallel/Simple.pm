@@ -3,7 +3,7 @@ package perfSONAR_PS::Client::Parallel::Simple;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.3;
 
 use fields 'LOGGER', 'REQUESTS';
 

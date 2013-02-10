@@ -3,7 +3,7 @@ package perfSONAR_PS::Client::gLS;
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use fields 'ROOTS', 'HINTS', 'LOGGER', 'FILE';
 

@@ -3,7 +3,7 @@ package perfSONAR_PS::Client::Echo;
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use fields 'URI', 'EVENT_TYPE', 'TIMEOUT', 'ALARM_DISABLED';
 

@@ -28,7 +28,7 @@ use Cwd;
 use Config::General;
 use Module::Load;
 
-our $VERSION = 0.09;
+our $VERSION = 3.3;
 
 sub handleCollector($);
 sub daemonize();

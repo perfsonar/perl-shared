@@ -5,7 +5,7 @@ use Data::Dumper;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.3;
 
 use base 'perfSONAR_PS::Collectors::Base';
 use fields 'DB_CLIENT', 'COUNTERS', 'TL1AGENTS';

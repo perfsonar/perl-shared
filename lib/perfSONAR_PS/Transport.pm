@@ -3,7 +3,7 @@ package perfSONAR_PS::Transport;
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use fields 'CONTACT_HOST', 'CONTACT_PORT', 'CONTACT_ENDPOINT', 'NETLOGGER', 'ALARM_DISABLED';
 

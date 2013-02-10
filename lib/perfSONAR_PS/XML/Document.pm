@@ -3,7 +3,7 @@ package perfSONAR_PS::XML::Document;
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use fields 'OPEN_TAGS', 'DEFINED_PREFIXES', 'FH', 'LOGGER', 'NETLOGGER';
 

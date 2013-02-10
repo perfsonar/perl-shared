@@ -13,7 +13,7 @@ A base class for network interface. it defines fields like interface-name, addre
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use base 'SimpleLookupService::Records::Record';
 

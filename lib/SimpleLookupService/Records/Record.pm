@@ -17,7 +17,7 @@ ttl - specified in minutes (max - 43200 minutes (30 days))
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);

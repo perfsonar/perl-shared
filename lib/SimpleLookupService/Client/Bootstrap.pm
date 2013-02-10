@@ -16,7 +16,7 @@ use warnings;
 
 use Params::Validate qw( :all );
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use fields 'URL';
 

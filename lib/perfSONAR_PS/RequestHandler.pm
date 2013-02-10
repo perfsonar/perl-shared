@@ -3,7 +3,7 @@ package perfSONAR_PS::RequestHandler;
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use fields 'EV_HANDLERS', 'EV_REGEX_HANDLERS', 'MSG_HANDLERS', 'FULL_MSG_HANDLERS', 'MERGE_HANDLERS', 'EVENTEQUIVALENCECHECKERS', 'LOGGER';
 

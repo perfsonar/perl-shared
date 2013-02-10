@@ -3,7 +3,7 @@ package perfSONAR_PS::DB::Cacti;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.3;
 
 use fields 'LOGGER', 'DB_HOST', 'DB_USER', 'DB_PASS', 'DB_NAME', 'FILE', 'VERSIONS', 'STORE', 'RRDTOOL';
 

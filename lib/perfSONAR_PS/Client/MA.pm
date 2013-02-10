@@ -3,7 +3,7 @@ package perfSONAR_PS::Client::MA;
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use fields 'INSTANCE', 'LOGGER', 'ALIVE', 'TIMEOUT', 'ALARM_DISABLED', 'data', 'metadata', 'EVENTTYPES', 'PARAMETERS', 'SUBJECT';
 

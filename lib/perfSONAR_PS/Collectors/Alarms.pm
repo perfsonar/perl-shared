@@ -3,7 +3,7 @@ package perfSONAR_PS::Collectors::Alarms;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.3;
 
 use base 'perfSONAR_PS::Collectors::Base';
 

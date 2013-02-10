@@ -3,7 +3,7 @@ package perfSONAR_PS::DB::Ganglia;
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use fields 'LOGGER', 'CONF', 'FILE', 'STORE', 'RRDTOOL', 'TELNET', 'MAP', 'TEMPLATES';
 

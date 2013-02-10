@@ -17,7 +17,7 @@ work with the instance of this class and avoid using explicit namespace declarat
 =cut
 
     use version;
-    our $VERSION = qv( '3.0_1' );
+   our $VERSION = 3.3;
     use Log::Log4perl qw(get_logger);
 
     our $nss = {

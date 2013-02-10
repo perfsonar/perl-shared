@@ -16,7 +16,7 @@ use strict;
 use warnings;
 use Scalar::Util qw(blessed);
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use Carp qw(cluck);
 use Params::Validate qw( :all );

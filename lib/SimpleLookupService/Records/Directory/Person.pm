@@ -13,7 +13,7 @@ A base class for user records. it is used to store contact details
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use base 'SimpleLookupService::Records::Record';
 

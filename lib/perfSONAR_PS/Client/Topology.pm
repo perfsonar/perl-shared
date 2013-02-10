@@ -3,7 +3,7 @@ package perfSONAR_PS::Client::Topology;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.3;
 
 use fields 'URI_STRING', 'LOGGER', 'TIMEOUT', 'ALARM_DISABLED';
 

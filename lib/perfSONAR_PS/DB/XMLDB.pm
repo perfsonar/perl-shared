@@ -3,7 +3,7 @@ package perfSONAR_PS::DB::XMLDB;
 use strict;
 use warnings;
 
-our $VERSION = 3.2;
+our $VERSION = 3.3;
 
 use fields 'ENVIRONMENT', 'CONTAINERFILE', 'NAMESPACES', 'ENV', 'MANAGER', 'CONTAINER', 'INDEX', 'LOGGER', 'NETLOGGER', 'DISABLETXN';
 

@@ -3,7 +3,7 @@ package perfSONAR_PS::XML::Document_string;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.3;
 
 use fields 'OPEN_TAGS', 'DEFINED_PREFIXES', 'STRING';
 
