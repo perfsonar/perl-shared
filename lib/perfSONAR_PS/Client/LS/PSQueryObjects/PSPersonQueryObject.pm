@@ -16,7 +16,7 @@ use warnings;
 
 our $VERSION = 3.3;
 
-use base 'SimpleLookupService::QueryObjects::Network::PersonQueryObject';
+use base 'SimpleLookupService::QueryObjects::Directory::PersonQueryObject';
 
 use Params::Validate qw( :all );
 use JSON qw( encode_json decode_json);

@@ -142,28 +142,60 @@ sub setTcpCongestionAlgorithm {
     return $ret;
 }
 
-sub getTcpMaxBuffer {
+sub getTcpMaxBufferSend {
     my $self = shift;
-    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXBUFFER)};
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXBUFFER_SEND)};
 }
 
-sub setTcpMaxBuffer {
+sub setTcpMaxBufferSend {
     my ( $self, $value ) = @_;
-    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXBUFFER), value=>$value  );
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXBUFFER_SEND), value=>$value  );
     return $ret;
 }
 
-sub getTcpAutotuneMaxBuffer {
+sub getTcpMaxBufferRecv {
     my $self = shift;
-    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER)};
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXBUFFER_RECV)};
 }
 
-sub setTcpAutotuneMaxBuffer {
+sub setTcpMaxBufferRecv {
     my ( $self, $value ) = @_;
-    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER), value=>$value  );
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXBUFFER_RECV), value=>$value  );
     return $ret;
 }
 
+sub getTcpAutotuneMaxBufferSend {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER_SEND)};
+}
+
+sub setTcpAutotuneMaxBufferSend {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER_SEND), value=>$value  );
+    return $ret;
+}
+
+sub getTcpAutotuneMaxBufferRecv {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER_RECV)};
+}
+
+sub setTcpAutotuneMaxBufferRecv {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER_RECV), value=>$value  );
+    return $ret;
+}
+
+sub getTcpMaxBacklog {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXBACKLOG)};
+}
+
+sub setTcpMaxBacklog {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXBACKLOG), value=>$value  );
+    return $ret;
+}
 sub getHostAdministrators{
     my $self = shift;
     return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_ADMINISTRATORS)};

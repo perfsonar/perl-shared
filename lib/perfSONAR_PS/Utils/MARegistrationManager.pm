@@ -14,9 +14,12 @@ use URI;
 
 use perfSONAR_PS::Client::LS::PSQueryObjects::PSInterfaceQueryObject;
 use perfSONAR_PS::Client::LS::PSQueryObjects::PSTestQueryObject;
+use perfSONAR_PS::Client::LS::PSQueryObjects::PSPersonQueryObject;
+use perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject;
 use perfSONAR_PS::Client::LS::PSRecords::PSInterface;
 use perfSONAR_PS::Client::LS::PSRecords::PSTest;
 use perfSONAR_PS::Client::LS::PSRecords::PSService;
+use perfSONAR_PS::Client::LS::PSRecords::PSPerson;
 use SimpleLookupService::Client::Query;
 use SimpleLookupService::Client::Registration;
 use SimpleLookupService::Client::RecordManager;
@@ -74,7 +77,7 @@ sub init {
 
 sub register {
     my ($self, @args) = @_;
-    my %parameters = validate( @args, { service_params => 1, interfaces => 1, test_set => 1} );
+    my %parameters = validate( @args, { service_params => 1, interfaces => 1, administrator => 1, test_set => 1} );
     
     #initialize values
     my $service_params = $parameters{service_params};
@@ -85,6 +88,54 @@ sub register {
     
     #load URIs into database
     my ($uri_db, $service_reg_info) = $self->_load_uri_db();
+    
+    # Register admin person record
+    if($parameters{administrator}){
+        my $person_query = perfSONAR_PS::Client::LS::PSQueryObjects::PSPersonQueryObject->new();
+        $person_query->init();
+        $person_query->setPersonName($parameters{administrator}->{name});
+        $person_query->setEmailAddresses($parameters{administrator}->{email});
+        my $query_client = SimpleLookupService::Client::Query->new();
+        $query_client->init(server => $self->{LS_CLIENT}, query => $person_query);
+        my($result_code, $results) = $query_client->query();
+        if($result_code != 0){
+            $self->{LOGGER}->warn("Error trying to lookup administrator " . $parameters{administrator}->{name} . " in LS: " . $results->{message});
+            next;
+        }elsif(@{$results} == 0){
+            $self->{LOGGER}->debug("Unable to find " . $parameters{administrator}->{name} . ", registering");
+            my $person = new perfSONAR_PS::Client::LS::PSRecords::PSPerson();
+            $person->init(
+                personName => $parameters{administrator}->{name},
+                emails => $parameters{administrator}->{email}
+            );
+            my $reg_result =  $self->_register($person);
+            if($reg_result){
+                $self->_save_reg_key($reg_result->getRecordUri(), 
+                    $reg_result->getRecordExpiresAsUnixTS()->[0], $person->getPersonName(), $person->getPersonName());
+                $service_params->{administrators} = $reg_result->getRecordUri();
+            }
+        }else {
+            $self->{LOGGER}->debug("Found " . $parameters{administrator}->{name});
+            my $last_uri = '';
+            foreach my $result(@{$results}){
+                if(!$uri_db->{$result->getRecordUri()}){
+                    #use first URI that is not registered by this MA. We prefer MAs 
+                    # don't register hosts so this should occur when ls_reg_daemon is running
+                    $service_params->{administrators} = $result->getRecordUri();
+                    last;
+                }
+                $last_uri = $result->getRecordUri();
+            }    
+            
+            #if our only option is a record maintained by this MA, then renew
+            if(!$service_params->{administrators}){
+                $service_params->{administrators} = $last_uri;
+                $self->{LOGGER}->debug("Using record maintained by this MA for " .  $parameters{administrator}->{name});
+                my $renew_result = $self->_renew($service_params->{administrators});
+                $self->_update_reg_key($renew_result->getRecordExpiresAsUnixTS()->[0], $renew_result->getRecordUri()) if($renew_result);
+            }
+        }
+    }
     
     #find/register interface URIs for endpoints
     my %iface_uris = ();
@@ -197,11 +248,40 @@ sub register {
     }
     $service_params->{'maTests'} = \@test_set_uris;
     
+    ##
+    #determine host on which service is running. Don't register a host 
+    # if you don't find one as the MA won't provide any useful information about host.
+    my $ma_url = URI->new($service_params->{'serviceLocator'});
+    my $ma_host = $ma_url->host();
+    my $iface_query = perfSONAR_PS::Client::LS::PSQueryObjects::PSInterfaceQueryObject->new();
+    $iface_query->init();
+    $iface_query->setInterfaceAddresses($ma_host);
+    my $query_client = SimpleLookupService::Client::Query->new();
+    $query_client->init(server => $self->{LS_CLIENT}, query => $iface_query);
+    my($result_code, $results) = $query_client->query();
+    if($result_code != 0){
+        $self->{LOGGER}->warn("Error trying to lookup MA interface $ma_host in LS: " . $results->{message});
+    }elsif(@{$results} != 0){
+        foreach my $iface_result(@{$results}){
+            my $host_query = perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject->new();
+            $host_query->init();
+            $host_query->setInterfaces($iface_result->getRecordUri());
+            my $host_query_client = SimpleLookupService::Client::Query->new();
+            $host_query_client->init(server => $self->{LS_CLIENT}, query => $host_query);
+            my($host_result_code, $host_results) = $host_query_client->query();
+            if($host_result_code == 0 && @{$host_results} > 0){
+                $service_params->{'host'} = $host_results->[0]->getRecordUri();
+                last;
+            }
+            
+        }
+    }
+        
     #register pSB service
     my $service_checksum = '';
     foreach my $service_param('serviceLocator', 'serviceType', 'serviceName', 
         'eventTypes', 'maTypes', 'maTests', 'communities', 'domains', 'city', 'region', 
-        'country',  'zip_code', 'latitude', 'longitude'){
+        'country',  'zip_code', 'latitude', 'longitude', 'administrators'){
         $service_checksum .= $self->_add_checksum_val($service_params->{$service_param});
     }
     $service_checksum = md5_base64($service_checksum);
@@ -380,6 +460,8 @@ sub _build_service_registration {
     $service->setZipCode($service_params->{'zip_code'}) if($service_params->{'zip_code'});
     $service->setLatitude($service_params->{'latitude'}) if($service_params->{'latitude'});
     $service->setLongitude($service_params->{'longitude'}) if($service_params->{'longitude'});
+    $service->setServiceAdministrators($service_params->{'administrators'}) if($service_params->{'administrators'});
+    $service->setServiceHost($service_params->{'host'}) if($service_params->{'host'});
     
     return $service;
 }

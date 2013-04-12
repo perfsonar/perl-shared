@@ -28,7 +28,7 @@ sub init {
     my ( $self, @args ) = @_;
     my %parameters = validate( @args, { serviceLocator => 1, serviceType => 1, 
     									serviceName => 0, serviceVersion => 0, 
-    									domains => 0, administrators => 0, 
+    									serviceHost => 0, domains => 0, administrators => 0, 
     									siteName => 0 , city => 0, region => 0,
     									country => 0, zipCode => 0, latitude =>0, longitude => 0} );
     

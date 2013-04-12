@@ -40,6 +40,7 @@ use constant {
     LS_KEY_SERVICE_NAME => "service-name",
     LS_KEY_SERVICE_TYPE => "service-type",
     LS_KEY_SERVICE_VERSION => "service-version",
+    LS_KEY_SERVICE_HOST => "service-host",
     LS_KEY_SERVICE_LOCATOR => "service-locator",
     LS_KEY_SERVICE_ADMINISTRATORS => "service-administrators"
     

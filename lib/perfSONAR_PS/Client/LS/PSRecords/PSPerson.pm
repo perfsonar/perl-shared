@@ -22,7 +22,7 @@ use JSON qw( encode_json decode_json);
 
 sub init {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, {personName => 1, personEmails => 1 } );
+    my %parameters = validate( @args, {personName => 1, emails => 1 } );
     
     $self->SUPER::init(%parameters); 
     
