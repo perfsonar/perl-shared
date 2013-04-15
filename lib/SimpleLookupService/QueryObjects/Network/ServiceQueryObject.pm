@@ -25,9 +25,7 @@ use SimpleLookupService::Keywords::Values;
 
 sub init {
     my ( $self, @args ) = @_;
-    
-    $self->SUPER::init(type=>(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_SERVICE)); 
-    
+    $self->SUPER::init(type=>(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_SERVICE));
     return 0;
 }
 

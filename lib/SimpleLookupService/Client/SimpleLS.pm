@@ -150,6 +150,9 @@ sub setUrl {
     my ( $self, $url ) = @_;
     if(defined $url){
     	$self->{URL} = $url;
+    	my $uri = URI->new($url);
+    	$self->{HOST} = $uri->host;
+    	$self->{PORT} = $uri->port;
     	return 0;
     }else{
     	return -1;

@@ -16,4 +16,15 @@ use constant {
 				}
 		
 };
+
+use constant {
+	
+	QUERYMAP => {
+					(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_SERVICE) => "SimpleLookupService::QueryObjects::Network::ServiceQueryObject",
+   					(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_HOST) => "SimpleLookupService::QueryObjects::Network::HostQueryObject",
+                    (SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_INTERFACE) => "SimpleLookupService::QueryObjects::Network::InterfaceQueryObject",
+                    (SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_PERSON) => "SimpleLookupService::QueryObjects::Directory::PersonQueryObject",
+				}
+		
+};
 1;

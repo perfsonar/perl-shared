@@ -2,7 +2,7 @@ package perfSONAR_PS::Client::LS::PSKeywords::PSRecordTypeMapping;
 
 use base 'SimpleLookupService::Keywords::RecordTypeMapping';
 
-use perfSONAR_PS::Client::LS::PSKeywords::PSValues;
+use perfSONAR_PS::Client::LS::PSKeywords::PSKeyValues;
 use SimpleLookupService::Keywords::Values;
 
 # Record keys

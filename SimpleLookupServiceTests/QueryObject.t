@@ -9,6 +9,7 @@ use Test::More 'no_plan';
 use Test::Deep;
 
 use SimpleLookupService::QueryObjects::QueryObject;
+use SimpleLookupService::Records::Record;
 
 my $query = SimpleLookupService::QueryObjects::QueryObject->new();
 

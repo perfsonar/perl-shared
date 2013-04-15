@@ -38,7 +38,6 @@ sub init {
     
     if(defined $parameters{type}){
     	my $res = $self->setRecordType($parameters{type});
-    	
     	if($res != 0){
     		cluck "Error initializing QueryObject";
     		return $res;
