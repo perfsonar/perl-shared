@@ -614,7 +614,17 @@ CLEAN_CHILDREN:
                 $logger->debug( "Calling inline maintance function" );
                 eval { $service->inline_maintenance(); };
                 if ( $EVAL_ERROR ) {
-                    $logger->error( "Failure in inline maintenance: $EVAL_ERROR" );
+                    # LibXML can (helpfully) throw invalid $EVAL_ERROR values
+                    # that bomb out when you try to print them. However, this
+                    # stupid looking code should work around this issue.
+                    my $error = $EVAL_ERROR;
+
+                    eval {
+                        $logger->error( "Failure in inline maintenance: $error" );
+                    };
+                    if ( $EVAL_ERROR ) {
+                        $logger->error( "Failure in inline maintenance: $EVAL_ERROR" );
+                    }
                 }
             }
         }
