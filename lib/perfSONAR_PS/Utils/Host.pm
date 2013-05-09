@@ -21,7 +21,7 @@ which the application is running.
 use base 'Exporter';
 use Params::Validate qw(:all);
 
-our @EXPORT_OK = qw( get_ips get_ethernet_interfaces get_interface_addresses );
+our @EXPORT_OK = qw( get_ips get_ethernet_interfaces get_interface_addresses get_interface_speed);
 
 =head2 get_ips()
 
@@ -109,6 +109,32 @@ sub get_interface_addresses {
     else {
         return [];
     }
+}
+
+sub get_interface_speed {
+    my $parameters = validate( @_, { interface_name => 0, } );
+    my $interface_name = $parameters->{interface_name};
+    
+    my $speed = 0;
+    my $ETHTOOL;
+    open( $ETHTOOL, "-|", "/sbin/ethtool $interface_name" ) or return;
+    while ( <$ETHTOOL> ) {
+        if ( /^\s*Speed:\s+(\d+)\s*(\w)/ ) {
+            $speed = $1;
+            my $units = $2;
+            if($units eq 'M'){
+                $speed *= 10**6;
+            }elsif($units eq 'G'){
+                $speed *= 10**9;
+            }elsif($units eq 'T'){
+                $speed *= 10**12;
+            }
+            last;
+        }
+    }
+    close( $ETHTOOL );
+    
+    return $speed;
 }
 
 1;

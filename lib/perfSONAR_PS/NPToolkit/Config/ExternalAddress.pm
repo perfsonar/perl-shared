@@ -21,7 +21,7 @@ configuration.
 
 use base 'perfSONAR_PS::NPToolkit::Config::Base';
 
-use fields 'EXTERNAL_ADDRESS_FILE', 'PRIMARY_ADDRESS', 'PRIMARY_IPV4', 'PRIMARY_IPV6', 'PRIMARY_ADDRESS_IFACE', 'PRIMARY_IPV4_IFACE', 'PRIMARY_IPV6_IFACE';
+use fields 'EXTERNAL_ADDRESS_FILE', 'PRIMARY_ADDRESS', 'PRIMARY_IPV4', 'PRIMARY_IPV6', 'PRIMARY_ADDRESS_IFACE', 'PRIMARY_IPV4_IFACE', 'PRIMARY_IPV6_IFACE', 'PRIMARY_IFACE_SPEED';
 
 use Params::Validate qw(:all);
 use Storable qw(store retrieve freeze thaw dclone);
@@ -142,6 +142,7 @@ sub save {
         $service_config->set_external_address_if_name( external_address_if_name => $self->{PRIMARY_ADDRESS_IFACE} );
         $service_config->set_external_address_ipv4( external_address_ipv4 => $self->{PRIMARY_IPV4} );
         $service_config->set_external_address_ipv6( external_address_ipv6 => $self->{PRIMARY_IPV6} );
+        $service_config->set_external_address_if_speed( external_address_if_speed => $self->{PRIMARY_IFACE_SPEED} );
         $res = $service_config->save({ restart_services => $parameters->{restart_services} });
         if ($res != 0) {
             return (-1, "Couldn't save or restart ".$service_config->get_service_name);
@@ -201,6 +202,17 @@ sub get_primary_ipv6 {
     my $parameters = validate( @params, {} );
 
     return $self->{PRIMARY_IPV6};
+}
+
+=head2 get_primary_ipv6({})
+Returns the speed of the primary interafce for the toolkit
+=cut
+
+sub get_primary_iface_speed {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, {} );
+
+    return $self->{PRIMARY_IFACE_SPEED};
 }
 
 =head2 set_primary_address({ address => 1 })
@@ -326,6 +338,22 @@ sub set_primary_ipv6_iface {
     return 0;
 }
 
+=head2 set_primary_iface_speed({ speed => 1 })
+Sets the speed of the primary interface
+=cut
+
+sub set_primary_iface_speed {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { speed => 1, } );
+
+    my $speed = $parameters->{speed};
+
+    $self->{PRIMARY_IFACE_SPEED} = $speed;
+
+    return 0;
+}
+
+
 =head2 last_modified()
     Returns when the configuration was last saved.
 =cut
@@ -355,6 +383,7 @@ sub reset_state {
         $self->{PRIMARY_IPV6_IFACE}    = $res->{primary_ipv6_iface};
         $self->{PRIMARY_IPV4_IFACE}    = $res->{primary_ipv4_iface};
         $self->{PRIMARY_ADDRESS_IFACE} = $res->{primary_address_iface};
+        $self->{PRIMARY_IFACE_SPEED}   = $res->{primary_iface_speed};
     }
 
     return 0;
@@ -382,6 +411,7 @@ sub read_external_address_file {
     my $primary_address_iface;
     my $primary_ipv4_iface;
     my $primary_ipv6_iface;
+    my $primary_iface_speed;
 
     while ( <EXTERNAL_ADDRESS_FILE> ) {
         chomp;
@@ -406,6 +436,8 @@ sub read_external_address_file {
         }
         elsif ( $variable eq "default_ipv6_address_iface" ) {
             $primary_ipv6_iface = $value;
+        }elsif ( $variable eq "default_iface_speed" ) {
+            $primary_iface_speed = $value;
         }
     }
 
@@ -418,6 +450,7 @@ sub read_external_address_file {
         primary_ipv6_iface    => $primary_ipv6_iface,
         primary_ipv4_iface    => $primary_ipv4_iface,
         primary_address_iface => $primary_address_iface,
+        primary_iface_speed   => $primary_iface_speed,
     );
 
     return ( 0, \%info );
@@ -456,6 +489,9 @@ sub generate_external_address_file {
 
     my $ipv6_addr_iface = $self->{PRIMARY_IPV6_IFACE};
     $ipv6_addr_iface = "" unless ( $ipv6_addr_iface );
+    
+    my $primary_iface_speed = $self->{PRIMARY_IFACE_SPEED};
+    $primary_iface_speed = "" unless ( $primary_iface_speed );
 
 
     $output .= "external_address=" . $addr . "\n";
@@ -465,7 +501,8 @@ sub generate_external_address_file {
     $output .= "default_accesspoint_iface=" . $addr_iface . "\n";
     $output .= "default_ipv4_address_iface=" . $ipv4_addr_iface . "\n";
     $output .= "default_ipv6_address_iface=" . $ipv6_addr_iface . "\n";
-
+    $output .= "default_iface_speed=" . $primary_iface_speed . "\n";
+    
     return $output;
 }
 
@@ -485,6 +522,7 @@ sub save_state {
         primary_address_iface      => $self->{PRIMARY_ADDRESS_IFACE},
         primary_ipv4_address_iface => $self->{PRIMARY_IPV4_IFACE},
         primary_ipv6_address_iface => $self->{PRIMARY_IPV6_IFACE},
+        primary_iface_speed        => $self->{PRIMARY_IFACE_SPEED},
     );
 
     my $str = freeze( \%state );
@@ -503,9 +541,14 @@ sub restore_state {
 
     my $state = thaw( $parameters->{state} );
 
-    $self->{PRIMARY_IPV6} = $state->{primary_ipv6}, $self->{PRIMARY_IPV4} = $state->{primary_ipv4}, $self->{PRIMARY_ADDRESS} = $state->{primary_address},
-    $self->{PRIMARY_IPV6_IFACE} = $state->{primary_ipv6_iface}, $self->{PRIMARY_IPV4_IFACE} = $state->{primary_ipv4_iface}, $self->{PRIMARY_ADDRESS_IFACE} = $state->{primary_address_iface},
-
+    $self->{PRIMARY_IPV6} = $state->{primary_ipv6};
+    $self->{PRIMARY_IPV4} = $state->{primary_ipv4};
+    $self->{PRIMARY_ADDRESS} = $state->{primary_address};
+    $self->{PRIMARY_IPV6_IFACE} = $state->{primary_ipv6_iface};
+    $self->{PRIMARY_IPV4_IFACE} = $state->{primary_ipv4_iface};
+    $self->{PRIMARY_ADDRESS_IFACE} = $state->{primary_address_iface};
+    $self->{PRIMARY_IFACE_SPEED} = $state->{primary_iface_speed};
+    
     $self->{LOGGER}->debug( "State: " . Dumper( $state ) );
     return;
 }

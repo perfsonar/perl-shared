@@ -21,7 +21,7 @@ use Template;
 
 use base 'perfSONAR_PS::NPToolkit::Config::Base';
 
-use fields 'CONFIG_FILE', 'SERVICE_NAME', 'ORGANIZATION_NAME', 'LOCATION', 'EXTERNAL_ADDRESS', 'EXTERNAL_ADDRESS_IF_NAME','EXTERNAL_ADDRESS_IPV4','EXTERNAL_ADDRESS_IPV6','PROJECTS', 'LS_REGISTRATION_INTERVAL', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL';
+use fields 'CONFIG_FILE', 'SERVICE_NAME', 'ORGANIZATION_NAME', 'LOCATION', 'EXTERNAL_ADDRESS', 'EXTERNAL_ADDRESS_IF_NAME','EXTERNAL_ADDRESS_IPV4','EXTERNAL_ADDRESS_IPV6', 'EXTERNAL_ADDRESS_IF_SPEED', 'PROJECTS', 'LS_REGISTRATION_INTERVAL', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL';
 
 use Params::Validate qw(:all);
 use Storable qw(store retrieve freeze thaw dclone);
@@ -111,6 +111,17 @@ sub get_external_address_ipv6 {
     my $parameters = validate( @params, { } );
 
     return $self->{EXTERNAL_ADDRESS_IPV6};
+}
+
+=head2 get_external_address_if_speed({ })
+Returns the external address interface speed
+=cut
+
+sub get_external_address_if_speed {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { } );
+
+    return $self->{EXTERNAL_ADDRESS_IF_SPEED};
 }
 
 =head2 get_organization_name({ organization_name => 1 })
@@ -310,6 +321,21 @@ sub set_external_address_ipv6 {
     my $external_address_ipv6 = $parameters->{external_address_ipv6};
 
     $self->{EXTERNAL_ADDRESS_IPV6} = $external_address_ipv6;
+
+    return 0;
+}
+
+=head2 set_external_address_if_speed({ external_address_if_speed => 1 })
+Sets the external address interface speed
+=cut
+
+sub set_external_address_if_speed {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { external_address_if_speed => 1, } );
+
+    my $external_address_if_speed = $parameters->{external_address_if_speed};
+
+    $self->{EXTERNAL_ADDRESS_IF_SPEED} = $external_address_if_speed;
 
     return 0;
 }
@@ -520,6 +546,11 @@ sub save {
                         {
                             cv => "external_address_ipv6",
                             lv => "EXTERNAL_ADDRESS_IPV6",
+                            ov => [],
+                        },
+                        {
+                            cv => "external_address_if_speed",
+                            lv => "EXTERNAL_ADDRESS_IF_SPEED",
                             ov => [],
                         },
                         {
@@ -774,6 +805,7 @@ sub reset_state {
     $self->{EXTERNAL_ADDRESS_IF_NAME}  = $self->psps_config_find_variable({ config => $config, variable => "external_address_if_name" });
     $self->{EXTERNAL_ADDRESS_IPV4}  = $self->psps_config_find_variable({ config => $config, variable => "external_address_ipv4" });
     $self->{EXTERNAL_ADDRESS_IPV6}  = $self->psps_config_find_variable({ config => $config, variable => "external_address_ipv6" });
+    $self->{EXTERNAL_ADDRESS_IF_SPEED}  = $self->psps_config_find_variable({ config => $config, variable => "external_address_if_speed" });
     $self->{ORGANIZATION_NAME} = $self->psps_config_find_variable({ config => $config, variable => "site_name" });
     $self->{LOCATION}          = $self->psps_config_find_variable({ config => $config, variable => "site_location" });
     $self->{ADMINISTRATOR_NAME} = $self->psps_config_find_variable({ config => $config, variable => "full_name" });
@@ -825,6 +857,7 @@ sub save_state {
         external_address_if_name    => $self->{EXTERNAL_ADDRESS_IF_NAME},
         external_address_ipv4       => $self->{EXTERNAL_ADDRESS_IPV4},
         external_address_ipv6       => $self->{EXTERNAL_ADDRESS_IPV6},
+        external_address_if_speed   => $self->{EXTERNAL_ADDRESS_IF_SPEED},
         projects                    => $self->{PROJECTS},
         administrator_name          => $self->{ADMINISTRATOR_NAME},
         administrator_email         => $self->{ADMINISTRATOR_EMAIL},
@@ -857,6 +890,7 @@ sub restore_state {
     $self->{EXTERNAL_ADDRESS_IF_NAME}    = $state->{external_address_if_name};
     $self->{EXTERNAL_ADDRESS_IPV4}       = $state->{external_address_ipv4};
     $self->{EXTERNAL_ADDRESS_IPV6}       = $state->{external_address_ipv6};
+    $self->{EXTERNAL_ADDRESS_IF_SPEED}   = $state->{external_address_if_speed};
     
     return;
 }
