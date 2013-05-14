@@ -78,7 +78,8 @@ use constant {
     LS_KEY_INTERFACE_ADDRESSES => "interface-addresses",
     LS_KEY_INTERFACE_SUBNET => "interface-subnet",
     LS_KEY_INTERFACE_CAPACITY => "interface-capacity",
-    LS_KEY_INTERFACE_MAC => "interface-mac"
+    LS_KEY_INTERFACE_MAC => "interface-mac",
+    LS_KEY_INTERFACE_MTU => "interface-mtu"
 };
 
 #person keys

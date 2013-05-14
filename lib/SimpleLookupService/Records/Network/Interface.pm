@@ -26,7 +26,7 @@ use Carp qw(cluck);
 
 sub init {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, {interfaceName => 1, interfaceAddresses => 1, subnet => 0, capacity => 0, macAddress=>0, domains=>0 } );
+    my %parameters = validate( @args, {interfaceName => 1, interfaceAddresses => 1, subnet => 0, capacity => 0, macAddress=>0, mtu=>0, domains=>0 } );
     
     $self->SUPER::init(type=>(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_INTERFACE)); 
         
@@ -64,6 +64,14 @@ sub init {
     	my $ret = $self->setInterfaceMacAddress($parameters{macAddress});
     	if($ret <0){
     		cluck "Error initializing Interface record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{mtu}){
+    	my $ret = $self->setInterfaceMTU($parameters{mtu});
+    	if($ret <0){
+    		cluck "Error initializing Interface record MTU";
     		return $ret;
     	}
     }
@@ -130,6 +138,17 @@ sub getInterfaceCapacity {
 sub setInterfaceCapacity {
     my ( $self, $value ) = @_;
     my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_CAPACITY), value=>$value  );
+    return $ret;
+}
+
+sub getInterfaceMTU {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_MTU)};
+}
+
+sub setInterfaceMTU {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_MTU), value=>$value  );
     return $ret;
 }
 
