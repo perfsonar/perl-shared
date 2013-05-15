@@ -97,3 +97,15 @@ sub setDNSDomains {
     $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_GROUP_DOMAINS), value=>$value  );
     
 }
+
+sub getInterfaceMTU {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_MTU)};
+}
+
+sub setInterfaceMTU {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_INTERFACE_MTU), value=>$value  );
+    return $ret;
+}
+1;
