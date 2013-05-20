@@ -3,6 +3,8 @@ package OWP::Conf;
 use strict;
 use warnings;
 
+use POSIX;
+
 our $VERSION = 3.3;
 
 =head1 NAME
