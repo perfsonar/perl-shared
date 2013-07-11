@@ -123,6 +123,8 @@ sub writeFile {
     my $filename = $parameters->{filename};
     my $contents = $parameters->{contents};
 
+    $self->{LOGGER}->debug("Attempting to write $filename");
+
     unless ($self->{ACCESS_CONTROL}->{file}->{$filename}) {
         $self->{LOGGER}->error("Couldn't write file $filename: unknown file");
         die("Access denied");
@@ -133,9 +135,16 @@ sub writeFile {
         die("Access denied");
     }
 
-    open( FILE, ">", $filename ) or die("Couldn't write $filename");
+    unless (open( FILE, ">", $filename )) {
+        my $msg = "Couldn't write $filename: $@";
+        $self->{LOGGER}->error($msg);
+        die($msg);
+    }
+
     print FILE $contents;
     close( FILE );
+
+    $self->{LOGGER}->debug("Finished writing $filename");
 
     return "";
 }
