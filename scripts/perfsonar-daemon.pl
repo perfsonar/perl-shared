@@ -648,13 +648,13 @@ sub registerLS {
 
     my $sleep_time = q{};
     if ( exists $args->{"conf"}->{"ls_registration_interval"} and $args->{"conf"}->{"ls_registration_interval"} ) {
-        $sleep_time = $args->{"conf"}->{"ls_registration_interval"};
+        $sleep_time = $args->{"conf"}->{"ls_registration_interval"} * 60;
     }
     elsif ( exists $args->{"conf"}->{"ls"}->{"ls_registration_interval"} and $args->{"conf"}->{"ls"}->{"ls_registration_interval"} ) {
-        $sleep_time = $args->{"conf"}->{"ls"}->{"ls_registration_interval"};
+        $sleep_time = $args->{"conf"}->{"ls"}->{"ls_registration_interval"} * 60;
     }
     elsif ( exists $args->{"conf"}->{"gls"}->{"ls_registration_interval"} and $args->{"conf"}->{"gls"}->{"ls_registration_interval"} ) {
-        $sleep_time = $args->{"conf"}->{"gls"}->{"ls_registration_interval"};
+        $sleep_time = $args->{"conf"}->{"gls"}->{"ls_registration_interval"} * 60;
     }
     else {
         $sleep_time = 3600;
