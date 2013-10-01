@@ -87,6 +87,8 @@ sub init {
     # Initialize the defaults
     $self->{LOCAL_MESH_CONFIG_FILE}  = $defaults{local_mesh_config_file};
 
+    print STDERR "LOCAL CONFIG: ".$self->{LOCAL_MESH_CONFIG_FILE}."\n";
+
     ( $status, $res ) = $self->reset_state();
     if ( $status != 0 ) {
         return ( $status, $res );
@@ -106,7 +108,9 @@ sub save {
 
     my ($status, $res);
 
-    my $local_mesh_config_output = $self->generate_mesh_config();
+    ($status, $res) = $self->generate_mesh_config();
+
+    my $local_mesh_config_output = $res;
 
     $res = save_file( { file => $self->{LOCAL_MESH_CONFIG_FILE}, content => $local_mesh_config_output } );
     if ( $res == -1 ) {
@@ -291,6 +295,7 @@ sub add_test_owamp {
             sample_count     => 1,
             packet_padding   => 1,
             bucket_width     => 1,
+            added_by_mesh    => 0,
         }
     );
 
@@ -307,6 +312,7 @@ sub add_test_owamp {
     $test{mesh_type}   = $parameters->{mesh_type};
     $test{name}        = $parameters->{name};
     $test{description} = $parameters->{description} if ( defined $parameters->{description} );
+    $test{added_by_mesh} = $parameters->{added_by_mesh};
 
     my %test_parameters = ();
     $test_parameters{packet_interval}  = $parameters->{packet_interval}  if ( defined $parameters->{packet_interval} );
@@ -357,6 +363,7 @@ sub update_test_owamp {
 
     return ( -1, "Test does not exist" ) unless ( $test );
     return ( -1, "Test is not owamp" ) unless ( $test->{type} eq "owamp" );
+    return ( -1, "Test was added by the mesh configuration agent. It can't be updated.") if ($test->{added_by_mesh});
 
     $test->{name}                           = $parameters->{name}             if ( defined $parameters->{name} );
     $test->{description}                    = $parameters->{description}      if ( defined $parameters->{description} );
@@ -397,6 +404,7 @@ sub add_test_bwctl_throughput {
             window_size               => 0,
             report_interval           => 0,
             test_interval_start_alpha => 0,
+            added_by_mesh             => 0,
             tos_bits                   => 0
         }
     );
@@ -414,6 +422,7 @@ sub add_test_bwctl_throughput {
     $test{description} = $parameters->{description};
     $test{type}        = "bwctl/throughput";
     $test{mesh_type}   = $parameters->{mesh_type};
+    $test{added_by_mesh} = $parameters->{added_by_mesh};
 
     my %test_parameters = ();
     $test_parameters{tool}                      = $parameters->{tool}                      if ( defined $parameters->{tool} );
@@ -472,6 +481,7 @@ sub update_test_bwctl_throughput {
 
     return ( -1, "Test does not exist" ) unless ( $test );
     return ( -1, "Test is not bwctl/throughput" ) unless ( $test->{type} eq "bwctl/throughput" );
+    return ( -1, "Test was added by the mesh configuration agent. It can't be updated.") if ($test->{added_by_mesh});
 
     $test->{name}                                    = $parameters->{name}                      if ( defined $parameters->{name} );
     $test->{description}                             = $parameters->{description}               if ( defined $parameters->{description} );
@@ -510,6 +520,7 @@ sub add_test_pinger {
             test_interval   => 1,
             test_offset     => 1,
             ttl             => 1,
+            added_by_mesh   => 0,
         }
     );
 
@@ -534,6 +545,7 @@ sub add_test_pinger {
         type        => "pinger",
         mesh_type   => "star",
         description => $description,
+        added_by_mesh => $parameters->{added_by_mesh},
         parameters  => {
             packet_interval => $packet_interval,
             packet_count    => $packet_count,
@@ -581,6 +593,7 @@ sub update_test_pinger {
     my $test = $self->{TESTS}->{$test_id};
 
     return ( -1, "Invalid test specified" ) unless ( $test );
+    return ( -1, "Test was added by the mesh configuration agent. It can't be updated.") if ($test->{added_by_mesh});
 
     $test->{description} = $parameters->{description} if ( defined $parameters->{description} );
 
@@ -615,6 +628,7 @@ sub add_test_traceroute {
             max_ttl       => 0,
             pause         => 0,
             protocol      => 0,
+            added_by_mesh => 0,
         }
     );
 
@@ -631,6 +645,7 @@ sub add_test_traceroute {
     $test{description} = $parameters->{description};
     $test{type}        = "traceroute";
     $test{mesh_type}   = $parameters->{mesh_type};
+    $test{added_by_mesh} = $parameters->{added_by_mesh};
 
     my %test_parameters = ();
     $test_parameters{test_interval}             = $parameters->{test_interval}             if ( defined $parameters->{test_interval} );
@@ -851,6 +866,7 @@ sub save_state {
     my %state = (
         tests                       => $self->{TESTS},
         local_port_ranges           => $self->{LOCAL_PORT_RANGES},
+        local_mesh_config_file      => $self->{LOCAL_MESH_CONFIG_FILE},
     );
 
     my $str = freeze( \%state );
@@ -869,6 +885,7 @@ sub restore_state {
 
     my $state = thaw( $parameters->{state} );
 
+    $self->{LOCAL_MESH_CONFIG_FILE}      = $state->{local_mesh_config_file};
     $self->{TESTS}                       = $state->{tests};
     $self->{LOCAL_PORT_RANGES}           = $state->{local_port_ranges};
 
@@ -901,9 +918,11 @@ sub parse_mesh_config {
     foreach my $test (@{ $mesh->tests }) {
         my ($old_id, $description) = split('_', $test->description, 2);
 
+        print STDERR "OLD ID: $old_id\n";
         my $test_id;
 
         if ($tests_by_id{$old_id}) {
+           print STDERR "FOUND OLD ID: $old_id\n";
            $test_id = $tests_by_id{$old_id}; 
         }
         else {
