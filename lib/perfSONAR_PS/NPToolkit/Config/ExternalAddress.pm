@@ -85,25 +85,12 @@ sub save {
         return (-1, "Problem saving external address file");
     }
 
-    # XXX When the default external address gets updated, we need to update the
-    # regular testing meshes. This is currently hacky because we assume that
-    # our host is the center of all 'star' tests. We go through each test and
-    # check if the existing center is ipv4 or ipv6 and replace it
-    # appropriately. If we don't have a default ipv4 or ipv6 address, we move
-    # on.
     my $regular_testing_config = perfSONAR_PS::NPToolkit::Config::RegularTesting->new();
     ( $status, $res ) = $regular_testing_config->init();
     if ( $status != 0 ) {
         return (-1, "Couldn't initialize regular testing configuration");
     }
 
-    ( $status, $res ) = $regular_testing_config->get_tests();
-    if ( $status != 0 ) {
-        return (-1, "Problem getting list of regular tests: $res");
-    }
-
-    my $tests = $res;
- 
     my $pinger_config = perfSONAR_PS::NPToolkit::Config::PingER->new();
     if ( $pinger_config->init() != 0 ) {
         return (-1, "Couldn't initialize PingER configuration");
@@ -129,13 +116,7 @@ sub save {
         return (-1, "Couldn't initialize LS Registration Daemon configuration");
     }
 
-    foreach my $test ( @$tests ) {
-        if ( $test->{mesh_type} eq "star" ) {
-            $regular_testing_config->set_test_center( { test_id => $test->{id}, ipv4_address => $self->{PRIMARY_IPV4}, ipv6_address => $self->{PRIMARY_IPV6} } );
-        }
-    }
-
-    $res = $regular_testing_config->save( { restart_services => $parameters->{restart_services} } );
+    $res = $regular_testing_config->save({ restart_services => $parameters->{restart_services} });
 
     foreach my $service_config ($pinger_config, $psb_ma_config, $snmp_ma_config, $traceroute_ma_config, $ls_reg_daemon_config) {
         $service_config->set_external_address( external_address => $self->{PRIMARY_ADDRESS} );
