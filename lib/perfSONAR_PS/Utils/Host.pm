@@ -143,7 +143,7 @@ sub get_interface_mtu {
     my $interface_name = $parameters->{interface_name};
     my @all_ifs = Net::Interface->interfaces();
     foreach my $if (@all_ifs){
-        if($if->name eq $ifcename  && $if->mtu){
+        if($if->name eq $interfacename  && $if->mtu){
           return $if->mtu;
         }
     }
