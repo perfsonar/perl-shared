@@ -21,7 +21,7 @@ configuration.
 
 use base 'perfSONAR_PS::NPToolkit::Config::Base';
 
-use fields 'EXTERNAL_ADDRESS_FILE', 'PRIMARY_ADDRESS', 'PRIMARY_IPV4', 'PRIMARY_IPV6', 'PRIMARY_ADDRESS_IFACE', 'PRIMARY_IPV4_IFACE', 'PRIMARY_IPV6_IFACE', 'PRIMARY_IFACE_SPEED';
+use fields 'EXTERNAL_ADDRESS_FILE', 'PRIMARY_ADDRESS', 'PRIMARY_IPV4', 'PRIMARY_IPV6', 'PRIMARY_ADDRESS_IFACE', 'PRIMARY_IPV4_IFACE', 'PRIMARY_IPV6_IFACE', 'PRIMARY_IFACE_SPEED', 'PRIMARY_IFACE_MTU';
 
 use Params::Validate qw(:all);
 use Storable qw(store retrieve freeze thaw dclone);
@@ -215,6 +215,17 @@ sub get_primary_iface_speed {
     return $self->{PRIMARY_IFACE_SPEED};
 }
 
+=head2 get_primary_iface_mtu({})
+Returns the mtu of the primary interface
+=cut
+
+sub get_primary_iface_mtu {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, {} );
+
+    return $self->{PRIMARY_IFACE_MTU};
+}
+
 =head2 set_primary_address({ address => 1 })
 Sets the primary address for the toolkit
 =cut
@@ -353,6 +364,21 @@ sub set_primary_iface_speed {
     return 0;
 }
 
+=head2 set_primary_iface_mtu({ mtu => 1 })
+Sets the mtu of the primary interface
+=cut
+
+sub set_primary_iface_mtu {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { mtu => 1, } );
+
+    my $mtu = $parameters->{mtu};
+
+    $self->{PRIMARY_IFACE_MTU} = $mtu;
+
+    return 0;
+}
+
 
 =head2 last_modified()
     Returns when the configuration was last saved.
@@ -384,6 +410,7 @@ sub reset_state {
         $self->{PRIMARY_IPV4_IFACE}    = $res->{primary_ipv4_iface};
         $self->{PRIMARY_ADDRESS_IFACE} = $res->{primary_address_iface};
         $self->{PRIMARY_IFACE_SPEED}   = $res->{primary_iface_speed};
+        $self->{PRIMARY_IFACE_MTU}   = $res->{primary_iface_mtu};
     }
 
     return 0;
@@ -412,6 +439,7 @@ sub read_external_address_file {
     my $primary_ipv4_iface;
     my $primary_ipv6_iface;
     my $primary_iface_speed;
+    my $primary_iface_mtu;
 
     while ( <EXTERNAL_ADDRESS_FILE> ) {
         chomp;
@@ -438,6 +466,8 @@ sub read_external_address_file {
             $primary_ipv6_iface = $value;
         }elsif ( $variable eq "default_iface_speed" ) {
             $primary_iface_speed = $value;
+        }elsif ( $variable eq "default_iface_mtu" ) {
+            $primary_iface_mtu = $value;
         }
     }
 
@@ -451,6 +481,7 @@ sub read_external_address_file {
         primary_ipv4_iface    => $primary_ipv4_iface,
         primary_address_iface => $primary_address_iface,
         primary_iface_speed   => $primary_iface_speed,
+        primary_iface_mtu   => $primary_iface_mtu,
     );
 
     return ( 0, \%info );
@@ -492,6 +523,9 @@ sub generate_external_address_file {
     
     my $primary_iface_speed = $self->{PRIMARY_IFACE_SPEED};
     $primary_iface_speed = "" unless ( $primary_iface_speed );
+    
+    my $primary_iface_mtu = $self->{PRIMARY_IFACE_MTU};
+    $primary_iface_mtu = "" unless ( $primary_iface_mtu );
 
 
     $output .= "external_address=" . $addr . "\n";
@@ -502,6 +536,7 @@ sub generate_external_address_file {
     $output .= "default_ipv4_address_iface=" . $ipv4_addr_iface . "\n";
     $output .= "default_ipv6_address_iface=" . $ipv6_addr_iface . "\n";
     $output .= "default_iface_speed=" . $primary_iface_speed . "\n";
+    $output .= "default_iface_mtu=" . $primary_iface_mtu . "\n";
     
     return $output;
 }
@@ -523,6 +558,7 @@ sub save_state {
         primary_ipv4_address_iface => $self->{PRIMARY_IPV4_IFACE},
         primary_ipv6_address_iface => $self->{PRIMARY_IPV6_IFACE},
         primary_iface_speed        => $self->{PRIMARY_IFACE_SPEED},
+        primary_iface_mtu        => $self->{PRIMARY_IFACE_MTU},
     );
 
     my $str = freeze( \%state );
@@ -548,6 +584,7 @@ sub restore_state {
     $self->{PRIMARY_IPV4_IFACE} = $state->{primary_ipv4_iface};
     $self->{PRIMARY_ADDRESS_IFACE} = $state->{primary_address_iface};
     $self->{PRIMARY_IFACE_SPEED} = $state->{primary_iface_speed};
+    $self->{PRIMARY_IFACE_MTU} = $state->{primary_iface_mtu};
     
     $self->{LOGGER}->debug( "State: " . Dumper( $state ) );
     return;

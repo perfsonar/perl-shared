@@ -20,8 +20,9 @@ which the application is running.
 
 use base 'Exporter';
 use Params::Validate qw(:all);
+use Net::Interface;
 
-our @EXPORT_OK = qw( get_ips get_ethernet_interfaces get_interface_addresses get_interface_speed);
+our @EXPORT_OK = qw( get_ips get_ethernet_interfaces get_interface_addresses get_interface_speed get_interface_mtu);
 
 =head2 get_ips()
 
@@ -135,6 +136,17 @@ sub get_interface_speed {
     close( $ETHTOOL );
     
     return $speed;
+}
+
+sub get_interface_mtu {
+	my $parameters = validate( @_, { interface_name => 1, } );
+    my $interface_name = $parameters->{interface_name};
+    my @all_ifs = Net::Interface->interfaces();
+    foreach my $if (@all_ifs){
+        if($if->name eq $ifcename  && $if->mtu){
+          return $if->mtu;
+        }
+    }
 }
 
 1;
