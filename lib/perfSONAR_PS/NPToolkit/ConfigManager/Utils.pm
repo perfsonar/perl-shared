@@ -27,7 +27,7 @@ use perfSONAR_PS::NPToolkit::ConfigManager::ConfigClient;
 
 use base 'Exporter';
 
-our @EXPORT_OK = qw( save_file restart_service stop_service start_service );
+our @EXPORT_OK = qw( save_file restart_service stop_service start_service config_firewall );
 
 my $default_url = "http://localhost:9000/";
 
@@ -160,6 +160,29 @@ sub start_service {
     }
 
     ($status, $res) = $client->startService({ name => $name, ignoreEnabled => 0 });
+    if ($status != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+=head2 restart_service ({ name => 0 })
+
+Generates iptables files
+
+=cut
+
+sub config_firewall {
+    my ($status, $res);
+
+    my $client = perfSONAR_PS::NPToolkit::ConfigManager::ConfigClient->new();
+    ($status, $res) = $client->init({ url => $default_url });
+    if ($status != 0) {
+        return -1;
+    }
+
+    ($status, $res) = $client->configureFirewall();
     if ($status != 0) {
         return -1;
     }

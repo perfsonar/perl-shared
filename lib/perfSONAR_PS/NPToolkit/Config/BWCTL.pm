@@ -25,7 +25,7 @@ use Storable qw(store retrieve freeze thaw dclone);
 use Data::Dumper;
 
 use perfSONAR_PS::Utils::Config::BWCTL qw( bwctl_conf_parse_file bwctl_keys_parse_file bwctl_limits_parse_file bwctl_keys_hash_password bwctl_conf_output bwctl_keys_output bwctl_limits_output bwctl_known_limits );
-use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service );
+use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service config_firewall);
 
 # These are the defaults for the current NPToolkit
 my %defaults = (
@@ -84,7 +84,7 @@ sub init {
 
 sub save {
     my ( $self, @params ) = @_;
-    my $parameters = validate( @params, { restart_services => 0, } );
+    my $parameters = validate( @params, { restart_services => 0, config_firewall => 0} );
 
     my ( $status, $res );
 
@@ -126,7 +126,14 @@ sub save {
     if ( $res == -1 ) {
         return (-1, "Problem saving conf file");
     }
-
+    
+    if ( $parameters->{config_firewall} ) {
+        $res = config_firewall();
+        if ( $res == -1 ) {
+            return (-1, "Problem updating firewall");
+        }
+    }
+    
     if ( $parameters->{restart_services} ) {
         $res = restart_service( { name => "bwctl" } );
         if ( $res == -1 ) {
