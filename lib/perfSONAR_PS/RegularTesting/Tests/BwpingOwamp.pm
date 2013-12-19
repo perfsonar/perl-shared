@@ -23,7 +23,6 @@ has 'bwping_cmd' => (is => 'rw', isa => 'Str', default => '/usr/bin/bwping');
 has 'tool' => (is => 'rw', isa => 'Str', default => 'owamp');
 has 'packet_count' => (is => 'rw', isa => 'Int', default => 100);
 has 'packet_length' => (is => 'rw', isa => 'Int', default => 1000);
-has 'packet_ttl' => (is => 'rw', isa => 'Int', );
 has 'inter_packet_time' => (is => 'rw', isa => 'Num', default => 0.1);
 
 my $logger = get_logger(__PACKAGE__);
@@ -52,7 +51,6 @@ override 'build_cmd' => sub {
     # XXX: need to set interpacket time
 
     push @cmd, ( '-N', $self->packet_count ) if $self->packet_count;
-    push @cmd, ( '-t', $self->packet_ttl ) if $self->packet_ttl;
     push @cmd, ( '-l', $self->packet_length ) if $self->packet_length;
     push @cmd, ( '-i', $self->inter_packet_time ) if $self->inter_packet_time;
 
@@ -83,7 +81,6 @@ override 'build_results' => sub {
 
     $results->packet_count($self->packet_count);
     $results->packet_size($self->packet_length);
-    $results->packet_ttl($self->packet_ttl);
     $results->inter_packet_time($self->inter_packet_time);
 
     # Parse the bwctl output, and add it in
