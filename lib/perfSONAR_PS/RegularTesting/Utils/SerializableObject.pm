@@ -34,14 +34,23 @@ sub parse {
            die("Need to specify a 'type' for $class");
         }
 
+        my $found_type;
         foreach my $subclass ($meta->subclasses) {
             next if $subclass eq $class;
 
-            if ($subclass->can("type") and $subclass->type eq $description->{type}) {
-                $meta = $subclass;
-                $object = $subclass->new();
-                last;
-            }
+            eval {
+                if ($subclass->can("type") and $subclass->type eq $description->{type}) {
+                    $meta = $subclass;
+                    $object = $subclass->new();
+                    $found_type = 1;
+                }
+            };
+
+            last if $found_type;
+        }
+
+        unless ($found_type) {
+            die("Unknown type: ".$description->{type});
         }
     }
 
