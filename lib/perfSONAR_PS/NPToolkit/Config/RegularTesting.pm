@@ -40,6 +40,7 @@ use Net::IP;
 
 use perfSONAR_PS::RegularTesting::Config;
 use perfSONAR_PS::RegularTesting::Test;
+use perfSONAR_PS::RegularTesting::Target;
 use perfSONAR_PS::RegularTesting::Schedulers::Streaming;
 use perfSONAR_PS::RegularTesting::Tests::Powstream;
 use perfSONAR_PS::RegularTesting::Schedulers::RegularInterval;
@@ -48,6 +49,8 @@ use perfSONAR_PS::RegularTesting::Tests::Bwtraceroute;
 use perfSONAR_PS::RegularTesting::Tests::Bwping;
 
 use perfSONAR_PS::Common qw(genuid);
+
+use perfSONAR_PS::RegularTesting::Utils::ConfigFile qw( parse_file save_string );
 
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service stop_service );
 
@@ -899,9 +902,9 @@ sub parse_regular_testing_config {
     my $config;
 
     eval {
-        my $conf = Config::General->new($file);
-        my %conf = $conf->getall;
-        $config = perfSONAR_PS::RegularTesting::Config->parse(\%conf);
+        my ($status, $res) = parse_file( file => $file );
+
+        $config = perfSONAR_PS::RegularTesting::Config->parse($res);
     };
     if ($@) {
         my $res = "Problem reading Regular Testing configurat: $@";
@@ -985,8 +988,8 @@ sub parse_regular_testing_config {
 
         my $test_id = $res;
 
-        foreach my $member (@{ $test->targets }) {
-            $self->add_test_member({ test_id => $test_id, address => $member, sender => 1, receiver => 1 });
+        foreach my $target (@{ $test->targets }) {
+            $self->add_test_member({ test_id => $test_id, address => $target->address, description => $target->description, sender => 1, receiver => 1 });
         }
     }
 
@@ -1069,7 +1072,11 @@ sub generate_regular_testing_config {
 
         my @targets = ();
         foreach my $member (values %{ $test_desc->{members} }) {
-            push @targets, $member->{address};
+            my $target = perfSONAR_PS::RegularTesting::Target->new();
+            $target->address($member->{address});
+            $target->description($member->{description}) if $member->{description};
+
+            push @targets, $target;
         }
 
         my $test = perfSONAR_PS::RegularTesting::Test->new();
@@ -1088,9 +1095,11 @@ sub generate_regular_testing_config {
     push @{ $new_config->tests },  @tests;
 
     # Generate a Config::General version
-    my $str = Config::General->new()->save_string($new_config->unparse());
+    my ($status, $res) = save_string(config => $new_config->unparse());
 
-    return (0, $str);
+    return ($status, $res) unless $status == 0;
+
+    return (0, $res);
 }
 
 1;
