@@ -71,10 +71,10 @@ sub get_individual_tests {
     # Build the set of set of tests that make up this bwctl test
     foreach my $target (@{ $test->targets }) {
         unless ($test->parameters->send_only) {
-            push @tests, { target => $target, receiver => 1 };
+            push @tests, { target => $target->address, receiver => 1 };
         }
         unless ($test->parameters->receive_only) {
-            push @tests, { target => $target, sender => 1 };
+            push @tests, { target => $target->address, sender => 1 };
         }
     }
 

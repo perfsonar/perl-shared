@@ -12,10 +12,12 @@ use Data::UUID;
 
 use Moose;
 
+use perfSONAR_PS::RegularTesting::Target;
+
 extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
 
 has 'description'          => (is => 'rw', isa => 'Str');
-has 'targets'              => (is => 'rw', isa => 'ArrayRef[Str]');
+has 'targets'              => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::Target]');
 has 'local_address'        => (is => 'rw', isa => 'Str');
 has 'parameters'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Tests::Base');
 has 'schedule'             => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Schedulers::Base');
