@@ -192,7 +192,7 @@ sub add_mesh_tests {
     return;
 }
 
-sub get_pinger_landmarks {
+sub get_config {
     my ($self, @args) = @_;
     my $parameters = validate( @args, { });
 

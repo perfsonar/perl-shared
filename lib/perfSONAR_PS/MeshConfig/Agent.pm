@@ -24,6 +24,7 @@ use Net::IP;
 use perfSONAR_PS::MeshConfig::Utils qw(load_mesh);
 
 use perfSONAR_PS::MeshConfig::Config::Mesh;
+use perfSONAR_PS::MeshConfig::Generators::perfSONARRegularTesting;
 use perfSONAR_PS::MeshConfig::Generators::PingER;
 use perfSONAR_PS::MeshConfig::Generators::perfSONARBUOY;
 use perfSONAR_PS::MeshConfig::Generators::TracerouteMaster;
@@ -37,13 +38,17 @@ has 'restart_services'       => (is => 'rw', isa => 'Bool');
 
 has 'meshes'                 => (is => 'rw', isa => 'ArrayRef[HashRef]');
 
-has 'traceroute_master_conf' => (is => 'rw', isa => 'Str');
-has 'owmesh_conf'            => (is => 'rw', isa => 'Str');
-has 'pinger_landmarks'       => (is => 'rw', isa => 'Str');
+has 'use_regular_testing'    => (is => 'rw', isa => 'Bool', default => 1);
+
+has 'regular_testing_conf'   => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/regular_testing/etc/regular_testing.conf");
+
+has 'traceroute_master_conf' => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/traceroute_ma/etc/traceroute-master.conf");
+has 'owmesh_conf'            => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/perfsonarbuoy_ma/etc/owmesh.conf");
+has 'pinger_landmarks'       => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/PingER/etc/pinger-landmarks.xml");
 
 has 'addresses'              => (is => 'rw', isa => 'ArrayRef[Str]');
 
-has 'send_error_emails'         => (is => 'rw', isa => 'Bool', default => 1);
+has 'send_error_emails'      => (is => 'rw', isa => 'Bool', default => 1);
 
 has 'from_address'           => (is => 'rw', isa => 'Str');
 has 'administrator_emails'   => (is => 'rw', isa => 'ArrayRef[Str]');
@@ -63,38 +68,22 @@ sub init {
                                          validate_certificate => 0,
                                          ca_certificate_file => 0,
                                          ca_certificate_path => 0,
-                                         traceroute_master_conf => 1,
-                                         owmesh_conf => 1,
-                                         pinger_landmarks => 1,
+                                         use_regular_testing => 0,
+                                         regular_testing_conf => 0,
+                                         traceroute_master_conf => 0,
+                                         owmesh_conf => 0,
+                                         pinger_landmarks => 0,
                                          skip_redundant_tests => 0,
                                          addresses => 0,
                                          from_address => 0,
                                          administrator_emails => 0,
                                          send_error_emails    => 0,
                                       });
-    my $meshes                 = $parameters->{meshes};
-    my $use_toolkit            = $parameters->{use_toolkit};
-    my $restart_services       = $parameters->{restart_services};
-    my $traceroute_master_conf = $parameters->{traceroute_master_conf};
-    my $owmesh_conf            = $parameters->{owmesh_conf};
-    my $pinger_landmarks       = $parameters->{pinger_landmarks};
-    my $addresses              = $parameters->{addresses};
-    my $from_address           = $parameters->{from_address};
-    my $administrator_emails   = $parameters->{administrator_emails};
-    my $send_error_emails      = $parameters->{send_error_emails};
-    my $skip_redundant_tests   = $parameters->{skip_redundant_tests};
-
-    $self->meshes($meshes) if defined $meshes;
-    $self->use_toolkit($use_toolkit) if defined $use_toolkit;
-    $self->restart_services($restart_services) if defined $restart_services;
-    $self->traceroute_master_conf($traceroute_master_conf) if defined $traceroute_master_conf;
-    $self->owmesh_conf($owmesh_conf) if defined $owmesh_conf;
-    $self->pinger_landmarks($pinger_landmarks) if defined $pinger_landmarks;
-    $self->addresses($addresses) if defined $addresses;
-    $self->from_address($from_address) if defined $from_address;
-    $self->administrator_emails($administrator_emails) if defined $administrator_emails;
-    $self->send_error_emails($send_error_emails) if defined $send_error_emails;
-    $self->skip_redundant_tests($skip_redundant_tests);
+    foreach my $key (keys %$parameters) {
+        if (defined $parameters->{$key}) {
+            $self->$key($parameters->{$key});
+        }
+    }
 
     return;
 }
@@ -228,35 +217,34 @@ sub __get_administrator_emails {
 sub __configure_host {
     my ($self) = @_;
 
-    my $perfsonarbuoy_generator = perfSONAR_PS::MeshConfig::Generators::perfSONARBUOY->new();
-    my ($status, $res) = $perfsonarbuoy_generator->init({ config_file => $self->owmesh_conf, skip_duplicates => $self->skip_redundant_tests });
-    if ($status != 0) {
-        my $msg = "Problem initializing perfSONARBUOY owmesh.conf: ".$res;
-        $logger->error($msg);
-        $self->__add_error({ error_msg => $msg });
+    my @services = ();
+    push @services, {
+    	name => "perfSONARBUOY",
+    	config_file => $self->owmesh_conf,
+    	generator => perfSONAR_PS::MeshConfig::Generators::perfSONARBUOY->new(),
+    	services => [ "perfsonarbuoy_owamp", "perfsonarbuoy_bwctl" ]
+    };
+    push @services, {
+    	name => "Traceroute MA",
+    	config_file => $self->traceroute_master_conf,
+    	generator => perfSONAR_PS::MeshConfig::Generators::TracerouteMaster->new(),
+    	services => [ "traceroute_scheduler" ]
+    };
+    push @services, {
+    	name => "PingER",
+    	config_file => $self->pinger_landmarks,
+    	generator => perfSONAR_PS::MeshConfig::Generators::PingER->new(),
+    	services => [ "pinger" ]
+    };
 
-        return;
-    }
-
-    my $traceroute_master_generator = perfSONAR_PS::MeshConfig::Generators::TracerouteMaster->new();
-    ($status, $res) = $traceroute_master_generator->init({ config_file => $self->traceroute_master_conf, skip_duplicates => $self->skip_redundant_tests });
-    if ($status != 0) {
-        my $msg = "Problem initializing traceroute-master.conf: ".$res;
-        $logger->error($msg);
-        $self->__add_error({ error_msg => $msg });
-
-        return;
-    }
-
-
-    my $pinger_generator = perfSONAR_PS::MeshConfig::Generators::PingER->new();
-    ($status, $res) = $pinger_generator->init({ config_file => $self->pinger_landmarks, skip_duplicates => $self->skip_redundant_tests });
-    if ($status != 0) {
-        my $msg = "Problem initializing pinger landmarks: ".$res;
-        $logger->error($msg);
-        $self->__add_error({ error_msg => $msg });
-
-        return;
+    foreach my $service (@services) {
+        my ($status, $res) = $service->{generator}->init({ config_file => $service->{config_file}, skip_duplicates => $self->skip_redundant_tests });
+        if ($status != 0) {
+            my $msg = "Problem initializing ".$service->{name}.": ".$res;
+            $logger->error($msg);
+            $self->__add_error({ error_msg => $msg });
+            return;
+        }
     }
 
     # The $dont_change variable lets us know at the end whether or not we
@@ -340,55 +328,23 @@ sub __configure_host {
             next;
         }
 
-        # Add the PingER tests to the PingER landmarks
-        eval {
-            $pinger_generator->add_mesh_tests({ mesh => $mesh,
-                                                tests => $tests,
-                                                host => $host,
-                                             });
-        };
-        if ($@) {
-            if ($mesh_params->{required}) {
-                $dont_change = 1;
+        foreach my $service (@services) {
+            # Add the tests to the various service configurations
+            eval {
+                $service->{generator}->add_mesh_tests({ mesh => $mesh,
+                                                        tests => $tests,
+                                                        host => $host,
+                                                     });
+            };
+            if ($@) {
+                if ($mesh_params->{required}) {
+                    $dont_change = 1;
+                }
+
+                my $msg = "Problem adding ".$service->{name}." tests: $@";
+                $logger->error($msg);
+                $self->__add_error({ mesh => $mesh, host => $host, error_msg => $msg });
             }
-
-            my $msg = "Problem adding PingER tests: $@";
-            $logger->error($msg);
-            $self->__add_error({ mesh => $mesh, host => $host, error_msg => $msg });
-        }
-
-        # Add the perfSONARBUOY tests to the PingER landmarks
-        eval {
-            $perfsonarbuoy_generator->add_mesh_tests({ mesh => $mesh,
-                                                       tests => $tests,
-                                                       host => $host,
-                                                    });
-        };
-        if ($@) {
-            if ($mesh_params->{required}) {
-                $dont_change = 1;
-            }
-
-            my $msg = "Problem adding perfSONARBUOY tests: $@";
-            $logger->error($msg);
-            $self->__add_error({ mesh => $mesh, host => $host, error_msg => $msg });
-        }
-
-        # Add the perfSONARBUOY to the traceroute master generator
-        eval {
-            $traceroute_master_generator->add_mesh_tests({ mesh => $mesh,
-                                                           tests => $tests,
-                                                           host => $host,
-                                                        });
-        };
-        if ($@) {
-            if ($mesh_params->{required}) {
-                $dont_change = 1;
-            }
-
-            my $msg = "Problem adding Traceroute tests: $@";
-            $logger->error($msg);
-            $self->__add_error({ mesh => $mesh, host => $host, error_msg => $msg });
         }
     }
 
@@ -399,39 +355,22 @@ sub __configure_host {
         return;
     }
 
-    my $pinger_landmarks       = $pinger_generator->get_pinger_landmarks();
-    my $owmesh_conf            = $perfsonarbuoy_generator->get_owmesh_conf();
-    my $traceroute_master_conf = $traceroute_master_generator->get_traceroute_master_conf();
+    foreach my $service (@services) {
+        my $config = $service->{generator}->get_config();
 
-    my $wrote_pinger;
-    my $wrote_perfsonarbuoy;
-    my $wrote_traceroute;
+        my ($status, $res);
 
-    # Write the new configuration files
-    $res = $self->__write_file({ file => $self->pinger_landmarks, contents => $pinger_landmarks });
-    $wrote_pinger = $res;
+        $status = $self->__write_file({ file => $service->{config_file}, contents => $config });
 
-    $res = $self->__write_file({ file => $self->owmesh_conf, contents => $owmesh_conf });
-    $wrote_perfsonarbuoy = $res;
-    $wrote_traceroute = $res;
-
-    $res = $self->__write_file({ file => $self->traceroute_master_conf, contents => $traceroute_master_conf });
-    $wrote_traceroute = $res unless $wrote_traceroute;  # Don't change yes to no. If we've written either, restart traceroute.
-
-    if ($self->restart_services) {
-        foreach my $service ("pinger", "perfsonarbuoy_owamp", "perfsonarbuoy_bwctl", "traceroute_scheduler") {
-            next if ($service eq "pinger" and not $wrote_pinger);
-
-            next if ($service =~ "perfsonarbuoy" and not $wrote_perfsonarbuoy);
-
-            next if ($service =~ "traceroute" and not $wrote_traceroute);
-
-            ($status, $res) = $self->__restart_service({ name => $service });
-            if ($status != 0) {
-                my $msg = "Problem restarting service $service: ".$res;
-                $logger->error($msg);
-                foreach my $mesh_params (@{ $self->meshes }) {
-                    $self->__add_error({ mesh => $mesh_params->{mesh}, host => $mesh_params->{host}, error_msg => $msg });
+        if ($status and $self->restart_services) {
+            foreach my $service_script (@{ $service->{services} }) {
+                ($status, $res) = $self->__restart_service({ name => $service });
+                if ($status != 0) {
+                    my $msg = "Problem restarting service $service: ".$res;
+                    $logger->error($msg);
+                    foreach my $mesh_params (@{ $self->meshes }) {
+                        $self->__add_error({ mesh => $mesh_params->{mesh}, host => $mesh_params->{host}, error_msg => $msg });
+                    }
                 }
             }
         }

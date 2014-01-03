@@ -54,7 +54,7 @@ sub init {
     return (0, "");
 }
 
-sub get_traceroute_master_conf {
+sub get_config {
     my ($self, @args) = @_;
     my $parameters = validate( @args, { } );
 

@@ -128,7 +128,7 @@ sub add_mesh_tests {
     return;
 }
 
-sub get_owmesh_conf {
+sub get_config {
     my ($self, @args) = @_;
     my $parameters = validate( @args, { } );
 
