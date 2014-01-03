@@ -38,7 +38,7 @@ has 'restart_services'       => (is => 'rw', isa => 'Bool');
 
 has 'meshes'                 => (is => 'rw', isa => 'ArrayRef[HashRef]');
 
-has 'use_regular_testing'    => (is => 'rw', isa => 'Bool', default => 1);
+has 'use_regular_testing'    => (is => 'rw', isa => 'Bool', default => 0);
 
 has 'regular_testing_conf'   => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/regular_testing/etc/regular_testing.conf");
 
@@ -218,24 +218,34 @@ sub __configure_host {
     my ($self) = @_;
 
     my @services = ();
-    push @services, {
-    	name => "perfSONARBUOY",
-    	config_file => $self->owmesh_conf,
-    	generator => perfSONAR_PS::MeshConfig::Generators::perfSONARBUOY->new(),
-    	services => [ "perfsonarbuoy_owamp", "perfsonarbuoy_bwctl" ]
-    };
-    push @services, {
-    	name => "Traceroute MA",
-    	config_file => $self->traceroute_master_conf,
-    	generator => perfSONAR_PS::MeshConfig::Generators::TracerouteMaster->new(),
-    	services => [ "traceroute_scheduler" ]
-    };
-    push @services, {
-    	name => "PingER",
-    	config_file => $self->pinger_landmarks,
-    	generator => perfSONAR_PS::MeshConfig::Generators::PingER->new(),
-    	services => [ "pinger" ]
-    };
+    if ($self->use_regular_testing) {
+        push @services, {
+            name => "Regular Testing",
+            config_file => $self->regular_testing_conf,
+            generator => perfSONAR_PS::MeshConfig::Generators::perfSONARRegularTesting->new(),
+            services => [ "regular_testing" ]
+        };
+    }
+    else {
+        push @services, {
+            name => "perfSONARBUOY",
+            config_file => $self->owmesh_conf,
+            generator => perfSONAR_PS::MeshConfig::Generators::perfSONARBUOY->new(),
+            services => [ "perfsonarbuoy_owamp", "perfsonarbuoy_bwctl" ]
+        };
+        push @services, {
+            name => "Traceroute MA",
+            config_file => $self->traceroute_master_conf,
+            generator => perfSONAR_PS::MeshConfig::Generators::TracerouteMaster->new(),
+            services => [ "traceroute_scheduler" ]
+        };
+        push @services, {
+            name => "PingER",
+            config_file => $self->pinger_landmarks,
+            generator => perfSONAR_PS::MeshConfig::Generators::PingER->new(),
+            services => [ "pinger" ]
+        };
+    }
 
     foreach my $service (@services) {
         my ($status, $res) = $service->{generator}->init({ config_file => $service->{config_file}, skip_duplicates => $self->skip_redundant_tests });
