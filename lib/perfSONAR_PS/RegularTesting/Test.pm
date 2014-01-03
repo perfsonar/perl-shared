@@ -22,6 +22,7 @@ has 'local_address'        => (is => 'rw', isa => 'Str');
 has 'parameters'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Tests::Base');
 has 'schedule'             => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Schedulers::Base');
 has 'measurement_archives' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Base]');
+has 'added_by_mesh'        => (is => 'rw', isa => 'Bool');
 
 my $logger = get_logger(__PACKAGE__);
 
