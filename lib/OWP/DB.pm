@@ -54,8 +54,8 @@ sub init_db {
         return;
     }
 
-    my $cgiuser  = $conf->must_get_val( ATTR => 'CGIDBUser',     TYPE => $ttype );
-    my $cgipass  = $conf->must_get_val( ATTR => 'CGIDBPass',     TYPE => $ttype );
+    my $cgiuser  = $conf->get_val( ATTR => 'CGIDBUser',     TYPE => $ttype );
+    my $cgipass  = $conf->get_val( ATTR => 'CGIDBPass',     TYPE => $ttype );
     my $dbuser   = $conf->must_get_val( ATTR => 'CentralDBUser', TYPE => $ttype );
     my $dbpass   = $conf->must_get_val( ATTR => 'CentralDBPass', TYPE => $ttype );
     my $dbdriver = $conf->must_get_val( ATTR => 'CentralDBType', TYPE => $ttype );
@@ -145,53 +145,45 @@ sub init_db {
 
         print "Granting user $dbuser\@localhost access to $dbname\n";
         $dbh->do( "grant select,insert,update,delete,create,drop,index,alter,create temporary tables on $dbname.* to $dbuser\@localhost" ) || die "Unable to grant permissions to $dbuser for $dbname.*";
-
-        print "Creating user account $cgiuser\n";
-        print "Granting user $cgiuser\@localhost read-only access to $dbname\n";
-        $dbh->do( "grant select on $dbname.* to $cgiuser\@'localhost' identified by \'$cgipass\'" ) || die "Unable to grant permissions to $cgiuser\@localhost to $dbname.*";
-        print "Granting user $cgiuser\@'%' read-only access to $dbname\n";
-        $dbh->do( "grant select on $dbname.* to $cgiuser\@'%' identified by \'$cgipass\'" ) || die "Unable to grant permissions to $cgiuser\@\% for $dbname.*";
+        
+        if($cgiuser && $cgipass){
+            print "Creating user account $cgiuser\n";
+            print "Granting user $cgiuser\@localhost read-only access to $dbname\n";
+            $dbh->do( "grant select on $dbname.* to $cgiuser\@'localhost' identified by \'$cgipass\'" ) || die "Unable to grant permissions to $cgiuser\@localhost to $dbname.*";
+            print "Granting user $cgiuser\@'%' read-only access to $dbname\n";
+            $dbh->do( "grant select on $dbname.* to $cgiuser\@'%' identified by \'$cgipass\'" ) || die "Unable to grant permissions to $cgiuser\@\% for $dbname.*";
+        }
     }
 
     elsif ( $dbdelete ) {
+        #if user does not exist, quietly move on. likely already deleted.
+        local $dbh->{PrintError} = 0;
         print "Remove R/W user '$dbuser'? (y/n) ";
         my $ans;
         $ans = ReadLine( 0 );
         if ( $ans =~ m/^y/i ) {
             print "Revoking user $dbuser permissions\n";
-            $dbh->do( "revoke all on $dbname.* from $dbuser\@localhost" )
-                || warn "Unable to revoke 'all' from $dbuser\@localhost";
-            $dbh->do( "revoke usage on *.* from $dbuser\@localhost" )
-                || warn "Unable to revoke 'usage' from $dbuser\@localhost";
-            print "Deleting user $dbuser\n";
-            $dbh->do( "drop user $dbuser\@localhost" )
-                || warn "Unable to drop $dbuser\@localhost: Perhaps user still has permissions for other tables?";
-
+            $dbh->do( "revoke all on $dbname.* from $dbuser\@localhost" );
+            $dbh->do( "revoke usage on *.* from $dbuser\@localhost" );
+            print "Deleting user $dbuser permissions\n";
+            $dbh->do( "drop user $dbuser\@localhost" );
         }
-
-        print "Remove R/O user '$cgiuser'? (y/n) ";
-        $ans = ReadLine( 0 );
-        if ( $ans =~ m/^y/i ) {
-            print "Revoking user $cgiuser permissions\n";
-            $dbh->do( "revoke all on $dbname.* from $cgiuser\@localhost" )
-                || warn "Unable to revoke 'all' from $cgiuser\@localhost";
-
-            $dbh->do( "revoke all on $dbname.* from $cgiuser\@'%'" )
-                || warn "Unable to revoke 'all' from $cgiuser\@'%'";
-
-            $dbh->do( "revoke usage on *.* from $cgiuser\@localhost" )
-                || warn "Unable to revoke 'usage' from $cgiuser\@localhost";
-            $dbh->do( "revoke usage on *.* from $cgiuser\@'%'" )
-                || warn "Unable to revoke 'usage' from $cgiuser\@'%'";
-
-            print "Deleting user $cgiuser\n";
-            $dbh->do( "drop user $cgiuser\@'%'" )
-                || warn "Unable to drop $cgiuser\@'%': Perhaps user still has permissions for other tables?";
-            $dbh->do( "drop user $cgiuser\@localhost" )
-                || warn "Unable to drop $cgiuser\@localhost: Perhaps user still has permissions for other tables?";
-
+        
+        if($cgiuser){
+            print "Remove R/O user '$cgiuser'? (y/n) ";
+            $ans = ReadLine( 0 );
+            if ( $ans =~ m/^y/i ) {
+                print "Revoking user $cgiuser permissions\n";
+                $dbh->do( "revoke all on $dbname.* from $cgiuser\@localhost" );
+                $dbh->do( "revoke all on $dbname.* from $cgiuser\@'%'" );
+                $dbh->do( "revoke usage on *.* from $cgiuser\@localhost" );
+                $dbh->do( "revoke usage on *.* from $cgiuser\@'%'" );
+                print "Deleting user $cgiuser\n";
+                $dbh->do( "drop user $cgiuser\@'%'" );
+                $dbh->do( "drop user $cgiuser\@localhost" );
+            }
         }
-
+        
         exit( 0 );
     }
 

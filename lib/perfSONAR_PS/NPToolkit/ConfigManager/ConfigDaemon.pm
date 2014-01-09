@@ -23,7 +23,11 @@ use Data::Dumper;
 
 use perfSONAR_PS::NPToolkit::Config::Services;
 
-use fields 'DAEMON', 'LOGGER', 'ACCESS_CONTROL';
+use fields 'DAEMON', 'LOGGER', 'ACCESS_CONTROL', 'FIREWALL_SCRIPT';
+
+my %defaults = (
+    firewall_script => "/opt/perfsonar_ps/toolkit/scripts/configure_firewall"
+);
 
 sub new {
     my ( $class ) = @_;
@@ -49,13 +53,15 @@ sub init {
             address        => 0,
             port           => 1,
             access_control => 1,
+            firewall_script => 0,
         }
     );
 
     my $address        = $parameters->{address};
     my $port           = $parameters->{port};
     my $access_control = $parameters->{access_control};
-
+    my $firewall_script = $parameters->{firewall_script};
+    
     $self->{ACCESS_CONTROL} = $access_control;
 
     $self->{DAEMON} = RPC::XML::Server->new(host => $address, port => $port);
@@ -103,6 +109,20 @@ sub init {
                      },
             signature => ['string string boolean']
     });
+    $self->{DAEMON}->add_method({
+            name => "configureFirewall",
+            code => sub {
+                        return $self->configureFirewall();
+                     },
+            signature => ['string']
+    });
+    
+    if($firewall_script){
+        $self->{FIREWALL_SCRIPT} = $firewall_script;
+    }else{
+        $self->{FIREWALL_SCRIPT} = $defaults{firewall_script};
+    }
+    
 
     return (0, "");
 }
@@ -328,6 +348,19 @@ sub stopService {
         $self->{LOGGER}->debug($cmd);
         system( $cmd );
     }
+
+    return "";
+}
+
+=head2 configureFirewall({ name => 1 })
+    Configures iptables
+=cut
+sub configureFirewall {
+    my ( $self ) = @_;
+     
+    my $cmd = $self->{FIREWALL_SCRIPT} . " &> /dev/null";
+    $self->{LOGGER}->debug($self->{FIREWALL_SCRIPT});
+    system( $cmd );
 
     return "";
 }

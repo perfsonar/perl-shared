@@ -201,6 +201,32 @@ sub stopService {
     return (0, "");
 }
 
+
+=head2 restartService ({ name => 1 })
+
+Generates iptables configuration
+
+=cut
+
+sub configureFirewall {
+    my ( $self, @params ) = @_;
+
+    my $res = $self->{CLIENT}->simple_request("configureFirewall");
+    unless (defined $res) {
+        my $msg = "Problem configuring firewall: ".$RPC::XML::ERROR;
+        $self->{LOGGER}->error($msg);
+        return (-1, $msg);
+    }
+    elsif (ref $res eq "HASH" and $res->{faultCode}) {
+        my $msg = "Problem configuring firewall: ".$res->{faultString};
+        $self->{LOGGER}->error($msg);
+        return (-1, $msg);
+    }
+
+
+    return (0, "");
+}
+
 1;
 
 __END__
