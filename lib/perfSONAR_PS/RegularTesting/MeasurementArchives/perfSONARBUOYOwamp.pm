@@ -267,8 +267,6 @@ sub add_data {
         $lost = $sent - $recv;
     }
     else {
-        my ($min, $max, $minttl, $maxttl, $sent, $lost, $dups, $maxerr, $finished);
-
         $sent = $results->packets_sent;
         if ($results->packets_sent) {
             $lost = $results->packets_received/$results->packets_sent;

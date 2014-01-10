@@ -87,7 +87,7 @@ sub save_results {
         if ($measurement_archive->accepts_results({ results => $results })) {
             $logger->debug("Enqueueing job to: ".$measurement_archive->nonce);
 
-            if ($queue->enqueue_string($json)) {
+            unless ($queue->enqueue_string($json)) {
                 $logger->error("Problem saving test results to measurement archive");
             }
             else {

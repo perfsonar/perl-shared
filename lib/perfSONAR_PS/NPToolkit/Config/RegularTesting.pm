@@ -1059,6 +1059,7 @@ sub generate_regular_testing_config {
             $parameters->packet_length($test_desc->{parameters}->{packet_size}) if defined $test_desc->{parameters}->{packet_size};
             $parameters->packet_ttl($test_desc->{parameters}->{ttl}) if defined $test_desc->{parameters}->{ttl};
             $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if defined $test_desc->{parameters}->{packet_interval};
+            $parameters->receive_only(1);
         }
         elsif ($test_desc->{type} eq "traceroute") {
             $schedule = perfSONAR_PS::RegularTesting::Schedulers::RegularInterval->new();
@@ -1068,6 +1069,7 @@ sub generate_regular_testing_config {
             $parameters->packet_length($test_desc->{parameters}->{packet_size}) if defined $test_desc->{parameters}->{packet_size};
             $parameters->packet_first_ttl($test_desc->{parameters}->{first_ttl}) if defined $test_desc->{parameters}->{first_ttl};
             $parameters->packet_max_ttl($test_desc->{parameters}->{max_ttl}) if defined $test_desc->{parameters}->{max_ttl};
+            $parameters->receive_only(1);
         }
 
         my @targets = ();
