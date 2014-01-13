@@ -269,7 +269,7 @@ sub add_data {
     else {
         $sent = $results->packets_sent;
         if ($results->packets_sent) {
-            $lost = $results->packets_received/$results->packets_sent;
+            $lost = $results->packets_sent - $results->packets_received;
         }
         else {
             $lost = 0;
