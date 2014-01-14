@@ -245,14 +245,14 @@ sub add_data {
     my $rtts_string = join(",", map { $_->delay } @{ $results->pings });
     my $seqNums_string = join(",", map { $_->sequence_number } @{ $results->pings });
 
-    # XXX: Calculate the conditional loss probability
     my $prev_datum;
     my $consecutive_packet_loss = 0;
-    foreach my $datum (sort { $a->sequence_number <=> $b->sequence_number } @{ $results->pings }) {
-        $consecutive_packet_loss += 
-
-        $prev_datum = $datum;
-    }
+    # XXX: Calculate the conditional loss probability
+#    foreach my $datum (sort { $a->sequence_number <=> $b->sequence_number } @{ $results->pings }) {
+#        $consecutive_packet_loss += 
+#
+#        $prev_datum = $datum;
+#    }
 
     # Calculate out-of-order packets and duplicates
     my ($oop, $dups) = (0, 0);
@@ -275,12 +275,12 @@ sub add_data {
         timestamp => $results->start_time->epoch(),
         minRtt => $rtt_stats->min(),
         meanRtt => $rtt_stats->mean(),
-        medianRtt => scalar($rtt_stats->percentile(50)),
+        medianRtt => $results->packets_received?scalar($rtt_stats->percentile(50)):undef,
         maxRtt => $rtt_stats->max(),
         minIpd => $ipd_stats->min(),
         meanIpd => $ipd_stats->mean(),
         maxIpd => $ipd_stats->max(),
-        iqrIpd => scalar($ipd_stats->percentile(75)) - scalar($ipd_stats->percentile(50)),
+        iqrIpd => $results->packets_received?scalar($ipd_stats->percentile(75)) - scalar($ipd_stats->percentile(50)):undef,
         duplicates => $dups,
         outOfOrder => $oop,
         clp  => 0, # XXX

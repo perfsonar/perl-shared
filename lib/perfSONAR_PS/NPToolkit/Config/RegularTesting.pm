@@ -923,6 +923,7 @@ sub parse_regular_testing_config {
                                           packet_interval => $test->parameters->inter_packet_time,
                                           packet_padding => $test->parameters->packet_length,
                                           sample_count => $test->parameters->resolution / $test->parameters->inter_packet_time,
+                                          added_by_mesh => $test->added_by_mesh,
                               });
         }
         elsif ($test->parameters->type eq "bwping/owamp") {
@@ -932,6 +933,7 @@ sub parse_regular_testing_config {
                                           packet_padding => $test->parameters->packet_length,
                                           sample_count => $test->parameters->packet_count,
                                           test_interval => $test->schedule->interval,
+                                          added_by_mesh => $test->added_by_mesh,
                               });
         }
         elsif ($test->parameters->type eq "bwping") {
@@ -943,6 +945,7 @@ sub parse_regular_testing_config {
                                           packet_interval => $test->parameters->inter_packet_time,
 
                                           test_interval => $test->schedule->interval,
+                                          added_by_mesh => $test->added_by_mesh,
                               });
         }
         elsif ($test->parameters->type eq "bwtraceroute") {
@@ -953,6 +956,7 @@ sub parse_regular_testing_config {
                                           max_ttl  => $test->parameters->packet_max_ttl,
 
                                           test_interval => $test->schedule->interval,
+                                          added_by_mesh => $test->added_by_mesh,
                               });
         }
         elsif ($test->parameters->type eq "bwctl") {
@@ -972,6 +976,7 @@ sub parse_regular_testing_config {
                                           #test_interval_start_alpha => $test->parameters->random_start_percentage,
 
                                           test_interval => $test->schedule->interval,
+                                          added_by_mesh => $test->added_by_mesh,
                               });
         }
         else {

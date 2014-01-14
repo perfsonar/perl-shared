@@ -374,9 +374,9 @@ sub __configure_host {
 
         if ($status and $self->restart_services) {
             foreach my $service_script (@{ $service->{services} }) {
-                ($status, $res) = $self->__restart_service({ name => $service });
+                ($status, $res) = $self->__restart_service({ name => $service_script });
                 if ($status != 0) {
-                    my $msg = "Problem restarting service $service: ".$res;
+                    my $msg = "Problem restarting service ".$service->{name}.": ".$res;
                     $logger->error($msg);
                     foreach my $mesh_params (@{ $self->meshes }) {
                         $self->__add_error({ mesh => $mesh_params->{mesh}, host => $mesh_params->{host}, error_msg => $msg });
