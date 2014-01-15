@@ -996,10 +996,12 @@ sub parse_regular_testing_config {
         foreach my $target (@{ $test->targets }) {
             $self->add_test_member({ test_id => $test_id, address => $target->address, description => $target->description, sender => 1, receiver => 1 });
         }
+
+        push @unhandled_tests, $test if $test->added_by_mesh;
     }
 
-    # Clear out the tests since we've handled them above
-    $config->tests([]);
+    # Clear out the tests we've handled above
+    $config->tests(\@unhandled_tests);
 
     $self->{EXISTING_CONFIGURATION} = $config->unparse();
 
@@ -1018,6 +1020,8 @@ sub generate_regular_testing_config {
     # Build test objects
     foreach my $test_desc (values %{ $self->{TESTS} }) {
         my ($parameters, $schedule);
+
+        next if ($test_desc->{added_by_mesh});
 
         if ($test_desc->{type} eq "owamp") {
             if ($test_desc->{parameters}->{test_interval}) {
