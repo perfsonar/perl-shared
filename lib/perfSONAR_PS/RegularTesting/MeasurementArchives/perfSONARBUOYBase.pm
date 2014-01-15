@@ -292,6 +292,18 @@ sub initialize_tables {
             $logger->error($msg);
             return (-1, $msg);
         }
+
+	# To aid in the upgrade procedure, convert any existing decimal tables
+	# (i.e. 'float' tables) into decimal tables.
+        foreach my $column (@$columns) {
+            next unless (lc($column->{type}) =~ /decimal/);
+
+            $sql = "ALTER TABLE $table_name MODIFY ".$column->{name}." ".$column->{type};
+            $logger->debug("SQL: $sql");
+            unless ($dbh->do($sql)) {
+                $logger->warn("Problem setting column type: ".$DBI::errstr);
+            }
+        }
     }
 
     # Add the dates to the table if there is a dates table (i.e. it's a
