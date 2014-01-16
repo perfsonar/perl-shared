@@ -228,8 +228,8 @@ sub handle_exit {
             $child->kill_child();
         }
 
-        # Wait two seconds for processes to exit
-        my $waketime = time + 2;
+        # Wait three seconds for processes to exit
+        my $waketime = time + 3;
         while ((my $sleep_time = $waketime - time) > 0 and 
                scalar keys %{ $self->children } > 0) {
             sleep($sleep_time);

@@ -17,9 +17,12 @@ use Data::Validate::IP qw(is_ipv4);
 use Data::Validate::Domain qw(is_hostname);
 use Net::IP;
 
+use perfSONAR_PS::RegularTesting::Utils::CmdRunner;
+use perfSONAR_PS::RegularTesting::Utils::CmdRunner::Cmd;
+
 use perfSONAR_PS::RegularTesting::Utils qw(owptime2datetime);
 
-use perfSONAR_PS::RegularTesting::Parsers::Owamp qw(parse_owamp_raw_file parse_owamp_summary_file);
+use perfSONAR_PS::RegularTesting::Parsers::Owamp qw(parse_owamp_summary_file);
 use perfSONAR_PS::RegularTesting::Results::LatencyTest;
 use perfSONAR_PS::RegularTesting::Results::LatencyTestDatum;
 
@@ -38,6 +41,7 @@ has 'packet_length'     => (is => 'rw', isa => 'Int', default => 0);
 has 'inter_packet_time' => (is => 'rw', isa => 'Num', default => 0.1);
 
 has '_individual_tests' => (is => 'rw', isa => 'ArrayRef[HashRef]');
+has '_runner'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Utils::CmdRunner');
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -106,160 +110,6 @@ override 'init_test' => sub {
     return;
 };
 
-sub run_individual_test {
-    my ($self, @args) = @_;
-    my $parameters = validate( @args, {
-                                         test            => 1,
-                                         individual_test => 1,
-                                         handle_results  => 1,
-                                      });
-    my $test              = $parameters->{test};
-    my $individual_test   = $parameters->{individual_test};
-    my $handle_results    = $parameters->{handle_results};
-
-    my ($powstream_process, $exiting);
-
-    # Kill off the bwctl process we spawn if we get a SIGTERM
-    $SIG{TERM} = $SIG{KILL} = sub {
-        $logger->debug("Killing powstream test");
-        eval { $powstream_process->kill_kill() } if ($powstream_process);
-        $exiting = 1;
-    };
-
-    my $last_start_time;
-
-    my %handled = ();
-    while (1) {
-        my $last_start_time = time;
-
-        eval {
-            last if $exiting;
-
-            my $reverse_direction;
-
-            # Calculate the total number of packets from the resolution
-            my $packets = $self->resolution / $self->inter_packet_time;
-
-            my @cmd = ();
-            push @cmd, $self->powstream_cmd;
-            push @cmd, '-4' if $self->force_ipv4;
-            push @cmd, '-6' if $self->force_ipv6;
-            push @cmd, ( '-p', '-d', $individual_test->{results_directory} );
-            push @cmd, ( '-c', $packets );
-            push @cmd, ( '-s', $self->packet_length ) if $self->packet_length;
-            push @cmd, ( '-i', $self->inter_packet_time ) if $self->inter_packet_time;
-            push @cmd, ( '-S', $test->local_address ) if $test->local_address;
-            push @cmd, '-t' if $individual_test->{sender};
-            push @cmd, $individual_test->{target};
-
-            my ($out, $err);
-
-            $powstream_process = start \@cmd, \undef, \$out, \$err;
-            unless ($powstream_process) {
-                die("Problem running command: $?");
-            }
-
-            my %summaries = ();
-
-            while (1) {
-                last if $exiting;
-
-                pump $powstream_process;
-
-                $logger->debug("IPC::Run::pump returned: out: ".$out." err: ".$err);
-
-                $err = "";
-
-                last if $exiting;
-
-                my @files = split('\n', $out);
-                foreach my $file (@files) {
-                    ($file) = ($file =~ /(.*)/); # untaint the silly filename
-
-                    next if $handled{$file};
-    
-                    my ($summary_id, $file_type);
-                    if ($file =~ /(.*).(owp)$/) {
-                        $summary_id = $1;
-                        $file_type = $2;
-                    }
-                    elsif ($file =~ /(.*).(sum)$/) {
-                        $summary_id = $1;
-                        $file_type = $2;
-                    }
-                    else {
-                        next;
-                    }
-    
-                    $summaries{$summary_id} = {} unless $summaries{$summary_id};
-                    $summaries{$summary_id}->{$file_type} = $file;
-
-                    $handled{$file} = 1;
-                }
-
-                foreach my $summary_id (sort keys %summaries) {
-                    unless ($summaries{$summary_id}->{sum} and 
-                            $summaries{$summary_id}->{owp}) {
-                        next;
-                    }
-    
-                    last if $exiting;
-
-                    my $source = $individual_test->{sender}?$test->local_address:$individual_test->{target};
-                    my $destination = $individual_test->{receiver}?$individual_test->{target}:$test->local_address;
-
-                    my $results = $self->build_results({
-                                                         source => $source,
-                                                         destination => $destination,
-                                                         schedule => $test->schedule,
-                                                         raw_file => $summaries{$summary_id}->{owp},
-                                                         summary_file => $summaries{$summary_id}->{sum},
-                                                      });
-                    unless ($results) {
-                        $logger->error("Problem parsing test results");
-                        next;
-                    }
-
-                    eval {
-                        $handle_results->(results => $results);
-                    };
-                    if ($@) {
-                        $logger->error("Problem saving results: $results");
-                        next;
-                    }
-
-                    unlink($summaries{$summary_id}->{owp});
-                    unlink($summaries{$summary_id}->{sum});
-                    delete($summaries{$summary_id});
-                }
-            }
-
-            last if $exiting;
-        };
-
-        if ($@) {
-            $logger->error("Problem running tests: $@");
-            if ($powstream_process) {
-                eval {
-                    $powstream_process->kill_kill() 
-                };
-            }
-        }
-
-        last if $exiting;
-
-        my $sleep_time;
-
-        while(($sleep_time = ($last_start_time + 300) - time) > 0) {
-            last if $exiting;
-
-            sleep($sleep_time);
-        }
-    }
-
-    return;
-}
-
 override 'run_test' => sub {
     my ($self, @args) = @_;
     my $parameters = validate( @args, {
@@ -269,28 +119,43 @@ override 'run_test' => sub {
     my $test              = $parameters->{test};
     my $handle_results    = $parameters->{handle_results};
 
-    my %children = ();
-
+    my @cmds = ();
     foreach my $individual_test (@{ $self->_individual_tests }) {
-        my $pid = fork();
+        # Calculate the total number of packets from the resolution
+        my $packets = $self->resolution / $self->inter_packet_time;
 
-        if ($pid < 0) {
-            $logger->error("Problem running tests: $@");
-            $self->stop_test();
-            return;
-        }
+        my @cmd = ();
+        push @cmd, $self->powstream_cmd;
+        push @cmd, '-4' if $self->force_ipv4;
+        push @cmd, '-6' if $self->force_ipv6;
+        push @cmd, ( '-p', '-d', $individual_test->{results_directory} );
+        push @cmd, ( '-c', $packets );
+        push @cmd, ( '-s', $self->packet_length ) if $self->packet_length;
+        push @cmd, ( '-i', $self->inter_packet_time ) if $self->inter_packet_time;
+        push @cmd, ( '-S', $test->local_address ) if $test->local_address;
+        push @cmd, '-t' if $individual_test->{sender};
+        push @cmd, $individual_test->{target};
 
-        if ($pid == 0) {
-            $self->run_individual_test({ individual_test => $individual_test, test => $test, handle_results => $handle_results });
-            exit(0);
-        }
+        my $cmd = perfSONAR_PS::RegularTesting::Utils::CmdRunner::Cmd->new();
 
-        $individual_test->{pid} = $pid;
+        $cmd->cmd(\@cmd);
+        $cmd->private($individual_test);
+        $cmd->restart_interval(300);
+        $cmd->result_cb(sub {
+            my ($cmd, @args) = @_;
+            my $parameters = validate( @args, { stdout => 0, stderr => 0 });
+            my $stdout = $parameters->{stdout};
+            my $stderr = $parameters->{stderr};
 
-        $children{$pid} = $individual_test;
+            $self->handle_output({ test => $test, individual_test => $individual_test, stdout => $stdout, stderr => $stderr, handle_results => $handle_results });
+        });
+
+        push @cmds, $cmd;
     }
 
-    while(my $pid = waitpid(-1, 0) > 0) { }
+    $self->_runner(perfSONAR_PS::RegularTesting::Utils::CmdRunner->new());
+    $self->_runner->init({ cmds => \@cmds });
+    $self->_runner->run();
 
     return;
 };
@@ -298,30 +163,7 @@ override 'run_test' => sub {
 override 'stop_test' => sub {
     my ($self) = @_;
 
-    my %exited = ();
-
-    foreach my $test (@{ $self->_individual_tests }) {
-        if ($test->{pid}) {
-            kill('TERM', $test->{pid});
-        }
-    }
-
-    # Wait for the children to exit
-    sleep(1);
-
-    # Reap any children that exited
-    my $pid;
-    do {
-        $pid = waitpid(-1, WNOHANG);
-        $exited{$pid} = 1 if $pid > 0;
-    } while $pid > 0;
-
-    # Kill any remaining children more ... powerfully
-    foreach my $test (@{ $self->_individual_tests }) {
-        if ($test->{pid} and not $exited{$test->{pid}}) {
-            kill('KILL', $test->{pid});
-        }
-    }
+    $self->_runner->stop();
 
     # Remove the directories we created
     foreach my $test (@{ $self->_individual_tests }) {
@@ -337,12 +179,55 @@ override 'stop_test' => sub {
            }
         }
     }
-
-    # Reap any remaining children before we exit
-    do {
-        $pid = waitpid(-1, WNOHANG);
-    } while $pid > 0;
 };
+
+sub handle_output {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, { test => 1, individual_test => 1, stdout => 0, stderr => 0, handle_results => 1 });
+    my $test            = $parameters->{test};
+    my $individual_test = $parameters->{individual_test};
+    my $stdout          = $parameters->{stdout};
+    my $stderr          = $parameters->{stderr};
+    my $handle_results  = $parameters->{handle_results};
+
+    foreach my $file (@$stdout) {
+        ($file) = ($file =~ /(.*)/); # untaint the silly filename
+
+        chomp($file);
+
+        unless ($file =~ /(.*).(sum)$/) {
+            unlink($file);
+            next;
+        }
+
+        my $source = $individual_test->{sender}?$test->local_address:$individual_test->{target};
+        my $destination = $individual_test->{receiver}?$individual_test->{target}:$test->local_address;
+
+
+        my $results = $self->build_results({
+                                             source => $source,
+                                             destination => $destination,
+                                             schedule => $test->schedule,
+                                             summary_file => $file,
+                                          });
+        unless ($results) {
+            $logger->error("Problem parsing test results");
+            next;
+        }
+        else {
+            eval {
+                $handle_results->(results => $results);
+            };
+            if ($@) {
+                $logger->error("Problem saving results: $results");
+            }
+        }
+
+        unlink($file);
+    }
+
+    return;
+}
 
 sub build_results {
     my ($self, @args) = @_;
@@ -350,13 +235,11 @@ sub build_results {
                                          source => 1,
                                          destination => 1,
                                          schedule => 0,
-                                         raw_file => 1,
                                          summary_file => 1,
                                       });
     my $source         = $parameters->{source};
     my $destination    = $parameters->{destination};
     my $schedule       = $parameters->{schedule};
-    my $raw_file       = $parameters->{raw_file};
     my $summary_file   = $parameters->{summary_file};
 
     my $summary         = parse_owamp_summary_file({ summary_file => $summary_file });
@@ -406,7 +289,8 @@ sub build_results {
     }
     $results->delay_histogram(\%delays);
 
-    my %ttls = %{ $summary->{TTLBUCKETS} };
+    my %ttls = ();
+    %ttls = %{ $summary->{TTLBUCKETS} } if $summary->{TTLBUCKETS};
     $results->ttl_histogram(\%ttls);
 
     $results->raw_results("");
