@@ -39,4 +39,30 @@ sub read_control_file {
   return $job;
 }
 
+sub worker_still_working {
+  my ($self, $fname) = @_;
+  $logger->debug("worker_still_working called");
+  if (!$fname) {
+    return;
+  }
+  if (!open (IN, "<".$fname)) {
+    return;
+  }
+  my $hname = <IN>; chomp $hname;
+  my $wpid = <IN>; chomp $wpid;
+  close IN;
+
+  ($wpid) = ($wpid =~ /^([0-9]+)$/);
+  ($hname) = ($hname =~ /^(.*)$/);
+
+  if ($hname eq $self->gethostname()) {
+    if (!kill (0, $wpid)) {
+      return;           # pid is local and no longer running
+    }
+  }
+
+  # pid is still running, or remote
+  return 1;
+}
+
 1;

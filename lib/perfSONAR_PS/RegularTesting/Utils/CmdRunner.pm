@@ -38,6 +38,8 @@ sub run {
     my ($self, @args) = @_;
     my $parameters = validate( @args, { });
 
+    local $SIG{CHLD} = 'DEFAULT';
+
     my $select = IO::Select->new();
 
     while (1) {
@@ -53,6 +55,8 @@ sub run {
 
 	    last if $self->exiting;
 
+            $logger->debug("Running command: ".$cmd->cmd_str);
+
             my ($status, $res) = $cmd->exec();
             if ($status != 0) {
                 my $msg = "Problem executing command: $res";
@@ -67,6 +71,12 @@ sub run {
         $self->cmds_not_run(\@remaining_cmds);
 
         last if $self->exiting;
+
+        # Special case: no commands are running, so select will return immediately
+        if (scalar(@{ $self->cmds_not_run }) == scalar(@{ $self->cmds })) {
+            sleep(1);
+            next;
+        }
 
         my @ready = $select->can_read(5);
 

@@ -29,6 +29,13 @@ has 'stdout_fh'        => (is => 'rw', isa => 'FileHandle|Undef');
 
 has 'last_exec_time'   => (is => 'rw', isa => 'Int');
 
+sub cmd_str {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, { });
+
+    return join(" ", @{ $self->cmd });
+}
+
 sub exec {
     my ($self, @args) = @_;
     my $parameters = validate( @args, { });
