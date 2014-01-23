@@ -22,7 +22,6 @@ a uniform API that all the models use.
 
 =cut
 
-use perfSONAR_PS::NPToolkit::Config::Services;
 use perfSONAR_PS::NPToolkit::ConfigManager::ConfigClient;
 
 use base 'Exporter';
