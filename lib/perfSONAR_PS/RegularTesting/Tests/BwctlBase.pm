@@ -64,11 +64,17 @@ sub get_individual_tests {
  
     # Build the set of set of tests that make up this bwctl test
     foreach my $target (@{ $test->targets }) {
+	# If they specify an interface, use that. If they specify an address,
+	# that takes precendence.
+        my $local_address;
+        $local_address = $test->local_interface if $test->local_interface;
+        $local_address = $test->local_address   if $test->local_address;
+
         unless ($test->parameters->send_only) {
-            push @tests, { source => $test->local_address, destination => $target->address };
+            push @tests, { source => $local_address, destination => $target->address };
         }
         unless ($test->parameters->receive_only) {
-            push @tests, { source => $target->address, destination => $test->local_address };
+            push @tests, { source => $target->address, destination => $local_address };
         }
     }
 

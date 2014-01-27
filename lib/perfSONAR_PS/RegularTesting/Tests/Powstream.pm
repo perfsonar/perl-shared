@@ -132,7 +132,12 @@ override 'run_test' => sub {
         push @cmd, ( '-c', $packets );
         push @cmd, ( '-s', $self->packet_length ) if $self->packet_length;
         push @cmd, ( '-i', $self->inter_packet_time ) if $self->inter_packet_time;
-        push @cmd, ( '-S', $test->local_address ) if $test->local_address;
+        if ($test->local_address) {
+            push @cmd, ( '-S', $test->local_address );
+        }
+        elsif ($test->local_interface) {
+            push @cmd, ( '-S', $test->local_interface );
+        }
         push @cmd, '-t' if $individual_test->{sender};
         push @cmd, $individual_test->{target};
 
