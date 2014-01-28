@@ -292,6 +292,7 @@ sub add_test_owamp {
             bucket_width     => 0,
             test_interval    => 0,
             added_by_mesh    => 0,
+            local_interface  => 0,
         }
     );
 
@@ -317,6 +318,7 @@ sub add_test_owamp {
     $test_parameters{packet_padding}   = $parameters->{packet_padding}   if ( defined $parameters->{packet_padding} );
     $test_parameters{bucket_width}     = $parameters->{bucket_width}     if ( defined $parameters->{bucket_width} );
     $test_parameters{test_interval}    = $parameters->{test_interval}    if ( defined $parameters->{test_interval} );
+    $test_parameters{local_interface}  = $parameters->{local_interface}  if ( defined $parameters->{local_interface} );
 
     $test{parameters} = \%test_parameters;
 
@@ -350,6 +352,7 @@ sub update_test_owamp {
             packet_interval  => 0,
             session_count    => 0,
             sample_count     => 0,
+            local_interface  => 0,
         }
     );
 
@@ -369,6 +372,7 @@ sub update_test_owamp {
     $test->{parameters}->{sample_count}     = $parameters->{sample_count}     if ( defined $parameters->{sample_count} );
     $test->{parameters}->{packet_padding}   = $parameters->{packet_padding}   if ( defined $parameters->{packet_padding} );
     $test->{parameters}->{bucket_width}     = $parameters->{bucket_width}     if ( defined $parameters->{bucket_width} );
+    $test->{parameters}->{local_interface}  = $parameters->{local_interface}  if ( defined $parameters->{local_interface} );
 
     return ( 0, "" );
 }
@@ -401,7 +405,8 @@ sub add_test_bwctl_throughput {
             report_interval           => 0,
             test_interval_start_alpha => 0,
             added_by_mesh             => 0,
-            tos_bits                   => 0
+            tos_bits                  => 0,
+            local_interface           => 0
         }
     );
 
@@ -430,6 +435,7 @@ sub add_test_bwctl_throughput {
     $test_parameters{report_interval}           = $parameters->{report_interval}           if ( defined $parameters->{report_interval} );
     $test_parameters{test_interval_start_alpha} = $parameters->{test_interval_start_alpha} if ( defined $parameters->{test_interval_start_alpha} );
     $test_parameters{tos_bits} 					= $parameters->{tos_bits} 				   if ( defined $parameters->{tos_bits} );
+    $test_parameters{local_interface}           = $parameters->{local_interface}           if ( defined $parameters->{local_interface} );
 
     $test{parameters} = \%test_parameters;
 
@@ -466,7 +472,8 @@ sub update_test_bwctl_throughput {
             udp_bandwidth => 0,
             buffer_length => 0,
             window_size   => 0,
-            tos_bits       => 0
+            tos_bits      => 0,
+            local_interface => 0
         }
     );
 
@@ -490,6 +497,7 @@ sub update_test_bwctl_throughput {
     $test->{parameters}->{report_interval}           = $parameters->{report_interval}           if ( exists $parameters->{report_interval} );
     $test->{parameters}->{test_interval_start_alpha} = $parameters->{test_interval_start_alpha} if ( exists $parameters->{test_interval_start_alpha} );
     $test->{parameters}->{tos_bits} 				 = $parameters->{tos_bits} 					if ( exists $parameters->{tos_bits} );
+    $test->{parameters}->{local_interface}           = $parameters->{local_interface}  if ( defined $parameters->{local_interface} );
 
     return ( 0, "" );
 }
@@ -516,6 +524,7 @@ sub add_test_pinger {
             test_offset     => 0,
             ttl             => 1,
             added_by_mesh   => 0,
+            local_interface => 0,
         }
     );
 
@@ -526,6 +535,7 @@ sub add_test_pinger {
     my $test_interval   = $parameters->{test_interval};
     my $test_offset     = $parameters->{test_offset};
     my $ttl             = $parameters->{ttl};
+    my $local_interface = $parameters->{local_interface};
 
     my $test_id;
 
@@ -547,6 +557,7 @@ sub add_test_pinger {
             test_interval   => $test_interval,
             test_offset     => $test_offset,
             ttl             => $ttl,
+            local_interface => $local_interface,
         },
         members => \%members,
     );
@@ -579,6 +590,7 @@ sub update_test_pinger {
             test_interval   => 0,
             test_offset     => 0,
             ttl             => 0,
+            local_interface => 0,
         }
     );
 
@@ -597,6 +609,7 @@ sub update_test_pinger {
     $test->{parameters}->{test_interval}   = $parameters->{test_interval}   if ( defined $parameters->{test_interval} );
     $test->{parameters}->{test_offset}     = $parameters->{test_offset}     if ( defined $parameters->{test_offset} );
     $test->{parameters}->{ttl}             = $parameters->{ttl}             if ( defined $parameters->{ttl} );
+    $test->{parameters}->{local_interface} = $parameters->{local_interface}  if ( defined $parameters->{local_interface} );
 
     return ( 0, "" );
 }
@@ -622,6 +635,7 @@ sub add_test_traceroute {
             pause         => 0,
             protocol      => 0,
             added_by_mesh => 0,
+            local_interface => 0,
         }
     );
 
@@ -648,6 +662,7 @@ sub add_test_traceroute {
     $test_parameters{max_ttl}                   = $parameters->{max_ttl}                   if ( defined $parameters->{max_ttl} );
     $test_parameters{pause}                     = $parameters->{pause}                     if ( defined $parameters->{pause} );
     $test_parameters{protocol}                  = $parameters->{protocol}                  if ( defined $parameters->{protocol} );
+    $test_parameters{local_interface}           = $parameters->{local_interface}           if ( defined $parameters->{local_interface} );
     
 
     $test{parameters} = \%test_parameters;
@@ -683,6 +698,7 @@ sub update_test_traceroute {
             max_ttl       => 0,
             pause         => 0,
             protocol      => 0,
+            local_interface => 0,
         }
     );
 
@@ -703,6 +719,7 @@ sub update_test_traceroute {
     $test->{parameters}->{max_ttl}                   = $parameters->{max_ttl}                   if ( defined $parameters->{max_ttl} );
     $test->{parameters}->{pause}                     = $parameters->{pause}                     if ( defined $parameters->{pause} );
     $test->{parameters}->{protocol}                  = $parameters->{protocol}                  if ( defined $parameters->{protocol} );
+    $test->{parameters}->{local_interface}           = $parameters->{local_interface}           if ( defined $parameters->{local_interface} );
     
     return ( 0, "" );
 }
@@ -920,6 +937,7 @@ sub parse_regular_testing_config {
         if ($test->parameters->type eq "powstream") {
             ($status, $res) = $self->add_test_owamp({
                                           description => $test->description,
+                                          local_interface => $test->local_interface,
                                           packet_interval => $test->parameters->inter_packet_time,
                                           packet_padding => $test->parameters->packet_length,
                                           sample_count => $test->parameters->resolution / $test->parameters->inter_packet_time,
@@ -929,6 +947,7 @@ sub parse_regular_testing_config {
         elsif ($test->parameters->type eq "bwping/owamp") {
             ($status, $res) = $self->add_test_owamp({
                                           description => $test->description,
+                                          local_interface => $test->local_interface,
                                           packet_interval => $test->parameters->inter_packet_time,
                                           packet_padding => $test->parameters->packet_length,
                                           sample_count => $test->parameters->packet_count,
@@ -939,6 +958,7 @@ sub parse_regular_testing_config {
         elsif ($test->parameters->type eq "bwping") {
             ($status, $res) = $self->add_test_pinger({
                                           description => $test->description,
+                                          local_interface => $test->local_interface,
                                           packet_size => $test->parameters->packet_length,
                                           ttl => $test->parameters->packet_ttl,
                                           packet_count => $test->parameters->packet_count,
@@ -951,6 +971,7 @@ sub parse_regular_testing_config {
         elsif ($test->parameters->type eq "bwtraceroute") {
             ($status, $res) = $self->add_test_traceroute({
                                           description => $test->description,
+                                          local_interface => $test->local_interface,
                                           packet_size => $test->parameters->packet_length,
                                           first_ttl => $test->parameters->packet_first_ttl,
                                           max_ttl  => $test->parameters->packet_max_ttl,
@@ -1092,6 +1113,7 @@ sub generate_regular_testing_config {
 
         my $test = perfSONAR_PS::RegularTesting::Test->new();
         $test->description($test_desc->{description}) if $test_desc->{description};
+        $test->local_interface($test_desc->{parameters}->{local_interface}) if $test_desc->{parameters}->{local_interface};
         $test->schedule($schedule);
         $test->parameters($parameters);
         $test->targets(\@targets);
