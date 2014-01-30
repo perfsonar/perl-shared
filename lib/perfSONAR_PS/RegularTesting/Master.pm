@@ -49,6 +49,8 @@ sub init {
     # Initialize the queue directories for these measurement_archives
     my @measurement_archives = @{ $self->config->measurement_archives };
     foreach my $test (@{ $self->config->tests }) {
+        next if $test->disabled;
+
         push @measurement_archives, @{ $test->measurement_archives} if $test->measurement_archives;
     }
 
@@ -79,6 +81,8 @@ sub init {
 
     # Initialize the tests before spawning processes
     foreach my $test (@{ $self->config->tests }) {
+        next if $test->disabled;
+
         $test->init_test(config => $self->config);
     }
 
@@ -146,6 +150,11 @@ sub run {
     }
 
     foreach my $test (@{ $self->config->tests }) {
+        if ($test->disabled) {
+            $logger->debug("Skipping disabled test: ".$test->description);
+            next;
+        }
+
         $logger->debug("Spawning test: ".$test->description);
 
         my @mas = ();
