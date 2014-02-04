@@ -139,6 +139,13 @@ my @default_known_services = (
         enabled                   => 1,
     },
     {
+        name                      => "regular_testing",
+        description               => "perfSONAR-PS Regular Testing",
+        enabled_services_variable => "regular_testing_enabled",
+        service_name              => [ "regular_testing" ],
+        enabled                   => 1,
+    },
+    {
         name        => "ntp",
         description => "NTP",
         service_name=> "ntpd",
