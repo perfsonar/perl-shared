@@ -128,6 +128,8 @@ sub __find_matching_hosts {
 
     my %addresses = ();
     foreach my $address (@$addresses) {
+        $address = lc($address);
+
         if ($address =~ /^\[(.*)\]:(\d+)$/) {
             $addresses{$1} = 1;
         }
@@ -149,6 +151,8 @@ sub __find_matching_hosts {
             my $found;
 
             foreach my $host_address (@{ $host->addresses }) {
+                $host_address = lc($host_address);
+
                 next unless ($addresses{$host_address});
 
                 $found = 1;
