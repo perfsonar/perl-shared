@@ -25,6 +25,8 @@ extends 'perfSONAR_PS::MeshConfig::Generators::Base';
 
 has 'pinger_landmarks'       => (is => 'rw', isa => 'perfSONAR_PS::XML::Document');
 
+my %lookup_cache = ();
+
 =head1 NAME
 
 perfSONAR_PS::MeshConfig::Generators::PingER;
@@ -235,7 +237,11 @@ sub __lookup_host {
 
     my ($new_hostname, $new_address);
 
-    for(my $i = 0; $i < 5; $i++) {
+    if ($lookup_cache{$address}) {
+        $new_hostname = $lookup_cache{$address}->{hostname};
+        $new_address  = $lookup_cache{$address}->{address};
+    }
+    else {
         if ( is_ipv4( $address ) or 
              &Net::IP::ip_is_ipv6( $address ) ) {
 
@@ -252,7 +258,10 @@ sub __lookup_host {
             die("Unknown address type: ".$address);
         }
 
-        last if ($new_address and $new_hostname);
+        $lookup_cache{$address} = {
+            hostname => $new_hostname,
+            address  => $new_address,
+        };
     }
 
     return ($new_hostname, $new_address);
