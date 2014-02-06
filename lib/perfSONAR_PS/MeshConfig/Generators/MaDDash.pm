@@ -9,6 +9,7 @@ use Log::Log4perl qw(get_logger);
 
 use JSON;
 use YAML qw(Dump);
+use Encode qw(encode);
 
 use base 'Exporter';
 
@@ -263,8 +264,17 @@ sub generate_maddash_config {
 
                 my $tester = $pair->{source}->{no_agent}?$pair->{destination}->{address}:$pair->{source}->{address};
 
-                my $host = $test->lookup_hosts({ addresses => [ $tester ] });
-                my $ma   = $host->[0]->lookup_measurement_archive({ type => $test->parameters->type, recursive => 1 });
+                my $hosts = $test->lookup_hosts({ addresses => [ $tester ] });
+                my $ma;
+
+                foreach my $host (@$hosts) {
+                    $ma = $host->lookup_measurement_archive({ type => $test->parameters->type, recursive => 1 });
+                    last if $ma;
+                }
+
+                unless ($ma) {
+                    die("Couldn't find ma for host: ".$tester);
+                }
 
                 my $src_addr = $pair->{source}->{address};
                 my $dst_addr = $pair->{destination}->{address};
@@ -367,7 +377,7 @@ sub generate_maddash_config {
 
     my $ret = Dump($existing_maddash_yaml);
     $ret = __quote_ipv6_address(maddash_yaml => $ret);
-    return $ret;
+    return encode('ascii', $ret);
 }
 
 sub __quote_ipv6_address {
@@ -445,7 +455,7 @@ sub __build_check {
         $check->{ok_description} = "Throughput >= ".$ok_throughput."Mbps";
         $check->{warning_description} = "Throughput < ".$ok_throughput."Mbps";
         $check->{critical_description} = "Throughput <= ".$critical_throughput."Mbps";
-        $check->{params}->{graphUrl} = 'http://'.$host.'/serviceTest/bandwidthGraph.cgi?url=%maUrl&key=%maKeyF&keyR=%maKeyR&dstIP=%dstIP&srcIP=%srcIP&dst=%dstName&src=%srcName&type=TCP&length=2592000';
+        $check->{params}->{graphUrl} = 'http://'.$host.'/serviceTest/bandwidthGraph.cgi?url=%maUrl&dst=%col&src=%row&length=2592000';
 
         # convert to Gbps used in the nagios plugin
         $ok_throughput       /= 1000;
@@ -454,13 +464,11 @@ sub __build_check {
         if ($direction eq "reverse") {
             $check->{name} = 'Throughput Reverse';
             $check->{description} = 'Throughput from %col to %row';
-            $check->{params}->{metaDataKeyLookup} = 'http://'.$host.'/serviceTest/metaKeyReq.cgi?ma_url=%maUrl&eventType=%event.iperf&srcRaw=%col&dstRaw=%row&protocol=TCP&timeDuration=0';
             $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_throughput.': -c '.$critical_throughput.': -r '.$check_time_range.' -s %col -d %row';
         }
         else {
             $check->{name} = 'Throughput';
             $check->{description} = 'Throughput from %row to %col';
-            $check->{params}->{metaDataKeyLookup} = 'http://'.$host.'/serviceTest/metaKeyReq.cgi?ma_url=%maUrl&eventType=%event.iperf&srcRaw=%row&dstRaw=%col&protocol=TCP&timeDuration=0';
             $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_throughput.': -c '.$critical_throughput.': -r '.$check_time_range.' -s %row -d %col';
         }
     }
@@ -472,17 +480,15 @@ sub __build_check {
         $check->{warning_description}  = "Loss rate is >= ".$ok_loss;
         $check->{critical_description}  = "Loss rate is >= ".$critical_loss;
 
-        $check->{params}->{graphUrl} = 'http://'.$host.'/serviceTest/delayGraph.cgi?url=%maUrl&key=%maKeyF&keyR=%maKeyR&dstIP=%dstIP&srcIP=%srcIP&dst=%dstName&src=%srcName&type=TCP&length=14400';
+        $check->{params}->{graphUrl} = 'http://'.$host.'/serviceTest/delayGraph.cgi?url=%maUrl&dst=%col&src=%row&length=14400';
         if ($direction eq "reverse") {
             $check->{name} = 'Loss Reverse';
             $check->{description} = 'Loss from %col to %row';
-            $check->{params}->{metaDataKeyLookup} = 'http://'.$host.'/serviceTest/metaKeyReq.cgi?ma_url=%maUrl&eventType=%event.delayBuckets&srcRaw=%col&dstRaw=%row&count=0&bucket_width=0';
             $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_loss.' -c '.$critical_loss.' -r '.$check_time_range.' -l -p -s %col -d %row';
         }
         else {
             $check->{name} = 'Loss';
             $check->{description} = 'Loss from %row to %col';
-            $check->{params}->{metaDataKeyLookup} = 'http://'.$host.'/serviceTest/metaKeyReq.cgi?ma_url=%maUrl&eventType=%event.delayBuckets&srcRaw=%row&dstRaw=%col&count=0&bucket_width=0';
             $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_loss.' -c '.$critical_loss.' -r '.$check_time_range.' -l -p -s %row -d %col';
         }
     }

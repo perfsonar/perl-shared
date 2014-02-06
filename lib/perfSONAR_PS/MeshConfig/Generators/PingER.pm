@@ -25,6 +25,8 @@ extends 'perfSONAR_PS::MeshConfig::Generators::Base';
 
 has 'pinger_landmarks'       => (is => 'rw', isa => 'perfSONAR_PS::XML::Document');
 
+my %lookup_cache = ();
+
 =head1 NAME
 
 perfSONAR_PS::MeshConfig::Generators::PingER;
@@ -122,6 +124,8 @@ sub add_mesh_tests {
         eval {
             my $domain_id = "urn:ogf:network:domain=mesh_agent_".$mesh_id."-".$i;
 
+            my %hosts = ();
+
             foreach my $pair (@{ $test->members->source_destination_pairs }) {
                 next unless ($host_addresses{$pair->{source}->{address}});
 
@@ -136,6 +140,9 @@ sub add_mesh_tests {
                 unless ($address and $hostname) {
                     die("Problem looking up address: ".$pair->{destination}->{address});
                 }
+
+                $hosts{$address}  = { address => $address, hostname => $hostname };
+                $hosts{$hostname} = { address => $address, hostname => $hostname };
             }
 
             __start_domain($self->pinger_landmarks, $domain_id);
@@ -146,7 +153,9 @@ sub add_mesh_tests {
 
                   my $matching_hosts = $mesh->lookup_hosts({ addresses => [ $pair->{destination}->{address} ] });
                   my $host_properties = $matching_hosts->[0];
-                  my ($hostname, $address) = __lookup_host($pair->{destination}->{address});
+
+                  my $hostname = $hosts{$pair->{destination}->{address}}->{hostname};
+                  my $address  = $hosts{$pair->{destination}->{address}}->{address};
 
                   if ($self->skip_duplicates) {
                       # Check if a specific test (i.e. same
@@ -226,24 +235,36 @@ sub __parse_pinger_landmarks {
 sub __lookup_host {
     my ($address) = @_;
 
-    if ( is_ipv4( $address ) or 
-         &Net::IP::ip_is_ipv6( $address ) ) {
-        my $hostname = reverse_dns($address);
+    my ($new_hostname, $new_address);
 
-        $hostname = $address unless $hostname;
-
-        return ($hostname, $address);
-    }
-    elsif ( is_hostname( $address ) ) {
-        my $hostname = $address;
-
-        my @addresses = resolve_address($hostname);
-
-        return ($hostname, $addresses[0]);
+    if ($lookup_cache{$address}) {
+        $new_hostname = $lookup_cache{$address}->{hostname};
+        $new_address  = $lookup_cache{$address}->{address};
     }
     else {
-        die("Unknown address type: ".$address);
+        if ( is_ipv4( $address ) or 
+             &Net::IP::ip_is_ipv6( $address ) ) {
+
+            $new_hostname = reverse_dns($address);
+            $new_address  = $address;
+        }
+        elsif ( is_hostname( $address ) ) {
+            my @addresses = resolve_address($address);
+
+            $new_hostname = $address;
+            $new_address  = $addresses[0];
+        }
+        else {
+            die("Unknown address type: ".$address);
+        }
+
+        $lookup_cache{$address} = {
+            hostname => $new_hostname,
+            address  => $new_address,
+        };
     }
+
+    return ($new_hostname, $new_address);
 }
 
 sub __start_topology {
