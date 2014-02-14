@@ -21,6 +21,7 @@ has 'tool' => (is => 'rw', isa => 'Str', default => 'iperf');
 has 'use_udp' => (is => 'rw', isa => 'Bool', default => 0);
 has 'streams' => (is => 'rw', isa => 'Int', default => 1);
 has 'duration' => (is => 'rw', isa => 'Int', default => 10);
+has 'omit_interval' => (is => 'rw', isa => 'Int');
 has 'udp_bandwidth' => (is => 'rw', isa => 'Int');
 has 'buffer_length' => (is => 'rw', isa => 'Int');
 
@@ -51,6 +52,7 @@ override 'build_cmd' => sub {
     push @cmd, ( '-P', $self->streams ) if $self->streams;
     push @cmd, ( '-t', $self->duration ) if $self->duration;
     push @cmd, ( '-b', $self->udp_bandwidth ) if $self->udp_bandwidth;
+    push @cmd, ( '-O', $self->omit_interval ) if $self->omit_interval;
     push @cmd, ( '-l', $self->buffer_length ) if $self->buffer_length;
 
     push @cmd, ('-y', 'J') if ($self->tool eq "iperf3");
