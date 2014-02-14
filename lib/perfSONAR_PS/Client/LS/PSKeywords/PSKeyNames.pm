@@ -43,5 +43,10 @@ use constant {
 };
 
 #pspserson keys
+#
+#bwctl keys
+use constant {
+    LS_KEY_BWCTL_TOOLS => "bwctl-tools"
+};
 
 1;

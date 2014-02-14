@@ -93,3 +93,14 @@ sub setCommunities {
     my $ret = $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_GROUP_COMMUNITIES), value=>$value  );  
 	return $ret;
 }
+
+sub getBWCTLTools {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_BWCTL_TOOLS)};
+}
+
+sub setBWCTLTools {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_BWCTL_TOOLS), value=>$value  );  
+	return $ret;
+}
