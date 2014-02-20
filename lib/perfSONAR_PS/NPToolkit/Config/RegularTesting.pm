@@ -256,6 +256,7 @@ sub lookup_test {
     $test_info{id}          = $test_id;
     $test_info{type}        = $test->{type};
     $test_info{description} = $test->{description};
+    $test_info{disabled}    = $test->{disabled};
     $test_info{parameters}  = $test->{parameters};
 
     my @members = ();
@@ -406,7 +407,7 @@ sub add_test_bwctl_throughput {
             test_interval_start_alpha => 0,
             added_by_mesh             => 0,
             tos_bits                  => 0,
-            local_interface           => 0
+            local_interface           => 0,
         }
     );
 
@@ -473,7 +474,7 @@ sub update_test_bwctl_throughput {
             buffer_length => 0,
             window_size   => 0,
             tos_bits      => 0,
-            local_interface => 0
+            local_interface => 0,
         }
     );
 
@@ -721,6 +722,42 @@ sub update_test_traceroute {
     $test->{parameters}->{protocol}                  = $parameters->{protocol}                  if ( defined $parameters->{protocol} );
     $test->{parameters}->{local_interface}           = $parameters->{local_interface}           if ( defined $parameters->{local_interface} );
     
+    return ( 0, "" );
+}
+
+=head2 disable_test ({ test_id => 1 })
+    Disables the test with the "test_id" identifier from the list. Returns (0,
+    "") if the test no longer is in the least, even if it never was.
+=cut
+
+sub enable_test {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { test_id => 1, } );
+
+    my $test = $self->{TESTS}->{ $parameters->{test_id} };
+
+    return ( -1, "Test does not exist" ) unless ( $test );
+
+    delete($test->{disabled});
+
+    return ( 0, "" );
+}
+
+=head2 disable_test ({ test_id => 1 })
+    Disables the test with the "test_id" identifier from the list. Returns (0,
+    "") if the test no longer is in the least, even if it never was.
+=cut
+
+sub disable_test {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { test_id => 1, } );
+
+    my $test = $self->{TESTS}->{ $parameters->{test_id} };
+
+    return ( -1, "Test does not exist" ) unless ( $test );
+
+    $test->{disabled} = 1;
+
     return ( 0, "" );
 }
 
@@ -1018,6 +1055,10 @@ sub parse_regular_testing_config {
             $self->add_test_member({ test_id => $test_id, address => $target->address, description => $target->description, sender => 1, receiver => 1 });
         }
 
+        if ($test->disabled) {
+            $self->disable_test({ test_id => $test_id });
+        }
+
         push @unhandled_tests, $test if $test->added_by_mesh;
     }
 
@@ -1114,6 +1155,7 @@ sub generate_regular_testing_config {
         my $test = perfSONAR_PS::RegularTesting::Test->new();
         $test->description($test_desc->{description}) if $test_desc->{description};
         $test->local_interface($test_desc->{parameters}->{local_interface}) if $test_desc->{parameters}->{local_interface};
+        $test->disabled($test_desc->{disabled}) if $test_desc->{disabled};
         $test->schedule($schedule);
         $test->parameters($parameters);
         $test->targets(\@targets);
