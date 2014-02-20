@@ -738,6 +738,8 @@ sub enable_test {
 
     return ( -1, "Test does not exist" ) unless ( $test );
 
+    return ( -1, "Test was added by the mesh configuration agent. It can't be updated.") if ($test->{added_by_mesh});
+
     delete($test->{disabled});
 
     return ( 0, "" );
@@ -755,6 +757,8 @@ sub disable_test {
     my $test = $self->{TESTS}->{ $parameters->{test_id} };
 
     return ( -1, "Test does not exist" ) unless ( $test );
+
+    return ( -1, "Test was added by the mesh configuration agent. It can't be updated.") if ($test->{added_by_mesh});
 
     $test->{disabled} = 1;
 
