@@ -27,10 +27,11 @@ use Moose;
 extends 'perfSONAR_PS::RegularTesting::Tests::Base';
 
 # Common to all bwctl-ish commands
-has 'force_ipv4'  => (is => 'rw', isa => 'Bool');
-has 'force_ipv6'  => (is => 'rw', isa => 'Bool');
-has 'send_only'   => (is => 'rw', isa => 'Bool');
-has 'receive_only'=> (is => 'rw', isa => 'Bool');
+has 'force_ipv4'      => (is => 'rw', isa => 'Bool');
+has 'force_ipv6'      => (is => 'rw', isa => 'Bool');
+has 'test_ipv4_ipv6'  => (is => 'rw', isa => 'Bool');
+has 'send_only'       => (is => 'rw', isa => 'Bool');
+has 'receive_only'    => (is => 'rw', isa => 'Bool');
 
 has '_individual_tests' => (is => 'rw', isa => 'ArrayRef[HashRef]');
 has '_runner'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Utils::CmdRunner');
@@ -71,10 +72,34 @@ sub get_individual_tests {
         $local_address = $test->local_address   if $test->local_address;
 
         unless ($test->parameters->send_only) {
-            push @tests, { source => $local_address, destination => $target->address };
+            if (is_hostname($target->address) and $test->parameters->test_ipv4_ipv6) {
+                push @tests, { source => $local_address, destination => $target->address, force_ipv4 => 1 };
+                push @tests, { source => $local_address, destination => $target->address, force_ipv6 => 1 };
+            }
+            else {
+                push @tests, {
+                               source      => $local_address,
+                               destination => $target->address,
+                               force_ipv4 => $test->parameters->force_ipv4,
+                               force_ipv6 => $test->parameters->force_ipv6,
+                             };
+
+            }
         }
         unless ($test->parameters->receive_only) {
-            push @tests, { source => $target->address, destination => $local_address };
+            if (is_hostname($target->address) and $test->parameters->test_ipv4_ipv6) {
+                push @tests, { source => $target->address, destination => $local_address, force_ipv4 => 1 };
+                push @tests, { source => $target->address, destination => $local_address, force_ipv6 => 1 };
+            }
+            else {
+                push @tests, {
+                               source => $target->address,
+                               destination => $local_address,
+                               force_ipv4 => $test->parameters->force_ipv4,
+                               force_ipv6 => $test->parameters->force_ipv6,
+                             };
+
+            }
         }
     }
 
@@ -120,6 +145,8 @@ override 'run_test' => sub {
         my @cmd = $self->build_cmd({ 
                                      source => $individual_test->{source},
                                      destination => $individual_test->{destination},
+                                     force_ipv4 => $individual_test->{force_ipv4},
+                                     force_ipv6 => $individual_test->{force_ipv6},
                                      results_directory => $individual_test->{results_directory},
                                      schedule => $test->schedule
                                   });
@@ -216,11 +243,15 @@ sub build_cmd {
     my $parameters = validate( @args, {
                                          source => 1,
                                          destination => 1,
+                                         force_ipv4 => 0,
+                                         force_ipv6 => 0,
                                          results_directory => 1,
                                          schedule => 0,
                                       });
     my $source            = $parameters->{source};
     my $destination       = $parameters->{destination};
+    my $force_ipv4         = $parameters->{force_ipv4};
+    my $force_ipv6         = $parameters->{force_ipv6};
     my $results_directory = $parameters->{results_directory};
     my $schedule          = $parameters->{schedule};
 
@@ -228,8 +259,8 @@ sub build_cmd {
     push @cmd, ( '-s', $source ) if $source;
     push @cmd, ( '-c', $destination ) if $destination;
     push @cmd, ( '-T', $self->tool ) if $self->tool;
-    push @cmd, '-4' if $self->force_ipv4;
-    push @cmd, '-6' if $self->force_ipv6;
+    push @cmd, '-4' if $force_ipv4;
+    push @cmd, '-6' if $force_ipv6;
 
     # Add the scheduling information
     push @cmd, ( '-I', $schedule->interval );

@@ -36,6 +36,7 @@ has 'send_only'         => (is => 'rw', isa => 'Bool');
 has 'receive_only'      => (is => 'rw', isa => 'Bool');
 has 'force_ipv4'        => (is => 'rw', isa => 'Bool');
 has 'force_ipv6'        => (is => 'rw', isa => 'Bool');
+has 'test_ipv4_ipv6'    => (is => 'rw', isa => 'Bool');
 has 'resolution'        => (is => 'rw', isa => 'Int', default => 60);
 has 'packet_length'     => (is => 'rw', isa => 'Int', default => 0);
 has 'inter_packet_time' => (is => 'rw', isa => 'Num', default => 0.1);
@@ -75,10 +76,32 @@ sub get_individual_tests {
     # Build the set of set of tests that make up this bwctl test
     foreach my $target (@{ $test->targets }) {
         unless ($test->parameters->send_only) {
-            push @tests, { target => $target->address, receiver => 1 };
+            if (is_hostname($target->address) and $test->parameters->test_ipv4_ipv6) {
+                push @tests, { target => $target->address, receiver => 1, force_ipv4 => 1 };
+                push @tests, { target => $target->address, receiver => 1, force_ipv6 => 1 };
+            }
+            else {
+                push @tests, {
+                               target => $target->address,
+                               receiver => 1,
+                               force_ipv4 => $test->parameters->force_ipv4,
+                               force_ipv6 => $test->parameters->force_ipv6,
+                             };
+            }
         }
         unless ($test->parameters->receive_only) {
-            push @tests, { target => $target->address, sender => 1 };
+            if (is_hostname($target->address) and $test->parameters->test_ipv4_ipv6) {
+                push @tests, { target => $target->address, sender => 1, force_ipv4 => 1 };
+                push @tests, { target => $target->address, sender => 1, force_ipv6 => 1 };
+            }
+            else {
+                push @tests, {
+                               target => $target->address,
+                               sender => 1,
+                               force_ipv4 => $test->parameters->force_ipv4,
+                               force_ipv6 => $test->parameters->force_ipv6,
+                             };
+            }
         }
     }
 
@@ -126,8 +149,8 @@ override 'run_test' => sub {
 
         my @cmd = ();
         push @cmd, $self->powstream_cmd;
-        push @cmd, '-4' if $self->force_ipv4;
-        push @cmd, '-6' if $self->force_ipv6;
+        push @cmd, '-4' if $individual_test->{force_ipv4};
+        push @cmd, '-6' if $individual_test->{force_ipv6};
         push @cmd, ( '-p', '-d', $individual_test->{results_directory} );
         push @cmd, ( '-c', $packets );
         push @cmd, ( '-s', $self->packet_length ) if $self->packet_length;
