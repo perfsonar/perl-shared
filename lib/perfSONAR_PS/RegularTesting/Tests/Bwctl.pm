@@ -57,6 +57,9 @@ override 'build_cmd' => sub {
     push @cmd, ( '-O', $self->omit_interval ) if $self->omit_interval;
     push @cmd, ( '-l', $self->buffer_length ) if $self->buffer_length;
 
+    # Set a default reporting interval
+    push @cmd, ( '-i', '1' );
+
     push @cmd, ('-y', 'J') if ($self->tool eq "iperf3");
 
     return @cmd;
