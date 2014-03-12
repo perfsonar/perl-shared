@@ -32,6 +32,7 @@ has 'force_ipv6'      => (is => 'rw', isa => 'Bool');
 has 'test_ipv4_ipv6'  => (is => 'rw', isa => 'Bool');
 has 'send_only'       => (is => 'rw', isa => 'Bool');
 has 'receive_only'    => (is => 'rw', isa => 'Bool');
+has 'latest_time' => (is => 'rw', isa => 'Int');
 
 has '_individual_tests' => (is => 'rw', isa => 'ArrayRef[HashRef]');
 has '_runner'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Utils::CmdRunner');
@@ -265,6 +266,7 @@ sub build_cmd {
     # Add the scheduling information
     push @cmd, ( '-I', $schedule->interval );
     push @cmd, ( '-p', '-d', $results_directory );
+    push @cmd, ( '-L', $self->latest_time ) if $self->latest_time;
 
     return @cmd;
 }
