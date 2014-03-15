@@ -23,6 +23,7 @@ has 'username' => (is => 'rw', isa => 'Str');
 has 'password' => (is => 'rw', isa => 'Str');
 has 'database' => (is => 'rw', isa => 'Str');
 has 'summary' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondSummary]', default => sub { [] });
+has 'disable_default_summaries' => (is => 'rw', isa => 'Bool', default => sub { 0 });
 
 override 'store_results' => sub {
     my ($self, @args) = @_;
@@ -102,11 +103,23 @@ sub add_metadata {
     
     #build map of sumamries
     my %summ_map = ();
-    foreach my $summ (@{$self->summary}){
+    my @summaries = (@{$self->summary});
+    unless($self->disable_default_summaries){
+        push @summaries, $self->default_summaries;
+    }
+    my %summ_dup_tracker = ();
+    foreach my $summ ( @summaries ){
+        #prevent duplicate summaries
+        my $summ_key = $summ->event_type . ':' . $summ->summary_type . ':' . $summ->summary_window;
+        if($summ_dup_tracker{$summ_key}){
+            next;
+        }
+        #create summary
         if(! exists $summ_map{$summ->event_type}){
             $summ_map{$summ->event_type} = [];
         }
         push @{$summ_map{$summ->event_type}}, {'summary-type' => $summ->summary_type , 'summary-window' => $summ->summary_window};
+        $summ_dup_tracker{$summ_key} = 1;
     }
     
     #add event types
@@ -223,6 +236,17 @@ sub get_timestamps {
     return [$results->{'start_time'}->epoch()];
 }
 
+sub create_summary_config(){
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {event_type => 1, summary_type => 1, summary_window=> 1  });
+    
+    return perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondSummary->new(
+        event_type => $parameters->{event_type},
+        summary_type => $parameters->{summary_type},
+        summary_window => $parameters->{summary_window}
+    );
+}   
+
 sub event_types {
     die("'event_types' needs to be overridden");
 }
@@ -235,6 +259,9 @@ sub add_datum {
      die("'add_datum' needs to be overridden");
 }
 
+sub default_summaries {
+     return ();
+}
 
 package perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondSummary;
 
