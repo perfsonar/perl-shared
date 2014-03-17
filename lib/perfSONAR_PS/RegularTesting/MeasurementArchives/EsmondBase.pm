@@ -27,13 +27,14 @@ has 'disable_default_summaries' => (is => 'rw', isa => 'Bool', default => sub { 
 
 override 'store_results' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {
+    my $parameters = validate( @args, {  test => 1, 
                                          results => 1,
                                       });
+    my $test = $parameters->{test};
     my $results = $parameters->{results};
     
     #create/retrieve metadata
-    my ($mdcode, $mdmsg, $metadata_uri) = $self->add_metadata(results => $results);
+    my ($mdcode, $mdmsg, $metadata_uri) = $self->add_metadata(test => $test, results => $results);
     if($mdcode != 0){
         $logger->error("Error writing metadata ($mdcode) $mdmsg");
         return (1, "Error writing metadata: $mdmsg");
@@ -66,7 +67,8 @@ override 'nonce' => sub {
 
 sub add_metadata {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {results => 1});
+    my $parameters = validate( @args, { test => 1, results => 1});
+    my $test = $parameters->{test};
     my $results = $parameters->{results};
     my $metadata = {};
     if (!$results->{source}){
@@ -82,11 +84,13 @@ sub add_metadata {
         return (1, "No destination address provided", "");
     }
     
+    $logger->debug("TEST: ".Dumper($test));
+    
     #set common parameters
     $metadata->{'subject-type'} = 'point-to-point';
     $metadata->{'source'} = $results->{source}->{address};
     $metadata->{'destination'} = $results->{destination}->{address};
-    $metadata->{'tool-name'} = 'bwctl/ping';
+    $metadata->{'tool-name'} = $self->tool_name(test => $test, results => $results);
     $metadata->{'measurement-agent'} = $results->{source}->{address}; #TODO fix
     if($results->{source}->{hostname}){
         $metadata->{'input-source'} = $results->{source}->{hostname};
@@ -98,7 +102,12 @@ sub add_metadata {
     }else{
         $metadata->{'input-destination'} = $results->{destination}->{address};
     }
-    #todo set time-interval
+    if($test->{schedule}->type() eq 'regular_testing'){
+        $metadata->{'time-interval'} = $test->{'schedule'}->interval;
+    }elsif($test->{schedule}->type() eq 'streaming'){
+        $metadata->{'time-interval'} = 0;
+    }
+    
     $metadata->{'event-types'} = [];
     
     #build map of sumamries
@@ -131,7 +140,7 @@ sub add_metadata {
         push @{$metadata->{'event-types'}}, $et_obj;
     }
     #set application specific parameters
-    $self->add_metadata_parameters(metadata=> $metadata, results => $results);
+    $self->add_metadata_parameters(metadata=> $metadata, test=>$test, results => $results);
     
     #write to MA
     my $response = $self->send_post(url => $self->database, json => $metadata);
@@ -246,6 +255,10 @@ sub create_summary_config(){
         summary_window => $parameters->{summary_window}
     );
 }   
+
+sub tool_name {
+     die("'tool_name' needs to be overridden");
+}
 
 sub event_types {
     die("'event_types' needs to be overridden");
