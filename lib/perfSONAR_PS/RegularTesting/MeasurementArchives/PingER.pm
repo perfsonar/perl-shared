@@ -262,7 +262,9 @@ sub add_data {
     my %seen = ();
     $prev_datum = undef;
     foreach my $datum (@{ $results->pings }) {
-        if ($seen{$datum->delay}) {
+        next unless $datum->delay;
+
+        if ($seen{$datum->sequence_number}) {
             $dups++;
         }
 
