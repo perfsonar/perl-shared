@@ -7,20 +7,17 @@ our $VERSION = 3.4;
 
 use Log::Log4perl qw(get_logger);
 use Params::Validate qw(:all);
-
-use Data::Dumper;
-use JSON qw(from_json to_json);
-use LWP;
-use URI::Split qw(uri_split uri_join);
 use POSIX qw/floor/;
 
 use Moose;
 
-use constant DEFAULT_BUCKET_WIDTH => .001;
+use constant DEFAULT_BUCKET_WIDTH => .0001;
  
 extends 'perfSONAR_PS::RegularTesting::MeasurementArchives::EsmondBase';
 
 my $logger = get_logger(__PACKAGE__);
+
+override 'type' => sub { "esmond/latency" };
 
 override 'accepts_results' => sub {
     my ($self, @args) = @_;
@@ -28,6 +25,69 @@ override 'accepts_results' => sub {
     my $results = $parameters->{results};
 
     return ($results->type eq "latency");
+};
+
+override 'tool_name' => sub {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {test => 1, results => 1});
+    my $results = $parameters->{results};
+    my $test = $parameters->{test};
+
+    if($test->parameters->type() eq 'bwping'){
+        return 'bwctl/ping';
+    }elsif($test->parameters->type() eq 'powstream'){
+        return 'powstream';
+    }elsif($test->parameters->type() eq 'bwping/owamp'){
+        return 'bwctl/owping';
+    }
+    
+    #unrecognized so just return type directly
+    return $test->parameters->type();
+
+};
+
+override 'event_types' => sub {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    my $test = $parameters->{test};
+    
+    my @event_types = (
+        'failures',
+        'histogram-ttl',
+        'packet-duplicates',
+        'packet-loss-rate',
+        'packet-count-lost',
+        'packet-count-sent',
+        #'time-error-estimates',
+        );
+    if($results->bidirectional){
+        push  @event_types, 'histogram-rtt';
+    }else{
+        push  @event_types, 'histogram-owdelay';
+    }
+    
+    return \@event_types;
+};
+
+override 'default_summaries' => sub {
+    my $self = shift;
+    
+    my @summaries = ();
+    push @summaries, $self->create_summary_config(
+        event_type=>'histogram-owdelay', 
+        summary_type  => 'statistics', 
+        summary_window => '0');
+    push @summaries, $self->create_summary_config(
+        event_type=>'histogram-rtt', 
+        summary_type  => 'statistics', 
+        summary_window => '0');
+    push @summaries, $self->create_summary_config(
+        event_type=>'histogram-ttl', 
+        summary_type  => 'statistics', 
+        summary_window => '0');
+        
+    return @summaries;
 };
 
 override 'add_metadata_parameters' => sub{
@@ -44,7 +104,9 @@ override 'add_metadata_parameters' => sub{
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'sample-size', value => $results->packet_count);
     my $bucket_width = ($results->histogram_bucket_size ? $results->histogram_bucket_size : DEFAULT_BUCKET_WIDTH);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'sample-bucket-width', value => $bucket_width);
-    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'time-duration', value => $test->{resolution});
+    if($results->packet_count && $results->inter_packet_time && !$results->bidirectional){
+        $self->add_metadata_opt_parameter(metadata => $metadata, key => 'time-duration', value => ($results->packet_count * $results->inter_packet_time));
+    }
 };
 
 override 'add_datum' => sub {
@@ -53,8 +115,8 @@ override 'add_datum' => sub {
     my $event_type = $parameters->{event_type};
     my $results = $parameters->{results};
     
-    if($event_type eq 'histogram-rtt'){
-        return $self->handle_histogram_rtt(results=>$results);
+    if($event_type eq 'histogram-owdelay' || $event_type eq 'histogram-rtt'){
+        return $self->handle_histogram_delay(results=>$results);
     }elsif($event_type eq 'histogram-ttl'){
         return $self->handle_histogram_ttl(results=>$results);
     }elsif($event_type eq 'packet-duplicates'){
@@ -65,6 +127,8 @@ override 'add_datum' => sub {
         return $self->handle_packets_lost(results=>$results);
     }elsif($event_type eq 'packet-loss-rate'){
         return $self->handle_packet_loss_rate(results=>$results);
+    }elsif($event_type eq 'time-error-estimates'){
+        return $self->handle_time_error_estimates(results=>$results);
     }elsif($event_type eq 'failures'){
         return $self->handle_failures(results=>$results);
     }else{
@@ -72,16 +136,47 @@ override 'add_datum' => sub {
     }
 };
 
+sub parse_ping {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    my $dups = 0;
+    my $sent = 0;
+    my $recv = 0;
+    
+    my %seen = ();
+    foreach my $datum (@{ $results->pings }) {
+        if ($seen{$datum->sequence_number}) {
+            $dups++;
+            next;
+        }
+        $sent++;
+        
+        unless ($datum->delay) {
+            # Skip lost packets
+            next;
+        }
+
+        $seen{$datum->sequence_number} = 1;
+
+        $recv++;
+    }
+    
+    return ($dups, $sent, $recv);
+}
 sub handle_packets_sent(){
     my ($self, @args) = @_;
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if(!defined $results->packets_sent){
-        return undef;
+    if(defined $results->packets_sent){
+        return $results->packets_sent;
+    }elsif (scalar(@{ $results->pings }) > 0) {    
+        my ($dups, $sent, $recv) = $self->parse_ping(results => $results);
+        return $sent;
     }
     
-    return $results->packets_sent;
+    return undef;
 }
 
 sub handle_packets_lost(){
@@ -89,11 +184,14 @@ sub handle_packets_lost(){
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if(!defined $results->packets_sent || !defined $results->packets_received){
-        return undef;
+    if(defined $results->packets_sent && defined $results->packets_received){
+        return ($results->packets_sent - $results->packets_received);
+    }elsif (scalar(@{ $results->pings }) > 0) {    
+        my ($dups, $sent, $recv) = $self->parse_ping(results => $results);
+        return ($sent - $recv);
     }
     
-    return ($results->packets_sent - $results->packets_received);
+    return undef;
 }
 
 sub handle_packet_loss_rate(){
@@ -101,35 +199,35 @@ sub handle_packet_loss_rate(){
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if(!defined $results->packets_sent || !defined $results->packets_received){
-        return undef;
-    }
-    
-    return {
+    if(defined $results->packets_sent && defined $results->packets_received){
+        return {
             'numerator' => ($results->packets_sent - $results->packets_received),
             'denominator' => $results->packets_sent 
         };
+    }elsif (scalar(@{ $results->pings }) > 0) {    
+        my ($dups, $sent, $recv) = $self->parse_ping(results => $results);
+        return {
+            'numerator' => ($sent - $recv),
+            'denominator' => $sent
+        };
+    }
+    
+    return undef;
 }
-
 
 sub handle_duplicates(){
     my ($self, @args) = @_;
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if(!$results->pings || @{$results->pings} == 0){
-        return undef;
+   if(defined $results->duplicate_packets){
+        return $results->duplicate_packets;
+    }elsif (scalar(@{ $results->pings }) > 0) {    
+        my ($dups, $sent, $recv) = $self->parse_ping(results => $results);
+        return $dups;
     }
     
-    my $dups = 0;
-    my %seen = ();
-    foreach my $datum (@{ $results->pings }) {
-        if ($seen{$datum->sequence_number}) {
-            $dups++;
-        }
-    }
-    
-    return $dups;
+    return undef;
 }
 
 sub handle_histogram_ttl(){
@@ -137,38 +235,52 @@ sub handle_histogram_ttl(){
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if(!$results->pings || @{$results->pings} == 0){
-        return undef;
+    my $hist = {};
+    if (scalar(@{ $results->pings }) > 0) {
+        foreach my $datum (@{ $results->pings }) {
+            $hist->{$datum->ttl}++ if(defined $datum->ttl);
+        }
+    }else{
+        $hist = $results->ttl_histogram;
     }
     
-    my $hist = {};
-    foreach my $datum (@{ $results->pings }) {
-        $hist->{$datum->ttl}++ if(defined $datum->ttl);
+    if(scalar(keys %{$hist}) == 0){
+        $hist = undef;
     }
     
     return $hist;
 }
 
-sub handle_histogram_rtt(){
+sub handle_histogram_delay(){
     my ($self, @args) = @_;
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if(!$results->pings || @{$results->pings} == 0){
-        return undef;
+    my $hist = {};
+    if (scalar(@{ $results->pings }) > 0) {
+        foreach my $datum (@{ $results->pings }) {
+            if(!defined $datum->delay){
+                next;
+            }
+            my $bucket_width = ($results->histogram_bucket_size ? $results->histogram_bucket_size : DEFAULT_BUCKET_WIDTH);
+            my $bucket = floor($datum->delay/$bucket_width);
+            $hist->{$bucket}++;
+        }
+    }else{
+        $hist = $results->delay_histogram;
     }
     
-    my $hist = {};
-    foreach my $datum (@{ $results->pings }) {
-        if(!defined $datum->delay){
-            next;
-        }
-        my $bucket_width = ($results->histogram_bucket_size ? $results->histogram_bucket_size : DEFAULT_BUCKET_WIDTH);
-        my $bucket = floor($datum->delay/$bucket_width);
-        $hist->{$bucket}++;
+    #don't store an empty object
+    if(scalar(keys %{$hist}) == 0){
+        $hist = undef;
     }
     
     return $hist;
+}
+
+sub handle_time_error_estimates(){
+    #not yet implemented
+    return undef;
 }
 
 sub handle_failures(){

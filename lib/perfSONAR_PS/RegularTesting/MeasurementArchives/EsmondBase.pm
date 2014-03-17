@@ -132,7 +132,7 @@ sub add_metadata {
     }
     
     #add event types
-    foreach my $et (@{$self->event_types()}){
+    foreach my $et (@{$self->event_types(results => $results)}){
         my $et_obj = { 'event-type' => $et };
         if(exists $summ_map{$et} && $summ_map{$et}){
             $et_obj->{'summaries'} = $summ_map{$et};
@@ -169,14 +169,15 @@ sub add_data {
     my $data = [];
     foreach my $ts (@{$self->get_timestamps(results => $results)}){
         my $vals = [];
-        foreach my $et (@{$self->event_types()}){
+        foreach my $et (@{$self->event_types(results => $results)}){
             my $datum = $self->add_datum(timestamp=>$ts, event_type=> $et, results => $results);
             push @{$vals}, {'event-type' => $et, 'val' => $datum} if(defined $datum);
         }
         push @{$data}, { 'ts' => $ts, 'val' => $vals};
     }
     
-    $logger->debug("DATA: ".Dumper($data));
+    $logger->debug("Results: ".Dumper($results));
+    $logger->debug("esmond data: ".Dumper($data));
     
     #send to MA
     my $response = $self->send_post(url => $write_url, json => {'data' => $data});

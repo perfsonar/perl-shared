@@ -38,7 +38,7 @@ use perfSONAR_PS::RegularTesting::MeasurementArchives::PingER;
 use perfSONAR_PS::RegularTesting::MeasurementArchives::TracerouteMA;
 use perfSONAR_PS::RegularTesting::MeasurementArchives::perfSONARBUOYOwamp;
 use perfSONAR_PS::RegularTesting::MeasurementArchives::EsmondBase;
-use perfSONAR_PS::RegularTesting::MeasurementArchives::EsmondPing;
+use perfSONAR_PS::RegularTesting::MeasurementArchives::EsmondLatency;
 
 # Schedulers
 use perfSONAR_PS::RegularTesting::Schedulers::Base;
