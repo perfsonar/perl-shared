@@ -155,7 +155,7 @@ sub handle_duplicates(){
     my %seen = ();
     foreach my $datum (@{ $results->pings }) {
         #copied from PinGER MA. better way to do this?
-        if ($seen{$datum->delay}) {
+        if ($seen{$datum->sequence_number}) {
             $dups++;
         }
     }
