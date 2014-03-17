@@ -21,7 +21,7 @@ has 'description'     => (is => 'rw', isa => 'Str');
 has 'queue_directory' => (is => 'rw', isa => 'Str');
 
 sub type {
-    return "";
+    die("'type' needs to be overridden");
 }
 
 sub nonce {

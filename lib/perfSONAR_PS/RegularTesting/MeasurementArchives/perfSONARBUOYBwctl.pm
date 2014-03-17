@@ -24,7 +24,8 @@ override 'type' => sub { "perfsonarbuoy/bwctl" };
 
 override 'accepts_results' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, { results => 1, });
+    my $parameters = validate( @args, { test => 1, results => 1, });
+    my $test    = $parameters->{test};
     my $results = $parameters->{results};
 
     return ($results->type eq "throughput");
@@ -33,8 +34,10 @@ override 'accepts_results' => sub {
 override 'store_results' => sub {
     my ($self, @args) = @_;
     my $parameters = validate( @args, {
+                                         test    => 1,
                                          results => 1,
                                       });
+    my $test    = $parameters->{test};
     my $results = $parameters->{results};
 
     eval {
