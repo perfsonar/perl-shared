@@ -24,7 +24,8 @@ override 'type' => sub { "perfsonarbuoy/owamp" };
 
 override 'accepts_results' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, { results => 1, });
+    my $parameters = validate( @args, { test => 1, results => 1, });
+    my $test    = $parameters->{test};
     my $results = $parameters->{results};
 
     return ($results->type eq "latency" and not $results->bidirectional);
@@ -33,8 +34,10 @@ override 'accepts_results' => sub {
 override 'store_results' => sub {
     my ($self, @args) = @_;
     my $parameters = validate( @args, {
+                                         test    => 1,
                                          results => 1,
                                       });
+    my $test    = $parameters->{test};
     my $results = $parameters->{results};
 
     my $bucket_width = 0.0001;
@@ -45,7 +48,7 @@ override 'store_results' => sub {
 
         my $dbh = DBI->connect($dsn, $self->username, $self->password, { RaiseError => 0, PrintError => 0 });
         unless ($dbh) {
-            die("Problem connecting to database: $@");
+            die("Problem connecting to database: ".$DBI::errstr);
         }
 
         $logger->debug("Connected to DB");

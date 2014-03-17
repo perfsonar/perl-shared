@@ -42,7 +42,7 @@ override 'child_main_loop' => sub {
                 handle_results => sub {
                     my $parameters = validate( @_, { results => 1 });
                     my $results = $parameters->{results};
-                    $self->save_results(results => $results);
+                    $self->save_results(test => $self->test, results => $results);
                 }
             );
         };
@@ -73,10 +73,16 @@ override 'child_main_loop' => sub {
 
 sub save_results {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, { results => 1 });
+    my $parameters = validate( @args, { test => 1, results => 1 });
+    my $test    = $parameters->{test};
     my $results = $parameters->{results};
 
-    my $json = JSON->new->pretty->encode($results->unparse);
+    my $result_info = {
+        test    => $test->unparse,
+        results => $results->unparse,
+    };
+
+    my $json = JSON->new->pretty->encode($result_info);
 
     my $enqueued;
 
@@ -84,7 +90,7 @@ sub save_results {
         my $measurement_archive = $ma_info->{ma};
         my $queue               = $ma_info->{queue};
 
-        if ($measurement_archive->accepts_results({ results => $results })) {
+        if ($measurement_archive->accepts_results({ test => $test, results => $results })) {
             $logger->debug("Enqueueing job to: ".$measurement_archive->nonce);
 
             unless ($queue->enqueue_string($json)) {

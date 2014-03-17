@@ -8,6 +8,8 @@ our $VERSION = 3.4;
 use Log::Log4perl qw(get_logger);
 use Params::Validate qw(:all);
 
+use DateTime::Format::ISO8601;
+
 use JSON;
 
 use Moose;
@@ -101,6 +103,9 @@ sub parse_element_attribute {
     if (UNIVERSAL::can($type, "parse")) {
         $parsed_value = $type->parse($value, $strict);
     }
+    elsif ($type eq "DateTime") {
+        $parsed_value = DateTime::Format::ISO8601->parse_datetime($value);
+    }
     elsif ($type =~ /ArrayRef\[(.*)\]/) {
         $value = [ $value ] unless ref($value) eq "ARRAY";
 
@@ -168,6 +173,9 @@ sub unparse {
         }
         elsif (UNIVERSAL::can($value, "unparse")) {
             $unparsed_value = $value->unparse;
+        }
+        elsif (UNIVERSAL::can($value, "iso8601")) {
+            $unparsed_value = $value->iso8601();
         }
         else {
             $unparsed_value = $value;
