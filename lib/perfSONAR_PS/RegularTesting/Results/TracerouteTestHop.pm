@@ -12,7 +12,7 @@ use Moose;
 
 my $logger = get_logger(__PACKAGE__);
 
-extends 'perfSONAR_PS::RegularTesting::Results::Base';
+extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
 
 has 'ttl'               => (is => 'rw', isa => 'Int');
 has 'address'           => (is => 'rw', isa => 'Str');
