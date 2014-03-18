@@ -23,6 +23,7 @@ has 'tool' => (is => 'rw', isa => 'Str', default => 'traceroute');
 has 'packet_length' => (is => 'rw', isa => 'Int');
 has 'packet_first_ttl' => (is => 'rw', isa => 'Int', );
 has 'packet_max_ttl' => (is => 'rw', isa => 'Int', );
+has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
 
 my $logger = get_logger(__PACKAGE__);
 

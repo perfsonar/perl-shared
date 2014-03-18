@@ -268,6 +268,10 @@ sub build_cmd {
     push @cmd, ( '-p', '-d', $results_directory );
     push @cmd, ( '-L', $self->latest_time ) if $self->latest_time;
 
+    if ($self->can("packet_tos_bits") and $self->packet_tos_bits) {
+        push @cmd, ( '--tos', $self->packet_tos_bits );
+    }
+
     return @cmd;
 }
 

@@ -24,6 +24,7 @@ has 'duration' => (is => 'rw', isa => 'Int', default => 10);
 has 'omit_interval' => (is => 'rw', isa => 'Int');
 has 'udp_bandwidth' => (is => 'rw', isa => 'Int');
 has 'buffer_length' => (is => 'rw', isa => 'Int');
+has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
 
 my $logger = get_logger(__PACKAGE__);
 
