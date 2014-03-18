@@ -257,6 +257,19 @@ sub create_summary_config(){
     );
 }   
 
+sub handle_failures(){
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    
+    if(!$results->errors || @{$results->errors} == 0){
+        return undef;
+    }
+    
+    my $err = join '--', @{$results->errors};
+    return {'error' => $err};
+}
+
 sub tool_name {
      die("'tool_name' needs to be overridden");
 }

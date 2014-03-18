@@ -199,7 +199,7 @@ sub handle_packet_loss_rate(){
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if(defined $results->packets_sent && defined $results->packets_received){
+    if($results->packets_sent && defined $results->packets_received){
         return {
             'numerator' => ($results->packets_sent - $results->packets_received),
             'denominator' => $results->packets_sent 
@@ -209,7 +209,7 @@ sub handle_packet_loss_rate(){
         return {
             'numerator' => ($sent - $recv),
             'denominator' => $sent
-        };
+        } if($sent > 0);
     }
     
     return undef;
@@ -281,19 +281,6 @@ sub handle_histogram_delay(){
 sub handle_time_error_estimates(){
     #not yet implemented
     return undef;
-}
-
-sub handle_failures(){
-    my ($self, @args) = @_;
-    my $parameters = validate( @args, {results => 1});
-    my $results = $parameters->{results};
-    
-    if(!$results->errors || @{$results->errors} == 0){
-        return undef;
-    }
-    
-    my $err = join '--', @{$results->errors};
-    return {'error' => $err};
 }
 
 1;
