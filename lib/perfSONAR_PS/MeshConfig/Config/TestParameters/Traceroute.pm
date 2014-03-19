@@ -24,6 +24,7 @@ sub BUILD {
 }
 
 has 'test_interval' => (is => 'rw', isa => 'Int');
+has 'tool' => (is => 'rw', isa => 'Str');
 has 'packet_size' => (is => 'rw', isa => 'Int');
 has 'timeout' => (is => 'rw', isa => 'Int');
 has 'waittime' => (is => 'rw', isa => 'Int');
