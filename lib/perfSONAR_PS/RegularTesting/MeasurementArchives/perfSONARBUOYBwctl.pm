@@ -228,10 +228,10 @@ sub add_data {
                 tspec_id => $testspec_id,
                 ti => datetime2owptstampi($results->start_time),
                 timestamp => datetime2owptime($results->start_time),
-                throughput => $results->throughput,
-                jitter => $results->jitter,
-                lost => $results->packets_lost,
-                sent => $results->packets_sent,
+                throughput => $results->summary_results->summary_results->throughput,
+                jitter => $results->summary_results->summary_results->jitter,
+                lost => $results->summary_results->summary_results->packets_lost,
+                sent => $results->summary_results->summary_results->packets_sent,
     );
 
     use Data::Dumper;

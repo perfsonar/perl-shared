@@ -13,6 +13,7 @@ use Moose;
 my $logger = get_logger(__PACKAGE__);
 
 use perfSONAR_PS::RegularTesting::Results::Endpoint;
+use perfSONAR_PS::RegularTesting::Results::LatencyTestDatum;
 
 extends 'perfSONAR_PS::RegularTesting::Results::Base';
 

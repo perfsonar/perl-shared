@@ -93,6 +93,7 @@ override 'build_results' => sub {
     $results->source($self->build_endpoint(address => $source, protocol => $protocol));
     $results->destination($self->build_endpoint(address => $destination, protocol => $protocol));
 
+    $results->protocol($protocol);
     $results->streams($self->streams);
     $results->time_duration($self->duration);
     $results->bandwidth_limit($self->udp_bandwidth) if $self->udp_bandwidth;
@@ -103,9 +104,6 @@ override 'build_results' => sub {
 
     # Parse the bwctl output, and add it in
     my $bwctl_results = parse_bwctl_output({ stdout => $output, tool_type => $self->tool });
-
-    use Data::Dumper;
-    $logger->debug("BWCTL Results: ".Dumper($bwctl_results));
 
     # Fill in the data that came directly from BWCTL itself
     $results->source->address($bwctl_results->{sender_address}) if $bwctl_results->{sender_address};
@@ -127,6 +125,9 @@ override 'build_results' => sub {
         push @{ $results->errors }, "Unknown tool type: ".$self->tool;
     }
 
+    use Data::Dumper;
+    $logger->debug("Build Results: ".Dumper($results->unparse));
+
     return $results;
 };
 
@@ -139,12 +140,66 @@ sub fill_iperf_data {
     my $results_obj    = $parameters->{results_obj};
     my $results        = $parameters->{results};
 
-    push @{ $results_obj->errors }, $results->{error} if ($results->{error});
+    # Build the intervals
+    my @intervals = ();
+    foreach my $interval (@{ $results->{intervals} }) {
+        my $interval_obj = perfSONAR_PS::RegularTesting::Results::ThroughputTestInterval->new();
 
-    $results_obj->throughput($results->{throughput}) if $results->{throughput};
-    $results_obj->jitter($results->{jitter}) if $results->{jitter};
-    $results_obj->packets_sent($results->{packets_sent}) if defined $results->{packets_sent};
-    $results_obj->packets_lost($results->{packets_lost}) if defined $results->{packets_lost};
+        $interval_obj->start($interval->{summary}->{start});
+        $interval_obj->duration($interval->{summary}->{end} - $interval->{summary}->{start});
+
+        my @streams = ();
+        foreach my $stream (@{ $interval->{streams} }) {
+            my $stream_obj = perfSONAR_PS::RegularTesting::Results::ThroughputTestResults->new();
+            $stream_obj->stream_id($stream->{stream_id});
+            $stream_obj->throughput($stream->{throughput});
+            $stream_obj->jitter($stream->{jitter});
+            $stream_obj->packets_lost($stream->{packets_lost});
+            $stream_obj->packets_sent($stream->{packets_sent});
+            push @streams, $stream_obj;
+        }
+
+        $interval_obj->streams(\@streams);
+
+        my $summary_results = perfSONAR_PS::RegularTesting::Results::ThroughputTestResults->new();
+        $summary_results->throughput($interval->{summary}->{throughput});
+        $summary_results->jitter($interval->{summary}->{jitter});
+        $summary_results->packets_sent($interval->{summary}->{packets_sent});
+        $summary_results->packets_lost($interval->{summary}->{packets_lost});
+
+        $interval_obj->summary_results($summary_results);
+
+        push @intervals, $interval_obj;
+    }
+
+    # Build the summary results
+    my $summary_result_obj = perfSONAR_PS::RegularTesting::Results::ThroughputTestInterval->new();
+
+    my @streams = ();
+    foreach my $stream (@{ $results->{summary}->{streams} }) {
+        my $stream_obj = perfSONAR_PS::RegularTesting::Results::ThroughputTestResults->new();
+        $stream_obj->stream_id($stream->{stream_id});
+        $stream_obj->throughput($stream->{throughput});
+        $stream_obj->jitter($stream->{jitter});
+        $stream_obj->packets_lost($stream->{packets_lost});
+        $stream_obj->packets_sent($stream->{packets_sent});
+        push @streams, $stream_obj;
+    }
+
+    $summary_result_obj->streams(\@streams);
+
+    my $summary_overall_obj = perfSONAR_PS::RegularTesting::Results::ThroughputTestResults->new();
+    $summary_overall_obj->throughput($results->{summary}->{summary}->{throughput}) if $results->{summary}->{summary}->{throughput};
+    $summary_overall_obj->jitter($results->{summary}->{summary}->{jitter}) if $results->{summary}->{summary}->{jitter};
+    $summary_overall_obj->packets_sent($results->{summary}->{summary}->{packets_sent}) if defined $results->{summary}->{summary}->{packets_sent};
+    $summary_overall_obj->packets_lost($results->{summary}->{summary}->{packets_lost}) if defined $results->{summary}->{summary}->{packets_lost};
+
+    $summary_result_obj->summary_results($summary_overall_obj);
+
+    # Fill in the test
+    $results_obj->intervals(\@intervals);
+    $results_obj->summary_results($summary_result_obj);
+    push @{ $results_obj->errors }, $results->{error} if ($results->{error});
 
     return;
 }
@@ -158,12 +213,74 @@ sub fill_iperf3_data {
     my $results_obj    = $parameters->{results_obj};
     my $results        = $parameters->{results};
 
-    push @{ $results_obj->errors }, $results->{error} if ($results->{error});
+    # Don't do anything if there's an error. Who knows what state the results are in...
+    if ($results->{error}) {
+        push @{ $results_obj->errors }, $results->{error} if ($results->{error});
+        return;
+    }
 
-    $results_obj->throughput($results->{end}->{sum_received}->{bits_per_second}) if $results->{end}->{sum_received}->{bits_per_second};
-    $results_obj->jitter($results->{end}->{sum_received}->{jitter_ms}) if $results->{end}->{sum_received}->{jitter_ms};
-    $results_obj->packets_sent($results->{end}->{sum_received}->{total_packets}) if defined $results->{end}->{sum_received}->{total_packets};
-    $results_obj->packets_lost($results->{end}->{sum_received}->{lost_packets}) if defined $results->{end}->{sum_received}->{lost_packets};
+    $logger->debug("iperf3 output: ".Dumper($results));
+
+    # Build the intervals
+    my @intervals = ();
+    foreach my $interval (@{ $results->{intervals} }) {
+        my $interval_obj = perfSONAR_PS::RegularTesting::Results::ThroughputTestInterval->new();
+
+        $interval_obj->start($interval->{sum}->{start});
+        $interval_obj->duration($interval->{sum}->{seconds});
+
+        my @streams = ();
+        foreach my $stream (@{ $interval->{streams} }) {
+            my $stream_obj = perfSONAR_PS::RegularTesting::Results::ThroughputTestResults->new();
+            $stream_obj->stream_id($stream->{socket});
+            $stream_obj->throughput($stream->{bits_per_second});
+            # XXX: $stream_obj->jitter($stream->{jitter});
+            # XXX: $stream_obj->packets_lost($stream->{packets_lost});
+            # XXX: $stream_obj->packets_sent($stream->{packets_sent});
+            push @streams, $stream_obj;
+        }
+
+        $interval_obj->streams(\@streams);
+
+        my $summary_results = perfSONAR_PS::RegularTesting::Results::ThroughputTestResults->new();
+        $summary_results->throughput($interval->{sum}->{bits_per_second});
+        # XXX: $summary_results->jitter($interval->{sum}->{jitter});
+        # XXX: $summary_results->packets_sent($interval->{sum}->{packets_sent});
+        # XXX: $summary_results->packets_lost($interval->{sum}->{packets_lost});
+
+        $interval_obj->summary_results($summary_results);
+
+        push @intervals, $interval_obj;
+    }
+
+    # Build the summary results
+    my $summary_result_obj = perfSONAR_PS::RegularTesting::Results::ThroughputTestInterval->new();
+
+    my @streams = ();
+    foreach my $stream (@{ $results->{end}->{streams} }) {
+        my $stream_obj = perfSONAR_PS::RegularTesting::Results::ThroughputTestResults->new();
+        $stream_obj->stream_id($stream->{receiver}->{socket});
+        $stream_obj->throughput($stream->{receiver}->{bits_per_second});
+        # XXX: $stream_obj->jitter($stream->{jitter});
+        # XXX: $stream_obj->packets_lost($stream->{packets_lost});
+        # XXX: $stream_obj->packets_sent($stream->{packets_sent});
+        push @streams, $stream_obj;
+    }
+
+    $summary_result_obj->streams(\@streams);
+
+    my $summary_overall_obj = perfSONAR_PS::RegularTesting::Results::ThroughputTestResults->new();
+    $summary_overall_obj->throughput($results->{end}->{sum_received}->{throughput}) if $results->{end}->{sum_received}->{throughput};
+    $summary_overall_obj->jitter($results->{end}->{sum_received}->{jitter}) if $results->{end}->{sum_received}->{jitter};
+    $summary_overall_obj->packets_sent($results->{end}->{sum_received}->{packets_sent}) if defined $results->{end}->{sum_received}->{packets_sent};
+    $summary_overall_obj->packets_lost($results->{end}->{sum_received}->{packets_lost}) if defined $results->{end}->{sum_received}->{packets_lost};
+
+    $summary_result_obj->summary_results($summary_overall_obj);
+
+    # Fill in the test
+    $results_obj->intervals(\@intervals);
+    $results_obj->summary_results($summary_result_obj);
+    push @{ $results_obj->errors }, $results->{error} if ($results->{error});
 
     return;
 }
