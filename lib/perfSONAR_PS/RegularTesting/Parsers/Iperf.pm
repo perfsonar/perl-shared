@@ -40,12 +40,11 @@ sub parse_iperf_output {
     my $stdout  = $parameters->{stdout};
 
     my %sess_summ = ();
-    my ($sess_id, $min_si, $max_ei);
 
     my ($source_addr, $destination_addr);
     my ($error);
-    my ($throughput, $jitter, $packets_sent, $packets_lost);
 
+    my ($prev_si, $in_summary);
 
     for my $line (split('\n', $stdout)) {
         my ( $id, $si, $ei, $txfr, $bw, $jitter, $nlost, $nsent );
@@ -71,26 +70,26 @@ sub parse_iperf_output {
             $source_addr = $src_ip;
         }
 
-        if (   ( ( $id, $si, $ei, $txfr, $bw, $jitter, $nlost, $nsent ) = ($line =~ m#\[\s*(\d+)\s*\]\s+([0-9\.]+)\s*\-\s*([0-9\.]+)\s+sec\s+(\d+)\s+Bytes\s+(\d+)\s+bits/sec\s+([0-9\.]+)\s+ms\s+(\d+)/(\d+)\s+# ))
-            || ( ( $id, $si, $ei, $txfr, $bw ) = ($line =~ m#\[\s*(\d+)\s*\]\s+([0-9\.]+)\s*\-\s*([0-9\.]+)\s+sec\s+(\d+)\s+Bytes\s+(\d+)\s+bits/sec# ) ) )
+        if (   ( ( $id, $si, $ei, $txfr, $bw, $jitter, $nlost, $nsent ) = ($line =~ m#\[\s*(\d+|SUM)\s*\]\s+([0-9\.]+)\s*\-\s*([0-9\.]+)\s+sec\s+(\d+)\s+Bytes\s+(\d+)\s+bits/sec\s+([0-9\.]+)\s+ms\s+(\d+)/(\d+)\s+# ))
+            || ( ( $id, $si, $ei, $txfr, $bw ) = ($line =~ m#\[\s*(\d+|SUM)\s*\]\s+([0-9\.]+)\s*\-\s*([0-9\.]+)\s+sec\s+(\d+)\s+Bytes\s+(\d+)\s+bits/sec# ) ) )
         {
-            $sess_id = $id if ( !defined( $sess_id ) );
-            next if ( $id != $sess_id );
 
-            if ( !defined( $min_si ) ) {
-                $min_si = $si;
-            }
-            else {
-                $min_si = $si if ( $si < $min_si );
+            #if (defined $prev_si and $si < $prev_si) {
+            if ($ei - $si > 5) {  # Cheesy heuristic...
+                $in_summary = 1;
             }
 
-            if ( !defined( $max_ei ) ) {
-                $max_ei = $ei;
+            my $summary_key;
+            if ($in_summary) {
+                $summary_key = "summary";
             }
             else {
-                $max_ei = $ei if ( $ei > $max_ei );
+                $summary_key = $si."_".$ei;
             }
-            @{ $sess_summ{"${si}_${ei}"} } = ( $si, $ei, $bw, $jitter, $nlost, $nsent );
+
+            push @{ $sess_summ{$summary_key} }, [ $id, $si, $ei, $bw, $jitter, $nlost, $nsent ];
+
+            $prev_si = $si;
         }
     }
 
@@ -98,41 +97,134 @@ sub parse_iperf_output {
     if ( ( keys %sess_summ ) <= 0 ) {
         $error = "No results";
     }
-    elsif ( !exists( $sess_summ{"${min_si}_${max_ei}"} ) ) {
-        # Average the interval summaries to create an overall summary
-        my ($summary_bw, $summary_jitter, $summary_nlost, $summary_nsent) = (0, 0, 0, 0);
 
-        foreach my $summary_key (keys %sess_summ) {
-            my $summary = $sess_summ{$summary_key};
+    # Fill in the intervals
+    my $summary_interval;
+    my @intervals = ();
 
-            $summary_bw += $summary->[2];
-            $summary_jitter += $summary->[3];
-            $summary_nlost += $summary->[4];
-            $summary_nsent += $summary->[5];
+    foreach my $interval_range (sort keys %sess_summ) {
+        my %interval = ();
+
+        my $summary_session;
+
+        my @streams = ();
+
+        foreach my $summary (@{ $sess_summ{$interval_range} }) {
+            if ($summary->[0] eq "SUM") {
+                $summary_session = $summary;
+                next;
+            }
+
+            push @streams, {
+                stream_id => $summary->[0],
+                start => $summary->[1],
+                end   => $summary->[2],
+                throughput => $summary->[3],
+                jitter => $summary->[4],
+                packets_sent => $summary->[5],
+                packets_lost => $summary->[6],
+            };
         }
-        $summary_jitter = $summary_jitter / (keys %sess_summ);
-        $summary_bw     = $summary_bw     / (keys %sess_summ);
 
-        $throughput = $summary_bw;
-        $jitter = $summary_jitter;
-        $packets_sent = $summary_nsent;
-        $packets_lost = $summary_nlost;
+        if (not $summary_session and scalar(@{ $sess_summ{$interval_range} }) == 1) {
+            $summary_session = $sess_summ{$interval_range}->[0];
+        }
+
+        my $interval = {
+            streams => \@streams,
+            summary => {
+                start => $summary_session->[1],
+                end   => $summary_session->[2],
+                throughput => $summary_session->[3],
+                jitter => $summary_session->[4],
+                packets_sent => $summary_session->[5],
+                packets_lost => $summary_session->[6],
+            }
+        };
+
+        if ($interval_range eq "summary") {
+            $summary_interval = $interval;
+        }
+        else {
+            push @intervals, $interval;
+        }
     }
-    else {
-        $throughput = $sess_summ{"${min_si}_${max_ei}"}->[2];
-        $jitter = $sess_summ{"${min_si}_${max_ei}"}->[3];
-        $packets_lost = $sess_summ{"${min_si}_${max_ei}"}->[4];
-        $packets_sent = $sess_summ{"${min_si}_${max_ei}"}->[5];
+
+    @intervals = sort{ $a->{summary}->{start} <=> $b->{summary}->{start} } @intervals;
+
+    unless ($summary_interval) {
+        my %streams = ();
+        my %overall_summary = (
+            throughput   => 0,
+            jitter       => 0,
+            packets_lost => 0,
+            packets_sent => 0,
+            total_intervals => 0,
+        );
+
+        foreach my $interval (@intervals) {
+            foreach my $stream (@{ $interval->{streams} }) {
+                unless ($streams{$stream->{stream_id}}) {
+                    $streams{$stream->{stream_id}} = {
+                        stream_id    => $stream->{stream_id},
+                        throughput   => 0,
+                        jitter       => 0,
+                        packets_lost => 0,
+                        packets_sent => 0,
+                        total_intervals => 0,
+                    };
+                }
+
+                my $stream_summary = $streams{$stream->{stream_id}};
+
+                $stream_summary->{throughput} += $stream->{throughput};
+                $stream_summary->{jitter} += $stream->{jitter} if $stream->{jitter};
+                $stream_summary->{packets_lost} += $stream->{packets_lost} if $stream->{packets_lost};
+                $stream_summary->{packets_sent} += $stream->{packets_sent} if $stream->{packets_sent};
+                $stream_summary->{total_intervals} += 1;
+            }
+
+            $overall_summary{throughput} += $interval->{summary}->{throughput};
+            $overall_summary{jitter} += $interval->{summary}->{jitter} if $interval->{summary}->{jitter};
+            $overall_summary{packets_lost} += $interval->{summary}->{packets_lost} if $interval->{summary}->{packets_lost};
+            $overall_summary{packets_sent} += $interval->{summary}->{packets_sent} if $interval->{summary}->{packets_sent};
+            $overall_summary{total_intervals} += 1;
+        }
+
+        foreach my $stream_id (keys %streams) {
+            my $stream = $streams{$stream_id};
+            
+            $stream->{throughput} /= $stream->{total_intervals};
+            $stream->{jitter} /= $stream->{total_intervals};
+            delete($stream->{total_intervals});
+        }
+
+        if ($overall_summary{total_intervals}) {
+            $overall_summary{throughput} /= $overall_summary{total_intervals};
+            $overall_summary{jitter} /= $overall_summary{total_intervals};
+        }
+
+        delete($overall_summary{total_intervals});
+
+        my @streams = values %streams;
+
+        $summary_interval = {
+            streams => \@streams,
+            summary => {
+                throughput => $overall_summary{throughput},
+                jitter => $overall_summary{jitter},
+                packets_sent => $overall_summary{packets_sent},
+                packets_lost => $overall_summary{packets_lost},
+            }
+        };
     }
 
     return {
         source => $source_addr,
         destination => $destination_addr,
         error => $error,
-        throughput => $throughput,
-        jitter => $jitter,
-        packets_sent => $packets_sent,
-        packets_lost => $packets_lost,
+        intervals => \@intervals,
+        summary => $summary_interval,
     };
 }
 
