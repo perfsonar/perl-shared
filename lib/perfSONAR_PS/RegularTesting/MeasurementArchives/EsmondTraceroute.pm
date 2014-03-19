@@ -114,15 +114,12 @@ sub handle_packet_trace(){
                     error_message => undef,
                     rtt => $hop->delay,
                     ip => $hop->address,
-                    mtu => undef,
+                    mtu => $hop->path_mtu,
                 };
             }
         }
         return \@packet_trace;
     }
-    
-    
-
     
     return undef;
 }
