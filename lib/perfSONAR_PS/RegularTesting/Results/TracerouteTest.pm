@@ -29,6 +29,7 @@ has 'end_time'           => (is => 'rw', isa => 'DateTime');
 
 has 'errors'          => (is => 'rw', isa => 'ArrayRef[Str]', default => sub { [] });
 
+has 'path_mtu'           => (is => 'rw', isa => 'Int');
 has 'hops'             => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::Results::TracerouteTestHop]', default => sub { [] });
 
 has 'raw_results'     => (is => 'rw', isa => 'Str');

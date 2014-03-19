@@ -19,6 +19,7 @@ has 'address'           => (is => 'rw', isa => 'Str');
 has 'query_number'      => (is => 'rw', isa => 'Int');
 has 'delay'             => (is => 'rw', isa => 'Num');
 has 'error'             => (is => 'rw', isa => 'Str');
+has 'path_mtu'          => (is => 'rw', isa => 'Int');
 
 no Moose;
 __PACKAGE__->meta->make_immutable;

@@ -105,9 +105,12 @@ override 'build_results' => sub {
             $hop->query_number($hop_desc->{queryNum}) if defined $hop_desc->{queryNum};
             $hop->delay($hop_desc->{delay}) if defined $hop_desc->{delay};
             $hop->error($hop_desc->{error}) if defined $hop_desc->{error};
+            $hop->path_mtu($hop_desc->{path_mtu}) if defined $hop_desc->{path_mtu};
             push @hops, $hop;
         }
     }
+
+    $results->path_mtu($bwctl_results->{results}->{path_mtu}) if defined $bwctl_results->{results}->{path_mtu};
 
     $results->hops(\@hops);
 
