@@ -136,7 +136,7 @@ sub parse_tracepath_output {
             else {
                 $hop_stats{hop} = $address;
                 $hop_stats{delay} = $rtt;
-                $hop_stats{pmtu} = $mtu;
+                $hop_stats{path_mtu} = $mtu;
             }
 
             # Skip cases that are obviously wrong
