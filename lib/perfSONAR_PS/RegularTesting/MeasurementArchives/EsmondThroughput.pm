@@ -68,7 +68,7 @@ override 'add_metadata_parameters' => sub{
 
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-transport-protocol', value => $results->source->protocol);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'time-duration', value => $test->parameters->duration);
-    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-tos', value => $results->tos_bits);
+    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-tos', value => $test->parameters->packet_tos_bits);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'bw-buffer-size', value => $results->buffer_length);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'bw-parallel-streams', value => $test->parameters->streams);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'bw-target-bandwidth', value => $results->bandwidth_limit);

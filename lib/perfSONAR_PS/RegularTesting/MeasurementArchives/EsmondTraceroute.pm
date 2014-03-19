@@ -65,6 +65,7 @@ override 'add_metadata_parameters' => sub{
 
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-transport-protocol', value => $results->source->protocol);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-packet-size', value => $test->parameters->packet_length);
+    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-tos', value => $test->parameters->packet_tos_bits);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'trace-first-ttl', value => $test->parameters->packet_first_ttl);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'trace-max-ttl', value => $test->parameters->packet_max_ttl);
     

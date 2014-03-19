@@ -107,6 +107,9 @@ override 'add_metadata_parameters' => sub{
     if($results->packet_count && $results->inter_packet_time && !$results->bidirectional){
         $self->add_metadata_opt_parameter(metadata => $metadata, key => 'time-duration', value => ($results->packet_count * $results->inter_packet_time));
     }
+    if($test->parameters->type() =~ /^bwping/){
+        $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-tos', value => $test->parameters->packet_tos_bits);
+    }
 };
 
 override 'add_datum' => sub {
