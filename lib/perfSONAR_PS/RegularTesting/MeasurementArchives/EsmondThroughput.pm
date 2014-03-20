@@ -54,7 +54,12 @@ override 'event_types' => sub {
         'packet-count-lost',
         'packet-count-sent',
         'throughput',
+        'throughput-subintervals',
         );
+    if($test->parameters->streams > 1){
+        push @event_types, 'streams-throughput';
+        push @event_types, 'streams-throughput-subintervals';
+    }
         
     return \@event_types;
 };
@@ -84,14 +89,19 @@ override 'add_datum' => sub {
     my $results = $parameters->{results};
     
     if($event_type eq 'packet-count-sent'){
-        return $results->packets_sent if($results->packets_sent);
+        return $self->handle_packets_sent(results=>$results);
     }elsif($event_type eq 'packet-count-lost'){
-        #only set packets lost if iperf actually returned packets sent
-        return $results->packets_lost if($results->packets_sent); 
+        return $self->handle_packets_lost(results=>$results);
     }elsif($event_type eq 'packet-loss-rate'){
         return $self->handle_packet_loss_rate(results=>$results);
     }elsif($event_type eq 'throughput'){
         return $self->handle_throughput(results=>$results);
+    }elsif($event_type eq 'throughput-subintervals'){
+        return $self->handle_throughput_subintervals(results=>$results);
+    }elsif($event_type eq 'streams-throughput'){
+        return $self->handle_streams_throughput(results=>$results);
+    }elsif($event_type eq 'streams-throughput-subintervals'){
+        return $self->handle_streams_throughput_subintervals(results=>$results);
     }elsif($event_type eq 'failures'){
         return $self->handle_failures(results=>$results);
     }else{
@@ -99,15 +109,129 @@ override 'add_datum' => sub {
     }
 };
 
+sub handle_packets_sent(){
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    
+    if(defined $results->summary_results &&
+        $results->summary_results->summary_results &&
+        $results->summary_results->summary_results->packets_sent){
+        return $results->summary_results->summary_results->packets_sent;
+    }
+    
+    return undef;
+}
+
+sub handle_packets_lost(){
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    
+    if(defined $results->summary_results &&
+        $results->summary_results->summary_results &&
+        defined $results->summary_results->summary_results->packets_lost &&
+        $results->summary_results->summary_results->packets_sent){#don't set unless we have packets sent
+        return $results->summary_results->summary_results->packets_lost;
+    }
+    
+    return undef;
+}
+
 sub handle_throughput(){
     my ($self, @args) = @_;
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if(defined $results->throughput){
-        return floor($results->throughput); #make an integer
+    if(defined $results->summary_results &&
+        $results->summary_results->summary_results &&
+        defined $results->summary_results->summary_results->throughput){
+        return floor($results->summary_results->summary_results->throughput); #make an integer
     }
     
+    return undef;
+}
+
+sub handle_throughput_subintervals(){
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    
+    if(defined $results->intervals && scalar( @{$results->intervals} > 0)){
+        my @esmond_subintervals = ();
+        #make sure sorted by start time
+        foreach my $interval(sort {$a->start <=> $b->start} @{$results->intervals}){
+             #don't even try to store really messed up subinterval
+            return undef if(!defined $interval->start || !defined $interval->duration);
+            my $tmpObj = {
+                'start' => sprintf("%f", $interval->start), 
+                'duration' => sprintf("%f", $interval->duration), 
+                'val' => undef
+                };
+            if(defined $interval->summary_results){
+                $tmpObj->{'val'} = $interval->summary_results->throughput;
+            }
+            push @esmond_subintervals, $tmpObj;
+        }
+        return \@esmond_subintervals;
+    }
+        
+    return undef;
+}
+
+sub handle_streams_throughput_subintervals(){
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    
+    if(defined $results->intervals && scalar( @{$results->intervals} > 0)){
+        #build subintervals for each stream id
+        my %stream_map = ();
+        #make sure sorted by start time
+        foreach my $interval(sort {$a->start <=> $b->start} @{$results->intervals}){
+             #don't even try to store really messed up subinterval
+            return undef if(!defined $interval->start || !defined $interval->duration);
+            foreach my $stream(@{$interval->streams}){
+                return undef if(!defined $stream->stream_id);
+                if(!exists $stream_map{$stream->stream_id}){
+                    $stream_map{$stream->stream_id} = [];
+                }
+                my $tmpObj = {
+                    'start' => sprintf("%f", $interval->start), 
+                    'duration' => sprintf("%f", $interval->duration), 
+                    'val' => $stream->throughput
+                };
+                push @{$stream_map{$stream->stream_id}}, $tmpObj;
+            }
+        }
+        
+        #sort by stream id
+        my @stream_ints = ();
+        foreach my $stream_id(sort keys %stream_map){
+            push @stream_ints, $stream_map{$stream_id};
+        }
+        return \@stream_ints;
+    }
+        
+    return undef;
+}
+
+sub handle_streams_throughput(){
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    
+    if(defined $results->summary_results && scalar( @{$results->summary_results->streams} > 0)){
+        my @stream_throughputs = ();
+        #make sure sorted by stream id
+        foreach my $stream(sort {$a->stream_id <=> $b->stream_id} @{$results->summary_results->streams}){
+             #don't even try to store really messed up stream
+            return undef if(!defined $stream->throughput);
+            push @stream_throughputs, $stream->throughput;
+        }
+        return \@stream_throughputs;
+    }
+        
     return undef;
 }
 
@@ -116,10 +240,12 @@ sub handle_packet_loss_rate(){
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if($results->packets_sent && defined $results->packets_lost){
+    my $sent = $self->handle_packets_sent(results=>$results);
+    my $lost = $self->handle_packets_lost(results=>$results);
+    if($sent && $lost){
         return {
-            'numerator' => $results->packets_lost,
-            'denominator' => $results->packets_sent 
+            'numerator' => $lost,
+            'denominator' => $sent
         };
     }
     
