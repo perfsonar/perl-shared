@@ -46,7 +46,7 @@ override 'store_results' => sub {
     my $md_url = uri_join($scheme, $auth, $metadata_uri);
     
     #write data
-    my($dcode, $dmsg) = $self->add_data(write_url=> $md_url, results => $results);
+    my($dcode, $dmsg) = $self->add_data(write_url=> $md_url, test =>$test, results => $results);
     if($dcode != 0){
         $logger->error("Error writing data ($dcode) $dmsg");
         return (1, "Error writing data: $dmsg");
@@ -132,7 +132,7 @@ sub add_metadata {
     }
     
     #add event types
-    foreach my $et (@{$self->event_types(results => $results)}){
+    foreach my $et (@{$self->event_types(test => $test, results => $results)}){
         my $et_obj = { 'event-type' => $et };
         if(exists $summ_map{$et} && $summ_map{$et}){
             $et_obj->{'summaries'} = $summ_map{$et};
@@ -161,15 +161,16 @@ sub add_metadata {
 
 sub add_data {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {write_url => 1, results => 1});
+    my $parameters = validate( @args, {write_url => 1, test => 1, results => 1});
     my $write_url = $parameters->{write_url};
     my $results = $parameters->{results};
+    my $test = $parameters->{test};
     
     #format data
     my $data = [];
     foreach my $ts (@{$self->get_timestamps(results => $results)}){
         my $vals = [];
-        foreach my $et (@{$self->event_types(results => $results)}){
+        foreach my $et (@{$self->event_types(test => $test, results => $results)}){
             my $datum = $self->add_datum(timestamp=>$ts, event_type=> $et, results => $results);
             push @{$vals}, {'event-type' => $et, 'val' => $datum} if(defined $datum);
         }

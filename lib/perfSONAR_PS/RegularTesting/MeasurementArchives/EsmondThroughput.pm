@@ -44,7 +44,7 @@ override 'tool_name' => sub {
 
 override 'event_types' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {results => 1});
+    my $parameters = validate( @args, {test => 1, results => 1});
     my $results = $parameters->{results};
     my $test = $parameters->{test};
     
