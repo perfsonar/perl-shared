@@ -53,10 +53,12 @@ override 'event_types' => sub {
         'packet-loss-rate',
         'packet-count-lost',
         'packet-count-sent',
+        'packet-retransmits',
         'throughput',
         'throughput-subintervals',
         );
     if($test->parameters->streams > 1){
+        push @event_types, 'streams-retransmits';
         push @event_types, 'streams-throughput';
         push @event_types, 'streams-throughput-subintervals';
     }
@@ -94,10 +96,14 @@ override 'add_datum' => sub {
         return $self->handle_packets_lost(results=>$results);
     }elsif($event_type eq 'packet-loss-rate'){
         return $self->handle_packet_loss_rate(results=>$results);
+    }elsif($event_type eq 'packet-retransmits'){
+        return $self->handle_packet_retransmits(results=>$results);
     }elsif($event_type eq 'throughput'){
         return $self->handle_throughput(results=>$results);
     }elsif($event_type eq 'throughput-subintervals'){
         return $self->handle_throughput_subintervals(results=>$results);
+    }elsif($event_type eq 'streams-retransmits'){
+        return $self->handle_streams_retransmits(results=>$results);
     }elsif($event_type eq 'streams-throughput'){
         return $self->handle_streams_throughput(results=>$results);
     }elsif($event_type eq 'streams-throughput-subintervals'){
@@ -147,6 +153,20 @@ sub handle_throughput(){
         $results->summary_results->summary_results &&
         defined $results->summary_results->summary_results->throughput){
         return floor($results->summary_results->summary_results->throughput); #make an integer
+    }
+    
+    return undef;
+}
+
+sub handle_packet_retransmits(){
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    
+    if(defined $results->summary_results &&
+        $results->summary_results->summary_results &&
+        defined $results->summary_results->summary_results->retransmits){
+        return floor($results->summary_results->summary_results->retransmits); #make an integer
     }
     
     return undef;
@@ -230,6 +250,25 @@ sub handle_streams_throughput(){
             push @stream_throughputs, $stream->throughput;
         }
         return \@stream_throughputs;
+    }
+        
+    return undef;
+}
+
+sub handle_streams_retransmits(){
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    
+    if(defined $results->summary_results && scalar( @{$results->summary_results->streams} > 0)){
+        my @stream_retransmits = ();
+        #make sure sorted by stream id
+        foreach my $stream(sort {$a->stream_id <=> $b->stream_id} @{$results->summary_results->streams}){
+             #don't even try to store really messed up stream
+            return undef if(!defined $stream->retransmits);
+            push @stream_retransmits, $stream->retransmits;
+        }
+        return \@stream_retransmits;
     }
         
     return undef;
