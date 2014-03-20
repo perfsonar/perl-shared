@@ -261,6 +261,7 @@ sub fill_iperf3_data {
         my $stream_obj = perfSONAR_PS::RegularTesting::Results::ThroughputTestResults->new();
         $stream_obj->stream_id($stream->{receiver}->{socket});
         $stream_obj->throughput($stream->{receiver}->{bits_per_second});
+        $stream_obj->retransmits($stream->{sender}->{retransmits}) if defined $stream->{sender}->{retransmits};
         # XXX: $stream_obj->jitter($stream->{jitter});
         # XXX: $stream_obj->packets_lost($stream->{packets_lost});
         # XXX: $stream_obj->packets_sent($stream->{packets_sent});
@@ -270,11 +271,12 @@ sub fill_iperf3_data {
     $summary_result_obj->streams(\@streams);
 
     my $summary_overall_obj = perfSONAR_PS::RegularTesting::Results::ThroughputTestResults->new();
-    $summary_overall_obj->throughput($results->{end}->{sum_received}->{throughput}) if $results->{end}->{sum_received}->{throughput};
+    $summary_overall_obj->throughput($results->{end}->{sum_received}->{bits_per_second}) if $results->{end}->{sum_received}->{bits_per_second};
     $summary_overall_obj->jitter($results->{end}->{sum_received}->{jitter}) if $results->{end}->{sum_received}->{jitter};
     $summary_overall_obj->packets_sent($results->{end}->{sum_received}->{packets_sent}) if defined $results->{end}->{sum_received}->{packets_sent};
     $summary_overall_obj->packets_lost($results->{end}->{sum_received}->{packets_lost}) if defined $results->{end}->{sum_received}->{packets_lost};
-
+    $summary_overall_obj->retransmits($results->{end}->{sum_sent}->{retransmits}) if defined $results->{end}->{sum_sent}->{retransmits};
+    
     $summary_result_obj->summary_results($summary_overall_obj);
 
     # Fill in the test
