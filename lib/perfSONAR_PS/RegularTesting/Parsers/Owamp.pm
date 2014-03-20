@@ -59,6 +59,7 @@ sub parse_owamp_raw_output {
             if ($destination_timestamp != 0) {
                 $packet_desc{delay} = owpdelay($source_timestamp, $destination_timestamp);
                 $packet_desc{ttl}   = $ttl;
+                $packet_desc{max_error} = ($source_error > $destination_error ? $source_error :  $destination_error);
             }
 
             push @packets, \%packet_desc;

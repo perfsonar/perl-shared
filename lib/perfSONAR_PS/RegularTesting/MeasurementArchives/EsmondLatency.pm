@@ -59,7 +59,6 @@ override 'event_types' => sub {
         'packet-loss-rate',
         'packet-count-lost',
         'packet-count-sent',
-        #'time-error-estimates',
         );
     if($results->bidirectional){
         push  @event_types, 'histogram-rtt';
@@ -68,6 +67,9 @@ override 'event_types' => sub {
     }
     if($test->parameters->type() ne 'powstream'){
         push  @event_types, 'packet-reorders';
+    }
+    if($test->parameters->type() ne 'bwping'){
+        push  @event_types, 'time-error-estimates';
     }
     
     return \@event_types;
@@ -110,7 +112,7 @@ override 'add_metadata_parameters' => sub{
     if($results->packet_count && $results->inter_packet_time && !$results->bidirectional){
         $self->add_metadata_opt_parameter(metadata => $metadata, key => 'time-duration', value => ($results->packet_count * $results->inter_packet_time));
     }
-    if($test->parameters->type() =~ /^bwping/){
+    if($test->parameters->type() eq 'bwping'){
         $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-tos', value => $test->parameters->packet_tos_bits);
     }
 };
@@ -235,7 +237,7 @@ sub handle_duplicates(){
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-   if(defined $results->duplicate_packets){
+    if(defined $results->duplicate_packets){
         return $results->duplicate_packets;
     }elsif (scalar(@{ $results->pings }) > 0) {    
         my ($dups, $sent, $recv, $oops) = $self->parse_ping(results => $results);
@@ -307,7 +309,14 @@ sub handle_histogram_delay(){
 }
 
 sub handle_time_error_estimates(){
-    #not yet implemented
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    
+    if(defined $results->time_error_estimate){
+        return sprintf("%f", $results->time_error_estimate);
+    }
+    
     return undef;
 }
 
