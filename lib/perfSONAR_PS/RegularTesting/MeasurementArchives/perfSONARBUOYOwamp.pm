@@ -24,8 +24,7 @@ override 'type' => sub { "perfsonarbuoy/owamp" };
 
 override 'accepts_results' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, { test => 1, results => 1, });
-    my $test    = $parameters->{test};
+    my $parameters = validate( @args, { test => 1, target => 1, test_parameters => 1, results => 1});
     my $results = $parameters->{results};
 
     return ($results->type eq "latency" and not $results->bidirectional);
@@ -34,11 +33,15 @@ override 'accepts_results' => sub {
 override 'store_results' => sub {
     my ($self, @args) = @_;
     my $parameters = validate( @args, {
-                                         test    => 1,
-                                         results => 1,
+                                         test            => 1,
+                                         target          => 1,
+                                         test_parameters => 1,
+                                         results         => 1,
                                       });
-    my $test    = $parameters->{test};
-    my $results = $parameters->{results};
+    my $test            = $parameters->{test};
+    my $target          = $parameters->{target};
+    my $test_parameters = $parameters->{test_parameters};
+    my $results         = $parameters->{results};
 
     my $bucket_width = 0.0001;
 

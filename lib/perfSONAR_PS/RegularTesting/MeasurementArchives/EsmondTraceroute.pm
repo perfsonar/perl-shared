@@ -21,7 +21,7 @@ override 'type' => sub { "esmond/traceroute" };
 
 override 'accepts_results' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, { test => 1, results => 1});
+    my $parameters = validate( @args, { test => 1, target => 1, test_parameters => 1, results => 1});
     my $results = $parameters->{results};
 
     return ($results->type eq "traceroute");
@@ -29,16 +29,16 @@ override 'accepts_results' => sub {
 
 override 'tool_name' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {test => 1, results => 1});
+    my $parameters = validate( @args, {test_parameters => 1, results => 1});
     my $results = $parameters->{results};
-    my $test = $parameters->{test};
+    my $test_parameters = $parameters->{test_parameters};
 
-    if($test->parameters->type() eq 'bwtraceroute'){
-        return 'bwctl/' . $test->parameters->tool;
+    if($test_parameters->type() eq 'bwtraceroute'){
+        return 'bwctl/' . $test_parameters->tool;
     }
     
     #unrecognized so just return type directly
-    return $test->parameters->type();
+    return $test_parameters->type;
 
 };
 
@@ -59,16 +59,18 @@ override 'event_types' => sub {
 
 override 'add_metadata_parameters' => sub{
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {test => 1, metadata => 1, results => 1});
+    my $parameters = validate( @args, {test => 1, target => 1, test_parameters => 1, metadata => 1, results => 1});
     my $metadata = $parameters->{metadata};
     my $results = $parameters->{results};
     my $test = $parameters->{test};
+    my $target = $parameters->{target};
+    my $test_parameters = $parameters->{test_parameters};
 
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-transport-protocol', value => $results->source->protocol);
-    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-packet-size', value => $test->parameters->packet_length);
-    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-tos', value => $test->parameters->packet_tos_bits);
-    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'trace-first-ttl', value => $test->parameters->packet_first_ttl);
-    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'trace-max-ttl', value => $test->parameters->packet_max_ttl);
+    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-packet-size', value => $test_parameters->packet_length);
+    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-tos', value => $test_parameters->packet_tos_bits);
+    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'trace-first-ttl', value => $test_parameters->packet_first_ttl);
+    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'trace-max-ttl', value => $test_parameters->packet_max_ttl);
     
 };
 

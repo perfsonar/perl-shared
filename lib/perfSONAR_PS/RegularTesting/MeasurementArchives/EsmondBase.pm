@@ -28,13 +28,17 @@ has 'disable_default_summaries' => (is => 'rw', isa => 'Bool', default => sub { 
 override 'store_results' => sub {
     my ($self, @args) = @_;
     my $parameters = validate( @args, {  test => 1, 
+                                         target  => 1,
+                                         test_parameters => 1,
                                          results => 1,
                                       });
     my $test = $parameters->{test};
+    my $target = $parameters->{target};
+    my $test_parameters = $parameters->{test_parameters};
     my $results = $parameters->{results};
     
     #create/retrieve metadata
-    my ($mdcode, $mdmsg, $metadata_uri) = $self->add_metadata(test => $test, results => $results);
+    my ($mdcode, $mdmsg, $metadata_uri) = $self->add_metadata(test => $test, target => $target, test_parameters => $test_parameters, results => $results);
     if($mdcode != 0){
         $logger->error("Error writing metadata ($mdcode) $mdmsg");
         return (1, "Error writing metadata: $mdmsg");
@@ -46,7 +50,7 @@ override 'store_results' => sub {
     my $md_url = uri_join($scheme, $auth, $metadata_uri);
     
     #write data
-    my($dcode, $dmsg) = $self->add_data(write_url=> $md_url, test =>$test, results => $results);
+    my($dcode, $dmsg) = $self->add_data(write_url=> $md_url, test =>$test, target => $target, test_parameters => $test_parameters, results => $results);
     if($dcode != 0){
         $logger->error("Error writing data ($dcode) $dmsg");
         return (1, "Error writing data: $dmsg");
@@ -67,8 +71,10 @@ override 'nonce' => sub {
 
 sub add_metadata {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, { test => 1, results => 1});
+    my $parameters = validate( @args, { test => 1, target => 1, test_parameters => 1, results => 1});
     my $test = $parameters->{test};
+    my $target = $parameters->{target};
+    my $test_parameters = $parameters->{test_parameters};
     my $results = $parameters->{results};
     my $metadata = {};
     if (!$results->{source}){
@@ -90,7 +96,7 @@ sub add_metadata {
     $metadata->{'subject-type'} = 'point-to-point';
     $metadata->{'source'} = $results->{source}->{address};
     $metadata->{'destination'} = $results->{destination}->{address};
-    $metadata->{'tool-name'} = $self->tool_name(test => $test, results => $results);
+    $metadata->{'tool-name'} = $self->tool_name(test_parameters => $test_parameters, results => $results);
     $metadata->{'measurement-agent'} = $results->{source}->{address}; #TODO fix
     if($results->{source}->{hostname}){
         $metadata->{'input-source'} = $results->{source}->{hostname};
@@ -132,7 +138,7 @@ sub add_metadata {
     }
     
     #add event types
-    foreach my $et (@{$self->event_types(test => $test, results => $results)}){
+    foreach my $et (@{$self->event_types(test_parameters => $test_parameters, results => $results)}){
         my $et_obj = { 'event-type' => $et };
         if(exists $summ_map{$et} && $summ_map{$et}){
             $et_obj->{'summaries'} = $summ_map{$et};
@@ -140,7 +146,7 @@ sub add_metadata {
         push @{$metadata->{'event-types'}}, $et_obj;
     }
     #set application specific parameters
-    $self->add_metadata_parameters(metadata=> $metadata, test=>$test, results => $results);
+    $self->add_metadata_parameters(metadata=> $metadata, test=>$test, target => $target, test_parameters => $test_parameters, results => $results);
     
     #write to MA
     my $response = $self->send_post(url => $self->database, json => $metadata);
@@ -161,16 +167,18 @@ sub add_metadata {
 
 sub add_data {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {write_url => 1, test => 1, results => 1});
+    my $parameters = validate( @args, {write_url => 1, test => 1, target => 1, test_parameters => 1, results => 1});
     my $write_url = $parameters->{write_url};
     my $results = $parameters->{results};
     my $test = $parameters->{test};
+    my $target = $parameters->{target};
+    my $test_parameters = $parameters->{test_parameters};
     
     #format data
     my $data = [];
     foreach my $ts (@{$self->get_timestamps(results => $results)}){
         my $vals = [];
-        foreach my $et (@{$self->event_types(test => $test, results => $results)}){
+        foreach my $et (@{$self->event_types(test_parameters => $test_parameters, results => $results)}){
             my $datum = $self->add_datum(timestamp=>$ts, event_type=> $et, results => $results);
             push @{$vals}, {'event-type' => $et, 'val' => $datum} if(defined $datum);
         }

@@ -17,6 +17,8 @@ extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
 has 'description'          => (is => 'rw', isa => 'Str');
 has 'address'              => (is => 'rw', isa => 'Str');
 
+has 'override_parameters'  => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Tests::Base');
+
 my $logger = get_logger(__PACKAGE__);
 
 override 'parse' => sub {

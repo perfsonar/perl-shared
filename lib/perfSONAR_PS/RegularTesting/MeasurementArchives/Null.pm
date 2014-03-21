@@ -26,9 +26,7 @@ override 'nonce' => sub {
 
 override 'accepts_results' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, { test => 1, results => 1, });
-    my $test    = $parameters->{test};
-    my $results = $parameters->{results};
+    my $parameters = validate( @args, { test => 1, target => 1, test_parameters => 1, results => 1});
 
     return 1;
 };
@@ -37,9 +35,10 @@ override 'store_results' => sub {
     my ($self, @args) = @_;
     my $parameters = validate( @args, {
                                          test    => 1,
+                                         target  => 1,
+                                         test_parameters => 1,
                                          results => 1,
                                       });
-    my $test    = $parameters->{test};
     my $results = $parameters->{results};
 
     $logger->debug("Got results: ".JSON->new->pretty->encode($results->unparse));

@@ -21,7 +21,7 @@ override 'type' => sub { "esmond/latency" };
 
 override 'accepts_results' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, { test => 1, results => 1});
+    my $parameters = validate( @args, { test => 1, target => 1, test_parameters => 1, results => 1});
     my $results = $parameters->{results};
 
     return ($results->type eq "latency");
@@ -29,28 +29,28 @@ override 'accepts_results' => sub {
 
 override 'tool_name' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {test => 1, results => 1});
+    my $parameters = validate( @args, {test_parameters => 1, results => 1});
     my $results = $parameters->{results};
-    my $test = $parameters->{test};
+    my $test_parameters = $parameters->{test_parameters};
 
-    if($test->parameters->type() eq 'bwping'){
+    if($test_parameters->type eq 'bwping'){
         return 'bwctl/ping';
-    }elsif($test->parameters->type() eq 'powstream'){
+    }elsif($test_parameters->type eq 'powstream'){
         return 'powstream';
-    }elsif($test->parameters->type() eq 'bwping/owamp'){
+    }elsif($test_parameters->type eq 'bwping/owamp'){
         return 'bwctl/owping';
     }
     
     #unrecognized so just return type directly
-    return $test->parameters->type();
+    return $test_parameters->type();
 
 };
 
 override 'event_types' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {test => 1, results => 1});
+    my $parameters = validate( @args, {test_parameters => 1, results => 1});
     my $results = $parameters->{results};
-    my $test = $parameters->{test};
+    my $test_parameters = $parameters->{test_parameters};
     
     my @event_types = (
         'failures',
@@ -65,10 +65,10 @@ override 'event_types' => sub {
     }else{
         push  @event_types, 'histogram-owdelay';
     }
-    if($test->parameters->type() ne 'powstream'){
+    if($test_parameters->type ne 'powstream'){
         push  @event_types, 'packet-reorders';
     }
-    if($test->parameters->type() ne 'bwping'){
+    if($test_parameters->type ne 'bwping'){
         push  @event_types, 'time-error-estimates';
     }
     
@@ -97,10 +97,11 @@ override 'default_summaries' => sub {
 
 override 'add_metadata_parameters' => sub{
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {test => 1, metadata => 1, results => 1});
+    my $parameters = validate( @args, {test => 1, test_parameters => 1, metadata => 1, results => 1});
     my $metadata = $parameters->{metadata};
     my $results = $parameters->{results};
     my $test = $parameters->{test};
+    my $test_parameters = $parameters->{test_parameters};
     
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-packet-size', value => $results->packet_size);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-packet-interval', value => $results->inter_packet_time);
@@ -112,8 +113,8 @@ override 'add_metadata_parameters' => sub{
     if($results->packet_count && $results->inter_packet_time && !$results->bidirectional){
         $self->add_metadata_opt_parameter(metadata => $metadata, key => 'time-duration', value => ($results->packet_count * $results->inter_packet_time));
     }
-    if($test->parameters->type() eq 'bwping'){
-        $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-tos', value => $test->parameters->packet_tos_bits);
+    if($test_parameters->type eq 'bwping'){
+        $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-tos', value => $test_parameters->packet_tos_bits);
     }
 };
 

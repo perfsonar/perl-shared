@@ -37,24 +37,26 @@ override 'build_cmd' => sub {
                                          force_ipv4 => 0,
                                          force_ipv6 => 0,
                                          results_directory => 1,
+                                         test_parameters => 1,
                                          schedule => 0,
                                       });
     my $source            = $parameters->{source};
     my $destination       = $parameters->{destination};
     my $results_directory = $parameters->{results_directory};
+    my $test_parameters   = $parameters->{test_parameters};
     my $schedule          = $parameters->{schedule};
 
     my @cmd = ();
-    push @cmd, $self->bwping_cmd;
+    push @cmd, $test_parameters->bwping_cmd;
 
     # Add the parameters from the parent class
     push @cmd, super();
 
     # XXX: need to set interpacket time
 
-    push @cmd, ( '-N', $self->packet_count ) if $self->packet_count;
-    push @cmd, ( '-l', $self->packet_length ) if $self->packet_length;
-    push @cmd, ( '-i', $self->inter_packet_time ) if $self->inter_packet_time;
+    push @cmd, ( '-N', $test_parameters->packet_count ) if $test_parameters->packet_count;
+    push @cmd, ( '-l', $test_parameters->packet_length ) if $test_parameters->packet_length;
+    push @cmd, ( '-i', $test_parameters->inter_packet_time ) if $test_parameters->inter_packet_time;
 
     # Get the raw output
     push @cmd, ( '-y', 'R' );
@@ -70,10 +72,11 @@ override 'build_results' => sub {
                                          schedule => 0,
                                          output => 1,
                                       });
-    my $source         = $parameters->{source};
-    my $destination    = $parameters->{destination};
-    my $schedule       = $parameters->{schedule};
-    my $output         = $parameters->{output};
+    my $source          = $parameters->{source};
+    my $destination     = $parameters->{destination};
+    my $test_parameters = $parameters->{parameters};
+    my $schedule        = $parameters->{schedule};
+    my $output          = $parameters->{output};
 
     my $results = perfSONAR_PS::RegularTesting::Results::LatencyTest->new();
 
@@ -81,12 +84,12 @@ override 'build_results' => sub {
     $results->source($self->build_endpoint(address => $source, protocol => "udp" ));
     $results->destination($self->build_endpoint(address => $destination, protocol => "udp" ));
 
-    $results->packet_count($self->packet_count);
-    $results->packet_size($self->packet_length);
-    $results->inter_packet_time($self->inter_packet_time);
+    $results->packet_count($test_parameters->packet_count);
+    $results->packet_size($test_parameters->packet_length);
+    $results->inter_packet_time($test_parameters->inter_packet_time);
 
     # Parse the bwctl output, and add it in
-    my $bwctl_results = parse_bwctl_output({ stdout => $output, tool_type => $self->tool });
+    my $bwctl_results = parse_bwctl_output({ stdout => $output, tool_type => $test_parameters->tool });
 
     $results->source->address($bwctl_results->{sender_address}) if $bwctl_results->{sender_address};
     $results->destination->address($bwctl_results->{receiver_address}) if $bwctl_results->{receiver_address};

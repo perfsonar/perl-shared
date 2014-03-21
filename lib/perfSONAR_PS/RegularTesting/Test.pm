@@ -84,6 +84,22 @@ sub stop_test {
     return $self->parameters->stop_test();
 }
 
+sub get_target_parameters {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {
+                                         target => 1,
+                                      });
+    my $target = $parameters->{target};
+
+    my $target_parameters = $self->parameters;
+
+    if ($target->override_parameters) {
+        $target_parameters = $target_parameters->merge(other => $target->override_parameters);
+    }
+
+    return $target_parameters;
+}
+
 sub handles_own_scheduling {
     my ($self) = @_;
 

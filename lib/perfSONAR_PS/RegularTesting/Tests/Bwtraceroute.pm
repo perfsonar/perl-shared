@@ -37,24 +37,26 @@ override 'build_cmd' => sub {
                                          force_ipv4 => 0,
                                          force_ipv6 => 0,
                                          results_directory => 1,
+                                         test_parameters => 1,
                                          schedule => 0,
                                       });
     my $source            = $parameters->{source};
     my $destination       = $parameters->{destination};
     my $results_directory = $parameters->{results_directory};
+    my $test_parameters   = $parameters->{test_parameters};
     my $schedule          = $parameters->{schedule};
 
     my @cmd = ();
-    push @cmd, $self->bwtraceroute_cmd;
+    push @cmd, $test_parameters->bwtraceroute_cmd;
 
     # Add the parameters from the parent class
     push @cmd, super();
 
     # XXX: need to set interpacket time
 
-    push @cmd, ( '-F', $self->packet_first_ttl ) if $self->packet_first_ttl;
-    push @cmd, ( '-M', $self->packet_max_ttl ) if $self->packet_max_ttl;
-    push @cmd, ( '-l', $self->packet_length ) if $self->packet_length;
+    push @cmd, ( '-F', $test_parameters->packet_first_ttl ) if $test_parameters->packet_first_ttl;
+    push @cmd, ( '-M', $test_parameters->packet_max_ttl ) if $test_parameters->packet_max_ttl;
+    push @cmd, ( '-l', $test_parameters->packet_length ) if $test_parameters->packet_length;
 
     # Prevent traceroute from doing DNS lookups since Net::Traceroute doesn't
     # like them...
@@ -70,13 +72,15 @@ override 'build_results' => sub {
     my $parameters = validate( @args, { 
                                          source => 1,
                                          destination => 1,
+                                         test_parameters => 1,
                                          schedule => 0,
                                          output => 1,
                                       });
-    my $source         = $parameters->{source};
-    my $destination    = $parameters->{destination};
-    my $schedule       = $parameters->{schedule};
-    my $output         = $parameters->{output};
+    my $source          = $parameters->{source};
+    my $destination     = $parameters->{destination};
+    my $test_parameters = $parameters->{test_parameters};
+    my $schedule        = $parameters->{schedule};
+    my $output          = $parameters->{output};
 
     my $results = perfSONAR_PS::RegularTesting::Results::TracerouteTest->new();
 
@@ -84,12 +88,12 @@ override 'build_results' => sub {
     $results->source($self->build_endpoint(address => $source, protocol => "icmp" ));
     $results->destination($self->build_endpoint(address => $destination, protocol => "icmp" ));
 
-    $results->packet_size($self->packet_length);
-    $results->packet_first_ttl($self->packet_max_ttl);
-    $results->packet_max_ttl($self->packet_max_ttl);
+    $results->packet_size($test_parameters->packet_length);
+    $results->packet_first_ttl($test_parameters->packet_max_ttl);
+    $results->packet_max_ttl($test_parameters->packet_max_ttl);
 
     # Parse the bwctl output, and add it in
-    my $bwctl_results = parse_bwctl_output({ stdout => $output, tool_type => $self->tool });
+    my $bwctl_results = parse_bwctl_output({ stdout => $output, tool_type => $test_parameters->tool });
 
     $logger->debug("BWCTL Results: ".Dumper($bwctl_results));
 

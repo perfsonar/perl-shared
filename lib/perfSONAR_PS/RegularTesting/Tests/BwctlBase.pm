@@ -66,38 +66,44 @@ sub get_individual_tests {
  
     # Build the set of set of tests that make up this bwctl test
     foreach my $target (@{ $test->targets }) {
+        my $target_parameters = $test->get_target_parameters(target => $target);
+
 	# If they specify an interface, use that. If they specify an address,
 	# that takes precendence.
         my $local_address;
         $local_address = $test->local_interface if $test->local_interface;
         $local_address = $test->local_address   if $test->local_address;
 
-        unless ($test->parameters->send_only) {
-            if (is_hostname($target->address) and $test->parameters->test_ipv4_ipv6) {
-                push @tests, { source => $local_address, destination => $target->address, force_ipv4 => 1 };
-                push @tests, { source => $local_address, destination => $target->address, force_ipv6 => 1 };
+        unless ($target_parameters->send_only) {
+            if (is_hostname($target->address) and $target_parameters->test_ipv4_ipv6) {
+                push @tests, { target => $target, source => $local_address, destination => $target->address, force_ipv4 => 1, test_parameters => $target_parameters };
+                push @tests, { target => $target, source => $local_address, destination => $target->address, force_ipv6 => 1, test_parameters => $target_parameters };
             }
             else {
                 push @tests, {
+                               target      => $target,
                                source      => $local_address,
                                destination => $target->address,
-                               force_ipv4 => $test->parameters->force_ipv4,
-                               force_ipv6 => $test->parameters->force_ipv6,
+                               force_ipv4 => $target_parameters->force_ipv4,
+                               force_ipv6 => $target_parameters->force_ipv6,
+                               test_parameters => $target_parameters,
                              };
 
             }
         }
-        unless ($test->parameters->receive_only) {
-            if (is_hostname($target->address) and $test->parameters->test_ipv4_ipv6) {
-                push @tests, { source => $target->address, destination => $local_address, force_ipv4 => 1 };
-                push @tests, { source => $target->address, destination => $local_address, force_ipv6 => 1 };
+        unless ($target_parameters->receive_only) {
+            if (is_hostname($target->address) and $target_parameters->test_ipv4_ipv6) {
+                push @tests, { target => $target, source => $target->address, destination => $local_address, force_ipv4 => 1, test_parameters => $target_parameters };
+                push @tests, { target => $target, source => $target->address, destination => $local_address, force_ipv6 => 1, test_parameters => $target_parameters };
             }
             else {
                 push @tests, {
+                               target => $target,
                                source => $target->address,
                                destination => $local_address,
-                               force_ipv4 => $test->parameters->force_ipv4,
-                               force_ipv6 => $test->parameters->force_ipv6,
+                               force_ipv4 => $target_parameters->force_ipv4,
+                               force_ipv6 => $target_parameters->force_ipv6,
+                               test_parameters => $target_parameters,
                              };
 
             }
@@ -149,6 +155,7 @@ override 'run_test' => sub {
                                      force_ipv4 => $individual_test->{force_ipv4},
                                      force_ipv6 => $individual_test->{force_ipv6},
                                      results_directory => $individual_test->{results_directory},
+                                     test_parameters => $individual_test->{test_parameters},
                                      schedule => $test->schedule
                                   });
 
@@ -222,6 +229,7 @@ sub handle_output {
         my $results = $self->build_results({
                 source => $individual_test->{source},
                 destination => $individual_test->{destination},
+                test_parameters => $individual_test->{test_parameters},
                 schedule => $test->schedule,
                 output => $contents,
         });
@@ -229,7 +237,7 @@ sub handle_output {
         next unless $results;
 
         eval {
-            $handle_results->(results => $results);
+            $handle_results->(test => $test, target => $individual_test->{target}, test_parameters => $individual_test->{test_parameters}, results => $results);
         };
         if ($@) {
             $logger->error("Problem saving results: $@");
@@ -247,6 +255,7 @@ sub build_cmd {
                                          force_ipv4 => 0,
                                          force_ipv6 => 0,
                                          results_directory => 1,
+                                         test_parameters => 1,
                                          schedule => 0,
                                       });
     my $source            = $parameters->{source};
@@ -254,22 +263,23 @@ sub build_cmd {
     my $force_ipv4         = $parameters->{force_ipv4};
     my $force_ipv6         = $parameters->{force_ipv6};
     my $results_directory = $parameters->{results_directory};
+    my $test_parameters   = $parameters->{test_parameters};
     my $schedule          = $parameters->{schedule};
 
     my @cmd = ();
     push @cmd, ( '-s', $source ) if $source;
     push @cmd, ( '-c', $destination ) if $destination;
-    push @cmd, ( '-T', $self->tool ) if $self->tool;
+    push @cmd, ( '-T', $test_parameters->tool ) if $test_parameters->tool;
     push @cmd, '-4' if $force_ipv4;
     push @cmd, '-6' if $force_ipv6;
 
     # Add the scheduling information
     push @cmd, ( '-I', $schedule->interval );
     push @cmd, ( '-p', '-d', $results_directory );
-    push @cmd, ( '-L', $self->latest_time ) if $self->latest_time;
+    push @cmd, ( '-L', $test_parameters->latest_time ) if $test_parameters->latest_time;
 
-    if ($self->can("packet_tos_bits") and $self->packet_tos_bits) {
-        push @cmd, ( '--tos', $self->packet_tos_bits );
+    if ($test_parameters->can("packet_tos_bits") and $test_parameters->packet_tos_bits) {
+        push @cmd, ( '--tos', $test_parameters->packet_tos_bits );
     }
 
     return @cmd;
@@ -280,6 +290,7 @@ sub build_results {
     my $parameters = validate( @args, { 
                                          source => 1,
                                          destination => 1,
+                                         test_parameters => 1,
                                          schedule => 0,
                                          output => 1,
                                       });

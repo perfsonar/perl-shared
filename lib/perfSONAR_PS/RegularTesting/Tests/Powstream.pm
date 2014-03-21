@@ -75,31 +75,35 @@ sub get_individual_tests {
  
     # Build the set of set of tests that make up this bwctl test
     foreach my $target (@{ $test->targets }) {
+        my $target_parameters = $test->get_target_parameters(target => $target);
+
         unless ($test->parameters->send_only) {
             if (is_hostname($target->address) and $test->parameters->test_ipv4_ipv6) {
-                push @tests, { target => $target->address, receiver => 1, force_ipv4 => 1 };
-                push @tests, { target => $target->address, receiver => 1, force_ipv6 => 1 };
+                push @tests, { target => $target, receiver => 1, force_ipv4 => 1, test_parameters => $target_parameters };
+                push @tests, { target => $target, receiver => 1, force_ipv6 => 1, test_parameters => $target_parameters };
             }
             else {
                 push @tests, {
-                               target => $target->address,
+                               target => $target,
                                receiver => 1,
                                force_ipv4 => $test->parameters->force_ipv4,
                                force_ipv6 => $test->parameters->force_ipv6,
+                               test_parameters => $target_parameters,
                              };
             }
         }
         unless ($test->parameters->receive_only) {
             if (is_hostname($target->address) and $test->parameters->test_ipv4_ipv6) {
-                push @tests, { target => $target->address, sender => 1, force_ipv4 => 1 };
-                push @tests, { target => $target->address, sender => 1, force_ipv6 => 1 };
+                push @tests, { target => $target, sender => 1, force_ipv4 => 1, test_parameters => $target_parameters };
+                push @tests, { target => $target, sender => 1, force_ipv6 => 1, test_parameters => $target_parameters };
             }
             else {
                 push @tests, {
-                               target => $target->address,
+                               target => $target,
                                sender => 1,
                                force_ipv4 => $test->parameters->force_ipv4,
                                force_ipv6 => $test->parameters->force_ipv6,
+                               test_parameters => $target_parameters,
                              };
             }
         }
@@ -144,17 +148,19 @@ override 'run_test' => sub {
 
     my @cmds = ();
     foreach my $individual_test (@{ $self->_individual_tests }) {
+        my $test_parameters = $individual_test->{test_parameters};
+
         # Calculate the total number of packets from the resolution
-        my $packets = $self->resolution / $self->inter_packet_time;
+        my $packets = $test_parameters->resolution / $test_parameters->inter_packet_time;
 
         my @cmd = ();
-        push @cmd, $self->powstream_cmd;
+        push @cmd, $test_parameters->powstream_cmd;
         push @cmd, '-4' if $individual_test->{force_ipv4};
         push @cmd, '-6' if $individual_test->{force_ipv6};
         push @cmd, ( '-p', '-d', $individual_test->{results_directory} );
         push @cmd, ( '-c', $packets );
-        push @cmd, ( '-s', $self->packet_length ) if $self->packet_length;
-        push @cmd, ( '-i', $self->inter_packet_time ) if $self->inter_packet_time;
+        push @cmd, ( '-s', $test_parameters->packet_length ) if $test_parameters->packet_length;
+        push @cmd, ( '-i', $test_parameters->inter_packet_time ) if $test_parameters->inter_packet_time;
         if ($test->local_address) {
             push @cmd, ( '-S', $test->local_address );
         }
@@ -162,7 +168,7 @@ override 'run_test' => sub {
             push @cmd, ( '-S', $test->local_interface );
         }
         push @cmd, '-t' if $individual_test->{sender};
-        push @cmd, $individual_test->{target};
+        push @cmd, $individual_test->{target}->address;
 
         my $cmd = perfSONAR_PS::RegularTesting::Utils::CmdRunner::Cmd->new();
 
@@ -218,23 +224,30 @@ sub handle_output {
     my $stderr          = $parameters->{stderr};
     my $handle_results  = $parameters->{handle_results};
 
+    if ($stderr and scalar(@$stderr) > 0) {
+        $logger->debug("Powstream output: ".join('\n', @$stderr));
+    }
+
     foreach my $file (@$stdout) {
         ($file) = ($file =~ /(.*)/); # untaint the silly filename
 
         chomp($file);
+
+        $logger->debug("Received file: $file");
 
         unless ($file =~ /(.*).(sum)$/) {
             unlink($file);
             next;
         }
 
-        my $source = $individual_test->{sender}?$test->local_address:$individual_test->{target};
-        my $destination = $individual_test->{receiver}?$individual_test->{target}:$test->local_address;
+        my $source = $individual_test->{sender}?$test->local_address:$individual_test->{target}->address;
+        my $destination = $individual_test->{receiver}?$individual_test->{target}->address:$test->local_address;
 
 
         my $results = $self->build_results({
                                              source => $source,
                                              destination => $destination,
+                                             test_parameters => $individual_test->{test_parameters},
                                              schedule => $test->schedule,
                                              summary_file => $file,
                                           });
@@ -244,10 +257,10 @@ sub handle_output {
         }
         else {
             eval {
-                $handle_results->(results => $results);
+                $handle_results->(test => $test, target => $individual_test->{target}, test_parameters => $individual_test->{test_parameters}, results => $results);
             };
             if ($@) {
-                $logger->error("Problem saving results: $results");
+                $logger->error("Problem saving results: $@");
             }
         }
 
@@ -262,13 +275,15 @@ sub build_results {
     my $parameters = validate( @args, { 
                                          source => 1,
                                          destination => 1,
+                                         test_parameters => 1,
                                          schedule => 0,
                                          summary_file => 1,
                                       });
-    my $source         = $parameters->{source};
-    my $destination    = $parameters->{destination};
-    my $schedule       = $parameters->{schedule};
-    my $summary_file   = $parameters->{summary_file};
+    my $source          = $parameters->{source};
+    my $destination     = $parameters->{destination};
+    my $test_parameters = $parameters->{test_parameters};
+    my $schedule        = $parameters->{schedule};
+    my $summary_file    = $parameters->{summary_file};
 
     my $summary         = parse_owamp_summary_file({ summary_file => $summary_file });
 
@@ -287,9 +302,9 @@ sub build_results {
     $results->source($self->build_endpoint(address => $source, protocol => "udp" ));
     $results->destination($self->build_endpoint(address => $destination, protocol => "udp" ));
 
-    $results->packet_count($self->resolution/$self->inter_packet_time);
-    $results->packet_size($self->packet_length);
-    $results->inter_packet_time($self->inter_packet_time);
+    $results->packet_count($test_parameters->resolution/$test_parameters->inter_packet_time);
+    $results->packet_size($test_parameters->packet_length);
+    $results->inter_packet_time($test_parameters->inter_packet_time);
 
     my $from_addr = $summary->{FROM_ADDR};
     my $to_addr = $summary->{TO_ADDR};

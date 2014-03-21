@@ -38,30 +38,32 @@ override 'build_cmd' => sub {
                                          force_ipv4 => 0,
                                          force_ipv6 => 0,
                                          results_directory => 1,
+                                         test_parameters => 1,
                                          schedule => 0,
                                       });
     my $source            = $parameters->{source};
     my $destination       = $parameters->{destination};
     my $results_directory = $parameters->{results_directory};
+    my $test_parameters   = $parameters->{test_parameters};
     my $schedule          = $parameters->{schedule};
 
     my @cmd = ();
-    push @cmd, $self->bwctl_cmd;
+    push @cmd, $test_parameters->bwctl_cmd;
 
     # Add the parameters from the parent class
     push @cmd, super();
 
-    push @cmd, '-u' if $self->use_udp;
-    push @cmd, ( '-P', $self->streams ) if $self->streams;
-    push @cmd, ( '-t', $self->duration ) if $self->duration;
-    push @cmd, ( '-b', $self->udp_bandwidth ) if $self->udp_bandwidth;
-    push @cmd, ( '-O', $self->omit_interval ) if $self->omit_interval;
-    push @cmd, ( '-l', $self->buffer_length ) if $self->buffer_length;
+    push @cmd, '-u' if $test_parameters->use_udp;
+    push @cmd, ( '-P', $test_parameters->streams ) if $test_parameters->streams;
+    push @cmd, ( '-t', $test_parameters->duration ) if $test_parameters->duration;
+    push @cmd, ( '-b', $test_parameters->udp_bandwidth ) if $test_parameters->udp_bandwidth;
+    push @cmd, ( '-O', $test_parameters->omit_interval ) if $test_parameters->omit_interval;
+    push @cmd, ( '-l', $test_parameters->buffer_length ) if $test_parameters->buffer_length;
 
     # Set a default reporting interval
     push @cmd, ( '-i', '1' );
 
-    push @cmd, ('-y', 'J') if ($self->tool eq "iperf3");
+    push @cmd, ('-y', 'J') if ($test_parameters->tool eq "iperf3");
 
     return @cmd;
 };
@@ -71,18 +73,20 @@ override 'build_results' => sub {
     my $parameters = validate( @args, { 
                                          source => 1,
                                          destination => 1,
+                                         test_parameters => 0,
                                          schedule => 0,
                                          output => 1,
                                       });
-    my $source         = $parameters->{source};
-    my $destination    = $parameters->{destination};
-    my $schedule       = $parameters->{schedule};
-    my $output         = $parameters->{output};
+    my $source          = $parameters->{source};
+    my $destination     = $parameters->{destination};
+    my $test_parameters = $parameters->{test_parameters};
+    my $schedule        = $parameters->{schedule};
+    my $output          = $parameters->{output};
 
     my $results = perfSONAR_PS::RegularTesting::Results::ThroughputTest->new();
 
     my $protocol;
-    if ($self->use_udp) {
+    if ($test_parameters->use_udp) {
         $protocol = "udp";
     }
     else {
@@ -94,16 +98,16 @@ override 'build_results' => sub {
     $results->destination($self->build_endpoint(address => $destination, protocol => $protocol));
 
     $results->protocol($protocol);
-    $results->streams($self->streams);
-    $results->time_duration($self->duration);
-    $results->bandwidth_limit($self->udp_bandwidth) if $self->udp_bandwidth;
-    $results->buffer_length($self->buffer_length) if $self->buffer_length;
+    $results->streams($test_parameters->streams);
+    $results->time_duration($test_parameters->duration);
+    $results->bandwidth_limit($test_parameters->udp_bandwidth) if $test_parameters->udp_bandwidth;
+    $results->buffer_length($test_parameters->buffer_length) if $test_parameters->buffer_length;
 
     # Add in the raw output
     $results->raw_results($output);
 
     # Parse the bwctl output, and add it in
-    my $bwctl_results = parse_bwctl_output({ stdout => $output, tool_type => $self->tool });
+    my $bwctl_results = parse_bwctl_output({ stdout => $output, tool_type => $test_parameters->tool });
 
     # Fill in the data that came directly from BWCTL itself
     $results->source->address($bwctl_results->{sender_address}) if $bwctl_results->{sender_address};
@@ -115,14 +119,14 @@ override 'build_results' => sub {
     $results->end_time($bwctl_results->{end_time});
 
     # Fill in the data that came from the tool itself
-    if ($self->tool eq "iperf") {
-        $self->fill_iperf_data({ results_obj => $results, results => $bwctl_results->{results} });
+    if ($test_parameters->tool eq "iperf") {
+        $test_parameters->fill_iperf_data({ results_obj => $results, results => $bwctl_results->{results} });
     }
-    elsif ($self->tool eq "iperf3") {
-        $self->fill_iperf3_data({ results_obj => $results, results => $bwctl_results->{results} });
+    elsif ($test_parameters->tool eq "iperf3") {
+        $test_parameters->fill_iperf3_data({ results_obj => $results, results => $bwctl_results->{results} });
     }
     else {
-        push @{ $results->errors }, "Unknown tool type: ".$self->tool;
+        push @{ $results->errors }, "Unknown tool type: ".$test_parameters->tool;
     }
 
     use Data::Dumper;

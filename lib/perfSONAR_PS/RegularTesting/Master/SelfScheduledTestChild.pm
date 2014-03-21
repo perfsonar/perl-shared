@@ -40,9 +40,12 @@ override 'child_main_loop' => sub {
         eval {
             $self->test->run_test(
                 handle_results => sub {
-                    my $parameters = validate( @_, { results => 1 });
+                    my $parameters = validate( @_, { test => 1, target => 1, test_parameters => 1, results => 1 });
+                    my $test = $parameters->{test};
+                    my $target = $parameters->{target};
+                    my $test_parameters = $parameters->{test_parameters};
                     my $results = $parameters->{results};
-                    $self->save_results(test => $self->test, results => $results);
+                    $self->save_results(test => $test, target => $target, test_parameters => $test_parameters, results => $results);
                 }
             );
         };
@@ -73,13 +76,17 @@ override 'child_main_loop' => sub {
 
 sub save_results {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, { test => 1, results => 1 });
-    my $test    = $parameters->{test};
-    my $results = $parameters->{results};
+    my $parameters = validate( @args, { test => 1, target => 1, test_parameters => 1, results => 1 });
+    my $test            = $parameters->{test};
+    my $target          = $parameters->{target};
+    my $test_parameters = $parameters->{test_parameters};
+    my $results         = $parameters->{results};
 
     my $result_info = {
-        test    => $test->unparse,
-        results => $results->unparse,
+        test       => $test->unparse,
+        target     => $target->unparse,
+        test_parameters => $test_parameters->unparse,
+        results    => $results->unparse,
     };
 
     my $json = JSON->new->pretty->encode($result_info);
@@ -90,7 +97,7 @@ sub save_results {
         my $measurement_archive = $ma_info->{ma};
         my $queue               = $ma_info->{queue};
 
-        if ($measurement_archive->accepts_results({ test => $test, results => $results })) {
+        if ($measurement_archive->accepts_results({ test => $test, target => $target, test_parameters => $test_parameters, results => $results })) {
             $logger->debug("Enqueueing job to: ".$measurement_archive->nonce);
 
             unless ($queue->enqueue_string($json)) {

@@ -114,16 +114,18 @@ sub handle_results {
 
     my $parsed = JSON->new->utf8(1)->decode($results);
 
-    unless ($parsed->{results} and $parsed->{test}) {
+    unless ($parsed->{results} and $parsed->{test} and $parsed->{target} and $parsed->{test_parameters}) {
         my $msg = "Problem parsing results";
         $logger->error($msg);
         return (-1, $msg);
     }
 
-    my ($test_obj, $results_obj);
+    my ($test_obj, $target_obj, $parameters_obj, $results_obj);
     eval {
         $test_obj    = perfSONAR_PS::RegularTesting::Test->parse($parsed->{test});
         $results_obj = perfSONAR_PS::RegularTesting::Results::Base->parse($parsed->{results});
+        $target_obj  = perfSONAR_PS::RegularTesting::Target->parse($parsed->{target});
+        $parameters_obj  = perfSONAR_PS::RegularTesting::Tests::Base->parse($parsed->{test_parameters});
     };
     if ($@) {
         my $msg = "Problem parsing results: $@";
@@ -131,7 +133,7 @@ sub handle_results {
         return (-1, $msg);
     }
 
-    my ($status, $res) = $self->measurement_archive->store_results(test => $test_obj, results => $results_obj);
+    my ($status, $res) = $self->measurement_archive->store_results(test => $test_obj, target => $target_obj, test_parameters => $parameters_obj, results => $results_obj);
     if ($status != 0) {
         my $msg = "Problem storing results: ".$res;
         $logger->error($msg);
