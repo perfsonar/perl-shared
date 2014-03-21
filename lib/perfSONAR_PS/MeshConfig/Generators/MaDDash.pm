@@ -10,7 +10,6 @@ use Log::Log4perl qw(get_logger);
 use JSON;
 use YAML qw(Dump);
 use Encode qw(encode);
-use Data::Dumper;
 
 use base 'Exporter';
 
