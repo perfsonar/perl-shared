@@ -10,6 +10,7 @@ use Params::Validate qw(:all);
 
 use IPC::Open3;
 use Symbol;
+use POSIX;
 
 use Moose;
 
@@ -69,6 +70,74 @@ sub exec {
     $self->stderr_prev_line("");
 
     return (0, "");
+}
+
+sub contains {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, { fh => 1 });
+    my $fh    = $parameters->{fh};
+
+    return ($self->stdout_fh == $fh or $self->stderr_fh == $fh);
+}
+
+sub readlines {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, { fh => 1, lines => 1, side => 1 });
+    my $fh    = $parameters->{fh};
+    my $lines = $parameters->{lines};
+    my $side  = $parameters->{side};
+
+    my @ret_lines = ();
+    while(my $res = $fh->sysread(my $buf, 4096)) {
+        if ($fh == $self->stdout_fh) {
+            $buf = $self->stdout_prev_line.$buf;
+        }
+        elsif ($fh == $self->stderr_fh) {
+            $buf = $self->stderr_prev_line.$buf;
+        }
+
+        my $complete_lines;
+        if ($buf =~ /\n$/) {
+            $complete_lines = 1;
+        }
+
+        my @lines = split(/\n/, $buf);
+
+        my $incomplete_line = "";
+        unless ($complete_lines) {
+            $incomplete_line = pop(@lines);
+        }
+
+        if ($fh == $self->stdout_fh) {
+            $self->stdout_prev_line($incomplete_line);
+        }
+        elsif ($fh == $self->stderr_fh) {
+            $self->stderr_prev_line($incomplete_line);
+        }
+
+        push @ret_lines, @lines;
+    }
+
+    use Data::Dumper;
+    $logger->debug("Lines: ".Dumper(\@ret_lines));
+
+    my $retval;
+    unless ($! == EAGAIN) {
+        $retval = 0;
+    }
+    else {
+        $retval = 1;
+    }
+
+    $$lines = \@ret_lines;
+    if ($fh == $self->stdout_fh) {
+        $$side = "stdout";
+    }
+    elsif ($fh == $self->stderr_fh) {
+        $$side = "stderr";
+    }
+
+    return $retval;
 }
 
 sub kill {
