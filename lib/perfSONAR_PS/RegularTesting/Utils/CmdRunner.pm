@@ -83,36 +83,78 @@ sub run {
         last if $self->exiting;
 
         foreach my $fh (@ready) {
-            my $line = <$fh>;
+            my ($cmd_fh, $direction);
 
-	    # Remove closed file handles so we don't keep selecting on them
-            unless (defined $line) {
+            # Find the matching command
+            foreach my $cmd (@{ $self->cmds }) {
+                if ($cmd->stdout_fh and $cmd->stdout_fh == $fh) {
+                    $direction = "stdout";
+                    $cmd_fh = $cmd;
+                    last;
+                }
+                elsif ($cmd->stderr_fh and $cmd->stderr_fh == $fh) {
+                    $direction = "stderr";
+                    $cmd_fh = $cmd;
+                    last;
+                }
+            }
+
+	    # If we can't file a matching command, remove it from the select.
+            unless ($cmd_fh) {
                 $select->remove($fh);
                 next;
             }
 
-            foreach my $cmd (@{ $self->cmds }) {
-                next unless $cmd->result_cb;
+            while(my $res = $fh->sysread(my $buf, 5)) {
+                next unless $cmd_fh->result_cb;
 
-                my $args;
-
-                if ($cmd->stdout_fh and $cmd->stdout_fh == $fh) {
-                    $args = { stdout => [ $line ] };
+                if ($direction eq "stdout") {
+                    if ($cmd_fh->stdout_prev_line) {
+                        $buf = $cmd_fh->stdout_prev_line.$buf;
+                        $cmd_fh->stdout_prev_line("");
+                    }
                 }
-                elsif ($cmd->stderr_fh and $cmd->stderr_fh == $fh) {
-                    $args = { stderr => [ $line ] };
+                elsif ($direction eq "stderr") {
+                    if ($cmd_fh->stderr_prev_line) {
+                        $buf = $cmd_fh->stderr_prev_line.$buf;
+                        $cmd_fh->stderr_prev_line("");
+                    }
                 }
 
-                next unless $args;
+                my $complete_lines;
+                if ($buf =~ /\n$/) {
+                    $complete_lines = 1;
+                }
+
+                my @lines = split(/\n/, $buf);
+
+                my $incomplete_line = "";
+
+                unless ($complete_lines) {
+                    $incomplete_line = pop(@lines);
+                }
+
+                if ($direction eq "stdout") {
+                    $cmd_fh->stdout_prev_line($incomplete_line);
+                }
+                elsif ($direction eq "stderr") {
+                    $cmd_fh->stderr_prev_line($incomplete_line);
+                }
+
+                next unless (scalar(@lines) > 0);
 
                 eval {
-                    ($cmd->result_cb)->($cmd, $args);
+                    ($cmd_fh->result_cb)->($cmd_fh, { $direction => \@lines });
                 };
                 if ($@) {
                     $logger->error("Problem with results callback: $@");
                 }
-
-                last;
+            }
+ 
+	    # Remove closed file handles so we don't keep selecting on them
+            unless ($! == EAGAIN) {
+                $select->remove($fh);
+                next;
             }
         }
 
@@ -123,6 +165,12 @@ sub run {
 
             foreach my $cmd (@{ $self->cmds }) {
                 next unless ($cmd->pid and $cmd->pid == $pid);
+
+                unless ($self->exiting) {
+                    my $remaining_seconds = ($cmd->restart_interval + $cmd->last_exec_time) - time;
+
+                    $logger->error("Command exited, will restart in ".$remaining_seconds." seconds: ".$cmd);
+                }
 
                 $select->remove($cmd->stdout_fh) if $cmd->stdout_fh;
                 $select->remove($cmd->stderr_fh) if $cmd->stderr_fh;

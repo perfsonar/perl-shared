@@ -27,6 +27,9 @@ has 'stdin_fh'         => (is => 'rw', isa => 'FileHandle|Undef');
 has 'stderr_fh'        => (is => 'rw', isa => 'FileHandle|Undef');
 has 'stdout_fh'        => (is => 'rw', isa => 'FileHandle|Undef');
 
+has 'stdout_prev_line'  => (is => 'rw', isa => 'Str');
+has 'stderr_prev_line'  => (is => 'rw', isa => 'Str');
+
 has 'last_exec_time'   => (is => 'rw', isa => 'Int');
 
 sub cmd_str {
@@ -48,6 +51,8 @@ sub exec {
 
     eval {
         $pid = open3($infh, $outfh, $errfh, @{ $self->cmd });
+        $outfh->blocking(0);
+        $errfh->blocking(0);
     };
     if ($@) {
         my $msg = "Problem executing command: $@";
@@ -59,6 +64,9 @@ sub exec {
     $self->stdin_fh($infh);
     $self->stdout_fh($outfh);
     $self->stderr_fh($errfh);
+
+    $self->stdout_prev_line("");
+    $self->stderr_prev_line("");
 
     return (0, "");
 }
