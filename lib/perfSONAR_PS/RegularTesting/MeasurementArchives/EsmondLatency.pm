@@ -48,7 +48,7 @@ override 'tool_name' => sub {
 
 override 'event_types' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {results => 1});
+    my $parameters = validate( @args, {test => 1, results => 1});
     my $results = $parameters->{results};
     my $test = $parameters->{test};
     
@@ -59,12 +59,17 @@ override 'event_types' => sub {
         'packet-loss-rate',
         'packet-count-lost',
         'packet-count-sent',
-        #'time-error-estimates',
         );
     if($results->bidirectional){
         push  @event_types, 'histogram-rtt';
     }else{
         push  @event_types, 'histogram-owdelay';
+    }
+    if($test->parameters->type() ne 'powstream'){
+        push  @event_types, 'packet-reorders';
+    }
+    if($test->parameters->type() ne 'bwping'){
+        push  @event_types, 'time-error-estimates';
     }
     
     return \@event_types;
@@ -107,6 +112,9 @@ override 'add_metadata_parameters' => sub{
     if($results->packet_count && $results->inter_packet_time && !$results->bidirectional){
         $self->add_metadata_opt_parameter(metadata => $metadata, key => 'time-duration', value => ($results->packet_count * $results->inter_packet_time));
     }
+    if($test->parameters->type() eq 'bwping'){
+        $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-tos', value => $test->parameters->packet_tos_bits);
+    }
 };
 
 override 'add_datum' => sub {
@@ -127,6 +135,8 @@ override 'add_datum' => sub {
         return $self->handle_packets_lost(results=>$results);
     }elsif($event_type eq 'packet-loss-rate'){
         return $self->handle_packet_loss_rate(results=>$results);
+    }elsif($event_type eq 'packet-reorders'){
+        return $self->handle_packet_reorders(results=>$results);
     }elsif($event_type eq 'time-error-estimates'){
         return $self->handle_time_error_estimates(results=>$results);
     }elsif($event_type eq 'failures'){
@@ -143,8 +153,10 @@ sub parse_ping {
     my $dups = 0;
     my $sent = 0;
     my $recv = 0;
+    my $oops = 0;
     
     my %seen = ();
+    my $prev_datum = undef;
     foreach my $datum (@{ $results->pings }) {
         if ($seen{$datum->sequence_number}) {
             $dups++;
@@ -158,12 +170,17 @@ sub parse_ping {
         }
 
         $seen{$datum->sequence_number} = 1;
-
         $recv++;
+        if ($prev_datum and $datum->sequence_number < $prev_datum->sequence_number) {
+            $oops++;
+        }
+        
+        $prev_datum = $datum;
     }
     
-    return ($dups, $sent, $recv);
+    return ($dups, $sent, $recv, $oops);
 }
+
 sub handle_packets_sent(){
     my ($self, @args) = @_;
     my $parameters = validate( @args, {results => 1});
@@ -172,7 +189,7 @@ sub handle_packets_sent(){
     if(defined $results->packets_sent){
         return $results->packets_sent;
     }elsif (scalar(@{ $results->pings }) > 0) {    
-        my ($dups, $sent, $recv) = $self->parse_ping(results => $results);
+        my ($dups, $sent, $recv, $oops) = $self->parse_ping(results => $results);
         return $sent;
     }
     
@@ -187,7 +204,7 @@ sub handle_packets_lost(){
     if(defined $results->packets_sent && defined $results->packets_received){
         return ($results->packets_sent - $results->packets_received);
     }elsif (scalar(@{ $results->pings }) > 0) {    
-        my ($dups, $sent, $recv) = $self->parse_ping(results => $results);
+        my ($dups, $sent, $recv, $oops) = $self->parse_ping(results => $results);
         return ($sent - $recv);
     }
     
@@ -205,7 +222,7 @@ sub handle_packet_loss_rate(){
             'denominator' => $results->packets_sent 
         };
     }elsif (scalar(@{ $results->pings }) > 0) {    
-        my ($dups, $sent, $recv) = $self->parse_ping(results => $results);
+        my ($dups, $sent, $recv, $oops) = $self->parse_ping(results => $results);
         return {
             'numerator' => ($sent - $recv),
             'denominator' => $sent
@@ -220,11 +237,24 @@ sub handle_duplicates(){
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-   if(defined $results->duplicate_packets){
+    if(defined $results->duplicate_packets){
         return $results->duplicate_packets;
     }elsif (scalar(@{ $results->pings }) > 0) {    
-        my ($dups, $sent, $recv) = $self->parse_ping(results => $results);
+        my ($dups, $sent, $recv, $oops) = $self->parse_ping(results => $results);
         return $dups;
+    }
+    
+    return undef;
+}
+
+sub handle_packet_reorders(){
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    
+    if (scalar(@{ $results->pings }) > 0) {    
+        my ($dups, $sent, $recv, $oops) = $self->parse_ping(results => $results);
+        return $oops;
     }
     
     return undef;
@@ -279,7 +309,14 @@ sub handle_histogram_delay(){
 }
 
 sub handle_time_error_estimates(){
-    #not yet implemented
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    
+    if(defined $results->time_error_estimate){
+        return sprintf("%f", $results->time_error_estimate);
+    }
+    
     return undef;
 }
 

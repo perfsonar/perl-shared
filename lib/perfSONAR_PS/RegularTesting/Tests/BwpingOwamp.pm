@@ -92,15 +92,20 @@ override 'build_results' => sub {
     $results->destination->address($bwctl_results->{receiver_address}) if $bwctl_results->{receiver_address};
 
     my @pings = ();
-
+    
     if ($bwctl_results->{results}->{pings}) {
+        my $max_err = undef;
         foreach my $ping (@{ $bwctl_results->{results}->{pings} }) {
             my $datum = perfSONAR_PS::RegularTesting::Results::LatencyTestDatum->new();
             $datum->sequence_number($ping->{sequence_number}) if defined $ping->{sequence_number};
             $datum->ttl($ping->{ttl}) if defined $ping->{ttl};
             $datum->delay($ping->{delay}) if defined $ping->{delay};
+            if(!defined $max_err || $max_err < $ping->{max_error}){
+                $max_err = $ping->{max_error};
+            }
             push @pings, $datum;
         }
+        $results->time_error_estimate($max_err);
     }
 
     $results->pings(\@pings);

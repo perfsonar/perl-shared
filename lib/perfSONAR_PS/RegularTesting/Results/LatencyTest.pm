@@ -39,6 +39,7 @@ has 'ttl_histogram'      => (is => 'rw', isa => 'HashRef[Int]', default => sub {
 has 'packets_sent'       => (is => 'rw', isa => 'Int');
 has 'packets_received'   => (is => 'rw', isa => 'Int');
 has 'duplicate_packets'  => (is => 'rw', isa => 'Int');
+has 'time_error_estimate'=> (is => 'rw', isa => 'Num | Undef');
 
 has 'pings'              => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::Results::LatencyTestDatum]', default => sub { [] });
 

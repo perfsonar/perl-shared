@@ -308,7 +308,8 @@ sub build_results {
     $results->packets_sent($summary->{SENT});
     $results->packets_received($summary->{SENT} - $summary->{LOST});
     $results->duplicate_packets($summary->{DUPS});
-
+    $results->time_error_estimate($summary->{MAXERR});
+    
     $results->histogram_bucket_size($summary->{BUCKET_WIDTH});
 
     my %delays = ();
