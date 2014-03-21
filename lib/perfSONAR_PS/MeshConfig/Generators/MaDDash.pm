@@ -10,6 +10,7 @@ use Log::Log4perl qw(get_logger);
 use JSON;
 use YAML qw(Dump);
 use Encode qw(encode);
+use Data::Dumper;
 
 use base 'Exporter';
 
@@ -163,6 +164,7 @@ sub generate_maddash_config {
 
             my $column_id;
             my @column_members = ();
+            my $is_full_mesh = 0;
             
             my $columnAlgorithm = "all";
             if ($test->members->type eq "star") {
@@ -198,7 +200,8 @@ sub generate_maddash_config {
                 # try to do it in a generic fashion. i.e. go through all the
                 # source/dest pairs and add each source/dest to both the column and
                 # the row. This should be, more or less, a mesh configuration.
-
+                
+                $is_full_mesh= 1;
                 my %tmp_members = ();
 
                 foreach my $pair (@{ $test->members->source_destination_pairs }) {
@@ -324,8 +327,8 @@ sub generate_maddash_config {
             $groups->{$column_id} = \@column_members;
 
             # Build the checks
-            my $check = __build_check(grid_name => $grid_name, type => $test->parameters->type, ma_map => \%forward_ma_map, exclude_checks => \%forward_exclude_checks, direction => "forward", maddash_options => $maddash_options);
-            my $rev_check = __build_check(grid_name => $grid_name, type => $test->parameters->type, ma_map => \%reverse_ma_map, exclude_checks => \%reverse_exclude_checks, direction => "reverse", maddash_options => $maddash_options);
+            my $check = __build_check(grid_name => $grid_name, type => $test->parameters->type, ma_map => \%forward_ma_map, exclude_checks => \%forward_exclude_checks, direction => "forward", maddash_options => $maddash_options, is_full_mesh => $is_full_mesh);
+            my $rev_check = __build_check(grid_name => $grid_name, type => $test->parameters->type, ma_map => \%reverse_ma_map, exclude_checks => \%reverse_exclude_checks, direction => "reverse", maddash_options => $maddash_options, is_full_mesh => $is_full_mesh);
 
             # Add the checks
             if ($checks->{$check->{id}}) {
@@ -425,14 +428,15 @@ my %maddash_default_check_options = (
 );
 
 sub __build_check {
-    my $parameters = validate( @_, { grid_name => 1, type => 1, ma_map => 1, exclude_checks => 1, direction => 1, maddash_options => 1 } );
+    my $parameters = validate( @_, { grid_name => 1, type => 1, ma_map => 1, exclude_checks => 1, direction => 1, maddash_options => 1, is_full_mesh => 1 } );
     my $grid_name = $parameters->{grid_name};
     my $type  = $parameters->{type};
     my $ma_map = $parameters->{ma_map};
     my $exclude_checks = $parameters->{exclude_checks};
     my $direction = $parameters->{direction};
     my $maddash_options = $parameters->{maddash_options};
-
+    my $is_full_mesh = $parameters->{is_full_mesh};
+    
     my $check = {};
     $check->{type} = "net.es.maddash.checks.PSNagiosCheck";
     $check->{retryInterval}   = 600;
@@ -461,7 +465,12 @@ sub __build_check {
         $ok_throughput       /= 1000;
         $critical_throughput /= 1000; 
 
-        if ($direction eq "reverse") {
+        if($is_full_mesh && $direction eq "reverse") {
+            $check->{name} = 'Throughput Alternate MA';
+            $check->{description} = 'Throughput from %row to %col';
+            $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_throughput.': -c '.$critical_throughput.': -r '.$check_time_range.' -s %row -d %col';
+        }
+        elsif ($direction eq "reverse") {
             $check->{name} = 'Throughput Reverse';
             $check->{description} = 'Throughput from %col to %row';
             $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_throughput.': -c '.$critical_throughput.': -r '.$check_time_range.' -s %col -d %row';
@@ -481,7 +490,12 @@ sub __build_check {
         $check->{critical_description}  = "Loss rate is >= ".$critical_loss;
 
         $check->{params}->{graphUrl} = 'http://'.$host.'/serviceTest/delayGraph.cgi?url=%maUrl&dst=%col&src=%row&length=14400';
-        if ($direction eq "reverse") {
+        if ($is_full_mesh && $direction eq "reverse") {
+           $check->{name} = 'Loss Alternate MA';
+           $check->{description} = 'Loss from %row to %col';
+           $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_loss.' -c '.$critical_loss.' -r '.$check_time_range.' -l -p -s %row -d %col';
+        }
+        elsif ($direction eq "reverse") {
             $check->{name} = 'Loss Reverse';
             $check->{description} = 'Loss from %col to %row';
             $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_loss.' -c '.$critical_loss.' -r '.$check_time_range.' -l -p -s %col -d %row';
