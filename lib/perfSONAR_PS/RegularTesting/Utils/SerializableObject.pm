@@ -7,6 +7,7 @@ our $VERSION = 3.4;
 
 use Log::Log4perl qw(get_logger);
 use Params::Validate qw(:all);
+use Hash::Merge;
 
 use DateTime::Format::ISO8601;
 
@@ -23,6 +24,40 @@ sub variable_map {
     return {};
 }
 
+sub merge {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, { other => 1 });
+    my $other = $parameters->{other};
+
+    my $self_description  = $self->unparse();
+    my $other_description = $other->unparse();
+
+    # Right Precedence, but don't merge arrays
+    my %merge_behavior = (
+        'SCALAR' => {
+            'SCALAR' => sub { $_[1] },
+            'ARRAY'  => sub { $_[1] },
+            'HASH'   => sub { $_[1] },
+        },
+        'ARRAY' => {
+            'SCALAR' => sub { $_[1] },
+            'ARRAY'  => sub { $_[1] },
+            'HASH'   => sub { $_[1] }, 
+        },
+        'HASH' => {
+            'SCALAR' => sub { $_[1] },
+            'ARRAY'  => sub { $_[1] },
+            'HASH'   => sub { Hash::Merge::_merge_hashes( $_[0], $_[1] ) }, 
+        },
+    );
+
+    my $merge = Hash::Merge->new();
+    $merge->specify_behavior(\%merge_behavior);
+    my $merged_description = $merge->merge($self_description, $other_description);
+
+    return $self->blessed()->parse($merged_description, 1);
+}
+
 sub parse {
     my ($class, $description, $strict) = @_;
 
@@ -36,10 +71,11 @@ sub parse {
            die("Need to specify a 'type' for $class");
         }
 
-        my $found_type;
-        foreach my $subclass ($meta->subclasses) {
-            next if $subclass eq $class;
+        my @classes = ( $class );
+        push @classes, $meta->subclasses;
 
+        my $found_type;
+        foreach my $subclass (@classes) {
             eval {
                 if ($subclass->can("type") and $subclass->type eq $description->{type}) {
                     $meta = $subclass;
