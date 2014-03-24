@@ -38,7 +38,7 @@ has 'restart_services'       => (is => 'rw', isa => 'Bool');
 
 has 'meshes'                 => (is => 'rw', isa => 'ArrayRef[HashRef]');
 
-has 'use_regular_testing'    => (is => 'rw', isa => 'Bool', default => 0);
+has 'use_regular_testing'    => (is => 'rw', isa => 'Bool', default => 1);
 
 has 'regular_testing_conf'   => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/regular_testing/etc/regular_testing.conf");
 
