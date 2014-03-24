@@ -263,6 +263,10 @@ sub reset_state {
                 elsif ( $res->{$variable} eq "enabled" ) {
                     $service->{enabled} = 1;
                 }
+                elsif ( $res->{$variable} eq "system" ) {
+                    $service->{enabled} = $self->check_system_enabled(services => $service->{service_name});
+                    $service->{system}  = 1;
+                }
             }
         }
     }
@@ -271,6 +275,31 @@ sub reset_state {
 
     return 0;
 }
+
+=head2 check_system_enabled ({ services => 1 })
+    Takes a list of services, and checks if they are enabled in the currently
+    run level.
+=cut
+
+sub check_system_enabled {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { services => 1} );
+    my $services = $parameters->{services};
+
+    $services = [ $services ] unless ref($services) eq "ARRAY";
+
+    my $enabled = 1;
+    foreach my $service (@$services) {
+        system("/sbin/chkconfig", $service);
+        if ($? != 0) {
+            $enabled = 0;
+            last;
+        }
+    }
+
+    return $enabled;
+}
+
 
 =head2 get_services ({})
     Returns the list of services as a hash indexed by name. The hash values are
@@ -312,6 +341,7 @@ sub enable_service {
     return -1 unless ( $self->{SERVICES}->{$name} );
 
     $self->{SERVICES}->{$name}->{enabled} = 1;
+    $self->{SERVICES}->{$name}->{system}  = 0;
 
     return 0;
 }
@@ -330,6 +360,7 @@ sub disable_service {
     return -1 unless ( $self->{SERVICES}->{$name} );
 
     $self->{SERVICES}->{$name}->{enabled} = 0;
+    $self->{SERVICES}->{$name}->{system}  = 0;
 
     return 0;
 }
@@ -398,7 +429,10 @@ sub generate_enabled_services_file {
 
         next unless ( $service->{enabled_services_variable} );
 
-        if ( $service->{enabled} ) {
+        if ( $service->{system} ) {
+            $output .= $service->{enabled_services_variable} . "=system\n";
+        }
+        elsif ( $service->{enabled} ) {
             $output .= $service->{enabled_services_variable} . "=enabled\n";
         }
         else {
