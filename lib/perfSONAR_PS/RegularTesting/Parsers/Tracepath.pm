@@ -123,11 +123,21 @@ sub parse_tracepath_output {
             # Another odd tracepath case where the last hop can have the same TTL
             # as last router for no apparent reason.
             if ($reached and $hops{$ttl}) {
-                $ttl++;
+                if ($hops{$ttl}->[0]->{hop} ne $address) {
+                    $ttl++;
+                }
             }
+
+            # Skip cases that are obviously wrong
+            next unless ($no_reply or $address);
+
+            $hops{$ttl} = [] unless $hops{$ttl};
+
+            my $query_num = scalar(@{ $hops{$ttl} }) + 1;
 
             my %hop_stats = (
                 ttl => $ttl,
+                queryNum => $query_num,
             );
 
             if ($no_reply) {
@@ -138,11 +148,6 @@ sub parse_tracepath_output {
                 $hop_stats{delay} = $rtt;
                 $hop_stats{path_mtu} = $mtu;
             }
-
-            # Skip cases that are obviously wrong
-            next unless ($hop_stats{error} or $hop_stats{hop});
-
-            $hops{$ttl} = [] unless $hops{$ttl};
 
             push @{ $hops{$ttl} }, \%hop_stats;
         }
