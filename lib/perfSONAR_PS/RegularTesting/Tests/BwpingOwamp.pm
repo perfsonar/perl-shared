@@ -69,12 +69,13 @@ override 'build_results' => sub {
     my $parameters = validate( @args, { 
                                          source => 1,
                                          destination => 1,
+                                         test_parameters => 1,
                                          schedule => 0,
                                          output => 1,
                                       });
     my $source          = $parameters->{source};
     my $destination     = $parameters->{destination};
-    my $test_parameters = $parameters->{parameters};
+    my $test_parameters = $parameters->{test_parameters};
     my $schedule        = $parameters->{schedule};
     my $output          = $parameters->{output};
 
@@ -89,7 +90,7 @@ override 'build_results' => sub {
     $results->inter_packet_time($test_parameters->inter_packet_time);
 
     # Parse the bwctl output, and add it in
-    my $bwctl_results = parse_bwctl_output({ stdout => $output, tool_type => $test_parameters->tool });
+    my $bwctl_results = parse_bwctl_output({ stdout => $output });
 
     $results->source->address($bwctl_results->{sender_address}) if $bwctl_results->{sender_address};
     $results->destination->address($bwctl_results->{receiver_address}) if $bwctl_results->{receiver_address};
