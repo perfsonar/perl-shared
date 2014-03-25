@@ -72,11 +72,14 @@ sub parse_bwctl_output {
         elsif (($time) = $line =~ /bwctl: run_tool: sender: (.*)/) {
             $results{sender_address} = $1;
         }
+        elsif ($line =~ /bwctl: Unable to initiate peer handshake/) {
+            $results{error} = $line;
+        }
         elsif ($line =~ /bwctl: Unable to connect/) {
             $results{error} = $line;
         }
         elsif ($line =~ /bwctl:/) {
-            # XXX: handle other errors. e.g. firewall
+            # XXX: handle other errors
         }
         else {
             $output_without_bwctl .= "\n".$line;
