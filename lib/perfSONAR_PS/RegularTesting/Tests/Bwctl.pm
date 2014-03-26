@@ -25,6 +25,7 @@ has 'omit_interval' => (is => 'rw', isa => 'Int');
 has 'udp_bandwidth' => (is => 'rw', isa => 'Int');
 has 'buffer_length' => (is => 'rw', isa => 'Int');
 has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
+has 'window_size'   => (is => 'rw', isa => 'Int');
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -60,6 +61,7 @@ override 'build_cmd' => sub {
     push @cmd, ( '-b', $test_parameters->udp_bandwidth ) if $test_parameters->udp_bandwidth;
     push @cmd, ( '-O', $test_parameters->omit_interval ) if $test_parameters->omit_interval;
     push @cmd, ( '-l', $test_parameters->buffer_length ) if $test_parameters->buffer_length;
+    push @cmd, ( '-w', $test_parameters->window_size ) if $test_parameters->window_size;
 
     # Set a default reporting interval
     push @cmd, ( '-i', '1' );
