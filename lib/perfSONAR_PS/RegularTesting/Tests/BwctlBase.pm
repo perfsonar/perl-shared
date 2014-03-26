@@ -32,7 +32,8 @@ has 'force_ipv6'      => (is => 'rw', isa => 'Bool');
 has 'test_ipv4_ipv6'  => (is => 'rw', isa => 'Bool');
 has 'send_only'       => (is => 'rw', isa => 'Bool');
 has 'receive_only'    => (is => 'rw', isa => 'Bool');
-has 'latest_time' => (is => 'rw', isa => 'Int');
+has 'latest_time'     => (is => 'rw', isa => 'Int');
+has 'local_firewall'  => (is => 'rw', isa => 'Bool');
 
 has '_individual_tests' => (is => 'rw', isa => 'ArrayRef[HashRef]');
 has '_runner'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Utils::CmdRunner');
@@ -76,8 +77,8 @@ sub get_individual_tests {
 
         unless ($target_parameters->send_only) {
             if (is_hostname($target->address) and $target_parameters->test_ipv4_ipv6) {
-                push @tests, { target => $target, source => $local_address, destination => $target->address, force_ipv4 => 1, test_parameters => $target_parameters };
-                push @tests, { target => $target, source => $local_address, destination => $target->address, force_ipv6 => 1, test_parameters => $target_parameters };
+                push @tests, { target => $target, local_destination => 0, source => $local_address, destination => $target->address, force_ipv4 => 1, test_parameters => $target_parameters };
+                push @tests, { target => $target, local_destination => 0, source => $local_address, destination => $target->address, force_ipv6 => 1, test_parameters => $target_parameters };
             }
             else {
                 push @tests, {
@@ -87,14 +88,15 @@ sub get_individual_tests {
                                force_ipv4 => $target_parameters->force_ipv4,
                                force_ipv6 => $target_parameters->force_ipv6,
                                test_parameters => $target_parameters,
+                               local_destination => 0,
                              };
 
             }
         }
         unless ($target_parameters->receive_only) {
             if (is_hostname($target->address) and $target_parameters->test_ipv4_ipv6) {
-                push @tests, { target => $target, source => $target->address, destination => $local_address, force_ipv4 => 1, test_parameters => $target_parameters };
-                push @tests, { target => $target, source => $target->address, destination => $local_address, force_ipv6 => 1, test_parameters => $target_parameters };
+                push @tests, { target => $target, local_destination => 1, source => $target->address, destination => $local_address, force_ipv4 => 1, test_parameters => $target_parameters };
+                push @tests, { target => $target, local_destination => 1, source => $target->address, destination => $local_address, force_ipv6 => 1, test_parameters => $target_parameters };
             }
             else {
                 push @tests, {
@@ -104,6 +106,7 @@ sub get_individual_tests {
                                force_ipv4 => $target_parameters->force_ipv4,
                                force_ipv6 => $target_parameters->force_ipv6,
                                test_parameters => $target_parameters,
+                               local_destination => 1,
                              };
 
             }
@@ -152,6 +155,7 @@ override 'run_test' => sub {
         my @cmd = $self->build_cmd({ 
                                      source => $individual_test->{source},
                                      destination => $individual_test->{destination},
+                                     local_destination => $individual_test->{local_destination},
                                      force_ipv4 => $individual_test->{force_ipv4},
                                      force_ipv6 => $individual_test->{force_ipv6},
                                      results_directory => $individual_test->{results_directory},
@@ -252,6 +256,7 @@ sub build_cmd {
     my $parameters = validate( @args, {
                                          source => 1,
                                          destination => 1,
+                                         local_destination => 1,
                                          force_ipv4 => 0,
                                          force_ipv6 => 0,
                                          results_directory => 1,
@@ -260,8 +265,9 @@ sub build_cmd {
                                       });
     my $source            = $parameters->{source};
     my $destination       = $parameters->{destination};
-    my $force_ipv4         = $parameters->{force_ipv4};
-    my $force_ipv6         = $parameters->{force_ipv6};
+    my $local_destination = $parameters->{local_destination};
+    my $force_ipv4        = $parameters->{force_ipv4};
+    my $force_ipv6        = $parameters->{force_ipv6};
     my $results_directory = $parameters->{results_directory};
     my $test_parameters   = $parameters->{test_parameters};
     my $schedule          = $parameters->{schedule};
@@ -277,6 +283,8 @@ sub build_cmd {
     push @cmd, ( '-I', $schedule->interval );
     push @cmd, ( '-p', '-d', $results_directory );
     push @cmd, ( '-L', $test_parameters->latest_time ) if $test_parameters->latest_time;
+
+    push @cmd, ( '--flip' ) if $test_parameters->local_firewall and $local_destination;
 
     if ($test_parameters->can("packet_tos_bits") and $test_parameters->packet_tos_bits) {
         push @cmd, ( '--tos', $test_parameters->packet_tos_bits );

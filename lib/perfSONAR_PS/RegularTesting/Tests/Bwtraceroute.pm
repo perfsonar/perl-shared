@@ -34,6 +34,7 @@ override 'build_cmd' => sub {
     my $parameters = validate( @args, {
                                          source => 1,
                                          destination => 1,
+                                         local_destination => 1,
                                          force_ipv4 => 0,
                                          force_ipv6 => 0,
                                          results_directory => 1,
@@ -42,6 +43,7 @@ override 'build_cmd' => sub {
                                       });
     my $source            = $parameters->{source};
     my $destination       = $parameters->{destination};
+    my $local_destination = $parameters->{local_destination};
     my $results_directory = $parameters->{results_directory};
     my $test_parameters   = $parameters->{test_parameters};
     my $schedule          = $parameters->{schedule};
@@ -62,7 +64,7 @@ override 'build_cmd' => sub {
     # like them...
     push @cmd, ( '-y', 'a' );
 
-    push @cmd, '-E';
+    push @cmd, '-E' unless $local_destination;
 
     return @cmd;
 };

@@ -34,6 +34,7 @@ override 'build_cmd' => sub {
     my $parameters = validate( @args, {
                                          source => 1,
                                          destination => 1,
+                                         local_destination => 1,
                                          force_ipv4 => 0,
                                          force_ipv6 => 0,
                                          results_directory => 1,
