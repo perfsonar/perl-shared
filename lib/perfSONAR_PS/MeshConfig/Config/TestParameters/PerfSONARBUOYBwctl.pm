@@ -26,6 +26,7 @@ sub BUILD {
 has 'tool',           => (is => 'rw', isa => 'Str');
 has 'duration'        => (is => 'rw', isa => 'Int');
 has 'interval'        => (is => 'rw', isa => 'Int');
+has 'streams'         => (is => 'rw', isa => 'Int');
 has 'tos_bits'        => (is => 'rw', isa => 'Int');
 has 'buffer_length'   => (is => 'rw', isa => 'Int');
 has 'report_interval' => (is => 'rw', isa => 'Int');
