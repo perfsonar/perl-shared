@@ -65,7 +65,7 @@ override 'build_cmd' => sub {
     push @cmd, ( '-i', '1' );
 
     # Have the tool use the most parsable format
-    push @cmd, ( '--parsable' );
+    push @cmd, ( '-y', 'J' ) if $test_parameters->tool eq "iperf3";
 
     return @cmd;
 };
