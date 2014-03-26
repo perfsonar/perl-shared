@@ -63,7 +63,8 @@ override 'build_cmd' => sub {
     # Set a default reporting interval
     push @cmd, ( '-i', '1' );
 
-    push @cmd, ('-y', 'J') if ($test_parameters->tool eq "iperf3");
+    # Have the tool use the most parsable format
+    push @cmd, ( '--parsable' );
 
     return @cmd;
 };
@@ -107,7 +108,7 @@ override 'build_results' => sub {
     $results->raw_results($output);
 
     # Parse the bwctl output, and add it in
-    my $bwctl_results = parse_bwctl_output({ stdout => $output, tool_type => $test_parameters->tool });
+    my $bwctl_results = parse_bwctl_output({ stdout => $output });
 
     # Fill in the data that came directly from BWCTL itself
     $results->source->address($bwctl_results->{sender_address}) if $bwctl_results->{sender_address};
@@ -119,14 +120,14 @@ override 'build_results' => sub {
     $results->end_time($bwctl_results->{end_time});
 
     # Fill in the data that came from the tool itself
-    if ($test_parameters->tool eq "iperf") {
+    if ($bwctl_results->{tool} eq "iperf") {
         $test_parameters->fill_iperf_data({ results_obj => $results, results => $bwctl_results->{results} });
     }
-    elsif ($test_parameters->tool eq "iperf3") {
+    elsif ($bwctl_results->{tool} eq "iperf3") {
         $test_parameters->fill_iperf3_data({ results_obj => $results, results => $bwctl_results->{results} });
     }
     else {
-        push @{ $results->errors }, "Unknown tool type: ".$test_parameters->tool;
+        push @{ $results->errors }, "Unknown tool type: ".$bwctl_results->{tool};
     }
 
     use Data::Dumper;

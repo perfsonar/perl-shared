@@ -46,18 +46,24 @@ use DateTime;
 sub parse_bwctl_output {
     my $parameters = validate( @_, { stdout  => 1,
                                      stderr  => 0,
-                                     tool_type => 1,
+                                     tool    => 0,
                                    });
     my $stdout    = $parameters->{stdout};
     my $stderr    = $parameters->{stderr};
-    my $tool_type = $parameters->{tool_type};
+    my $tool      = $parameters->{tool};
 
     my $output_without_bwctl = "";
 
     my %results = ();
     for my $line (split('\n', $stdout)) {
         my $time;
-        if (($time) = $line =~ /bwctl: start_tool: ([0-9.]+)/) {
+        if (($time) = $line =~ /bwctl: start_endpoint: ([0-9.]+)/) {
+            $results{start_time} = owptstampi2datetime($time);
+        }
+        elsif (($time) = $line =~ /bwctl: stop_endpoint: ([0-9.]+)/) {
+            $results{end_time} = owptstampi2datetime($time) unless $results{end_time};
+        }
+        elsif (($time) = $line =~ /bwctl: start_tool: ([0-9.]+)/) {
             $results{start_time} = owptstampi2datetime($time);
         }
         elsif (($time) = $line =~ /bwctl: stop_exec: ([0-9.]+)/) {
@@ -72,37 +78,62 @@ sub parse_bwctl_output {
         elsif (($time) = $line =~ /bwctl: run_tool: sender: (.*)/) {
             $results{sender_address} = $1;
         }
+        # Special-case some of the tool handling in case something happens
+        # before exec can write the tester out.
+        elsif ($line =~ /bwctl: exec_line: owping/) {
+            $results{tool} = "owamp";
+        }
+        elsif ($line =~ /bwctl: exec_line: traceroute/) {
+            $results{tool} = "traceroute";
+        }
+        elsif ($line =~ /bwctl: exec_line: tracepath/) {
+            $results{tool} = "tracepath";
+        }
+        elsif ($line =~ /bwctl: exec_line: iperf/) {
+            $results{tool} = "iperf";
+        }
+        elsif ($line =~ /bwctl: exec_line: nuttcp/) {
+            $results{tool} = "nuttcp";
+        }
+        elsif ($line =~ /bwctl: run_tool: tester: (.*)/) {
+            $results{tool} = $1;
+        }
+        elsif ($line =~ /bwctl: Unable to initiate peer handshake/) {
+            $results{error} = $line;
+        }
         elsif ($line =~ /bwctl: Unable to connect/) {
             $results{error} = $line;
         }
         elsif ($line =~ /bwctl:/) {
-            # XXX: handle other errors. e.g. firewall
+            # XXX: handle other errors
         }
         else {
             $output_without_bwctl .= "\n".$line;
         }
     }
 
-    if ($tool_type eq "iperf") {
+    $tool = $results{tool} unless $tool;
+
+    if ($tool eq "iperf") {
         $results{results} = parse_iperf_output({ stdout => $stdout });
     }
-    elsif ($tool_type eq "iperf3") {
+    elsif ($tool eq "iperf3") {
         $results{results} = parse_iperf3_output({ stdout => $stdout });
     }
-    elsif ($tool_type eq "traceroute") {
+    elsif ($tool eq "traceroute") {
         $results{results} = parse_traceroute_output({ stdout => $output_without_bwctl });
     }
-    elsif ($tool_type eq "tracepath") {
+    elsif ($tool eq "tracepath") {
         $results{results} = parse_tracepath_output({ stdout => $output_without_bwctl });
     }
-    elsif ($tool_type eq "ping") {
+    elsif ($tool eq "ping") {
         $results{results} = parse_ping_output({ stdout => $stdout });
     }
-    elsif ($tool_type eq "owamp") {
+    elsif ($tool eq "owamp") {
         $results{results} = parse_owamp_raw_output({ stdout => $stdout });
     }
     else {
-        $results{error} = "Unknown tool type: $tool_type";
+        $results{error} = "Unknown tool type: $tool";
     }
 
     $results{raw_results} = $stdout;

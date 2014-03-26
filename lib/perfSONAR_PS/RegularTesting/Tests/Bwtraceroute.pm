@@ -93,7 +93,7 @@ override 'build_results' => sub {
     $results->packet_max_ttl($test_parameters->packet_max_ttl);
 
     # Parse the bwctl output, and add it in
-    my $bwctl_results = parse_bwctl_output({ stdout => $output, tool_type => $test_parameters->tool });
+    my $bwctl_results = parse_bwctl_output({ stdout => $output });
 
     $logger->debug("BWCTL Results: ".Dumper($bwctl_results));
 
