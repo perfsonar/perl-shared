@@ -40,20 +40,20 @@ sub get_ips {
 
     my $IFCONFIG;
     open( $IFCONFIG, "-|", "/sbin/ifconfig" ) or return;
-    my $is_eth = 0;
+    my $is_loop = 0;
     my $curr_interface;
     while ( <$IFCONFIG> ) {
         if ( /^(\S+)\s*Link encap:([^ ]+)/ ) {
             $curr_interface = $1;
-            if ( lc( $2 ) eq "ethernet" ) {
-                $is_eth = 1;
+            if ( lc( $2 ) eq "local" ) {
+                $is_loop = 1;
             }
             else {
-                $is_eth = 0;
+                $is_loop = 0;
             }
         }
 
-        next unless $is_eth;
+        next if $is_loop;
 
         unless ($ret_interfaces{$curr_interface}) {
             $ret_interfaces{$curr_interface} = [];
@@ -85,10 +85,9 @@ sub get_ethernet_interfaces {
 
     my $IFCONFIG;
     open( $IFCONFIG, "-|", "/sbin/ifconfig -a" ) or return;
-    my $is_eth = 0;
     while ( <$IFCONFIG> ) {
         if ( /^(\S*).*Link encap:([^ ]+)/ ) {
-            if ( lc( $2 ) eq "ethernet" ) {
+            if ( lc( $2 ) ne "local" ) {
                 push @ret_interfaces, $1;
             }
         }
