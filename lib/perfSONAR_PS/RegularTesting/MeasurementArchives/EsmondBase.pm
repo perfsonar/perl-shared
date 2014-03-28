@@ -24,6 +24,7 @@ has 'password' => (is => 'rw', isa => 'Str');
 has 'database' => (is => 'rw', isa => 'Str');
 has 'summary' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondSummary]', default => sub { [] });
 has 'disable_default_summaries' => (is => 'rw', isa => 'Bool', default => sub { 0 });
+has 'timeout' => (is => 'rw', isa => 'Int', default => sub { 60 });
 
 override 'store_results' => sub {
     my ($self, @args) = @_;
@@ -224,6 +225,8 @@ sub send_post {
     my $json = $parameters->{json};
     my $auth_string = $self->username . ":" . $self->password;
     my $client = LWP::UserAgent->new();
+    $client->timeout($self->timeout);
+    $client->env_proxy();
     
     $logger->debug("Writing to esmond at " . $self->database);
     $logger->debug("Esmond request: " . to_json($json));
