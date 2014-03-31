@@ -407,11 +407,19 @@ sub __owmesh_conf_generic_add_mesh_tests {
             next;
         }
 
-        $i++;
+        $logger->debug("Adding: ".$test->description);
 
-        my $test_id = $mesh->description."_".$variable_prefix.$i;
-        $test_id = uc($test_id);
-        $test_id =~ s/[^A-Z0-9_]/_/g;
+        my $base_id = $mesh->description."_".$variable_prefix;
+
+        my $test_id;
+        my $i = 1;
+        do {
+            $test_id = $base_id;
+            $test_id .= "-".$i unless ($i == 1);
+            $test_id = __build_id(id => $test_id);
+            $i++;
+        }
+        while(exists $self->owmesh_conf->{TESTSPEC}->{$test_id});
 
         my $test_spec = __build_test_spec({ variable_prefix => $variable_prefix, test => $test });
 
@@ -542,6 +550,16 @@ sub __owmesh_conf_generic_add_mesh_tests {
     }
 
     return;
+}
+
+sub __build_id {
+    my $parameters = validate( @_, { id => 1 } );
+    my $id = $parameters->{id};
+
+    $id = uc($id);
+    $id =~ s/[^A-Z0-9_]/_/g;
+
+    return $id;
 }
 
 sub __get_node {
