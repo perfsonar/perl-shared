@@ -46,6 +46,7 @@ use perfSONAR_PS::RegularTesting::MeasurementArchives::EsmondTraceroute;
 use perfSONAR_PS::RegularTesting::Schedulers::Base;
 use perfSONAR_PS::RegularTesting::Schedulers::RegularInterval;
 use perfSONAR_PS::RegularTesting::Schedulers::Streaming;
+use perfSONAR_PS::RegularTesting::Schedulers::TimeBasedSchedule;
 
 override 'variable_map' => sub {
     return { "tests" => "test", "measurement_archives" => "measurement_archive" };

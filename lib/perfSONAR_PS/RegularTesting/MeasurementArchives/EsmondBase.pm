@@ -113,6 +113,8 @@ sub add_metadata {
         $metadata->{'time-interval'} = $test->{'schedule'}->interval;
     }elsif($test->{schedule}->type() eq 'streaming'){
         $metadata->{'time-interval'} = 0;
+    }elsif($test->{schedule}->type() eq 'time_schedule'){
+        $metadata->{'time-schedule'} = join(",", @{ $test->schedule->time_slots });
     }
     
     $metadata->{'event-types'} = [];
