@@ -118,9 +118,6 @@ sub readlines {
         push @ret_lines, @lines;
     }
 
-    use Data::Dumper;
-    $logger->debug("Lines: ".Dumper(\@ret_lines));
-
     my $retval;
     unless ($! == EAGAIN) {
         $retval = 0;
@@ -128,6 +125,9 @@ sub readlines {
     else {
         $retval = 1;
     }
+
+    use Data::Dumper;
+    $logger->debug("Lines: ".Dumper(\@ret_lines));
 
     $$lines = \@ret_lines;
     if ($fh == $self->stdout_fh) {
