@@ -97,7 +97,7 @@ override 'default_summaries' => sub {
 
 override 'add_metadata_parameters' => sub{
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {test => 1, test_parameters => 1, metadata => 1, results => 1});
+    my $parameters = validate( @args, {test => 1, target => 1, test_parameters => 1, metadata => 1, results => 1});
     my $metadata = $parameters->{metadata};
     my $results = $parameters->{results};
     my $test = $parameters->{test};
