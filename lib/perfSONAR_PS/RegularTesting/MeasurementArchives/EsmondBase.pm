@@ -25,6 +25,9 @@ has 'database' => (is => 'rw', isa => 'Str');
 has 'summary' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondSummary]', default => sub { [] });
 has 'disable_default_summaries' => (is => 'rw', isa => 'Bool', default => sub { 0 });
 has 'timeout' => (is => 'rw', isa => 'Int', default => sub { 60 });
+has 'ca_certificate_file' => (is => 'rw', isa => 'Str|Undef');
+has 'ca_certificate_path' => (is => 'rw', isa => 'Str|Undef');
+has 'verify_hostname' => (is => 'rw', isa => 'Bool|Undef');
 
 override 'store_results' => sub {
     my ($self, @args) = @_;
@@ -227,6 +230,9 @@ sub send_post {
     my $client = LWP::UserAgent->new();
     $client->timeout($self->timeout);
     $client->env_proxy();
+    $client->ssl_opts(verify_hostname => $self->verify_hostname) if defined ($self->verify_hostname);
+    $client->ssl_opts(SSL_ca_file => $self->ca_certificate_file) if($self->ca_certificate_file);
+    $client->ssl_opts(SSL_ca_path => $self->ca_certificate_path) if($self->ca_certificate_path);
     
     $logger->debug("Writing to esmond at " . $self->database);
     $logger->debug("Esmond request: " . to_json($json));
