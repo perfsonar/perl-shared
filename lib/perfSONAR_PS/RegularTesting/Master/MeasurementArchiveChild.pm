@@ -91,6 +91,7 @@ override 'child_main_loop' => sub {
             if ($@) {
                 $status = -1;
                 $res = "Problem handling test results: $@";
+                $logger->error($res);
             }
 
             if ($status != 0) {
