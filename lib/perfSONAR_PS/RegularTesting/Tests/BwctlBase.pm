@@ -53,6 +53,8 @@ override 'valid_schedule' => sub {
 
     return 1 if ($schedule->type eq "regular_intervals");
 
+    return 1 if ($schedule->type eq "time_schedule");
+
     return;
 };
 
@@ -280,7 +282,13 @@ sub build_cmd {
     push @cmd, '-6' if $force_ipv6;
 
     # Add the scheduling information
-    push @cmd, ( '-I', $schedule->interval );
+    if ($schedule->type eq "regular_intervals") {
+        push @cmd, ( '-I', $schedule->interval );
+    }
+    elsif ($schedule->type eq "time_schedule") {
+        my $schedule_str = join(",", @{ $schedule->time_slots });
+        push @cmd, ( '--schedule', $schedule_str );
+    }
     push @cmd, ( '-p', '-d', $results_directory );
     push @cmd, ( '-L', $test_parameters->latest_time ) if $test_parameters->latest_time;
 
