@@ -50,9 +50,6 @@ override 'event_types' => sub {
     
     my @event_types = (
         'failures',
-        'packet-loss-rate',
-        'packet-count-lost',
-        'packet-count-sent',
         'packet-retransmits',
         'throughput',
         'throughput-subintervals',
@@ -61,6 +58,11 @@ override 'event_types' => sub {
         push @event_types, 'streams-retransmits';
         push @event_types, 'streams-throughput';
         push @event_types, 'streams-throughput-subintervals';
+    }
+    if($test_parameters->use_udp){
+        push @event_types, 'packet-loss-rate';
+        push @event_types, 'packet-count-lost';
+        push @event_types, 'packet-count-sent';
     }
         
     return \@event_types;
