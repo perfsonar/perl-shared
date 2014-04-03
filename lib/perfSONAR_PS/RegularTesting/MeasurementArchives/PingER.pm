@@ -238,15 +238,14 @@ sub add_data {
     my $prev_delay;
     foreach my $datum (@{ $results->pings }) {
         next unless $datum->delay;
-        my $delay_in_ms = $datum->delay * 1000.0;
         
-        $rtt_stats->add_data($delay_in_ms);
+        $rtt_stats->add_data($datum->delay);
 
         if ($prev_delay) {
-            $ipd_stats->add_data($delay_in_ms - $prev_delay);
+            $ipd_stats->add_data($datum->delay - $prev_delay);
         }
 
-        $prev_delay = $delay_in_ms;
+        $prev_delay = $datum->delay;
     }
 
     my $rtts_string = join(",", map { $_->delay } @{ $results->pings });

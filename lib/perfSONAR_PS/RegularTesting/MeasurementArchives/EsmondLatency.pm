@@ -10,8 +10,6 @@ use Params::Validate qw(:all);
 use POSIX qw/floor/;
 
 use Moose;
-
-use constant DEFAULT_BUCKET_WIDTH => .0001;
  
 extends 'perfSONAR_PS::RegularTesting::MeasurementArchives::EsmondBase';
 
@@ -108,8 +106,7 @@ override 'add_metadata_parameters' => sub{
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-transport-protocol', value => $results->source->protocol);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-ttl', value => $results->packet_ttl);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'sample-size', value => $results->packet_count);
-    my $bucket_width = ($results->histogram_bucket_size ? $results->histogram_bucket_size : DEFAULT_BUCKET_WIDTH);
-    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'sample-bucket-width', value => $bucket_width);
+    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'sample-bucket-width', value => $bucket_width) if(defined $results->histogram_bucket_size );
     if($results->packet_count && $results->inter_packet_time && !$results->bidirectional){
         $self->add_metadata_opt_parameter(metadata => $metadata, key => 'time-duration', value => ($results->packet_count * $results->inter_packet_time));
     }
@@ -293,9 +290,7 @@ sub handle_histogram_delay(){
             if(!defined $datum->delay){
                 next;
             }
-            my $bucket_width = ($results->histogram_bucket_size ? $results->histogram_bucket_size : DEFAULT_BUCKET_WIDTH);
-            my $bucket = floor($datum->delay/$bucket_width);
-            $hist->{$bucket}++;
+            $hist->{$datum->delay}++;
         }
     }else{
         $hist = $results->delay_histogram;
