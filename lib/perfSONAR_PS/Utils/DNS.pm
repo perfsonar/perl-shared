@@ -27,8 +27,9 @@ use Net::DNS;
 use NetAddr::IP;
 use Regexp::Common;
 use Data::Dumper;
+use Socket6 qw(inet_ntop);
 
-our @EXPORT_OK = qw( reverse_dns resolve_address resolve_address_multi reverse_dns_multi query_location );
+our @EXPORT_OK = qw( reverse_dns resolve_address resolve_address_multi reverse_dns_multi query_location discover_source_address );
 
 =head2 resolve_address ($name)
 
@@ -281,6 +282,22 @@ sub query_location {
     return (0, { latitude => $latitude, longitude => $longitude });
 }
 
+sub discover_source_address {
+    my $parameters = validate( @_, { address => 1, local_address => 0 } );
+    my $address = $parameters->{address};
+    my $local_address = $parameters->{local_address};
+
+    # Create a UDP socket destined for the specified address
+    my $sock = IO::Socket::INET6->new(LocalAddr => $local_address, PeerAddr => $address, PeerPort => '80', Proto => 'udp');
+    return unless $sock;
+
+    # Grab the local end of the newly-created socket 
+    my $addr = $sock->sockaddr();
+    return unless $addr;
+
+    # Convert the address to a string
+    return inet_ntop($sock->sockdomain(), $addr);
+}
 
 1;
 

@@ -12,7 +12,7 @@ use Data::Dumper;
 use Data::Validate::IP qw(is_ipv4);
 use JSON qw(from_json to_json);
 use LWP;
-use perfSONAR_PS::Utils::DNS qw(resolve_address);
+use perfSONAR_PS::Utils::DNS qw(discover_source_address);
 use URI::Split qw(uri_split uri_join);
 
 use Moose;
@@ -318,71 +318,26 @@ sub measurement_agent {
     my $test = $parameters->{test};
     my $target = $parameters->{target};
     my $results = $parameters->{results};
-    #Determine address type we need 
-    my $use_ipv6 = 1;
-    if ( is_ipv4($results->{source}->{address}) ){
-        $use_ipv6 = 0;
-    }
-    
-    #Try the local address first
-    my $agent = $test->local_address;
-    if(!$agent){
-        #no local address so grab the endpoint that is not the target.
-        my $target_ip = $self->get_addr_by_type(address => $target->address, use_ipv6 => $use_ipv6);
-        if($target_ip eq '0.0.0.0' || $target_ip eq '::0' ){
-            $logger->warn("Unable to determinine measurement agent for target" . $target->address);
-            return $target_ip;
-        }elsif($target_ip eq $results->{source}->{address}){
-            return $results->{destination}->{address};
-        }else{
-            return $results->{source}->{address};
-        }
-    }
-    
-    #make sure we have an IP
-    unless ( is_ipv4( $agent ) or &Net::IP::ip_is_ipv6( $agent ) ) {
-        $agent = $self->get_addr_by_type(address => $agent, use_ipv6 => $use_ipv6);
-    }
-    if($agent eq '0.0.0.0' || $agent eq '::0' ){
-        $logger->warn("Unable to determinine measurement agent for local address " . $test->local_address);
-    }
-    
-    return $agent;
-}
 
-sub get_addr_by_type {
-    my ($self, @args) = @_;
-    my $parameters = validate( @args, { address => 1, use_ipv6 => 1});
-    my $address = $parameters->{address};
-    my $use_ipv6 = $parameters->{use_ipv6};
-    
-    #if its in the right form then return
-    if($use_ipv6 && &Net::IP::ip_is_ipv6( $address )){
-        return $address;
-    }elsif(!$use_ipv6 && is_ipv4( $address )){
-        return $address;
-    }elsif($use_ipv6 && is_ipv4( $address )){
-        #type mismatch, fix the config.
-        return '::0';
-    }elsif(!$use_ipv6 && &Net::IP::ip_is_ipv6( $address )){
-        #type mismatch, fix the config.
-        return '0.0.0.0';
+    # Check if this host is the destination first
+    my $agent = discover_source_address(address => $results->{source}->{address}, local_address => $results->{destination}->{address});
+
+    # If this host isn't the destination, check if it's this source
+    unless ($agent) {
+        $agent = discover_source_address(address => $results->{destination}->{address}, local_address => $results->{source}->{address});
     }
     
-    #we should have a hostname here
-    my $result = $use_ipv6 ? '::0' : '0.0.0.0';
-    my @addresses = resolve_address($address);
-    foreach my $a(@addresses){
-        if($use_ipv6 && &Net::IP::ip_is_ipv6( $a )){
-            $result = $a;
-            last;
-        }elsif(!$use_ipv6 && is_ipv4( $a )){
-            $result = $a;
-            last;
-        }
+    # If using the results didn't work, try using the target address and the test's local address
+    unless ($agent) {
+        $agent = discover_source_address(address => $target->address, local_address => $test->local_address);
     }
-    
-    return $result;
+
+    # Lastly, if none of that worked, lookup the local host's address to target address
+    unless ($agent) {
+        $agent = discover_source_address(address => $target->address);
+    }
+
+    return $agent;
 }
 
 package perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondSummary;
