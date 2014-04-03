@@ -329,7 +329,7 @@ sub build_results {
 
     my %delays = ();
     foreach my $bucket (keys %{ $summary->{BUCKETS} }) {
-        $delays{$bucket * $summary->{BUCKET_WIDTH}} = $summary->{BUCKETS}->{$bucket};
+        $delays{$bucket} = $summary->{BUCKETS}->{$bucket};
     }
     $results->delay_histogram(\%delays);
 

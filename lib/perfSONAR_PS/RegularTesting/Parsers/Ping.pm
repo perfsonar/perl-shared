@@ -56,7 +56,7 @@ sub parse_ping_output {
             push @pings, {
                 seq => $seq,
                 ttl => $ttl,
-                delay => $delay,
+                delay => $delay/1000.0,
             };
         }
 
