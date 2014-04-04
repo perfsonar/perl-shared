@@ -190,17 +190,20 @@ sub add_data {
             my $datum = $self->add_datum(timestamp=>$ts, event_type=> $et, results => $results);
             push @{$vals}, {'event-type' => $et, 'val' => $datum} if(defined $datum);
         }
-        push @{$data}, { 'ts' => $ts, 'val' => $vals};
+        
+        push @{$data}, { 'ts' => $ts, 'val' => $vals} if(scalar(@{$vals}) > 0);
     }
     
     $logger->debug("Results: ".Dumper($results));
     $logger->debug("esmond data: ".Dumper($data));
     
     #send to MA
-    my $response = $self->send_post(url => $write_url, json => {'data' => $data});
-    if(!$response->is_success){
-        my $errmsg = $self->build_err_msg(http_response => $response);
-        return ($response->code, $errmsg);
+    if(scalar(@{$data}) > 0){
+        my $response = $self->send_post(url => $write_url, json => {'data' => $data});
+        if(!$response->is_success){
+            my $errmsg = $self->build_err_msg(http_response => $response);
+            return ($response->code, $errmsg);
+        }
     }
     
     return (0, "")
