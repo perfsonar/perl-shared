@@ -104,7 +104,8 @@ override 'build_results' => sub {
             my $datum = perfSONAR_PS::RegularTesting::Results::LatencyTestDatum->new();
             $datum->sequence_number($ping->{sequence_number}) if defined $ping->{sequence_number};
             $datum->ttl($ping->{ttl}) if defined $ping->{ttl};
-            $datum->delay($ping->{delay}) if defined $ping->{delay};
+            #convert to milliseconds from seconds.
+            $datum->delay($ping->{delay} * 1000) if defined $ping->{delay};
             if(!defined $max_err || $max_err < $ping->{max_error}){
                 $max_err = $ping->{max_error};
             }

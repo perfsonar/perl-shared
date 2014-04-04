@@ -7,7 +7,6 @@ our $VERSION = 3.4;
 
 use Log::Log4perl qw(get_logger);
 use Params::Validate qw(:all);
-use POSIX qw/floor/;
 
 use Moose;
  
@@ -106,7 +105,7 @@ override 'add_metadata_parameters' => sub{
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-transport-protocol', value => $results->source->protocol);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-ttl', value => $results->packet_ttl);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'sample-size', value => $results->packet_count);
-    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'sample-bucket-width', value => $bucket_width) if(defined $results->histogram_bucket_size );
+    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'sample-bucket-width', value => $results->histogram_bucket_size) if(defined $results->histogram_bucket_size );
     if($results->packet_count && $results->inter_packet_time && !$results->bidirectional){
         $self->add_metadata_opt_parameter(metadata => $metadata, key => 'time-duration', value => ($results->packet_count * $results->inter_packet_time));
     }
@@ -290,7 +289,7 @@ sub handle_histogram_delay(){
             if(!defined $datum->delay){
                 next;
             }
-            $hist->{$datum->delay}++;
+            $hist->{sprintf("%.2f", $datum->delay)}++;
         }
     }else{
         $hist = $results->delay_histogram;
