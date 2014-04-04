@@ -318,23 +318,28 @@ sub measurement_agent {
     my $test = $parameters->{test};
     my $target = $parameters->{target};
     my $results = $parameters->{results};
-
+    #untaint addresses
+    my $src_address = $1 if($results->{source}->{address} =~ /(.+)/);
+    my $dst_address = $1 if($results->{destination}->{address} =~ /(.+)/);
+    my $local_address = $1 if($test->local_address =~ /(.+)/);
+    my $target_address = $1 if($target->address =~ /(.+)/);
+    
     # Check if this host is the destination first
-    my $agent = discover_source_address(address => $results->{source}->{address}, local_address => $results->{destination}->{address});
+    my $agent = discover_source_address(address => $src_address, local_address => $dst_address);
 
     # If this host isn't the destination, check if it's this source
     unless ($agent) {
-        $agent = discover_source_address(address => $results->{destination}->{address}, local_address => $results->{source}->{address});
+        $agent = discover_source_address(address => $dst_address, local_address => $src_address);
     }
     
     # If using the results didn't work, try using the target address and the test's local address
     unless ($agent) {
-        $agent = discover_source_address(address => $target->address, local_address => $test->local_address);
+        $agent = discover_source_address(address => $target_address, local_address => $local_address);
     }
 
     # Lastly, if none of that worked, lookup the local host's address to target address
     unless ($agent) {
-        $agent = discover_source_address(address => $target->address);
+        $agent = discover_source_address(address => $target_address);
     }
 
     return $agent;
