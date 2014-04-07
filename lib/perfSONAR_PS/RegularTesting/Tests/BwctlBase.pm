@@ -55,6 +55,8 @@ override 'valid_schedule' => sub {
 
     return 1 if ($schedule->type eq "time_schedule");
 
+    return 1 if ($schedule->type eq "streaming");
+
     return;
 };
 
@@ -282,7 +284,10 @@ sub build_cmd {
     push @cmd, '-6' if $force_ipv6;
 
     # Add the scheduling information
-    if ($schedule->type eq "regular_intervals") {
+    if ($schedule->type eq "streaming") {
+        push @cmd, ( '--streaming' );
+    }
+    elsif ($schedule->type eq "regular_intervals") {
         push @cmd, ( '-I', $schedule->interval );
     }
     elsif ($schedule->type eq "time_schedule") {
@@ -297,6 +302,9 @@ sub build_cmd {
     if ($test_parameters->can("packet_tos_bits") and $test_parameters->packet_tos_bits) {
         push @cmd, ( '--tos', $test_parameters->packet_tos_bits );
     }
+
+    # Make sure verbose mode is on
+    push @cmd, ( '-v' );
 
     return @cmd;
 }
