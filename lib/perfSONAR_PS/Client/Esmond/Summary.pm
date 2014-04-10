@@ -25,4 +25,18 @@ sub summary_window {
     return $self->data->{'summary-window'};
 }
 
+sub time_updated {
+    my $self = shift;
+    return $self->data->{'time-updated'};
+}
+
+sub datetime_updated {
+    my $self = shift;
+    my $ts = $self->time_updated();
+    if($ts){
+        return DateTime->from_epoch(epoch => $self->time_updated());
+    }
+    return undef;
+}
+
 1;

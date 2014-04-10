@@ -21,6 +21,20 @@ sub event_type {
     return $self->data->{'event-type'};
 }
 
+sub time_updated {
+    my $self = shift;
+    return $self->data->{'time-updated'};
+}
+
+sub datetime_updated {
+    my $self = shift;
+    my $ts = $self->time_updated();
+    if($ts){
+        return DateTime->from_epoch(epoch => $self->time_updated());
+    }
+    return undef;
+}
+
 sub summaries {
     my $self = shift;
     my @summaries = ();
