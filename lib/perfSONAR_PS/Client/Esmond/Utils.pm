@@ -28,6 +28,7 @@ sub send_http_request{
         foreach my $g(keys %{$parameters{'get_params'}}){
             $url .= '&' if($param_count > 0);
             $url .= "$g=" . $parameters{'get_params'}->{$g};
+            $param_count++;
         }
     }
     

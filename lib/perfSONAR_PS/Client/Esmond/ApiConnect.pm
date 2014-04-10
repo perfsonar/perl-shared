@@ -21,6 +21,7 @@ our $VERSION = 3.4;
 
 has 'url' => (is => 'rw', isa => 'Str');
 has 'filters' => (is => 'rw', isa => 'perfSONAR_PS::Client::Esmond::ApiFilters', default => sub { new perfSONAR_PS::Client::Esmond::ApiFilters(); });
+has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 
 sub get_metadata() {
     my $self = shift;
@@ -39,14 +40,17 @@ sub get_metadata() {
      
     if(!$response->is_success){
         my $msg = build_err_msg(http_response => $response);
-        warn  $msg;
+        $self->_set_error($msg);
+        return;
     }
     my $response_metadata = from_json($response->content);
     if(! $response_metadata){
-        warn "No metadata objects returned.";
+        $self->_set_error("No metadata objects returned.");
+        return;
     }
     if(ref($response_metadata) ne 'ARRAY'){
-        warn  "Metadata must be an array not " . ref($response_metadata);
+        $self->_set_error("Metadata must be an array not " . ref($response_metadata));
+        return;
     }
     
     my @md_objs = ();

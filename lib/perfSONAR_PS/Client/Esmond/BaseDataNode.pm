@@ -8,6 +8,8 @@ use URI::Split qw(uri_split uri_join);
 
 extends 'perfSONAR_PS::Client::Esmond::BaseNode';
 
+has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
+
 sub _uri {
     die "Must override _uri()";
 }
@@ -33,14 +35,17 @@ sub get_data {
     
     if(!$response->is_success){
         my $msg = build_err_msg(http_response => $response);
-        warn  $msg;
+        $self->_set_error($msg);
+        return;
     }
     my $response_data = from_json($response->content);
     if(! $response_data){
-        warn "No time series objects returned.";
+        $self->_set_error("No time series objects returned.");
+        return;
     }
     if(ref($response_data) ne 'ARRAY'){
-        warn  "Data must be an array not " . ref($response_data);
+        $self->_set_error("Data must be an array not " . ref($response_data));
+        return;
     }
     
     my @ts_objs = ();
@@ -49,3 +54,5 @@ sub get_data {
     }
     return \@ts_objs;
 }
+
+1;
