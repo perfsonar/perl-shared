@@ -101,7 +101,7 @@ override 'add_metadata_parameters' => sub{
     my $test_parameters = $parameters->{test_parameters};
     
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-packet-size', value => $results->packet_size);
-    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-packet-interval', value => $results->inter_packet_time);
+    $self->add_metadata_opt_parameter(metadata => $metadata, key => 'time-probe-interval', value => $results->inter_packet_time);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-transport-protocol', value => $results->source->protocol);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'ip-ttl', value => $results->packet_ttl);
     $self->add_metadata_opt_parameter(metadata => $metadata, key => 'sample-size', value => $results->packet_count);
