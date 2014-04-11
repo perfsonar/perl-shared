@@ -55,7 +55,7 @@ override 'event_types' => sub {
         'throughput-subintervals',
         );
     if($test_parameters->streams > 1){
-        push @event_types, 'streams-retransmits';
+        push @event_types, 'streams-packet-retransmits';
         push @event_types, 'streams-throughput';
         push @event_types, 'streams-throughput-subintervals';
     }
@@ -106,7 +106,7 @@ override 'add_datum' => sub {
         return $self->handle_throughput(results=>$results);
     }elsif($event_type eq 'throughput-subintervals'){
         return $self->handle_throughput_subintervals(results=>$results);
-    }elsif($event_type eq 'streams-retransmits'){
+    }elsif($event_type eq 'streams-packet-retransmits'){
         return $self->handle_streams_retransmits(results=>$results);
     }elsif($event_type eq 'streams-throughput'){
         return $self->handle_streams_throughput(results=>$results);
