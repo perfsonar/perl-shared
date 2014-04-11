@@ -114,7 +114,7 @@ sub add_metadata {
     }else{
         $metadata->{'input-destination'} = $results->{destination}->{address};
     }
-    if($test->{schedule}->type() eq 'regular_testing'){
+    if($test->{schedule}->type() eq 'regular_intervals'){
         $metadata->{'time-interval'} = $test->{'schedule'}->interval;
     }elsif($test->{schedule}->type() eq 'streaming'){
         $metadata->{'time-interval'} = 0;
