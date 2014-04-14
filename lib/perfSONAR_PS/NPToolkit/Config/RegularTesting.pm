@@ -802,6 +802,8 @@ sub add_test_member {
             description => 0,
             sender      => 0,
             receiver    => 0,
+            test_ipv4   => 0,
+            test_ipv6   => 0,
         }
     );
 
@@ -829,6 +831,8 @@ sub add_test_member {
     $member{description} = $parameters->{description};
     $member{sender}      = $parameters->{sender};
     $member{receiver}    = $parameters->{receiver};
+    $member{test_ipv4}   = $parameters->{test_ipv4};
+    $member{test_ipv6}   = $parameters->{test_ipv6};
 
     $test->{members}->{$id} = \%member;
 
@@ -853,10 +857,13 @@ sub update_test_member {
         {
             test_id     => 1,
             member_id   => 1,
+            address     => 0,
             port        => 0,
             description => 0,
             sender      => 0,
             receiver    => 0,
+            test_ipv4   => 0,
+            test_ipv6   => 0,
         }
     );
 
@@ -870,10 +877,13 @@ sub update_test_member {
 
     return ( -1, "Test member does not exist" ) unless ( $member );
 
+    $member->{address}     = $parameters->{address}     if ( defined $parameters->{address} );
     $member->{port}        = $parameters->{port}        if ( defined $parameters->{port} );
     $member->{description} = $parameters->{description} if ( defined $parameters->{description} );
     $member->{sender}      = $parameters->{sender}      if ( defined $parameters->{sender} );
     $member->{receiver}    = $parameters->{receiver}    if ( defined $parameters->{receiver} );
+    $member->{test_ipv4}   = $parameters->{test_ipv4}   if ( defined $parameters->{test_ipv4} );
+    $member->{test_ipv6}   = $parameters->{test_ipv6}   if ( defined $parameters->{test_ipv6} );
 
     return ( 0, "" );
 }
@@ -1056,7 +1066,22 @@ sub parse_regular_testing_config {
         my $test_id = $res;
 
         foreach my $target (@{ $test->targets }) {
-            $self->add_test_member({ test_id => $test_id, address => $target->address, description => $target->description, sender => 1, receiver => 1 });
+            my ($ipv4, $ipv6) = (1, 1);
+
+            foreach my $params ($test->parameters, $target->override_parameters) {
+                next unless $params;
+
+                if ($params->force_ipv4) {
+                    $ipv4 = 1;
+                    $ipv6 = 0;
+                }
+                elsif ($params->force_ipv6) {
+                    $ipv4 = 0;
+                    $ipv6 = 1;
+                }
+            }
+
+            $self->add_test_member({ test_id => $test_id, address => $target->address, description => $target->description, sender => 1, receiver => 1, test_ipv4 => $ipv4, test_ipv6 => $ipv6 });
         }
 
         if ($test->disabled) {
@@ -1110,7 +1135,6 @@ sub generate_regular_testing_config {
                 $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if defined $test_desc->{parameters}->{packet_interval};
                 $parameters->resolution($resolution);
             }
-
         }
         elsif ($test_desc->{type} eq "bwctl/throughput") {
             $schedule = perfSONAR_PS::RegularTesting::Schedulers::RegularInterval->new();
@@ -1147,11 +1171,25 @@ sub generate_regular_testing_config {
             $parameters->receive_only(1);
         }
 
+        $parameters->test_ipv4_ipv6(1);
+
         my @targets = ();
         foreach my $member (values %{ $test_desc->{members} }) {
             my $target = perfSONAR_PS::RegularTesting::Target->new();
             $target->address($member->{address});
             $target->description($member->{description}) if $member->{description};
+
+            unless ($member->{test_ipv4}) {
+                my $override_parameters = $parameters->meta->new_object();
+                $override_parameters->force_ipv6(1);
+                $target->override_parameters($override_parameters);
+            }
+
+            unless ($member->{test_ipv6}) {
+                my $override_parameters = $parameters->meta->new_object();
+                $override_parameters->force_ipv4(1);
+                $target->override_parameters($override_parameters);
+            }
 
             push @targets, $target;
         }
