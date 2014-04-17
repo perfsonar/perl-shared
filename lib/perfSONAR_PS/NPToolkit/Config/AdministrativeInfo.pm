@@ -709,6 +709,59 @@ sub restore_state {
     return;
 }
 
+=head2 get_incomplete_fields()
+    Returns a list of fields that are incomplete
+=cut
+
+sub get_incomplete_fields {
+    my ( $self, @params ) = @_;
+    my %fields = (
+        administrator_name        => $self->{ADMINISTRATOR_NAME},
+        administrator_email       => $self->{ADMINISTRATOR_EMAIL},
+        organization_name => $self->{ORGANIZATION_NAME},
+        location          => $self->{LOCATION},
+        #keywords          => $self->{KEYWORDS}, #TODO: Fix keywords
+        city              => $self->{CITY},
+        state             => $self->{REGION},
+        country           => $self->{COUNTRY},
+        zipcode           => $self->{ZIP_CODE},
+        latitude          => $self->{LATITUDE},
+        longitude         => $self->{LONGITUDE}
+    );
+    my @incomplete_fields = ();
+    while (my ($key, $value) = each %fields) {
+        push @incomplete_fields, $key if (!defined($value) || $value eq '');
+    }
+    
+    return @incomplete_fields;
+}
+
+=head2 field_completed()
+    Returns whether the field in question has been completed
+=cut
+
+sub field_empty {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { field_name => 1, } );
+    my $field_name = quotemeta $parameters->{field_name};
+    my @incomplete_fields = $self->get_incomplete_fields();
+    return grep ( /$field_name/, @incomplete_fields) || 0; 
+}
+
+=head2 is_complete()
+    Returns whether all the fields have been completed
+=cut
+
+sub is_complete {
+    my ( $self, @params ) = @_;
+    return $self->get_incomplete_fields() == 0 || 0;
+#    if( $self->get_incomplete_fields() == 0 ) {
+#        return 1;
+#    } else {
+#        return 0;
+#    }
+}
+
 1;
 
 __END__
