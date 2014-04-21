@@ -29,7 +29,6 @@ sub _post {
         data => $data
     );
     
-    print "Success: " . $response->is_success . "\n";
     if(!$response->is_success){
         my $msg = build_err_msg(http_response => $response);
         $self->_set_error($msg);

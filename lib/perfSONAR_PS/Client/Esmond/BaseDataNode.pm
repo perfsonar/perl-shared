@@ -16,7 +16,7 @@ override '_post_url' => sub {
     my $self = shift;
     my ($scheme, $auth, $path, $query, $frag) = uri_split($self->url);
     my $url = uri_join($scheme, $auth, $self->_uri());
-    print "post url $url\n";
+
     return $url;
 };
 

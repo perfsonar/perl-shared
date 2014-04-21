@@ -47,7 +47,6 @@ sub send_http_request{
         }
     }
     $req->header('Content-Type' => 'application/json'); #always set this
-    print $parameters{data} . "\n";
     $req->content($parameters{data});
     
     # Pass request to the user agent and get a response back
