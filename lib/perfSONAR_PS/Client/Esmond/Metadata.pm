@@ -79,6 +79,12 @@ sub get_field(){
     return $self->data->{$field};
 }
 
+sub set_field(){
+    my ($self, $field, $val) = @_;
+    $self->data->{$field} = $val;
+    return $self->data->{$field};
+}
+
 sub event_types(){
     my $self = shift;
     my @ets = ();
