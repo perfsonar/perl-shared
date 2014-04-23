@@ -51,8 +51,8 @@ sub validate_mesh {
 
     foreach my $host (@all_hosts) {
         foreach my $address (@{ $host->addresses }) {
-            my @hosts = $self->lookup_hosts({ addresses => [ $address ] });
-            if (scalar(@hosts) > 1) {
+            my $hosts = $self->lookup_hosts({ addresses => [ $address ] });
+            if (scalar(@$hosts) > 1) {
                 die("Multiple hosts match $address");
             }
         }
@@ -60,13 +60,23 @@ sub validate_mesh {
 
     foreach my $test (@{ $self->tests }) {
         my $pairs = $test->members->source_destination_pairs;
+        my $has_testing_agent;
+
         foreach my $pair (@$pairs) {
             foreach my $direction ("source", "destination") {
-                my @hosts = $self->lookup_hosts({ addresses => [ $pair->{$direction}->{address} ] });
-                if (scalar(@hosts) == 0) {
+                my $hosts = $self->lookup_hosts({ addresses => [ $pair->{$direction}->{address} ] });
+                if (scalar(@$hosts) == 0) {
                     die($pair->{$direction}->{address}." is not associated with a host");
                 }
+
+                foreach my $host (@$hosts) {
+                    $has_testing_agent = 1 unless ($host->no_agent);
+                }
             }
+        }
+
+        unless ($has_testing_agent and scalar(@$pairs) > 0) {
+            die("Test '".$test->description."' does not have any hosts that can actually perform the test");
         }
     }
 
