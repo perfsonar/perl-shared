@@ -24,7 +24,7 @@ use Params::Validate qw(:all);
 use Storable qw(store retrieve freeze thaw dclone);
 use Data::Dumper;
 
-use perfSONAR_PS::Utils::Config::BWCTL qw( bwctl_conf_parse_file bwctl_keys_parse_file bwctl_limits_parse_file bwctl_keys_hash_password bwctl_conf_output bwctl_keys_output bwctl_limits_output bwctl_known_limits );
+use perfSONAR_PS::Utils::Config::BWCTL qw( bwctl_conf_parse_file bwctl_keys_parse_file bwctl_limits_parse bwctl_limits_parse_file bwctl_keys_hash_password bwctl_conf_output bwctl_keys_output bwctl_limits_output bwctl_known_limits );
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service config_firewall);
 
 # These are the defaults for the current NPToolkit
@@ -92,6 +92,14 @@ sub save {
     if ($status != 0) {
         $self->{LOGGER}->error("Couldn't save limits: ".$res);
         return (-1, "Problem generating limits file");
+    }
+    # validate the limits output
+    $self->{LOGGER}->error("res: " . Dumper $res);
+    my ($status_valid, $res_valid) = bwctl_limits_parse( { lines => $res } );
+    $self->{LOGGER}->error( "status, res: $status_valid, " . Dumper $res_valid);
+    if ( $status_valid != 0 ) {
+        $self->{LOGGER}->error("Save error: invalid limits: ".$res_valid);
+        return ( $status_valid, $res_valid );
     }
 
     my $bwctld_limits_output = join( "\n", @{$res} );

@@ -720,7 +720,6 @@ sub get_incomplete_fields {
         administrator_email       => $self->{ADMINISTRATOR_EMAIL},
         organization_name => $self->{ORGANIZATION_NAME},
         location          => $self->{LOCATION},
-        #keywords          => $self->{KEYWORDS}, #TODO: Fix keywords
         city              => $self->{CITY},
         state             => $self->{REGION},
         country           => $self->{COUNTRY},
@@ -730,7 +729,7 @@ sub get_incomplete_fields {
     );
     my @incomplete_fields = ();
     while (my ($key, $value) = each %fields) {
-        push @incomplete_fields, $key if (!defined($value) || $value eq '');
+        push @incomplete_fields, $key unless $value;
     }
     
     return @incomplete_fields;
