@@ -146,7 +146,7 @@ sub headers {
     my $self = shift;
     my $headers = {};
     if($self->auth_username && $self->auth_apikey){
-        $headers->{'Authorization'} = $self->auth_username . ":" . $self->auth_apikey;
+        $headers->{'Authorization'} = 'ApiKey ' . $self->auth_username . ":" . $self->auth_apikey;
     }
     
     return $headers;

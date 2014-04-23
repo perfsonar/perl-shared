@@ -3,6 +3,7 @@ package perfSONAR_PS::Client::Esmond::EventType;
 use Moose;
 use perfSONAR_PS::Client::Esmond::ApiFilters;
 use perfSONAR_PS::Client::Esmond::Summary;
+use JSON qw(to_json);
 
 extends 'perfSONAR_PS::Client::Esmond::BaseDataNode';
 
@@ -51,7 +52,7 @@ sub get_all_summaries {
     my @summaries = ();
     if($self->data->{'summaries'} && ref($self->data->{'summaries'}) eq 'ARRAY'){
         foreach my $s(@{$self->data->{'summaries'}}){
-            push @summaries, new perfSONAR_PS::Client::Esmond::Summary(data => $s, api_url => $self->api_url, filters => $self->filters);;
+            push @summaries, new perfSONAR_PS::Client::Esmond::Summary(data => $s, url => $self->url, filters => $self->filters);;
         }
     }
     return \@summaries;
@@ -62,12 +63,24 @@ sub get_summary {
     if($self->data->{'summaries'} && ref($self->data->{'summaries'}) eq 'ARRAY'){
         foreach my $s(@{$self->data->{'summaries'}}){
             if($s->{'summary-type'} eq $type && $s->{'summary-window'} eq $window){
-                return new perfSONAR_PS::Client::Esmond::Summary(data => $s, api_url => $self->api_url, filters => $self->filters);
+                return new perfSONAR_PS::Client::Esmond::Summary(data => $s, url => $self->url, filters => $self->filters);
             }
         }
     }
     
     return undef;
+}
+
+sub post_data {
+    my ($self, $data_payload) = @_;
+    
+    my $json_payload = to_json({'ts' => $data_payload->ts, 'val' => $data_payload->val});
+    my $content = $self->_post($json_payload);
+    if($self->error){
+        return -1;
+    }
+    
+    return 0;
 }
 
 1;

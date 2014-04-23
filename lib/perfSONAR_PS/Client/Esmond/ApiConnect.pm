@@ -55,7 +55,7 @@ sub get_metadata() {
     
     my @md_objs = ();
     foreach my $md(@{$response_metadata}){
-        push @md_objs, new perfSONAR_PS::Client::Esmond::Metadata(data => $md, api_url => $self->url, filters => $self->filters);
+        push @md_objs, new perfSONAR_PS::Client::Esmond::Metadata(data => $md, url => $self->url, filters => $self->filters);
     }
     
     return \@md_objs;
