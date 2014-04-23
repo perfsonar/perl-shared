@@ -8,17 +8,23 @@ use URI::Split qw(uri_split uri_join);
 
 extends 'perfSONAR_PS::Client::Esmond::BaseNode';
 
-has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
-
 sub _uri {
     die "Must override _uri()";
 }
+
+override '_post_url' => sub {
+    my $self = shift;
+    my ($scheme, $auth, $path, $query, $frag) = uri_split($self->url);
+    my $url = uri_join($scheme, $auth, $self->_uri());
+
+    return $url;
+};
 
 sub get_data {
     my $self = shift;
 
     #build URL
-    my ($scheme, $auth, $path, $query, $frag) = uri_split($self->api_url);
+    my ($scheme, $auth, $path, $query, $frag) = uri_split($self->url);
     my $url = uri_join($scheme, $auth, $self->_uri());
     
     #sent request
