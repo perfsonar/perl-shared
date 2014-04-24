@@ -283,8 +283,8 @@ sub add_data {
         $dups = $results->duplicate_packets;
 
         my @sorted_buckets = sort { $a <=> $b} keys %{ $results->delay_histogram };
-        $min = $sorted_buckets[0];
-        $max = $sorted_buckets[$#sorted_buckets];
+        $min = $sorted_buckets[0]/1000;
+        $max = $sorted_buckets[$#sorted_buckets]/1000;
 
         my @sorted_ttls    = sort { $a <=> $b} keys %{ $results->ttl_histogram };
         $minttl = $sorted_ttls[0];
@@ -292,7 +292,7 @@ sub add_data {
 
         # Convert buckets to milliseconds from seconds.
         foreach my $bucket (keys %{ $results->delay_histogram }) {
-            $buckets{int($bucket / $results->histogram_bucket_size)} = $results->delay_histogram->{$bucket};
+            $buckets{int($bucket / (1000*$results->histogram_bucket_size))} = $results->delay_histogram->{$bucket};
         }
     }
 
