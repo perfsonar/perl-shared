@@ -43,6 +43,7 @@ override 'build_cmd' => sub {
                                       });
     my $source            = $parameters->{source};
     my $destination       = $parameters->{destination};
+    my $local_destination = $parameters->{local_destination};
     my $results_directory = $parameters->{results_directory};
     my $test_parameters   = $parameters->{test_parameters};
     my $schedule          = $parameters->{schedule};
@@ -53,11 +54,13 @@ override 'build_cmd' => sub {
     # Add the parameters from the parent class
     push @cmd, super();
 
-    # XXX: need to set interpacket time
-
     push @cmd, ( '-N', $test_parameters->packet_count ) if $test_parameters->packet_count;
     push @cmd, ( '-l', $test_parameters->packet_length ) if $test_parameters->packet_length;
     push @cmd, ( '-i', $test_parameters->inter_packet_time ) if $test_parameters->inter_packet_time;
+
+    push @cmd, ( '--flip' ) if $local_destination;
+
+    push @cmd, ( '--no_endpoint' );
 
     # Get the raw output
     push @cmd, ( '-y', 'R' );
