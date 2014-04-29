@@ -41,6 +41,7 @@ has 'meshes'                 => (is => 'rw', isa => 'ArrayRef[HashRef]');
 has 'use_regular_testing'    => (is => 'rw', isa => 'Bool', default => 1);
 
 has 'regular_testing_conf'   => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/regular_testing/etc/regular_testing.conf");
+has 'force_bwctl_owamp'      => (is => 'rw', isa => 'Bool', default => 0);
 
 has 'traceroute_master_conf' => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/traceroute_ma/etc/traceroute-master.conf");
 has 'owmesh_conf'            => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/perfsonarbuoy_ma/etc/owmesh.conf");
@@ -70,6 +71,7 @@ sub init {
                                          ca_certificate_path => 0,
                                          use_regular_testing => 0,
                                          regular_testing_conf => 0,
+                                         force_bwctl_owamp    => 0,
                                          traceroute_master_conf => 0,
                                          owmesh_conf => 0,
                                          pinger_landmarks => 0,
@@ -219,12 +221,16 @@ sub __configure_host {
 
     my @services = ();
     if ($self->use_regular_testing) {
-        push @services, {
+        my $service = {
             name => "Regular Testing",
             config_file => $self->regular_testing_conf,
             generator => perfSONAR_PS::MeshConfig::Generators::perfSONARRegularTesting->new(),
             services => [ "regular_testing" ]
         };
+
+        $service->{generator}->force_bwctl_owamp($self->force_bwctl_owamp);
+
+        push @services, $service;
     }
     else {
         push @services, {
