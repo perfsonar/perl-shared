@@ -10,11 +10,11 @@ use Time::HiRes qw( time );
 use Params::Validate;
 use Data::Dumper;
 
-use FindBin qw($RealBin);
+#use FindBin qw($RealBin);
 
-my $basedir = "$RealBin/";
+#my $basedir = "$RealBin/";
 
-use lib "$RealBin/../../../../lib";
+#use lib "$RealBin/../../../../lib";
 
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 use perfSONAR_PS::NPToolkit::Config::ExternalAddress;
