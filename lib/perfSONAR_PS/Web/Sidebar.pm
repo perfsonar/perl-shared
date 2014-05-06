@@ -1,50 +1,36 @@
 package perfSONAR_PS::Web::Sidebar;
 
-#our $VERSION = 3.3; # what to do here?
+#our $VERSION = 3.4; # what to do here?
 
 use strict;
 use warnings;
 
 use Time::HiRes qw( time );
-#use Log::Log4perl qw(get_logger :easy :levels);
 use Params::Validate;
 use Data::Dumper;
 
-#use FindBin qw($RealBin);
-
-#my $basedir = "$RealBin/";
-
-#use lib "$RealBin/../../../../lib";
-
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 use perfSONAR_PS::NPToolkit::Config::ExternalAddress;
+use perfSONAR_PS::HostInfo::Base;
 
 use Exporter qw(import);
 our @EXPORT_OK = qw(set_sidebar_vars);
 
-our ( $administrative_info_conf );
+our ( $administrative_info_conf, $ntpinfo );
 
 $administrative_info_conf = perfSONAR_PS::NPToolkit::Config::AdministrativeInfo->new();
 $administrative_info_conf->init();
+$ntpinfo = perfSONAR_PS::HostInfo::NTP->new();
 
 sub set_sidebar_vars {
 
-    #my ( $self, @params ) = @_;
-     
-    #my $parameters = validate( @params, { vars => 0 } );
     my $parameters = validate( @_, { vars => 1 } );
     my $vars = $parameters->{vars};
 
-    my $start = [Time::HiRes::gettimeofday()];
+    $vars->{admin_info_nav_class} = "warning" unless $administrative_info_conf->is_complete();
 
-    #$administrative_info_conf = perfSONAR_PS::NPToolkit::Config::AdministrativeInfo->new();
-
-    if (!$administrative_info_conf->is_complete()) {
-        $vars->{admin_info_nav_class} = "warning";
-    }
-
-    my $diff = Time::HiRes::tv_interval($start);
-    warn "time: $diff\n";
+    $vars->{ntp_nav_class} = "warning" unless $ntpinfo->is_synced();
+   
     return $vars;
 
 }
