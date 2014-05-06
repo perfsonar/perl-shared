@@ -50,7 +50,6 @@ use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 use perfSONAR_PS::NPToolkit::Config::Services;
 use perfSONAR_PS::NPToolkit::Config::Version;
 use perfSONAR_PS::NPToolkit::Config::ExternalAddress;
-use perfSONAR_PS::Web::Sidebar qw(set_sidebar_vars);
 
 package perfSONAR_PS::HostInfo::Base;
 
