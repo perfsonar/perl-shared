@@ -11,7 +11,8 @@ use Data::Dumper;
 
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 use perfSONAR_PS::NPToolkit::Config::ExternalAddress;
-use perfSONAR_PS::HostInfo::Base;
+
+use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
 use Exporter qw(import);
 our @EXPORT_OK = qw(set_sidebar_vars);
@@ -20,7 +21,7 @@ our ( $administrative_info_conf, $ntpinfo );
 
 $administrative_info_conf = perfSONAR_PS::NPToolkit::Config::AdministrativeInfo->new();
 $administrative_info_conf->init();
-$ntpinfo = perfSONAR_PS::HostInfo::NTP->new();
+$ntpinfo = get_service_object("ntp");
 
 sub set_sidebar_vars {
 

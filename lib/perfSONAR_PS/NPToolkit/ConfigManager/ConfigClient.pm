@@ -110,14 +110,12 @@ sub restartService {
         @params,
         {
             name           => 1,
-            ignoreEnabled => 1,
         }
     );
 
     my $name           = $parameters->{name};
-    my $ignoreEnabled  = RPC::XML::boolean->new($parameters->{ignoreEnabled});
 
-    my $res = $self->{CLIENT}->simple_request("restartService", $name, $ignoreEnabled);
+    my $res = $self->{CLIENT}->simple_request("restartService", $name, RPC::XML::boolean->new(0));
     unless (defined $res) {
         my $msg = "Problem restarting service $name: ".$RPC::XML::ERROR;
         $self->{LOGGER}->error($msg);
@@ -145,14 +143,14 @@ sub startService {
         @params,
         {
             name           => 1,
-            ignoreEnabled => 1,
+            enable        => 1,
         }
     );
 
-    my $name           = $parameters->{name};
-    my $ignoreEnabled  = RPC::XML::boolean->new($parameters->{ignoreEnabled});
+    my $name   = $parameters->{name};
+    my $enable = RPC::XML::boolean->new($parameters->{enable});
 
-    my $res = $self->{CLIENT}->simple_request("startService", $name, $ignoreEnabled);
+    my $res = $self->{CLIENT}->simple_request("startService", $name, $enable);
     unless (defined $res) {
         my $msg = "Problem starting service $name: ".$RPC::XML::ERROR;
         $self->{LOGGER}->error($msg);
@@ -178,15 +176,15 @@ sub stopService {
     my $parameters = validate(
         @params,
         {
-            name           => 1,
-            ignoreEnabled => 1,
+            name          => 1,
+            disable       => 1,
         }
     );
 
-    my $name           = $parameters->{name};
-    my $ignoreEnabled  = RPC::XML::boolean->new($parameters->{ignoreEnabled});
+    my $name    = $parameters->{name};
+    my $disable = RPC::XML::boolean->new($parameters->{disable});
 
-    my $res = $self->{CLIENT}->simple_request("stopService", $name, $ignoreEnabled);
+    my $res = $self->{CLIENT}->simple_request("stopService", $name, $disable, $disable);
     unless (defined $res) {
         my $msg = "Problem stopping service $name: ".$RPC::XML::ERROR;
         $self->{LOGGER}->error($msg);
