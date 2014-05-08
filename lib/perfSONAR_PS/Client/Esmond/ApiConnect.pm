@@ -13,6 +13,7 @@ A client for interacting with the MA as implemented by esmond
 use Moose;
 use Params::Validate qw(:all);
 use  perfSONAR_PS::Client::Esmond::ApiFilters;
+use  perfSONAR_PS::Client::Esmond::DataConnect;
 use  perfSONAR_PS::Client::Esmond::Metadata;
 use perfSONAR_PS::Client::Esmond::Utils qw(send_http_request build_err_msg);
 use JSON qw(from_json);
@@ -59,6 +60,12 @@ sub get_metadata() {
     }
     
     return \@md_objs;
+}
+
+sub get_data() {
+    my ($self, $uri) = @_;
+    my $data_client = new perfSONAR_PS::Client::Esmond::DataConnect(url => $self->url, filters => $self->filters, uri => $uri);
+    return $data_client->get_data();
 }
 
 1;
