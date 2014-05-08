@@ -11,15 +11,11 @@ perfSONAR_PS::NPToolkit::Config::RegularTesting
 
 =head1 DESCRIPTION
 
-Module is a catch-all for configuring with PingER and perfSONAR-BUOY tests.
-Longer term, this should probably be split into separate modules, but for now
-it's one. The test description model used is a combination of the semantics of
-the PingER and pSB models.
-
-In this model, there are only tests. These tests can them have members added to
-them. These members can either be hostnames, IPv4 or IPv6 addresses. The module
-then takes care to make sure that these concepts can be done using the PingER
-and pSB model. The model currently assumes that in star configuration, the
+Module is a catch-all for configuring with Regular Testing tests.  In this
+model, there are only tests. These tests can them have members added to them.
+These members can either be hostnames, IPv4 or IPv6 addresses. The module then
+takes care to make sure that these concepts can be done using the Regular
+Testing model. The model currently assumes that in star configuration, the
 center is always the local host.
 
 =cut
@@ -95,8 +91,8 @@ sub init {
 }
 
 =head2 save({ restart_services => 0 })
-    Saves the configuration to disk. The PingER/pSB services can be restarted
-    by specifying the "restart_services" parameter as 1. 
+    Saves the configuration to disk. The Regular Testing service can be
+    restarted by specifying the "restart_services" parameter as 1. 
 =cut
 
 sub save {
@@ -505,8 +501,8 @@ sub update_test_bwctl_throughput {
 
 =head2 add_test_pinger({ description => 0, packet_size => 1, packet_count => 1, packet_interval => 1, test_interval => 1, test_offset => 1, ttl => 1 })
 
-    Adds a new PingER test to the list. packet_size, packet_count,
-    packet_interval, test_interval, test_offset, ttl all correspond to PingER
+    Adds a new ping test to the list. packet_size, packet_count,
+    packet_interval, test_interval, test_offset, ttl all correspond to ping
     test parameters. Returns (-1, $error_msg) on failure and (0, $test_id) on
     success.
 
@@ -570,8 +566,8 @@ sub add_test_pinger {
 
 =head2 update_test_pinger({ description => 0, packet_size => 0, packet_count => 0, packet_interval => 0, test_interval => 0, test_offset => 0, ttl => 0 })
 
-    Updates an existing PingER test. packet_size, packet_count,
-    packet_interval, test_interval, test_offset, ttl all correspond to PingER
+    Updates an existing ping test. packet_size, packet_count,
+    packet_interval, test_interval, test_offset, ttl all correspond to ping
     test parameters. Returns (-1, $error_msg) on failure and (0, $test_id) on
     success.
 
@@ -782,12 +778,11 @@ sub delete_test {
 }
 
 =head2 add_test_member ({ test_id => 1, address => 1, port => 0, name => 0, description => 0, sender => 0, receiver => 0 })
-    Adds a new address to the test. Address can be either hostname/ipv4/ipv6
-    except for PingER where the address must be an ipv4 or ipv6 adress. Port
-    specifies which port should be connected to, this is ignored in PingER
-    tests. The sender/receiver fields can be set to 1 or 0 and specify whether
-    that test member should do a send or receive test, inapplicable for PingER
-    tests. Returns (0, $member_id) on success and (-1, $error_msg) on failure.
+    Adds a new address to the test. Address can be any of hostname/ipv4/ipv6.
+    Port specifies which port should be connected to, this is ignored in ping
+    tests. The sender/receiver fields can be set to 1 or 0 and specify whether that
+    test member should do a send or receive test.
+    Returns (0, $member_id) on success and (-1, $error_msg) on failure.
 =cut
 
 sub add_test_member {
@@ -843,11 +838,8 @@ sub add_test_member {
 
 =head2 update_test_member ({ test_id => 1, member_id => 1, port => 0, name => 0, description => 0, sender => 0, receiver => 0 })
     Updates an existing member in a test.  Port specifies which port should be
-    connected to, this is ignored in PingER tests. The sender/receiver fields
-    can be set to 1 or 0 and specify whether that test member should do a send
-    or receive test, inapplicable for PingER tests. The name field is used to
-    make sure that pSB node names stay consistent across re-configurations
-    since pSB uses node names to differentiate new elements.
+    connected to. The sender/receiver fields can be set to 1 or 0 and specify
+    whether that test member should do a send or receive test.
 =cut
 
 sub update_test_member {

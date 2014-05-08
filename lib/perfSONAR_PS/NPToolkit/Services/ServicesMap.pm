@@ -23,7 +23,7 @@ use perfSONAR_PS::NPToolkit::Services::OWAMP;
 use perfSONAR_PS::NPToolkit::Services::RegularTesting;
 use perfSONAR_PS::NPToolkit::Services::SimpleLSBoostrap;
 
-our @EXPORT_OK = qw( get_service_object get_service_name );
+our @EXPORT_OK = qw( get_service_object get_service_name get_all_service_names );
 
 my %name_to_service_map = (
     bwctl => "perfSONAR_PS::NPToolkit::Services::BWCTL",
@@ -68,6 +68,13 @@ sub get_service_name {
     }
 
     return;
+}
+
+sub get_all_service_names {
+
+    my @names = keys %name_to_service_map;
+
+    return \@names;
 }
 
 1;
