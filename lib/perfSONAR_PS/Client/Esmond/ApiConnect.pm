@@ -65,7 +65,9 @@ sub get_metadata() {
 sub get_data() {
     my ($self, $uri) = @_;
     my $data_client = new perfSONAR_PS::Client::Esmond::DataConnect(url => $self->url, filters => $self->filters, uri => $uri);
-    return $data_client->get_data();
+    my $data = $data_client->get_data();
+    $self->_set_error($data_client->error) if($data_client->error);
+    return $data;
 }
 
 1;
