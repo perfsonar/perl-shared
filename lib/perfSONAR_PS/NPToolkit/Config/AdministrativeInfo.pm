@@ -29,11 +29,6 @@ use Data::Dumper;
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service );
 use perfSONAR_PS::NPToolkit::Config::NDT;
 use perfSONAR_PS::NPToolkit::Config::NPAD;
-use perfSONAR_PS::NPToolkit::Config::PingER;
-use perfSONAR_PS::NPToolkit::Config::perfSONARBUOYMA;
-use perfSONAR_PS::NPToolkit::Config::TracerouteMA;
-use perfSONAR_PS::NPToolkit::Config::SNMPMA;
-use perfSONAR_PS::NPToolkit::Config::hLS;
 use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
 
 # These are the defaults for the current NPToolkit
@@ -95,26 +90,6 @@ sub save {
         return (-1, "Couldn't initialize NPAD configuration");
     }
 
-    my $pinger_config = perfSONAR_PS::NPToolkit::Config::PingER->new();
-    if ( $pinger_config->init() != 0 ) {
-        return (-1, "Couldn't initialize PingER configuration");
-    }
-
-    my $psb_ma_config = perfSONAR_PS::NPToolkit::Config::perfSONARBUOYMA->new();
-    if ( $psb_ma_config->init() != 0 ) {
-        return (-1, "Couldn't initialize perfSONARBUOY-MA configuration");
-    }
-
-    my $snmp_ma_config = perfSONAR_PS::NPToolkit::Config::SNMPMA->new();
-    if ( $snmp_ma_config->init() != 0 ) {
-        return (-1, "Couldn't initialize perfSONARBUOY-MA configuration");
-    }
-    
-    my $traceroute_ma_config = perfSONAR_PS::NPToolkit::Config::TracerouteMA->new();
-    if ( $traceroute_ma_config->init() != 0 ) {
-        return (-1, "Couldn't initialize Traceroute MA configuration");
-    }
-
     my $ls_reg_daemon_config = perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon->new();
     if ( $ls_reg_daemon_config->init() != 0 ) {
         return (-1, "Couldn't initialize LS Registration Daemon configuration");
@@ -131,7 +106,7 @@ sub save {
         }
     }
 
-    foreach my $service_config ($pinger_config, $psb_ma_config, $snmp_ma_config, $traceroute_ma_config, $ls_reg_daemon_config) {
+    foreach my $service_config ($ls_reg_daemon_config) {
         $service_config->set_administrator_email( administrator_email => $self->{ADMINISTRATOR_EMAIL} );
         $service_config->set_administrator_name( administrator_name => $self->{ADMINISTRATOR_NAME} );
         $service_config->set_city( city => $self->{CITY} );

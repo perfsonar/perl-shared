@@ -90,7 +90,7 @@ sub restart_service {
         return -1;
     }
 
-    ($status, $res) = $client->restartService({ name => $name, ignoreEnabled => 0 });
+    ($status, $res) = $client->restartService({ name => $name });
     if ($status != 0) {
         return -1;
     }
@@ -111,10 +111,12 @@ sub stop_service {
         @_,
         {
             name => 0,
+            disable => 0
         }
     );
 
     my $name    = $parameters->{name};
+    my $disable = $parameters->{disable};
 
     my ($status, $res);
 
@@ -124,7 +126,7 @@ sub stop_service {
         return -1;
     }
 
-    ($status, $res) = $client->stopService({ name => $name, ignoreEnabled => 0 });
+    ($status, $res) = $client->stopService({ name => $name, disable => $disable });
     if ($status != 0) {
         return -1;
     }
@@ -145,10 +147,12 @@ sub start_service {
         @_,
         {
             name => 0,
+            enable => 0,
         }
     );
 
     my $name    = $parameters->{name};
+    my $enable  = $parameters->{enable};
 
     my ($status, $res);
 
@@ -158,7 +162,7 @@ sub start_service {
         return -1;
     }
 
-    ($status, $res) = $client->startService({ name => $name, ignoreEnabled => 0 });
+    ($status, $res) = $client->startService({ name => $name, enable => $enable });
     if ($status != 0) {
         return -1;
     }

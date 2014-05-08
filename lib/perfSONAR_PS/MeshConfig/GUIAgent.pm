@@ -14,6 +14,7 @@ use URI::Split qw(uri_split);
 use YAML qw(LoadFile);
 
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw(restart_service save_file);
+use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
 use perfSONAR_PS::MeshConfig::Utils qw(load_mesh);
 
@@ -342,45 +343,16 @@ sub __restart_service {
             if ( $res == -1 ) {
                 die("Couldn't restart service ".$name." via toolkit daemon");
             }
-        } 
+        }
         else {
-            my $services_conf = perfSONAR_PS::NPToolkit::Config::Services->new();
-            $services_conf->init();
-
-            my $service_info = $services_conf->lookup_service( { name => $name } );
+            my $service_obj = get_service_object($name);
             unless ($service_info) {
                 my $msg = "Invalid service: $name";
                 $logger->error($msg);
                 die($msg);
             }
 
-            my @service_names;
-
-            if ( ref $service_info->{service_name} eq "ARRAY" ) {
-                @service_names = @{ $service_info->{service_name} };
-            }
-            else {
-                @service_names = ( $service_info->{service_name} );
-            }
- 
-            foreach my $service_name ( @service_names ) {
-                my $cmd = "service " . $service_name . " restart";
-                $logger->debug($cmd);
-                my $output = "";
-                open FH, $cmd." 2>&1 | " or die "Problem exec'ing $cmd";
-                while(<FH>) {
-                    $output .= $_;
-                }
-                my $result = $?;
-
-                close(FH);
-
-                $logger->debug("Script output for $cmd: ".$output);
-
-                unless ($result == 0) {
-                    die("Couldn't restart $service_name");
-                }
-            }
+            die if ($service_obj->restart);
         } 
     };
     if ($@) {

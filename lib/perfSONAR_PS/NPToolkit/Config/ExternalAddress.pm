@@ -31,10 +31,6 @@ use Net::Interface;
 use perfSONAR_PS::NPToolkit::Config::RegularTesting;
 use perfSONAR_PS::NPToolkit::Config::NDT;
 use perfSONAR_PS::NPToolkit::Config::NPAD;
-use perfSONAR_PS::NPToolkit::Config::PingER;
-use perfSONAR_PS::NPToolkit::Config::perfSONARBUOYMA;
-use perfSONAR_PS::NPToolkit::Config::SNMPMA;
-use perfSONAR_PS::NPToolkit::Config::TracerouteMA;
 use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service );
 
@@ -85,49 +81,19 @@ sub save {
         return (-1, "Problem saving external address file");
     }
 
-    my $regular_testing_config = perfSONAR_PS::NPToolkit::Config::RegularTesting->new();
-    ( $status, $res ) = $regular_testing_config->init();
-    if ( $status != 0 ) {
-        return (-1, "Couldn't initialize regular testing configuration");
-    }
-
-    my $pinger_config = perfSONAR_PS::NPToolkit::Config::PingER->new();
-    if ( $pinger_config->init() != 0 ) {
-        return (-1, "Couldn't initialize PingER configuration");
-    }
-
-    my $psb_ma_config = perfSONAR_PS::NPToolkit::Config::perfSONARBUOYMA->new();
-    if ( $psb_ma_config->init() != 0 ) {
-        return (-1, "Couldn't initialize perfSONARBUOY-MA configuration");
-    }
-
-    my $snmp_ma_config = perfSONAR_PS::NPToolkit::Config::SNMPMA->new();
-    if ( $snmp_ma_config->init() != 0 ) {
-        return (-1, "Couldn't initialize perfSONARBUOY-MA configuration");
-    }
-    
-    my $traceroute_ma_config = perfSONAR_PS::NPToolkit::Config::TracerouteMA->new();
-    if ( $traceroute_ma_config->init() != 0 ) {
-        return (-1, "Couldn't initialize Traceroute MA configuration");
-    }
-
     my $ls_reg_daemon_config = perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon->new();
     if ( $ls_reg_daemon_config->init() != 0 ) {
         return (-1, "Couldn't initialize LS Registration Daemon configuration");
     }
 
-    $res = $regular_testing_config->save({ restart_services => $parameters->{restart_services} });
-
-    foreach my $service_config ($pinger_config, $psb_ma_config, $snmp_ma_config, $traceroute_ma_config, $ls_reg_daemon_config) {
-        $service_config->set_external_address( external_address => $self->{PRIMARY_ADDRESS} );
-        $service_config->set_external_address_if_name( external_address_if_name => $self->{PRIMARY_ADDRESS_IFACE} );
-        $service_config->set_external_address_ipv4( external_address_ipv4 => $self->{PRIMARY_IPV4} );
-        $service_config->set_external_address_ipv6( external_address_ipv6 => $self->{PRIMARY_IPV6} );
-        $service_config->set_external_address_if_speed( external_address_if_speed => $self->{PRIMARY_IFACE_SPEED} );
-        $res = $service_config->save({ restart_services => $parameters->{restart_services} });
-        if ($res != 0) {
-            return (-1, "Couldn't save or restart ".$service_config->get_service_name);
-        }
+    $ls_reg_daemon_config->set_external_address( external_address => $self->{PRIMARY_ADDRESS} );
+    $ls_reg_daemon_config->set_external_address_if_name( external_address_if_name => $self->{PRIMARY_ADDRESS_IFACE} );
+    $ls_reg_daemon_config->set_external_address_ipv4( external_address_ipv4 => $self->{PRIMARY_IPV4} );
+    $ls_reg_daemon_config->set_external_address_ipv6( external_address_ipv6 => $self->{PRIMARY_IPV6} );
+    $ls_reg_daemon_config->set_external_address_if_speed( external_address_if_speed => $self->{PRIMARY_IFACE_SPEED} );
+    $res = $ls_reg_daemon_config->save({ restart_services => $parameters->{restart_services} });
+    if ($res != 0) {
+        return (-1, "Couldn't save or restart ".$ls_reg_daemon_config->get_service_name);
     }
 
     return 0;

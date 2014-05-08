@@ -21,7 +21,7 @@ use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger :nowarn);
 use Data::Dumper;
 
-use perfSONAR_PS::NPToolkit::Config::Services;
+use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
 use fields 'DAEMON', 'LOGGER', 'ACCESS_CONTROL', 'FIREWALL_SCRIPT';
 
@@ -84,7 +84,6 @@ sub init {
             code => sub {
                         return $self->restartService({
                                                 name => $_[1],
-                                                ignoreEnabled => $_[2],
                                                 });
                      },
             signature => ['string string boolean']
@@ -94,7 +93,7 @@ sub init {
             code => sub {
                         return $self->startService({
                                                 name => $_[1],
-                                                ignoreEnabled => $_[2],
+                                                enable => $_[2],
                                                 });
                      },
             signature => ['string string boolean']
@@ -104,10 +103,10 @@ sub init {
             code => sub {
                         return $self->stopService({
                                                 name => $_[1],
-                                                ignoreEnabled => $_[2],
+                                                disable => $_[2],
                                                 });
                      },
-            signature => ['string string boolean']
+            signature => ['string string boolean boolean']
     });
     $self->{DAEMON}->add_method({
             name => "configureFirewall",
@@ -178,16 +177,11 @@ sub restartService {
         @params,
         {
             name => 1,
-            ignoreEnabled => 1,
         }); 
 
     my $name          = $parameters->{name};
-    my $ignoreEnabled = $parameters->{ignoreEnabled};
 
     my ($status, $res);
-
-    my $services_conf = perfSONAR_PS::NPToolkit::Config::Services->new();
-    $services_conf->init();
 
     unless ($self->{ACCESS_CONTROL}->{service}->{$name}) {
         die("Access denied: no service $name in list");
@@ -197,40 +191,18 @@ sub restartService {
         die("Access denied: no restart option for $name");
     }
 
-    my $service_info = $services_conf->lookup_service( { name => $name } );
-    unless ($service_info) {
+    my $service_obj = get_service_object( $name );
+    unless ($service_obj) {
         my $msg = "Invalid service: $name";
         $self->{LOGGER}->error($msg);
         die($msg);
     }
 
-    unless ($ignoreEnabled or $service_info->{enabled}) {
+    if ($service_obj->disabled) {
         return "";
     }
 
-    my @service_names = ();
-
-    if ( ref $service_info->{service_name} eq "ARRAY" ) {
-        foreach my $service_name ( @{ $service_info->{service_name} } ) {
-            push @service_names, $service_name;
-        }
-    }
-    else {
-        push @service_names, $service_info->{service_name};
-    }
- 
-    foreach my $service_name ( @service_names ) {
-        # XXX: hack so that during a save, it doesn't stop apache in the middle.
-        # Really needs a better way of doing it.
-        my $restart_cmd = "restart";
-        $restart_cmd = "reload" if ($service_name =~ /httpd/);
-
-        my $cmd = "service " . $service_name . " " .$restart_cmd ." &> /dev/null";
-        $self->{LOGGER}->debug($cmd);
-        system( $cmd );
-    }
-
-    return "";
+    return $service_obj->restart;
 }
 
 =head2 startService({ name => 1 })
@@ -242,16 +214,13 @@ sub startService {
         @params,
         {
             name => 1,
-            ignoreEnabled => 1,
+            enable => 0,
         }); 
 
     my $name          = $parameters->{name};
-    my $ignoreEnabled = $parameters->{ignoreEnabled};
+    my $enable        = $parameters->{enable};
 
     my ($status, $res);
-
-    my $services_conf = perfSONAR_PS::NPToolkit::Config::Services->new();
-    $services_conf->init();
 
     unless ($self->{ACCESS_CONTROL}->{service}->{$name}) {
         die("Access denied");
@@ -261,35 +230,26 @@ sub startService {
         die("Access denied");
     }
 
-    my $service_info = $services_conf->lookup_service( { name => $name } );
-    unless ($service_info) {
+    my $service_obj = get_service_object( $name );
+    unless ($service_obj) {
         my $msg = "Invalid service: $name";
         $self->{LOGGER}->error($msg);
         die($msg);
     }
 
-    unless ($ignoreEnabled or $service_info->{enabled}) {
+    if ($enable) {
+        $self->{LOGGER}->error("Enabling $name in startup");
+        $service_obj->enable_startup();
+    }
+    else {
+        $self->{LOGGER}->error("Not enabling $name from startup");
+    }
+
+    if ($service_obj->disabled) {
         return "";
     }
 
-    my @service_names = ();
-
-    if ( ref $service_info->{service_name} eq "ARRAY" ) {
-        foreach my $service_name ( @{ $service_info->{service_name} } ) {
-            push @service_names, $service_name;
-        }
-    }
-    else {
-        push @service_names, $service_info->{service_name};
-    }
- 
-    foreach my $service_name ( @service_names ) {
-        my $cmd = "service " . $service_name . " start &> /dev/null";
-        $self->{LOGGER}->debug($cmd);
-        system( $cmd );
-    }
-
-    return "";
+    return $service_obj->start;
 }
 
 =head2 stopService({ name => 1 })
@@ -301,16 +261,13 @@ sub stopService {
         @params,
         {
             name => 1,
-            ignoreEnabled => 1,
+            disable => 0,
         }); 
 
     my $name          = $parameters->{name};
-    my $ignoreEnabled = $parameters->{ignoreEnabled};
+    my $disable       = $parameters->{disable};
 
     my ($status, $res);
-
-    my $services_conf = perfSONAR_PS::NPToolkit::Config::Services->new();
-    $services_conf->init();
 
     unless ($self->{ACCESS_CONTROL}->{service}->{$name}) {
         die("Access denied");
@@ -320,36 +277,23 @@ sub stopService {
         die("Access denied");
     }
 
-    my $service_info = $services_conf->lookup_service( { name => $name } );
-    unless ($service_info) {
+    my $service_obj = get_service_object( $name );
+    unless ($service_obj) {
         my $msg = "Invalid service: $name";
         $self->{LOGGER}->error($msg);
         die($msg);
     }
 
 #    stop no matter what since stopping a non-enabled service doesn't matter
-#    unless ($ignoreEnabled or $service_info->{enabled}) {
-#        return "";
-#    }
-
-    my @service_names = ();
-
-    if ( ref $service_info->{service_name} eq "ARRAY" ) {
-        foreach my $service_name ( @{ $service_info->{service_name} } ) {
-            push @service_names, $service_name;
-        }
+    if ($disable) {
+        $self->{LOGGER}->error("Disabling $name from startup");
+        $service_obj->disable_startup();
     }
     else {
-        push @service_names, $service_info->{service_name};
-    }
- 
-    foreach my $service_name ( @service_names ) {
-        my $cmd = "service " . $service_name . " stop &> /dev/null";
-        $self->{LOGGER}->debug($cmd);
-        system( $cmd );
+        $self->{LOGGER}->error("Not disabling $name from startup");
     }
 
-    return "";
+    return $service_obj->kill;
 }
 
 =head2 configureFirewall({ name => 1 })
