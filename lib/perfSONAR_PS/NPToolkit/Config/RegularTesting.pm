@@ -80,7 +80,9 @@ sub init {
     }
 
     # Initialize the defaults
-    $self->{REGULAR_TESTING_CONFIG_FILE}  = $defaults{regular_testing_config_file};
+    $self->{REGULAR_TESTING_CONFIG_FILE}  = $parameters->{regular_testing_config_file};
+
+    $self->{REGULAR_TESTING_CONFIG_FILE}  = $defaults{regular_testing_config_file} unless $self->{REGULAR_TESTING_CONFIG_FILE};
 
     ( $status, $res ) = $self->reset_state();
     if ( $status != 0 ) {
@@ -988,13 +990,18 @@ sub parse_regular_testing_config {
                               });
         }
         elsif ($test->parameters->type eq "bwping/owamp") {
+            my $interval;
+            if ($test->schedule->can("interval")) {
+                $interval = $test->schedule->interval;
+            }
+
             ($status, $res) = $self->add_test_owamp({
                                           description => $test->description,
                                           local_interface => $test->local_interface,
                                           packet_interval => $test->parameters->inter_packet_time,
                                           packet_padding => $test->parameters->packet_length,
                                           sample_count => $test->parameters->packet_count,
-                                          test_interval => $test->schedule->interval,
+                                          test_interval => $interval,
                                           added_by_mesh => $test->added_by_mesh,
                               });
         }
@@ -1096,7 +1103,8 @@ sub parse_regular_testing_config {
 =cut
 sub generate_regular_testing_config {
     my ( $self, @params ) = @_;
-    my $parameters = validate( @params, { } );
+    my $parameters = validate( @params, { include_mesh_tests => 0 } );
+    my $include_mesh_tests = $parameters->{include_mesh_tests};
 
     my @tests = ();
 
@@ -1104,7 +1112,7 @@ sub generate_regular_testing_config {
     foreach my $test_desc (values %{ $self->{TESTS} }) {
         my ($parameters, $schedule);
 
-        next if ($test_desc->{added_by_mesh});
+        next if ($test_desc->{added_by_mesh} and not $include_mesh_tests);
 
         if ($test_desc->{type} eq "owamp") {
             if ($test_desc->{parameters}->{test_interval}) {
@@ -1146,10 +1154,10 @@ sub generate_regular_testing_config {
             $schedule->interval($test_desc->{parameters}->{test_interval});
 
             $parameters = perfSONAR_PS::RegularTesting::Tests::Bwping->new();
-            $parameters->packet_count($test_desc->{parameters}->{packet_count}) if defined $test_desc->{parameters}->{packet_count};
-            $parameters->packet_length($test_desc->{parameters}->{packet_size}) if defined $test_desc->{parameters}->{packet_size};
-            $parameters->packet_ttl($test_desc->{parameters}->{ttl}) if defined $test_desc->{parameters}->{ttl};
-            $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if defined $test_desc->{parameters}->{packet_interval};
+            $parameters->packet_count($test_desc->{parameters}->{packet_count}) if $test_desc->{parameters}->{packet_count};
+            $parameters->packet_length($test_desc->{parameters}->{packet_size}) if $test_desc->{parameters}->{packet_size};
+            $parameters->packet_ttl($test_desc->{parameters}->{ttl}) if $test_desc->{parameters}->{ttl};
+            $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if $test_desc->{parameters}->{packet_interval};
             $parameters->receive_only(1);
         }
         elsif ($test_desc->{type} eq "traceroute") {
