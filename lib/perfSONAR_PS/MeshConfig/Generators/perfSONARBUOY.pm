@@ -332,9 +332,11 @@ sub __validate_perfsonarbuoy_configuration {
 
         # Handle the special-cases for each test type
         if ($test->parameters->type eq "perfsonarbuoy/bwctl") {
-             unless ($test->parameters->protocol eq "udp" or
-                     $test->parameters->protocol eq "tcp") {
-                 die("Unknown test protocol: ".$test->parameters->protocol);
+             if ($test->parameters->protocol) {
+                 unless ($test->parameters->protocol eq "udp" or
+                         $test->parameters->protocol eq "tcp") {
+                     die("Unknown test protocol: ".$test->parameters->protocol);
+                 }
              }
     
              unless ($test->parameters->tool eq "bwctl/iperf") {

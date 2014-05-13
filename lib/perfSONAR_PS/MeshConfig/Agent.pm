@@ -490,7 +490,7 @@ sub __restart_service {
         }
         else {
             my $service_obj = get_service_object($name);
-            unless ($service_info) {
+            unless ($service_obj) {
                 my $msg = "Invalid service: $name";
                 $logger->error($msg);
                 die($msg);
