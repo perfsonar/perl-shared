@@ -274,7 +274,7 @@ To join the 'perfSONAR-PS' mailing list, please visit:
 
   https://mail.internet2.edu/wws/info/i2-perfsonar
 
-The perfSONAR-PS subversion repository is located at:
+The perfSONAR-PS git repository is located at:
 
   https://svn.internet2.edu/svn/perfSONAR-PS 
   
