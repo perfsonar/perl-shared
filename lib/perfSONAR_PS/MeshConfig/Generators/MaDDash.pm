@@ -440,7 +440,8 @@ sub __build_check {
     $check->{type} = "net.es.maddash.checks.PSNagiosCheck";
     $check->{retryInterval}   = 600;
     $check->{retryAttempts}   = 3;
-    $check->{timeout}         = 60;
+    $check->{timeout}         = __get_check_option({ option => "timeout", test_type => $type, grid_name => $grid_name, maddash_options => $maddash_options });
+    $check->{timeout}         = 60 unless(defined $check->{timeout});
     $check->{excludeChecks}   = $exclude_checks;
     $check->{params}          = {};
     $check->{params}->{maUrl} = $ma_map;
