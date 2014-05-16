@@ -102,6 +102,41 @@ sub summary_window{
     return $self->metadata_filters->{'summary-window'};
 }
 
+sub dns_match_rule{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->metadata_filters->{'dns-match-rule'} = $val;
+    }
+    
+    return $self->metadata_filters->{'dns-match-rule'};
+}
+
+sub dns_match_only_v4{
+    my $self = shift;
+    return $self->dns_match_rule('only-v4');
+}
+
+sub dns_match_only_v6{
+    my $self = shift;
+    return $self->dns_match_rule('only-v6');
+}
+
+sub dns_match_prefer_v4{
+    my $self = shift;
+    return $self->dns_match_rule('prefer-v4');
+}
+
+sub dns_match_prefer_v6{
+    my $self = shift;
+    return $self->dns_match_rule('prefer-v6');
+}
+
+sub dns_match_all{
+    my $self = shift;
+    return $self->dns_match_rule('v4v6');
+}
+
 sub time{
     my ($self, $val) = @_;
     
