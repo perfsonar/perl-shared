@@ -10,7 +10,6 @@ use Params::Validate;
 use Data::Dumper;
 
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
-use perfSONAR_PS::NPToolkit::Config::ExternalAddress;
 
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
