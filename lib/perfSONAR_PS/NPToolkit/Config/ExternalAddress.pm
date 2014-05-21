@@ -28,10 +28,6 @@ use Storable qw(store retrieve freeze thaw dclone);
 use Data::Dumper;
 use Net::Interface;
 
-use perfSONAR_PS::NPToolkit::Config::RegularTesting;
-use perfSONAR_PS::NPToolkit::Config::NDT;
-use perfSONAR_PS::NPToolkit::Config::NPAD;
-use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service );
 
 # These are the defaults for the current NPToolkit
@@ -79,21 +75,6 @@ sub save {
     $res = save_file( { file => $self->{EXTERNAL_ADDRESS_FILE}, content => $external_address_output } );
     if ( $res == -1 ) {
         return (-1, "Problem saving external address file");
-    }
-
-    my $ls_reg_daemon_config = perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon->new();
-    if ( $ls_reg_daemon_config->init() != 0 ) {
-        return (-1, "Couldn't initialize LS Registration Daemon configuration");
-    }
-
-    $ls_reg_daemon_config->set_external_address( external_address => $self->{PRIMARY_ADDRESS} );
-    $ls_reg_daemon_config->set_external_address_if_name( external_address_if_name => $self->{PRIMARY_ADDRESS_IFACE} );
-    $ls_reg_daemon_config->set_external_address_ipv4( external_address_ipv4 => $self->{PRIMARY_IPV4} );
-    $ls_reg_daemon_config->set_external_address_ipv6( external_address_ipv6 => $self->{PRIMARY_IPV6} );
-    $ls_reg_daemon_config->set_external_address_if_speed( external_address_if_speed => $self->{PRIMARY_IFACE_SPEED} );
-    $res = $ls_reg_daemon_config->save({ restart_services => $parameters->{restart_services} });
-    if ($res != 0) {
-        return (-1, "Couldn't save or restart ".$ls_reg_daemon_config->get_service_name);
     }
 
     return 0;
