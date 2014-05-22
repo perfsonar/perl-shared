@@ -21,7 +21,6 @@ use perfSONAR_PS::NPToolkit::Services::NPAD;
 use perfSONAR_PS::NPToolkit::Services::NTP;
 use perfSONAR_PS::NPToolkit::Services::OWAMP;
 use perfSONAR_PS::NPToolkit::Services::RegularTesting;
-use perfSONAR_PS::NPToolkit::Services::SimpleLSBootstrap;
 
 our @EXPORT_OK = qw( get_service_object get_service_name get_all_service_names );
 
@@ -40,7 +39,6 @@ my %name_to_service_map = (
     ntp => "perfSONAR_PS::NPToolkit::Services::NTP",
     owamp => "perfSONAR_PS::NPToolkit::Services::OWAMP",
     regular_testing => "perfSONAR_PS::NPToolkit::Services::RegularTesting",
-    simple_ls_boostrap => "perfSONAR_PS::NPToolkit::Services::SimpleLSBootstrap",
 );
 
 sub get_service_object {
