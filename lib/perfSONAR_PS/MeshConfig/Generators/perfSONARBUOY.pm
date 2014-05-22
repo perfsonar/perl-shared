@@ -615,6 +615,7 @@ sub __build_test_spec {
             'report_interval' => 'ReportInterval',
             'udp_bandwidth'   => 'UDPBandwidthLimit',
             'window_size'     => 'WindowSize',
+            'latest_time'     => 'LatestTime',
             'ipv4_only'       => 'IPv4Only',
             'ipv6_only'       => 'IPv6Only',
             'random_start_percentage' => 'TestIntervalStartAlpha',

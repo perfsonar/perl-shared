@@ -37,6 +37,7 @@ has 'omit_interval'   => (is => 'rw', isa => 'Int');
 has 'force_bidirectional' => (is => 'rw', isa => 'Bool');
 has 'ipv4_only'       => (is => 'rw', isa => 'Bool');
 has 'ipv6_only'       => (is => 'rw', isa => 'Bool');
+has 'latest_time'     => (is => 'rw', isa => 'Int');
 has 'random_start_percentage' => (is => 'rw', isa => 'Int');
 
 1;
