@@ -233,7 +233,8 @@ sub discover_primary_address {
     my $ipv6_interface;
     my $interface_speed;
     my $interface_mtu;
-
+    my $interface_mac;
+    
     my @all_ips = ();
     foreach my $iface ( keys %$ips_by_iface ) {
         foreach my $ip (@{ $ips_by_iface->{$iface} }) {
@@ -350,6 +351,7 @@ sub discover_primary_address {
     if($chosen_interface){
         $interface_speed = get_interface_speed({interface_name => $chosen_interface});
         $interface_mtu = get_interface_mtu({interface_name => $chosen_interface});
+        $interface_mac = get_interface_mac({interface_name => $chosen_interface});
     }
 
     if ($chosen_address) {
@@ -382,6 +384,7 @@ sub discover_primary_address {
         primary_ipv4_iface => $ipv4_interface,
         primary_iface_speed => $interface_speed,
         primary_iface_mtu => $interface_mtu,
+        primary_iface_mac => $interface_mac,
     };
 }
 
