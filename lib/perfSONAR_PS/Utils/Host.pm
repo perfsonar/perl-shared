@@ -417,6 +417,7 @@ sub get_processor_info {
     my %parse_map = (
         'CPU MHz' => 'speed',
         'CPU socket(s)' => 'count',
+        'Socket(s)' => 'count', #alternative label for sockets
         'CPU(s)' => 'cores',
     );
     
