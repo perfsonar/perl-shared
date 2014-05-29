@@ -22,7 +22,7 @@ use base 'Exporter';
 use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger);
 
-use Net::Interface;
+use Net::Interface qw/mac_bin2hex/;
 use Net::CIDR;
 use Net::IP;
 use Data::Validate::IP qw(is_ipv4);
