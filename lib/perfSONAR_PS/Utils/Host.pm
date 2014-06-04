@@ -128,7 +128,7 @@ sub get_interface_addresses {
         return @{ $ips->{$interface} };
     }
     else {
-        return [];
+        return ();
     }
 }
 
