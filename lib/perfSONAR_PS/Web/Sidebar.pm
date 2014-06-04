@@ -27,6 +27,8 @@ sub set_sidebar_vars {
     my $parameters = validate( @_, { vars => 1 } );
     my $vars = $parameters->{vars};
 
+    $vars->{remote_login} = $ENV{'REMOTE_USER'};
+
     $vars->{admin_info_nav_class} = "warning" unless $administrative_info_conf->is_complete();
 
     $vars->{ntp_nav_class} = "warning" unless $ntpinfo->is_synced();
