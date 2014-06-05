@@ -26,6 +26,7 @@ use Socket;
 use Time::HiRes qw(gettimeofday);
 use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger);
+use IO::Select;
 
 our @EXPORT_OK = qw( ping );
 
@@ -36,67 +37,119 @@ Resolve an ip address to a NTP name.
 =cut
 
 sub ping {
-    my $parameters = validate( @_, { hostname => 1, port => 0, timeout => 0} );
+    my $parameters = validate( @_, { hostnames => 1, port => 0, timeout => 0} );
 
-    my $hostname = $parameters->{hostname};
+    my $hostnames = $parameters->{hostnames};
     my $port = $parameters->{port};
     my $timeout = $parameters->{timeout};
 
-    $port = 123 unless ($port);
+    $hostnames = [ $hostnames ] unless ref($hostnames) eq "ARRAY";
+    $port = 123 unless $port;
+    $timeout = 5 unless $timeout;
 
     my $retval;
 
-    eval {
-		local $SIG{ALRM} = sub { die "Timeout" };
-		if ($timeout) {
-			alarm($timeout);
-		}
+    my %results = ();
 
+    my $end_time = time + $timeout;
+
+    eval {
         my ($status, $res);
 
-	    #we use the system call to open a UDP socket
-        $status = socket(SOCKET, PF_INET, SOCK_DGRAM, getprotobyname("udp"));
-        unless ($status) {
-            die("Socket failed: $?" );
+        my @states = ();
+
+        my $select = IO::Select->new();
+        foreach my $hostname (@$hostnames) {
+            eval {
+                #we use the system call to open a UDP socket
+                my $status = socket(my $socket, PF_INET, SOCK_DGRAM, getprotobyname("udp"));
+                unless ($status) {
+                    die("Socket failed: $?");
+                }
+
+                #convert hostname to ipaddress if needed
+                my $ipaddr   = inet_aton($hostname);
+                my $portaddr = sockaddr_in($port, $ipaddr);
+                push @states, {
+                    hostname => $hostname,
+                    portaddr => $portaddr,
+                    ipaddr   => $ipaddr,
+                    socket   => $socket
+                };
+
+                $select->add($socket);
+            };
+            if ($@) {
+                $results{$hostname}->{error} = $@;
+            };
         }
 
-	    #convert hostname to ipaddress if needed
-        my $ipaddr   = inet_aton($hostname);
-        my $portaddr = sockaddr_in($port, $ipaddr);
+        # build a message.  Our message is all zeros except for a one in the protocol version field
+        # $msg in binary is 00 001 000 00000000 ....  or in C msg[]={010,0,0,0,0,0,0,0,0,...}
+        #it should be a total of 48 bytes long
+        my $MSG="\010"."\0"x47;
 
-	    # build a message.  Our message is all zeros except for a one in the protocol version field
-    	# $msg in binary is 00 001 000 00000000 ....  or in C msg[]={010,0,0,0,0,0,0,0,0,...}
-    	#it should be a total of 48 bytes long
-    	my $MSG="\010"."\0"x47;
+        # Send the messages
+        foreach my $state (@states) {
+            my ($s_seconds, $s_microseconds) = gettimeofday();
 
-		my   ($s_seconds, $s_microseconds) = gettimeofday();
+            # Send the data
+            my $res = send($state->{socket}, $MSG, 0, $state->{portaddr});
+            unless ($res == length($MSG)) {
+                $state->{error} = "cannot send to ".$state->{hostname}."($port): $!";
+                next;
+            }
 
-		#send the data
-		$res = send(SOCKET, $MSG, 0, $portaddr);
-		unless ($res == length($MSG)) {
-			die("cannot send to $hostname($port): $!");
-		}
+            $state->{start_seconds}      = $s_seconds;
+            $state->{start_microseconds} = $s_microseconds;
+        }
 
-		$portaddr = recv(SOCKET, $MSG, 1024, 0)      or die "recv: $!";
+        my $remaining_time = $end_time - time;
 
-		my   ($e_seconds, $e_microseconds) = gettimeofday();
+        while (scalar(my @ready = $select->can_read($remaining_time)) > 0) {
+            foreach my $socket (@ready) {
+                my $portaddr = recv($socket, $MSG, 1024, 0);
+                my $error_msg = "recv: $!" unless $portaddr;
 
-		my $dur_seconds = ($e_seconds - $s_seconds);
-		my $dur_micros = ($e_microseconds - $s_microseconds);
-		if ($dur_micros < 0) {
-			$dur_micros = -$dur_micros;
-			$dur_seconds--;
-		}
-		$retval = sprintf("%d.%06d", $dur_seconds, $dur_micros);
+                my ($e_seconds, $e_microseconds) = gettimeofday();
+
+                foreach my $state (@states) {
+                    next unless ($state->{socket} == $socket);
+
+                    $state->{error} = $error_msg;
+                    $state->{end_seconds} = $e_seconds;
+                    $state->{end_microseconds} = $e_microseconds;
+                }
+
+                $select->remove($socket);
+            }
+        }
+
+        foreach my $state (@states) {
+            my $seconds;
+
+            if ($state->{end_seconds} and $state->{end_microseconds}) {
+                my $dur_seconds = ($state->{end_seconds} - $state->{start_seconds});
+                my $dur_micros = ($state->{end_microseconds} - $state->{start_microseconds});
+                if ($dur_micros < 0) {
+                        $dur_micros = -$dur_micros;
+                        $dur_seconds--;
+                }
+                $seconds = sprintf("%d.%06d", $dur_seconds, $dur_micros);
+            }
+
+            $results{$state->{hostname}}->{rtt} = $seconds;
+            $results{$state->{hostname}}->{error} = $state->{error};
+        }
 
         alarm 0;
-	};
-	if ($@) {
-		my $msg = $@;
-		return (-1, $msg);
-	}
+    };
+    if ($@ and $@ !~ /Timeout/) {
+        my $msg = $@;
+        return (-1, $msg);
+    }
 
-	return (0, $retval);
+    return (0, \%results);
 }
 
 1;
