@@ -93,6 +93,15 @@ sub get_target_parameters {
 
     my $target_parameters = $self->parameters;
 
+    if ($self->parent and $self->parent->can("default_parameters")) {
+        foreach my $default_parameters (@{ $self->parent->default_parameters }) {
+            next unless $default_parameters->type eq $target_parameters->type;
+
+            # Have the target parameters override the default parameters
+            $target_parameters = $default_parameters->merge(other => $target_parameters);
+        }
+    }
+
     if ($target->override_parameters) {
         $target_parameters = $target_parameters->merge(other => $target->override_parameters);
     }

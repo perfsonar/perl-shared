@@ -17,6 +17,8 @@ use Moose;
 
 my $logger = get_logger(__PACKAGE__);
 
+has 'parent' => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Utils::SerializableObject | Undef');
+
 sub variable_map {
     my ($self, @args) = @_;
     my $parameters = validate( @args, { });
@@ -55,13 +57,19 @@ sub merge {
     $merge->specify_behavior(\%merge_behavior);
     my $merged_description = $merge->merge($self_description, $other_description);
 
-    return $self->blessed()->parse($merged_description, 1);
+    my $parent;
+    $parent = $self->parent;
+    $parent = $other->parent if not $parent;
+
+    return $self->blessed()->parse($merged_description, 1, $parent);
 }
 
 sub parse {
-    my ($class, $description, $strict) = @_;
+    my ($class, $description, $strict, $parent) = @_;
 
     my $object = $class->new();
+
+    $object->parent($parent) if $parent;
 
     my $meta = $object->meta;
 
@@ -101,7 +109,7 @@ sub parse {
 
         next unless (defined $description->{$variable});
 
-        my $parsed_value = $object->parse_element_attribute({ name => $variable, type => $type, value => $description->{$variable}, strict => $strict });
+        my $parsed_value = $object->parse_element_attribute({ name => $variable, type => $type, value => $description->{$variable}, strict => $strict, parent => $object });
 
         $object->$writer($parsed_value) if defined $parsed_value;
     }
@@ -126,18 +134,19 @@ sub parse {
 
 sub parse_element_attribute {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, { name => 1, type => 1, value => 1, strict => 0 });
+    my $parameters = validate( @args, { name => 1, type => 1, value => 1, strict => 0, parent => 0 });
     my $name       = $parameters->{name};
     my $type       = $parameters->{type};
     my $value      = $parameters->{value};
     my $strict     = $parameters->{strict};
+    my $parent     = $parameters->{parent};
 
     my $parsed_value;
 
     $type = $type."";
 
     if (UNIVERSAL::can($type, "parse")) {
-        $parsed_value = $type->parse($value, $strict);
+        $parsed_value = $type->parse($value, $strict, $parent);
     }
     elsif ($type eq "DateTime") {
         $parsed_value = DateTime::Format::ISO8601->parse_datetime($value);
@@ -149,7 +158,7 @@ sub parse_element_attribute {
 
         my @array = ();
         foreach my $element (@$value) {
-            my $parsed = $self->parse_element_attribute({ name => $name, type => $array_type, value => $element, strict => $strict });
+            my $parsed = $self->parse_element_attribute({ name => $name, type => $array_type, value => $element, strict => $strict, parent => $parent });
             push @array, $parsed;
         }
 
@@ -182,7 +191,7 @@ sub unparse {
         my $reader    = $attribute->get_read_method;
         my $writer    = $attribute->get_write_method;
 
-        next if ($attr_name =~ /^_/);
+        next if ($attr_name =~ /^_/ or $attr_name eq "parent");
 
         if ($attribute->has_default) {
             next if ($attribute->default($self) eq $self->$reader());
