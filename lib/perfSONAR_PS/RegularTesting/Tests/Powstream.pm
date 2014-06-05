@@ -40,6 +40,7 @@ has 'test_ipv4_ipv6'    => (is => 'rw', isa => 'Bool');
 has 'resolution'        => (is => 'rw', isa => 'Int', default => 60);
 has 'packet_length'     => (is => 'rw', isa => 'Int', default => 0);
 has 'inter_packet_time' => (is => 'rw', isa => 'Num', default => 0.1);
+has 'receive_port_range' => (is => 'rw', isa => 'Str');
 
 has '_individual_tests' => (is => 'rw', isa => 'ArrayRef[HashRef]');
 has '_runner'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Utils::CmdRunner');
@@ -161,6 +162,7 @@ override 'run_test' => sub {
         push @cmd, ( '-c', $packets );
         push @cmd, ( '-s', $test_parameters->packet_length ) if $test_parameters->packet_length;
         push @cmd, ( '-i', $test_parameters->inter_packet_time ) if $test_parameters->inter_packet_time;
+        push @cmd, ( '-P', $test_parameters->receive_port_range ) if $test_parameters->receive_port_range;
         if ($test->local_address) {
             push @cmd, ( '-S', $test->local_address );
         }
