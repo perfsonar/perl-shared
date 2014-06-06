@@ -307,6 +307,17 @@ sub __configure_host {
             next;
         }
 
+        if ($mesh->has_unknown_attributes) {
+            if ($mesh_params->{required}) {
+                $dont_change = 1;
+            }
+
+            my $msg = "Mesh has unknown attributes: ".join(", ", keys %{ $host->get_unknown_attributes });
+            $logger->error($msg);
+            $self->__add_error({ mesh => $mesh, error_msg => $msg });
+            next;
+        }
+
         # Find the host block associated with this machine
         my $hosts = $mesh->lookup_hosts({ addresses => $self->addresses });
         unless ($hosts->[0]) {
@@ -332,6 +343,17 @@ sub __configure_host {
         }
 
         my $host = $hosts->[0];
+
+        if ($host->has_unknown_attributes) {
+            if ($mesh_params->{required}) {
+                $dont_change = 1;
+            }
+
+            my $msg = "Host block associated with this machine has unknown attributes: ".join(", ", keys %{ $host->get_unknown_attributes });
+            $logger->error($msg);
+            $self->__add_error({ mesh => $mesh, error_msg => $msg });
+            next;
+        }
 
         # Find the tests that this machine is expected to run
         my $tests = $mesh->lookup_tests_by_addresses({ addresses => $host->addresses });

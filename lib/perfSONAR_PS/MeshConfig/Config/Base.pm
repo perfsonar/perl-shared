@@ -7,6 +7,7 @@ our $VERSION = 3.1;
 use Moose;
 
 use FreezeThaw qw(cmpStr);
+use Clone qw(clone);
 
 =head1 NAME
 
@@ -19,6 +20,7 @@ perfSONAR_PS::MeshConfig::Config::Base;
 =cut
 
 has 'cache'                => (is => 'rw', isa => 'HashRef');
+has 'unknown_attributes'  => (is => 'rw', isa => 'HashRef', default => sub { {} });
 
 sub parse {
     my ($class, $description, $strict) = @_;
@@ -76,11 +78,14 @@ sub parse {
         $object->$writer($parsed_value) if defined $parsed_value;
     }
 
-    if ($strict) {
-        foreach my $key (keys %$description) {
-            unless (UNIVERSAL::can($object, $key)) {
-                die("Unknown attribute: $key");
-            }
+    foreach my $key (keys %$description) {
+        next if (UNIVERSAL::can($object, $key));
+
+        if ($strict) {
+            die("Unknown attribute: $key");
+        }
+        else {
+            $object->unknown_attributes->{$key} = clone($description->{$key});
         }
     }
 
@@ -100,7 +105,7 @@ sub unparse {
         my $reader   = $attribute->get_read_method;
         my $value    = $self->$reader;
 
-        next if ($variable eq "parent" or $variable eq "cache");
+        next if ($variable eq "parent" or $variable eq "cache" or $variable eq "unknown_attributes");
 
         next unless (defined $value);
 
@@ -129,6 +134,10 @@ sub unparse {
         $description{$variable} = $unparsed_value;
     }
 
+    foreach my $attribute (keys %{ $self->unknown_attributes }) {
+        $description{$attribute} = $self->unknown_attributes->{$attribute};
+    }
+
     return \%description;
 }
 
@@ -144,6 +153,13 @@ sub compare {
 
     return cmpStr($self_hash, $other_hash);
 }
+
+sub has_unknown_attributes {
+    my ($self) = @_;
+
+    return (scalar(keys %{ $self->unknown_attributes }) > 0);
+}
+
 
 1;
 
