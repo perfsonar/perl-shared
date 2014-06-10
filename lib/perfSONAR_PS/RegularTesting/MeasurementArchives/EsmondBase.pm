@@ -200,7 +200,10 @@ sub add_data {
     #send to MA
     if(scalar(@{$data}) > 0){
         my $response = $self->send_post(url => $write_url, json => {'data' => $data});
-        if(!$response->is_success){
+        if($response->code() == 409){
+            #if try to post duplicate datapoint, warn and move on
+            $logger->warn("Error posting data to MA: " + $response->content);
+        }elsif(!$response->is_success){
             my $errmsg = $self->build_err_msg(http_response => $response);
             return ($response->code, $errmsg);
         }
