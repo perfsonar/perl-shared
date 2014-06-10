@@ -290,6 +290,7 @@ sub add_test_owamp {
             session_count    => 0,
             bucket_width     => 0,
             test_interval    => 0,
+            test_schedule    => 0,
             added_by_mesh    => 0,
             local_interface  => 0,
         }
@@ -317,6 +318,7 @@ sub add_test_owamp {
     $test_parameters{packet_padding}   = $parameters->{packet_padding}   if ( defined $parameters->{packet_padding} );
     $test_parameters{bucket_width}     = $parameters->{bucket_width}     if ( defined $parameters->{bucket_width} );
     $test_parameters{test_interval}    = $parameters->{test_interval}    if ( defined $parameters->{test_interval} );
+    $test_parameters{test_schedule}    = $parameters->{test_schedule}    if ( defined $parameters->{test_schedule} );
     $test_parameters{local_interface}  = $parameters->{local_interface}  if ( defined $parameters->{local_interface} );
 
     $test{parameters} = \%test_parameters;
@@ -395,7 +397,8 @@ sub add_test_bwctl_throughput {
             name                      => 0,
             description               => 1,
             tool                      => 1,
-            test_interval             => 1,
+            test_interval             => 0,
+            test_schedule             => 0,
             duration                  => 1,
             protocol                  => 1,
             udp_bandwidth             => 0,
@@ -426,6 +429,7 @@ sub add_test_bwctl_throughput {
     my %test_parameters = ();
     $test_parameters{tool}                      = $parameters->{tool}                      if ( defined $parameters->{tool} );
     $test_parameters{test_interval}             = $parameters->{test_interval}             if ( defined $parameters->{test_interval} );
+    $test_parameters{test_schedule}             = $parameters->{test_schedule}             if ( defined $parameters->{test_schedule} );
     $test_parameters{duration}                  = $parameters->{duration}                  if ( defined $parameters->{duration} );
     $test_parameters{protocol}                  = $parameters->{protocol}                  if ( defined $parameters->{protocol} );
     $test_parameters{udp_bandwidth}             = $parameters->{udp_bandwidth}             if ( defined $parameters->{udp_bandwidth} );
@@ -465,6 +469,7 @@ sub update_test_bwctl_throughput {
             name          => 0,
             description   => 0,
             test_interval => 0,
+            test_schedule => 0,
             tool          => 0,
             duration      => 0,
             protocol      => 0,
@@ -488,6 +493,7 @@ sub update_test_bwctl_throughput {
     $test->{description}                             = $parameters->{description}               if ( defined $parameters->{description} );
     $test->{parameters}->{tool}                      = $parameters->{tool}                      if ( defined $parameters->{tool} );
     $test->{parameters}->{test_interval}             = $parameters->{test_interval}             if ( defined $parameters->{test_interval} );
+    $test->{parameters}->{test_schedule}             = $parameters->{test_schedule}             if ( defined $parameters->{test_schedule} );
     $test->{parameters}->{duration}                  = $parameters->{duration}                  if ( defined $parameters->{duration} );
     $test->{parameters}->{protocol}                  = $parameters->{protocol}                  if ( defined $parameters->{protocol} );
     $test->{parameters}->{udp_bandwidth}             = $parameters->{udp_bandwidth}             if ( exists $parameters->{udp_bandwidth} );
@@ -520,6 +526,7 @@ sub add_test_pinger {
             packet_count    => 1,
             packet_interval => 1,
             test_interval   => 1,
+            test_schedule   => 0,
             test_offset     => 0,
             ttl             => 1,
             added_by_mesh   => 0,
@@ -532,6 +539,7 @@ sub add_test_pinger {
     my $packet_count    = $parameters->{packet_count};
     my $packet_size     = $parameters->{packet_size};
     my $test_interval   = $parameters->{test_interval};
+    my $test_schedule   = $parameters->{test_schedule};
     my $test_offset     = $parameters->{test_offset};
     my $ttl             = $parameters->{ttl};
     my $local_interface = $parameters->{local_interface};
@@ -554,6 +562,7 @@ sub add_test_pinger {
             packet_count    => $packet_count,
             packet_size     => $packet_size,
             test_interval   => $test_interval,
+            test_schedule   => $test_schedule,
             test_offset     => $test_offset,
             ttl             => $ttl,
             local_interface => $local_interface,
@@ -587,6 +596,7 @@ sub update_test_pinger {
             packet_count    => 0,
             packet_size     => 0,
             test_interval   => 0,
+            test_schedule   => 0,
             test_offset     => 0,
             ttl             => 0,
             local_interface => 0,
@@ -606,6 +616,7 @@ sub update_test_pinger {
     $test->{parameters}->{packet_count}    = $parameters->{packet_count}    if ( defined $parameters->{packet_count} );
     $test->{parameters}->{packet_size}     = $parameters->{packet_size}     if ( defined $parameters->{packet_size} );
     $test->{parameters}->{test_interval}   = $parameters->{test_interval}   if ( defined $parameters->{test_interval} );
+    $test->{parameters}->{test_schedule}   = $parameters->{test_schedule}   if ( defined $parameters->{test_schedule} );
     $test->{parameters}->{test_offset}     = $parameters->{test_offset}     if ( defined $parameters->{test_offset} );
     $test->{parameters}->{ttl}             = $parameters->{ttl}             if ( defined $parameters->{ttl} );
     $test->{parameters}->{local_interface} = $parameters->{local_interface}  if ( defined $parameters->{local_interface} );
@@ -626,6 +637,7 @@ sub add_test_traceroute {
             name          => 0,
             description   => 1,
             test_interval => 1,
+            test_schedule => 0,
             packet_size   => 0,
             timeout       => 0,
             waittime      => 0,
@@ -654,6 +666,7 @@ sub add_test_traceroute {
 
     my %test_parameters = ();
     $test_parameters{test_interval}             = $parameters->{test_interval}             if ( defined $parameters->{test_interval} );
+    $test_parameters{test_schedule}             = $parameters->{test_schedule}             if ( defined $parameters->{test_schedule} );
     $test_parameters{packet_size}               = $parameters->{packet_size}               if ( defined $parameters->{packet_size} );
     $test_parameters{timeout}                   = $parameters->{timeout}                   if ( defined $parameters->{timeout} );
     $test_parameters{waittime}                  = $parameters->{waittime}                  if ( defined $parameters->{waittime} );
@@ -690,6 +703,7 @@ sub update_test_traceroute {
             name          => 0,
             description   => 0,
             test_interval => 0,
+            test_schedule => 0,
             packet_size   => 0,
             timeout       => 0,
             waittime      => 0,
@@ -711,6 +725,7 @@ sub update_test_traceroute {
     $test->{name}                                    = $parameters->{name}                      if ( defined $parameters->{name} );
     $test->{description}                             = $parameters->{description}               if ( defined $parameters->{description} );
     $test->{parameters}->{test_interval}             = $parameters->{test_interval}             if ( defined $parameters->{test_interval} );
+    $test->{parameters}->{test_schedule}             = $parameters->{test_schedule}             if ( defined $parameters->{test_schedule} );
     $test->{parameters}->{packet_size}               = $parameters->{packet_size}               if ( defined $parameters->{packet_size} );
     $test->{parameters}->{timeout}                   = $parameters->{timeout}                   if ( defined $parameters->{timeout} );
     $test->{parameters}->{waittime}                  = $parameters->{waittime}                  if ( defined $parameters->{waittime} );
@@ -979,6 +994,14 @@ sub parse_regular_testing_config {
     foreach my $test (@{ $config->tests }) {
         my ($status, $res);
 
+        my ($test_schedule, $test_interval);
+        if ($test->schedule->can("interval")) {
+            $test_interval = $test->schedule->interval;
+        }
+        elsif ($test->schedule->can("time_slots")) {
+            $test_schedule = $test->schedule->time_slots;
+        }
+
         if ($test->parameters->type eq "powstream") {
             ($status, $res) = $self->add_test_owamp({
                                           description => $test->description,
@@ -991,17 +1014,14 @@ sub parse_regular_testing_config {
         }
         elsif ($test->parameters->type eq "bwping/owamp") {
             my $interval;
-            if ($test->schedule->can("interval")) {
-                $interval = $test->schedule->interval;
-            }
-
             ($status, $res) = $self->add_test_owamp({
                                           description => $test->description,
                                           local_interface => $test->local_interface,
                                           packet_interval => $test->parameters->inter_packet_time,
                                           packet_padding => $test->parameters->packet_length,
                                           sample_count => $test->parameters->packet_count,
-                                          test_interval => $interval,
+                                          test_interval => $test_interval,
+                                          test_schedule => $test_schedule,
                                           added_by_mesh => $test->added_by_mesh,
                               });
         }
@@ -1014,7 +1034,8 @@ sub parse_regular_testing_config {
                                           packet_count => $test->parameters->packet_count,
                                           packet_interval => $test->parameters->inter_packet_time,
 
-                                          test_interval => $test->schedule->interval,
+                                          test_interval => $test_interval,
+                                          test_schedule => $test_schedule,
                                           added_by_mesh => $test->added_by_mesh,
                               });
         }
@@ -1026,7 +1047,8 @@ sub parse_regular_testing_config {
                                           first_ttl => $test->parameters->packet_first_ttl,
                                           max_ttl  => $test->parameters->packet_max_ttl,
 
-                                          test_interval => $test->schedule->interval,
+                                          test_interval => $test_interval,
+                                          test_schedule => $test_schedule,
                                           added_by_mesh => $test->added_by_mesh,
                               });
         }
@@ -1041,12 +1063,13 @@ sub parse_regular_testing_config {
                                           udp_bandwidth => $test->parameters->udp_bandwidth,
                                           buffer_length => $test->parameters->buffer_length,
 
-                                          #tos_bits => $test->parameters->tos_bits,
+                                          tos_bits => $test->parameters->packet_tos_bits,
                                           #report_interval => $test->parameters->report_interval,
-                                          #window_size => $test->parameters->window_size,
+                                          window_size => $test->parameters->window_size,
                                           #test_interval_start_alpha => $test->parameters->random_start_percentage,
 
-                                          test_interval => $test->schedule->interval,
+                                          test_interval => $test_interval,
+                                          test_schedule => $test_schedule,
                                           added_by_mesh => $test->added_by_mesh,
                               });
         }
@@ -1114,32 +1137,33 @@ sub generate_regular_testing_config {
 
         next if ($test_desc->{added_by_mesh} and not $include_mesh_tests);
 
-        if ($test_desc->{type} eq "owamp") {
-            if ($test_desc->{parameters}->{test_interval}) {
-                $schedule = perfSONAR_PS::RegularTesting::Schedulers::RegularInterval->new();
-                $schedule->interval($test_desc->{parameters}->{test_interval});
-
-                $parameters = perfSONAR_PS::RegularTesting::Tests::BwpingOwamp->new();
-
-                $parameters->packet_count($test_desc->{parameters}->{sample_count});
-                $parameters->packet_length($test_desc->{parameters}->{packet_padding}) if defined $test_desc->{parameters}->{packet_padding};
-                $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if defined $test_desc->{parameters}->{packet_interval};
-            }
-            else {
-                $schedule = perfSONAR_PS::RegularTesting::Schedulers::Streaming->new();
-                $parameters = perfSONAR_PS::RegularTesting::Tests::Powstream->new();
-
-                my $resolution = $test_desc->{parameters}->{sample_count} * $test_desc->{parameters}->{packet_interval};
-
-                $parameters->packet_length($test_desc->{parameters}->{packet_padding}) if defined $test_desc->{parameters}->{packet_padding};
-                $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if defined $test_desc->{parameters}->{packet_interval};
-                $parameters->resolution($resolution);
-            }
-        }
-        elsif ($test_desc->{type} eq "bwctl/throughput") {
+        if ($test_desc->{parameters}->{test_interval}) {
             $schedule = perfSONAR_PS::RegularTesting::Schedulers::RegularInterval->new();
             $schedule->interval($test_desc->{parameters}->{test_interval});
+        }
+        elsif ($test_desc->{parameters}->{test_schedule}) {
+            $schedule = perfSONAR_PS::RegularTesting::Schedulers::TimeBasedSchedule->new();
+            $schedule->time_slots($test_desc->{parameters}->{test_schedule});
+        }
+        else {
+            $schedule = perfSONAR_PS::RegularTesting::Schedulers::Streaming->new();
+        }
 
+        if ($test_desc->{type} eq "owamp") {
+            if ($schedule->type eq "streaming") {
+                $parameters = perfSONAR_PS::RegularTesting::Tests::Powstream->new();
+                my $resolution = $test_desc->{parameters}->{sample_count} * $test_desc->{parameters}->{packet_interval};
+                $parameters->resolution($resolution);
+            }
+            else {
+                $parameters = perfSONAR_PS::RegularTesting::Tests::BwpingOwamp->new();
+                $parameters->packet_count($test_desc->{parameters}->{sample_count});
+            }
+
+            $parameters->packet_length($test_desc->{parameters}->{packet_padding}) if defined $test_desc->{parameters}->{packet_padding};
+            $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if defined $test_desc->{parameters}->{packet_interval};
+        }
+        elsif ($test_desc->{type} eq "bwctl/throughput") {
             $parameters = perfSONAR_PS::RegularTesting::Tests::Bwctl->new();
 
             $parameters->tool($test_desc->{parameters}->{tool}) if defined $test_desc->{parameters}->{tool};
@@ -1147,12 +1171,9 @@ sub generate_regular_testing_config {
             $parameters->duration($test_desc->{parameters}->{duration}) if defined $test_desc->{parameters}->{duration};
             $parameters->udp_bandwidth($test_desc->{parameters}->{udp_bandwidth}) if defined $test_desc->{parameters}->{udp_bandwidth};
             $parameters->buffer_length($test_desc->{parameters}->{buffer_length}) if defined $test_desc->{parameters}->{buffer_length};
-            #$parameters->tos_bits($test_desc->{parameters}->{tos_bits}) if defined $test_desc->{parameters}->{tos_bits};
+            $parameters->packet_tos_bits($test_desc->{parameters}->{tos_bits}) if defined $test_desc->{parameters}->{tos_bits};
         }
         elsif ($test_desc->{type} eq "pinger") {
-            $schedule = perfSONAR_PS::RegularTesting::Schedulers::RegularInterval->new();
-            $schedule->interval($test_desc->{parameters}->{test_interval});
-
             $parameters = perfSONAR_PS::RegularTesting::Tests::Bwping->new();
             $parameters->packet_count($test_desc->{parameters}->{packet_count}) if $test_desc->{parameters}->{packet_count};
             $parameters->packet_length($test_desc->{parameters}->{packet_size}) if $test_desc->{parameters}->{packet_size};
@@ -1161,9 +1182,6 @@ sub generate_regular_testing_config {
             $parameters->receive_only(1);
         }
         elsif ($test_desc->{type} eq "traceroute") {
-            $schedule = perfSONAR_PS::RegularTesting::Schedulers::RegularInterval->new();
-            $schedule->interval($test_desc->{parameters}->{test_interval});
-
             $parameters = perfSONAR_PS::RegularTesting::Tests::Bwtraceroute->new();
             $parameters->packet_length($test_desc->{parameters}->{packet_size}) if defined $test_desc->{parameters}->{packet_size};
             $parameters->packet_first_ttl($test_desc->{parameters}->{first_ttl}) if defined $test_desc->{parameters}->{first_ttl};

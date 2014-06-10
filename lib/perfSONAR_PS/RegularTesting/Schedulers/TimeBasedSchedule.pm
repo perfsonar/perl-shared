@@ -21,7 +21,7 @@ after 'check_configuration' => sub {
     my ($self) = @_;
 
     unless (@{ $self->time_slots } > 0) {
-        die("'interval' not specified");
+        die("'time_slot' parameters not specified");
     }
 
     foreach my $interval (@{ $self->time_slots }) {
