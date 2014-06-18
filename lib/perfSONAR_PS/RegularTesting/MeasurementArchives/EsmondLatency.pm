@@ -51,24 +51,27 @@ override 'event_types' => sub {
     
     my @event_types = (
         'failures',
-        'histogram-ttl',
-        'packet-duplicates',
-        'packet-loss-rate',
-        'packet-count-lost',
         'packet-count-sent',
         );
     if($results->bidirectional){
         push  @event_types, 'histogram-rtt';
+        push  @event_types, 'histogram-ttl-reverse';
+        push  @event_types, 'packet-duplicates-bidir';
+        push  @event_types, 'packet-loss-rate-bidir';
+        push  @event_types, 'packet-count-lost-bidir';
+        push  @event_types, 'packet-reorders-bidir';
     }else{
         push  @event_types, 'histogram-owdelay';
+        push  @event_types, 'histogram-ttl';
+        push  @event_types, 'packet-duplicates';
+        push  @event_types, 'packet-loss-rate';
+        push  @event_types, 'packet-count-lost';
+        if($test_parameters->type ne 'powstream'){
+            push  @event_types, 'packet-reorders';
+        }else{
+            push  @event_types, 'time-error-estimates';
+        }
     }
-    if($test_parameters->type ne 'powstream'){
-        push  @event_types, 'packet-reorders';
-    }
-    if($test_parameters->type ne 'bwping'){
-        push  @event_types, 'time-error-estimates';
-    }
-    
     return \@event_types;
 };
 
@@ -122,17 +125,17 @@ override 'add_datum' => sub {
     
     if($event_type eq 'histogram-owdelay' || $event_type eq 'histogram-rtt'){
         return $self->handle_histogram_delay(results=>$results);
-    }elsif($event_type eq 'histogram-ttl'){
+    }elsif($event_type eq 'histogram-ttl' || $event_type eq 'histogram-ttl-reverse'){
         return $self->handle_histogram_ttl(results=>$results);
-    }elsif($event_type eq 'packet-duplicates'){
+    }elsif($event_type eq 'packet-duplicates' || $event_type eq 'packet-duplicates-bidir'){
         return $self->handle_duplicates(results=>$results);
     }elsif($event_type eq 'packet-count-sent'){
         return $self->handle_packets_sent(results=>$results);
-    }elsif($event_type eq 'packet-count-lost'){
+    }elsif($event_type eq 'packet-count-lost' || $event_type eq 'packet-count-lost-bidir'){
         return $self->handle_packets_lost(results=>$results);
-    }elsif($event_type eq 'packet-loss-rate'){
+    }elsif($event_type eq 'packet-loss-rate' || $event_type eq 'packet-loss-rate-bidir'){
         return $self->handle_packet_loss_rate(results=>$results);
-    }elsif($event_type eq 'packet-reorders'){
+    }elsif($event_type eq 'packet-reorders' || $event_type eq 'packet-reorders-bidir'){
         return $self->handle_packet_reorders(results=>$results);
     }elsif($event_type eq 'time-error-estimates'){
         return $self->handle_time_error_estimates(results=>$results);
