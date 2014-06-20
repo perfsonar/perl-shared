@@ -25,8 +25,11 @@ use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger);
 
 use SimpleLookupService::Client::SimpleLS;
+use perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject;
+use SimpleLookupService::Client::Query;
+use URI;
 
-our @EXPORT_OK = qw( discover_lookup_services discover_primary_lookup_service );
+our @EXPORT_OK = qw( discover_lookup_services discover_primary_lookup_service is_host_registered);
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -105,6 +108,33 @@ sub discover_lookup_services {
     }
 
     return \@active_hosts;
+}
+
+sub is_host_registered{
+    my ($address) = @_;
+     
+    my $ls_url = discover_primary_lookup_service();
+    my $server = SimpleLookupService::Client::SimpleLS->new();
+    my $uri = URI->new($ls_url); 
+    my $ls_port =$uri->port();
+    if(!$ls_port &&  $uri->scheme() eq 'https'){
+        $ls_port = 443;
+    }elsif(!$ls_port){
+        $ls_port = 80;
+    }
+    $server->init( host=> $uri->host(), port=> $ls_port );
+    
+    my $query = new perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject();
+    $query->init();
+    $query->setHostName($address);
+    my $client = new SimpleLookupService::Client::Query();
+    $client->init(server => $server, query => $query);
+    my ($status, $host) = $client->query();
+    if($status == 0 && @{$host} >= 1){
+        return 1;
+    }
+    
+    return 0;
 }
 
 1;
