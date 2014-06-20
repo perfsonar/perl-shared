@@ -22,7 +22,7 @@ sub get_addresses {
 
     my @addresses = ();
     foreach my $address (@interfaces) {
-        push @addresses, "http://".$address."/esmond/perfsonar/?format=json";
+        push @addresses, "http://".$address."/esmond/perfsonar/archive/";
     }
 
     return \@addresses;
