@@ -698,7 +698,6 @@ sub get_incomplete_fields {
         administrator_name        => $self->{ADMINISTRATOR_NAME},
         administrator_email       => $self->{ADMINISTRATOR_EMAIL},
         organization_name => $self->{ORGANIZATION_NAME},
-        location          => $self->{LOCATION},
         city              => $self->{CITY},
         state             => $self->{REGION},
         country           => $self->{COUNTRY},
