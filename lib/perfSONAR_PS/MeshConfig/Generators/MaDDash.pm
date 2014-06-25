@@ -474,6 +474,8 @@ sub __build_check {
             $check->{name} = 'Throughput Reverse';
             $check->{description} = 'Throughput from %col to %row';
             $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_throughput.': -c '.$critical_throughput.': -r '.$check_time_range.' -s %col -d %row';
+            #change graph url to flip src and dst
+            $check->{params}->{graphUrl} = 'http://'.$host.'/serviceTest/bandwidthGraph.cgi?url=%maUrl&dst=%row&src=%col&length=2592000';
         }
         else {
             $check->{name} = 'Throughput';
@@ -499,6 +501,8 @@ sub __build_check {
             $check->{name} = 'Loss Reverse';
             $check->{description} = 'Loss from %col to %row';
             $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_loss.' -c '.$critical_loss.' -r '.$check_time_range.' -l -p -s %col -d %row';
+            #change graph url to flip src and dst
+            $check->{params}->{graphUrl} = 'http://'.$host.'/serviceTest/delayGraph.cgi?url=%maUrl&dst=%row&src=%col&length=14400';
         }
         else {
             $check->{name} = 'Loss';
