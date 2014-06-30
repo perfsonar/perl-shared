@@ -184,7 +184,7 @@ sub stopService {
     my $name    = $parameters->{name};
     my $disable = RPC::XML::boolean->new($parameters->{disable});
 
-    my $res = $self->{CLIENT}->simple_request("stopService", $name, $disable, $disable);
+    my $res = $self->{CLIENT}->simple_request("stopService", $name, $disable);
     unless (defined $res) {
         my $msg = "Problem stopping service $name: ".$RPC::XML::ERROR;
         $self->{LOGGER}->error($msg);

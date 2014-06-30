@@ -106,7 +106,7 @@ sub init {
                                                 disable => $_[2],
                                                 });
                      },
-            signature => ['string string boolean boolean']
+            signature => ['string string boolean']
     });
     $self->{DAEMON}->add_method({
             name => "configureFirewall",
