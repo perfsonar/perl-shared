@@ -21,6 +21,7 @@ extends 'perfSONAR_PS::RegularTesting::Results::Base';
 has 'source'          => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Results::Endpoint', default => sub { return perfSONAR_PS::RegularTesting::Results::Endpoint->new() });
 has 'destination'     => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Results::Endpoint', default => sub { return perfSONAR_PS::RegularTesting::Results::Endpoint->new() });
 
+has 'tool'            => (is => 'rw', isa => 'Str');
 has 'protocol'        => (is => 'rw', isa => 'Str');
 has 'window_size'     => (is => 'rw', isa => 'Int | Undef');
 has 'bandwidth_limit' => (is => 'rw', isa => 'Int | Undef');

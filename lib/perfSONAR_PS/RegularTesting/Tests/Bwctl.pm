@@ -116,7 +116,8 @@ override 'build_results' => sub {
     # Fill in the data that came directly from BWCTL itself
     $results->source->address($bwctl_results->{sender_address}) if $bwctl_results->{sender_address};
     $results->destination->address($bwctl_results->{receiver_address}) if $bwctl_results->{receiver_address};
-
+    $results->tool($bwctl_results->{tool});
+    
     push @{ $results->errors }, $bwctl_results->{error} if ($bwctl_results->{error});
 
     $results->start_time($bwctl_results->{start_time});
