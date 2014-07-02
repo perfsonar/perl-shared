@@ -243,7 +243,7 @@ sub handle_output {
         }
 
         my $source = $individual_test->{sender}?$test->local_address:$individual_test->{target}->address;
-        my $destination = $individual_test->{receiver}?$individual_test->{target}->address:$test->local_address;
+        my $destination = $individual_test->{receiver}?$test->local_address:$individual_test->{target}->address;
 
 
         my $results = $self->build_results({
