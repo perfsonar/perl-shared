@@ -312,7 +312,7 @@ sub __configure_host {
                 $dont_change = 1;
             }
 
-            my $msg = "Mesh has unknown attributes: ".join(", ", keys %{ $host->get_unknown_attributes });
+            my $msg = "Mesh has unknown attributes: ".join(", ", keys %{ $mesh->get_unknown_attributes });
             $logger->error($msg);
             $self->__add_error({ mesh => $mesh, error_msg => $msg });
             next;
@@ -549,9 +549,9 @@ sub __get_addresses {
 
         if ( is_ipv4( $address ) or 
              &Net::IP::ip_is_ipv6( $address ) ) {
-            my $hostname = reverse_dns($address);
+            my @hostnames = reverse_dns($address);
 
-            push @all_addressses, $hostname if ($hostname);
+            push @all_addressses, @hostnames;
         }
         elsif ( is_hostname( $address ) ) {
             my $hostname = $address;

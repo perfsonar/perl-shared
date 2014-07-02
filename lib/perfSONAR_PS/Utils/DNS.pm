@@ -79,17 +79,21 @@ sub reverse_dns {
 
     my $resolved_hostnames = reverse_dns_multi({ addresses => [ $ip ], timeout => $timeout });
 
-    my $hostname;
+    my $hostnames;
 
     if ($resolved_hostnames && $resolved_hostnames->{$ip}) {
-        $hostname = $resolved_hostnames->{$ip};
-
-        if (ref $hostname eq "ARRAY") {
-            $hostname = $hostname->[0];
-        }
+        $hostnames = $resolved_hostnames->{$ip};
+    }
+    else {
+        $hostnames = [];
     }
 
-    return $hostname;
+    if (wantarray) {
+        return $hostnames;
+    }
+    else {
+        return $hostnames->[0];
+    }
 }
 
 =head2 resolve_address_multi({ addresses => 1, timeout => 0 })
