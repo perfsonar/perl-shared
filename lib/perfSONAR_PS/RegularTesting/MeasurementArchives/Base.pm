@@ -17,11 +17,16 @@ extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
 my $logger = get_logger(__PACKAGE__);
 
 has 'description'     => (is => 'rw', isa => 'Str');
+has 'max_parallelism' => (is => 'rw', isa => 'Int', default => 5);
 
 has 'queue_directory' => (is => 'rw', isa => 'Str');
 
 sub type {
     die("'type' needs to be overridden");
+}
+
+sub supports_parallelism {
+    return 0;
 }
 
 sub nonce {

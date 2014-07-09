@@ -31,6 +31,10 @@ has 'ca_certificate_file' => (is => 'rw', isa => 'Str|Undef');
 has 'ca_certificate_path' => (is => 'rw', isa => 'Str|Undef');
 has 'verify_hostname' => (is => 'rw', isa => 'Bool|Undef');
 
+override 'supports_parallelism' => sub {
+    return 1;
+};
+
 override 'store_results' => sub {
     my ($self, @args) = @_;
     my $parameters = validate( @args, {  test => 1, 
