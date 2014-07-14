@@ -12,6 +12,7 @@ sub init {
     $conf{init_script} = "httpd" unless $conf{init_script};
     $conf{process_names} = "httpd" unless $conf{process_names};
     $conf{pid_files} = "/var/run/httpd/httpd.pid" unless $conf{pid_files};
+    $conf{package_names} = [ "httpd" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
 

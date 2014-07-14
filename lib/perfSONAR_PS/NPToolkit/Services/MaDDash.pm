@@ -13,6 +13,7 @@ sub init {
     $conf{process_names} = "java" unless $conf{process_names};
     $conf{pid_files} = "/var/run/cassandra/cassandra.pid" unless $conf{pid_files};
     $conf{can_disable} = 1;
+    $conf{package_names} = [ "maddash-server", "maddash-webui" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
 

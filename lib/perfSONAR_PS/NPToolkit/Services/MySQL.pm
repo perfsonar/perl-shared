@@ -13,6 +13,7 @@ sub init {
     $conf{process_names} = [ "mysql" ] unless $conf{process_names};
     $conf{pid_files} = [ "/var/run/mysqld/mysqld.pid" ] unless $conf{pid_files};
     $conf{regular_restart} = 1;
+    $conf{package_names} = [ "mysql-server" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
 

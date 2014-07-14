@@ -12,6 +12,7 @@ sub init {
     $conf{init_script} = "ls_registration_daemon" unless $conf{init_script};
     $conf{pid_files} = "/var/run/ls_registration_daemon.pid";
     $conf{process_names} = "daemon.pl";
+    $conf{package_names} = [ "perl-perfSONAR_PS-LSRegistrationDaemon" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
 

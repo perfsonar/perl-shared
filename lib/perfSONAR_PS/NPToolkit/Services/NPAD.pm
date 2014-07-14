@@ -13,6 +13,7 @@ sub init {
     $conf{pid_files} = [ "/var/run/npad.pid" ] unless $conf{pid_files};
     $conf{init_script} = "npad" unless $conf{init_script};
     $conf{can_disable} = 1;
+    $conf{package_names} = [ "npad" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
 

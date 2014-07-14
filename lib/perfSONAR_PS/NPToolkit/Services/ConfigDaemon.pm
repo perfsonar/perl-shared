@@ -12,6 +12,7 @@ sub init {
     $conf{init_script} = "config_daemon" unless $conf{init_script};
     $conf{process_names} = "config_daemon" unless $conf{process_names};
     $conf{pid_files} = "/var/run/config_daemon.pid" unless $conf{pid_files};
+    $conf{package_names} = [ "perl-perfSONAR_PS-Toolkit" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
 

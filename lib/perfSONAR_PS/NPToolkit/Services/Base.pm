@@ -4,8 +4,9 @@ use strict;
 use warnings;
 
 use Log::Log4perl qw(:easy);
+use RPM2;
 
-use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART';
+use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES';
 
 sub new {
     my ( $package ) = @_;
@@ -35,7 +36,40 @@ sub init {
     }
     $self->{PROCESS_NAMES} = $params{process_names};
 
+    if ( $params{package_names} and ref( $params{package_names} ) ne "ARRAY" ) {
+        $params{package_names} = [ $params{package_names} ];
+    }
+    $self->{PACKAGE_NAMES} = $params{package_names};
+
     return 0;
+}
+
+sub package_version {
+    my ($self) = @_;
+
+    my $version;
+    if ($self->{PACKAGE_NAMES}) {
+        my $min;
+
+        if (my $db = RPM2->open_rpm_db()) {
+            foreach my $package_name (@{ $self->{PACKAGE_NAMES} }) {
+                my @packages = $db->find_by_name($package_name);
+    
+                foreach my $package (@packages) {
+                    $min = $package unless $min;
+    
+                    my $result = ($package <=> $min);
+                    if ($result < 0) {
+                        $min = $package;
+                    }
+                }
+            }
+        }
+
+        $version = $min->version."-".$min->release if $min;
+    }
+
+    return $version;
 }
 
 sub needs_regular_restart {

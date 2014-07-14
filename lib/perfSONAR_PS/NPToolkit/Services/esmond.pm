@@ -9,6 +9,7 @@ sub init {
     my ( $self, %conf ) = @_;
 
     $conf{description}  = "esmond Measurement Archive" unless $conf{description};
+    $conf{package_names} = [ "esmond" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
 

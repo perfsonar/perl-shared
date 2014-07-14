@@ -12,6 +12,7 @@ sub init {
     $conf{init_script} = "cassandra" unless $conf{init_script};
     $conf{process_names} = "java" unless $conf{process_names};
     $conf{pid_files} = "/var/run/cassandra/cassandra.pid" unless $conf{pid_files};
+    $conf{package_names} = [ "cassandra20" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
 

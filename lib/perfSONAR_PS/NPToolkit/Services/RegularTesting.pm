@@ -12,6 +12,7 @@ sub init {
     $conf{pid_files} = [ "/var/run/regular_testing.pid" ] unless $conf{pid_files};
     $conf{process_names} = [ "daemon" ] unless $conf{process_names};
     $conf{init_script} = "regular_testing" unless $conf{init_script};
+    $conf{package_names} = [ "perl-perfSONAR_PS-RegularTesting" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
 

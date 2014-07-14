@@ -13,6 +13,7 @@ sub init {
     $conf{description}  = "NTP" unless $conf{description};
     $conf{process_names} = "ntpd" unless $conf{process_names};
     $conf{pid_files} = "/var/run/ntpd.pid" unless $conf{pid_files};
+    $conf{package_names} = [ "ntp" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
 

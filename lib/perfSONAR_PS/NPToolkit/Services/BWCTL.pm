@@ -12,6 +12,7 @@ sub init {
     $conf{init_script} = "bwctld" unless $conf{init_script};
     $conf{process_names} = "bwctld" unless $conf{process_names};
     $conf{pid_files} = "/var/run/bwctld.pid" unless $conf{pid_files};
+    $conf{package_names} = [ "bwctl-server", "bwctl-client" ] unless $conf{package_names};
     $conf{regular_restart} = 1;
     $conf{can_disable} = 1;
 

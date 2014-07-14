@@ -12,6 +12,7 @@ sub init {
     $conf{process_names} = [ "web100srv", "fakewww" ] unless $conf{process_names};
     $conf{init_script} = "ndt" unless $conf{init_script};
     $conf{can_disable} = 1;
+    $conf{package_names} = [ "ndt-client", "ndt-server" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
 
