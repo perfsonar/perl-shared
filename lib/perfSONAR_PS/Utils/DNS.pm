@@ -89,7 +89,7 @@ sub reverse_dns {
     }
 
     if (wantarray) {
-        return $hostnames;
+        return @$hostnames;
     }
     else {
         return $hostnames->[0];
