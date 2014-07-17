@@ -19,7 +19,7 @@ use Moose;
 extends 'perfSONAR_PS::RegularTesting::Tests::BwctlBase';
 
 has 'bwtraceroute_cmd' => (is => 'rw', isa => 'Str', default => '/usr/bin/bwtraceroute');
-has 'tool' => (is => 'rw', isa => 'Str', default => 'traceroute');
+has 'tool' => (is => 'rw', isa => 'Str', default => 'tracepath,traceroute');
 has 'packet_length' => (is => 'rw', isa => 'Int');
 has 'packet_first_ttl' => (is => 'rw', isa => 'Int', );
 has 'packet_max_ttl' => (is => 'rw', isa => 'Int', );
