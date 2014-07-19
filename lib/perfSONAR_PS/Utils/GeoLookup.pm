@@ -110,7 +110,7 @@ sub geoIPLookup {
 sub geoWhoisLookup {
     my ( $address ) = @_;
     
-    my %result = ();
+    my $result = ();
     return $result
 }
 
