@@ -53,6 +53,10 @@ use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service 
 # These are the defaults for the current NPToolkit
 my %defaults = (
     regular_testing_config_file => "/opt/perfsonar_ps/regular_testing/etc/regular_testing.conf",
+    traceroute_test_parameters => {
+        description => "perfSONAR Toolkit Default Traceroute Test",
+        test_interval => 600,
+    },
 );
 
 =head2 init({ perfsonarbuoy_conf_template => 0, perfsonarbuoy_conf_file => 0, pinger_landmarks_file => 0 })
@@ -816,6 +820,7 @@ sub add_test_member {
             receiver    => 0,
             test_ipv4   => 0,
             test_ipv6   => 0,
+            skip_default_rules => 0,
         }
     );
 
@@ -850,6 +855,8 @@ sub add_test_member {
 
     $self->{LOGGER}->debug("Added new test member: ".Dumper(\%member));
 
+    $self->configure_default_tests() unless $parameters->{skip_default_rules};
+
     return ( 0, $id );
 }
 
@@ -873,6 +880,7 @@ sub update_test_member {
             receiver    => 0,
             test_ipv4   => 0,
             test_ipv6   => 0,
+            skip_default_rules => 0,
         }
     );
 
@@ -894,6 +902,8 @@ sub update_test_member {
     $member->{test_ipv4}   = $parameters->{test_ipv4}   if ( defined $parameters->{test_ipv4} );
     $member->{test_ipv6}   = $parameters->{test_ipv6}   if ( defined $parameters->{test_ipv6} );
 
+    $self->configure_default_tests() unless $parameters->{skip_default_rules};
+
     return ( 0, "" );
 }
 
@@ -910,6 +920,7 @@ sub remove_test_member {
         {
             test_id   => 1,
             member_id => 1,
+            skip_default_rules => 0,
         }
     );
 
@@ -920,6 +931,8 @@ sub remove_test_member {
     return ( -1, "Test does not exist" ) unless ( $test );
 
     delete( $test->{members}->{ $parameters->{member_id} } );
+
+    $self->configure_default_tests() unless $parameters->{skip_default_rules};
 
     return ( 0, "" );
 }
@@ -962,6 +975,69 @@ sub restore_state {
     $self->{LOCAL_PORT_RANGES}           = $state->{local_port_ranges};
 
     return;
+}
+
+sub configure_default_tests {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { } );
+
+    # Initialize the default traceroute test, and make sure that its test set
+    # are only those hosts that are in non-mesh added, non-traceroute tests.
+    foreach my $test ( values %{ $self->{TESTS} } ) {
+        next unless ($test->{description} eq $defaults{traceroute_test_parameters}->{description});
+
+        $self->delete_test({ test_id => $test->{id} });
+    }
+
+    my ($status, $res) = $self->add_test_traceroute($defaults{traceroute_test_parameters});
+
+    return ($status, $res) unless ($status == 0);
+
+    my $traceroute_test_id = $res;
+
+    my %hosts_to_add = ();
+    foreach my $test ( values %{ $self->{TESTS} } ) {
+        next if $test->{added_by_mesh} or $test->{type} eq "traceroute";
+
+        foreach my $member (values %{ $test->{members} }) {
+            unless ($hosts_to_add{$member->{address}}) {
+                my %new_member = %$member;
+
+                $hosts_to_add{$member->{address}} = \%new_member;
+            }
+
+            $hosts_to_add{$member->{address}}->{test_ipv4} = 1 if $member->{test_ipv4};
+            $hosts_to_add{$member->{address}}->{test_ipv6} = 1 if $member->{test_ipv6};
+        }
+    }
+
+    # Don't do a default traceroute test if we're already doing one as part of
+    # another test
+    foreach my $test ( values %{ $self->{TESTS} } ) {
+        next unless $test->{type} eq "traceroute";
+        foreach my $member (values %{ $test->{members} }) {
+            delete($hosts_to_add{$member->{address}});
+        }
+    }
+
+    foreach my $member (values %hosts_to_add) {
+        my ($status, $res) = $self->add_test_member({
+                                 test_id     => $traceroute_test_id,
+                                 address     => $member->{address},
+                                 name        => $member->{name},
+                                 description => $member->{description},
+                                 sender      => 1,
+                                 receiver    => 1,
+                                 test_ipv4   => $member->{test_ipv4},
+                                 test_ipv6   => $member->{test_ipv6},
+                                 skip_default_rules => 1,
+                             });
+        if ($status != 0) {
+            $self->{LOGGER}->warn("Problem adding ".$member->{address}." to default traceroute test: ".$res);
+        }
+    }
+
+    return (0, "");
 }
 
 =head2 parse_regular_testing_config
