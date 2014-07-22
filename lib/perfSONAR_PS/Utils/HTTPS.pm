@@ -117,7 +117,7 @@ RETRY:
         return (-1, $msg);
     }
 
-    print $client "GET ".$uri->path." HTTP/1.0\r\nHost: ".$uri->host."\r\n\r\n";
+    print $client "GET ".$uri->path_query." HTTP/1.0\r\nHost: ".$uri->host."\r\n\r\n";
     my $results = "";
     while (<$client>) {
         $results .= $_;
