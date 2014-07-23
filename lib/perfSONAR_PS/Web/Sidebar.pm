@@ -9,6 +9,8 @@ use Time::HiRes qw( time );
 use Params::Validate;
 use Data::Dumper;
 
+use RPM2;
+
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
@@ -32,7 +34,16 @@ sub set_sidebar_vars {
     $vars->{admin_info_nav_class} = "warning" unless $administrative_info_conf->is_complete();
 
     $vars->{ntp_nav_class} = "warning" unless $ntpinfo->is_synced();
-   
+
+    my $cacti_available;
+    if (my $db = RPM2->open_rpm_db()) {
+       my @packages = $db->find_by_name("cacti");
+ 
+       $cacti_available = 1 if scalar(@packages) > 0;
+    }
+
+    $vars->{cacti_available} = $cacti_available;
+  
     return $vars;
 
 }
