@@ -189,17 +189,12 @@ sub __parse_owmesh_conf {
 
     foreach my $variable_prefix ("", "BW", "OWP", "TRACE") {
         foreach my $variable (@variables) {
-            $logger->debug("Checking ".$variable_prefix.$variable);
-
             my $value = $owmesh_conf->get_val(ATTR => $variable, TYPE => $variable_prefix);
-
-            $logger->debug($variable." is defined: ".$value) if defined $value;
 
             if ($variable_prefix ne "") {
                 my $higher_value = $owmesh_conf->get_val(ATTR => $variable);
 
                 if ($higher_value and $value eq $higher_value) {
-                    $logger->debug("Existing higher value $higher_value for $variable is the same");
                     next;
                 }
             }

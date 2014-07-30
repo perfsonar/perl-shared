@@ -38,7 +38,7 @@ use Moose;
 has 'use_toolkit'            => (is => 'rw', isa => 'Bool');
 has 'restart_services'       => (is => 'rw', isa => 'Bool');
 
-has 'meshes'                 => (is => 'rw', isa => 'ArrayRef[HashRef]');
+has 'meshes'                 => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { [] });
 
 has 'use_regular_testing'    => (is => 'rw', isa => 'Bool', default => 1);
 
@@ -220,6 +220,10 @@ sub __get_administrator_emails {
 
 sub __configure_host {
     my ($self) = @_;
+
+    if (scalar(@{ $self->meshes }) == 0) {
+        $logger->warn("No meshes defined in the configuration");
+    }
 
     my @services = ();
     if ($self->use_regular_testing) {
