@@ -625,13 +625,8 @@ sub get_port_range {
     my $parameters = validate( @params, { port_type => 1 } );
     my $port_type = $parameters->{port_type};
 
-    unless ($port_type eq "peer" or $port_type eq "iperf") {
-        my $msg = "Invalid port range: ".$port_type;
-        $self->{LOGGER}->error($msg);
-        return (-1, $msg);
-    }
-
     my $port_variable = $port_type."_port";
+    $port_variable = $port_type."_ports" unless ($self->{BWCTL_CONF}->{$port_variable});
 
     my ($min_port, $max_port) = (0, 0);
 
@@ -646,6 +641,11 @@ sub get_port_range {
             return (-1, $msg);
         }
     }
+    else {
+        my $msg = "No port range for $port_variable";
+        $self->{LOGGER}->error($msg);
+        return (-1, $msg);
+    }
 
     return (0, { min_port => $min_port, max_port => $max_port });
 }
@@ -659,12 +659,6 @@ sub set_port_range {
     my $port_type = $parameters->{port_type};
     my $min_port  = $parameters->{min_port};
     my $max_port  = $parameters->{max_port};
-
-    unless ($port_type eq "peer" or $port_type eq "iperf") {
-        my $msg = "Invalid port range: ".$port_type;
-        $self->{LOGGER}->error($msg);
-        return (-1, $msg);
-    }
 
     if ($min_port > $max_port) {
         my $msg = "Invalid port range (min port > max port): ".$min_port."<".$max_port;
