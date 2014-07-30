@@ -18,21 +18,22 @@ extended to configure all aspects of OWAMP configuration.
 
 use base 'perfSONAR_PS::NPToolkit::Config::Base';
 
-use fields 'OWAMP_LIMITS', 'OWAMP_PFS', 'OWAMPD_LIMITS_FILE', 'OWAMPD_LIMITS_TEMPLATE', 'OWAMPD_PFS_FILE', 'OWAMPD_PFS_TEMPLATE';
+use fields 'OWAMP_CONF', 'OWAMP_LIMITS', 'OWAMP_PFS', 'OWAMPD_CONF_FILE', 'OWAMPD_LIMITS_FILE', 'OWAMPD_PFS_FILE';
 
 use Params::Validate qw(:all);
 use Storable qw(store retrieve freeze thaw dclone);
 
-use perfSONAR_PS::Utils::Config::OWAMP qw( owamp_pfs_parse_file owamp_limits_parse_file owamp_pfs_hash_password owamp_pfs_output owamp_limits_output owamp_known_limits );
+use perfSONAR_PS::Utils::Config::OWAMP qw( owamp_conf_parse_file owamp_pfs_parse_file owamp_limits_parse_file owamp_pfs_hash_password owamp_pfs_output owamp_limits_output owamp_known_limits );
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service );
 
 # These are the defaults for the current NPToolkit
 my %defaults = (
     owampd_limits => "/etc/owampd/owampd.limits",
     owampd_pfs    => "/etc/owampd/owampd.pfs",
+    owampd_conf   => "/etc/owampd/owampd.conf",
 );
 
-=head2 init({ owampd_limits => 0, owampd_pfs => 0 })
+=head2 init({ owampd_limits => 0, owampd_pfs => 0, owampd_conf => 0 })
 
 Initializes the client. Returns 0 on success and -1 on failure. The
 owampd_limits and owampd_pfs parameters can be specified to set which files
@@ -47,6 +48,7 @@ sub init {
         {
             owampd_limits => 0,
             owampd_pfs    => 0,
+            owampd_conf   => 0,
         }
     );
 
@@ -60,9 +62,11 @@ sub init {
     # Initialize the defaults
     $self->{OWAMPD_PFS_FILE}    = $defaults{owampd_pfs};
     $self->{OWAMPD_LIMITS_FILE} = $defaults{owampd_limits};
+    $self->{OWAMPD_CONF_FILE}   = $defaults{owampd_conf};
 
     $self->{OWAMPD_PFS_FILE}    = $parameters->{owampd_pfs}    if ( $parameters->{owampd_pfs} );
     $self->{OWAMPD_LIMITS_FILE} = $parameters->{owampd_limits} if ( $parameters->{owampd_limits} );
+    $self->{OWAMPD_CONF_FILE}   = $parameters->{owampd_conf}   if ( $parameters->{owampd_conf} );
 
     $res = $self->reset_state();
     if ( $res != 0 ) {
@@ -558,6 +562,38 @@ sub delete_group {
     return ( 0, "" );
 }
 
+=head2 get_port_range
+	Gets the port range for the test type specified in port_type
+=cut
+sub get_test_port_range {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { } );
+
+    my $port_variable = "testports";
+    $port_variable = "testport" unless ($self->{OWAMP_CONF}->{$port_variable});
+
+    my ($min_port, $max_port) = (0, 0);
+
+    if ($self->{OWAMP_CONF}->{$port_variable}) {
+        if ($self->{OWAMP_CONF}->{$port_variable} =~ /^(\d+)-(\d+)$/) {
+            $min_port = $1;
+            $max_port = $2;
+        }
+        else {
+            my $msg = "Invalid port range for $port_variable: ".$self->{OWAMP_CONF}->{$port_variable};
+            $self->{LOGGER}->error($msg);
+            return (-1, $msg);
+        }
+    }
+    else {
+        my $msg = "No port range for $port_variable";
+        $self->{LOGGER}->error($msg);
+        return (-1, $msg);
+    }
+
+    return (0, { min_port => $min_port, max_port => $max_port });
+}
+
 =head2 lookup_limit
 	Looks up the limit for the specified group
 =cut
@@ -673,11 +709,14 @@ sub last_modified {
 
     my ($mtime1) = (stat ( $self->{OWAMPD_PFS_FILE} ) )[9];
     my ($mtime2) = (stat ( $self->{OWAMPD_LIMITS_FILE} ) )[9];
+    my ($mtime3) = (stat ( $self->{OWAMPD_CONF_FILE} ) )[9];
 
     $mtime1 = 0 unless ($mtime1);
     $mtime2 = 0 unless ($mtime2);
+    $mtime3 = 0 unless ($mtime3);
 
     my $mtime = ($mtime1 > $mtime2)?$mtime1:$mtime2;
+    $mtime = ($mtime > $mtime3)?$mtime:$mtime3;
 
     return $mtime;
 }
@@ -718,6 +757,19 @@ sub reset_state {
         $self->{OWAMP_PFS} = {};
     }
 
+    if ( -f $self->{OWAMPD_CONF_FILE} ) {
+        ( $status, $res ) = owamp_conf_parse_file( { file => $self->{OWAMPD_CONF_FILE} } );
+        if ( $status != 0 ) {
+            $self->{LOGGER}->error( "Conf: $res" );
+            return -1;
+        }
+
+        $self->{OWAMP_CONF} = $res;
+    }
+    else {
+        $self->{OWAMP_CONF} = {};
+    }
+
     return 0;
 }
 
@@ -733,8 +785,10 @@ sub save_state {
     my %state = (
         owamp_limits       => $self->{OWAMP_LIMITS},
         owamp_pfs          => $self->{OWAMP_PFS},
+        owamp_conf         => $self->{OWAMP_CONF},
         owampd_limits_file => $self->{OWAMPD_LIMITS_FILE},
         owampd_pfs_file    => $self->{OWAMPD_PFS_FILE},
+        owampd_conf_file   => $self->{OWAMPD_CONF_FILE},
     );
 
     my $str = freeze( \%state );
@@ -755,10 +809,10 @@ sub restore_state {
 
     $self->{OWAMP_LIMITS}       = $state->{owamp_limits};
     $self->{OWAMP_PFS}          = $state->{owamp_pfs};
+    $self->{OWAMP_CONF}         = $state->{owamp_conf};
     $self->{OWAMPD_LIMITS_FILE} = $state->{owampd_limits_file};
     $self->{OWAMPD_PFS_FILE}    = $state->{owampd_pfs_file};
-
-    $self->{LOGGER}->info("FDSALimits: ".Dumper($self->{OWAMP_LIMITS}));
+    $self->{OWAMPD_CONF_FILE}   = $state->{owampd_conf_file};
 
     return;
 }
