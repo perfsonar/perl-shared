@@ -18,7 +18,7 @@ our $VERSION = 3.4;
 
 use base 'Exporter';
 use Data::Dumper;
-use JSON::Parse 'parse_json';
+use JSON::XS;
 require LWP::UserAgent;
 
 our @EXPORT_OK = qw(
@@ -71,10 +71,12 @@ sub geoLookup {
         my $request = "${GEOCODE_URL}?address=${address}";
         my $response = $ua->get($request);
         if ($response->is_success) {
-            my $json = parse_json($response->decoded_content);
-            if ($json->{"status"} eq "OK") {
-                $result = parseGeocodeResult($json->{"results"}[0]);
-            }
+            eval {
+                my $json = decode_json($response->decoded_content);
+                if ($json->{"status"} eq "OK") {
+                    $result = parseGeocodeResult($json->{"results"}[0]);
+                }
+            };
         }
     }
     return $result;
@@ -94,8 +96,10 @@ sub geoIPLookup {
         my $request = "${GEOIP_URL}${ip}";
         my $response = $ua->get($request);
         if ($response->is_success) {
-            my $json = parse_json($response->decoded_content);
-            $result = parseGeoIPResult($json);
+            eval {
+                my $json = decode_json($response->decoded_content);
+                $result = parseGeoIPResult($json);
+            };
         }
     }
     return $result;
@@ -128,10 +132,12 @@ sub geoReverseLookup {
         my $request = "${GEOCODE_URL}?latlng=${lat},${lng}";
         my $response = $ua->get($request);
         if ($response->is_success) {
-            my $json = parse_json($response->decoded_content);
-            if ($json->{"status"} eq "OK") {
-                $result = parseGeocodeResult($json->{"results"}[0]);
-            }
+            eval {
+                my $json = decode_json($response->decoded_content);
+                if ($json->{"status"} eq "OK") {
+                    $result = parseGeocodeResult($json->{"results"}[0]);
+                }
+            };
         }
     }
     return $result;
