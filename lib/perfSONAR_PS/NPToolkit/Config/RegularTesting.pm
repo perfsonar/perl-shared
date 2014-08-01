@@ -1296,6 +1296,8 @@ sub generate_regular_testing_config {
         $test->parameters($parameters);
         $test->targets(\@targets);
 
+        $test->added_by_mesh(1) if $test_desc->{added_by_mesh};
+
         push @tests, $test;
     }
 
