@@ -50,8 +50,11 @@ sub parse_file {
         chomp;
         $line++;
 
-        # Strip out comments
-        s/#.*//;
+        # Strip out comments that are in-line (skipping any # with a \ before it)
+        s/([^\\])#.*/$1/g;
+
+        # Strip out comments that are at the start of the line
+        s/^\s+#.*/$1/g;
 
         # Strip leading and trailing whitespace
         s/^\s+//;
