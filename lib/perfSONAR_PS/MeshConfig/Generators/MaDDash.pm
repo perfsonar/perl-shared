@@ -367,8 +367,8 @@ sub generate_maddash_config {
                                     next if $test_type eq 'ipv4' && !is_ipv4($dst_ip);
                                     next if $test_type eq 'ipv6' && !is_ipv6($dst_ip);
                                     foreach my $unique_ma (@unique_mas){
-                                        $graph_url .= "url=$unique_ma&source=$src_site_host_addr&dest=$dst_site_host_addr&";
-                                        $rev_graph_url .= "url=$unique_ma&dest=$src_site_host_addr&source=$dst_site_host_addr&";
+                                        $graph_url .= "url=$unique_ma&source=$src_ip&dest=$dst_ip&";
+                                        $rev_graph_url .= "url=$unique_ma&dest=$src_ip&source=$dst_ip&";
                                         $seen_src_ip{$src_ip}++;
                                         $seen_dst_ip{$dst_ip}++;
                                     }
