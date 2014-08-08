@@ -6,6 +6,9 @@ our $VERSION = 3.1;
 
 use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger);
+use Data::Validate::IP qw(is_ipv4 is_ipv6);
+use perfSONAR_PS::Utils::DNS qw(resolve_address);
+use Net::IP;
 
 use JSON;
 use YAML qw(Dump);
@@ -32,7 +35,7 @@ sub generate_maddash_config {
     my $meshes                = $parameters->{meshes};
     my $existing_maddash_yaml = $parameters->{existing_maddash_yaml};
     my $maddash_options       = $parameters->{maddash_options};
-
+    
     # Need to make changes to the YAML parser so that the Java YAML parser will
     # grok the output.
     local $YAML::UseHeader = 0;
@@ -110,12 +113,16 @@ sub generate_maddash_config {
         #generate groupMembers. not we could 
         my @all_hosts = ();
         push @all_hosts, @{ $mesh->hosts };
-
+        my %addr_site_map = ();
         foreach my $organization (@{ $mesh->organizations }) {
             push @all_hosts, @{ $organization->hosts };
-
             foreach my $site (@{ $organization->sites }) {
                 push @all_hosts, @{ $site->hosts };
+                foreach my $site_host (@{ $site->hosts }){
+                    foreach my $address (@{ $site_host->addresses }) {
+                        $addr_site_map{$address} = $site->hosts;
+                    }
+                }
             }
         }
 
@@ -257,7 +264,11 @@ sub generate_maddash_config {
             # build the MA maps
             my %forward_ma_map = ();
             my %reverse_ma_map = ();
-
+            
+            # build the graph maps
+            my %forward_graph_map = ();
+            my %reverse_graph_map = ();
+            
             my %row_hosts = map { $_ => 1 } @row_members;
             my %column_hosts = map { $_ => 1 } @column_members;
 
@@ -280,18 +291,107 @@ sub generate_maddash_config {
 
                 my $src_addr = $pair->{source}->{address};
                 my $dst_addr = $pair->{destination}->{address};
-
+                
+                
+                #get test address type
+                my $test_type = '';
+                if($test->parameters->ipv4_only || is_ipv4($src_addr) || is_ipv4($dst_addr)){
+                    $test_type = 'ipv4';
+                }elsif($test->parameters->ipv6_only || is_ipv6($src_addr) || is_ipv6($dst_addr)){
+                    $test_type = 'ipv6';
+                }else{
+                    my $src_type = __get_hostname_ip_type($src_addr);
+                    my $dst_type = __get_hostname_ip_type($dst_addr);
+                    if($src_type =~ /ipv6/ && $dst_type =~ /ipv6/){
+                        $test_type = 'ipv6';
+                    }else{
+                        $test_type = 'ipv4';
+                    }
+                }
+                
+                #determine base graph url
+                my $graph_url = __get_check_option({ option => "graph_url", test_type => $test->parameters->type, grid_name => $grid_name, maddash_options => $maddash_options });
+                $graph_url = '/serviceTest/graphWidget.cgi' unless $graph_url;
+                $graph_url .= '?' if($graph_url !~ /\?$/);
+                my $rev_graph_url = $graph_url;
+                
+                #Build list of hosts at same site for graphs
+                my $src_site_hosts = $addr_site_map{$src_addr} ? $addr_site_map{$src_addr} : [{'addresses' => [$src_addr]}];
+                my $dst_site_hosts = $addr_site_map{$dst_addr} ? $addr_site_map{$dst_addr} : [{'addresses' => [$dst_addr]}];
+                
+                #Build graph URL
+                if($ma->read_url =~ /\/perfSONAR_PS\/services\/pSB\/?$/){
+                    #HACK: Assume if using pSB MA that they want old style graphs
+                    if($test->parameters->type eq 'perfsonarbuoy/bwctl'){
+                        $graph_url = '/serviceTest/bandwidthGraph.cgi?url=%maUrl&dst=%col&src=%row&length=2592000';
+                        $rev_graph_url = '/serviceTest/bandwidthGraph.cgi?url=%maUrl&dst=%row&src=%col&length=2592000';
+                    }else{
+                        $graph_url = '/serviceTest/delayGraph.cgi?url=%maUrl&dst=%col&src=%row&length=14400';
+                        $rev_graph_url = '/serviceTest/delayGraph.cgi?url=%maUrl&dst=%row&src=%col&length=14400';
+                    }
+                } else {
+                    #New MA so use new graphs that try to plot all latency and throughput data together
+                    my $is_source_ma = $tester eq $src_addr ? 1 : 0;
+                    foreach my $src_site_host(@{$src_site_hosts}){
+                        foreach my $dst_site_host(@{$dst_site_hosts}){
+                        
+                            #figure out mas
+                            my @ma_list;
+                            if($is_source_ma){
+                                @ma_list = map {$_->read_url} @{$src_site_host->measurement_archives};      
+                            }else{
+                                @ma_list = map {$_->read_url} @{$dst_site_host->measurement_archives};    
+                            }
+                            my %seen = ();
+                            my @unique_mas = grep !$seen{$_}++, @ma_list;
+                        
+                            #go through all hosts
+                            my %seen_src_ip = ();
+                            foreach my $src_site_host_addr (@{ $src_site_host->{addresses} }) {
+                                my $src_ip = $src_site_host_addr;
+                                if(!is_ipv4($src_site_host_addr) && !is_ipv6($src_site_host_addr)){
+                                    $src_ip = __get_hostname_ip($src_site_host_addr, $test_type);
+                                }
+                                $src_ip = '' . Net::IP->new($src_ip)->ip() if($src_ip);#normalize ipv6
+                                next if($seen_src_ip{$src_ip});
+                                next if $test_type eq 'ipv4' && !is_ipv4($src_ip);
+                                next if $test_type eq 'ipv6' && !is_ipv6($src_ip);
+                                my %seen_dst_ip = ();
+                                foreach my $dst_site_host_addr (@{ $dst_site_host->{addresses} }) {
+                                    my $dst_ip = $dst_site_host_addr;
+                                    if(!is_ipv4($dst_site_host_addr) && !is_ipv6($dst_site_host_addr)){
+                                        $dst_ip = __get_hostname_ip($dst_site_host_addr, $test_type);
+                                    }
+                                    $dst_ip = '' . Net::IP->new($dst_ip)->ip() if($dst_ip);#normalize ipv6
+                                    next if($seen_dst_ip{$dst_ip});
+                                    next if $test_type eq 'ipv4' && !is_ipv4($dst_ip);
+                                    next if $test_type eq 'ipv6' && !is_ipv6($dst_ip);
+                                    foreach my $unique_ma (@unique_mas){
+                                        $graph_url .= "url=$unique_ma&source=$src_site_host_addr&dest=$dst_site_host_addr&";
+                                        $rev_graph_url .= "url=$unique_ma&dest=$src_site_host_addr&source=$dst_site_host_addr&";
+                                        $seen_src_ip{$src_ip}++;
+                                        $seen_dst_ip{$dst_ip}++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                 }
+                
                 if ($row_hosts{$src_addr}) {
                     my $ma_url = $ma->read_url;
 
                     if ($tester eq $src_addr) {
                         $ma_url =~ s/$tester/\%row/g;
+                        $graph_url =~ s/$tester/\%row/g;
                     }
                     else {
                         $ma_url =~ s/$tester/\%col/g;
+                        $graph_url =~ s/$tester/\%col/g;
                     }
-
+                    
                     $forward_ma_map{$src_addr}->{$dst_addr} = $ma_url;
+                    $forward_graph_map{$src_addr}->{$dst_addr} = $graph_url;
                 }
 
                 if ($column_hosts{$src_addr} and $row_hosts{$dst_addr}) {
@@ -299,17 +399,20 @@ sub generate_maddash_config {
 
                     if ($tester eq $src_addr) {
                         $ma_url =~ s/$tester/\%col/g;
+                        $rev_graph_url =~ s/$tester/\%col/g;
                     }
                     else {
                         $ma_url =~ s/$tester/\%row/g;
+                        $rev_graph_url =~ s/$tester/\%row/g;
                     }
-
+                    
                     $reverse_ma_map{$dst_addr}->{$src_addr} = $ma_url;
+                    $reverse_graph_map{$dst_addr}->{$src_addr} = $rev_graph_url;
                 }
             }
 
             # simplify the maps
-            foreach my $map (\%forward_ma_map, \%reverse_ma_map) {
+            foreach my $map (\%forward_ma_map, \%reverse_ma_map, \%forward_graph_map, \%reverse_graph_map) {
                 __simplify_map($map);
             }
 
@@ -326,8 +429,8 @@ sub generate_maddash_config {
             $groups->{$column_id} = \@column_members;
 
             # Build the checks
-            my $check = __build_check(grid_name => $grid_name, type => $test->parameters->type, ma_map => \%forward_ma_map, exclude_checks => \%forward_exclude_checks, direction => "forward", maddash_options => $maddash_options, is_full_mesh => $is_full_mesh);
-            my $rev_check = __build_check(grid_name => $grid_name, type => $test->parameters->type, ma_map => \%reverse_ma_map, exclude_checks => \%reverse_exclude_checks, direction => "reverse", maddash_options => $maddash_options, is_full_mesh => $is_full_mesh);
+            my $check = __build_check(grid_name => $grid_name, type => $test->parameters->type, ma_map => \%forward_ma_map, exclude_checks => \%forward_exclude_checks, direction => "forward", maddash_options => $maddash_options, is_full_mesh => $is_full_mesh, graph_map => \%forward_graph_map);
+            my $rev_check = __build_check(grid_name => $grid_name, type => $test->parameters->type, ma_map => \%reverse_ma_map, exclude_checks => \%reverse_exclude_checks, direction => "reverse", maddash_options => $maddash_options, is_full_mesh => $is_full_mesh, graph_map => \%reverse_graph_map);
 
             # Add the checks
             if ($checks->{$check->{id}}) {
@@ -427,7 +530,7 @@ my %maddash_default_check_options = (
 );
 
 sub __build_check {
-    my $parameters = validate( @_, { grid_name => 1, type => 1, ma_map => 1, exclude_checks => 1, direction => 1, maddash_options => 1, is_full_mesh => 1 } );
+    my $parameters = validate( @_, { grid_name => 1, type => 1, ma_map => 1, exclude_checks => 1, direction => 1, maddash_options => 1, is_full_mesh => 1, graph_map => 1 } );
     my $grid_name = $parameters->{grid_name};
     my $type  = $parameters->{type};
     my $ma_map = $parameters->{ma_map};
@@ -435,6 +538,7 @@ sub __build_check {
     my $direction = $parameters->{direction};
     my $maddash_options = $parameters->{maddash_options};
     my $is_full_mesh = $parameters->{is_full_mesh};
+    my $graph_map = $parameters->{graph_map};
     
     my $check = {};
     $check->{type} = "net.es.maddash.checks.PSNagiosCheck";
@@ -446,6 +550,7 @@ sub __build_check {
     $check->{params}          = {};
     $check->{params}->{maUrl} = $ma_map;
     $check->{checkInterval}   = __get_check_option({ option => "check_interval", test_type => $type, grid_name => $grid_name, maddash_options => $maddash_options });
+    $check->{params}->{graphUrl} = $graph_map;
 
     my $nagios_cmd    = __get_check_option({ option => "check_command", test_type => $type, grid_name => $grid_name, maddash_options => $maddash_options });
     my $check_time_range = __get_check_option({ option => "check_time_range", test_type => $type, grid_name => $grid_name, maddash_options => $maddash_options });
@@ -459,8 +564,7 @@ sub __build_check {
         $check->{ok_description} = "Throughput >= ".$ok_throughput."Mbps";
         $check->{warning_description} = "Throughput < ".$ok_throughput."Mbps";
         $check->{critical_description} = "Throughput <= ".$critical_throughput."Mbps";
-        $check->{params}->{graphUrl} = 'http://'.$host.'/serviceTest/bandwidthGraph.cgi?url=%maUrl&dst=%col&src=%row&length=2592000';
-
+ 
         # convert to Gbps used in the nagios plugin
         $ok_throughput       /= 1000;
         $critical_throughput /= 1000; 
@@ -474,8 +578,6 @@ sub __build_check {
             $check->{name} = 'Throughput Reverse';
             $check->{description} = 'Throughput from %col to %row';
             $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_throughput.': -c '.$critical_throughput.': -r '.$check_time_range.' -s %col -d %row';
-            #change graph url to flip src and dst
-            $check->{params}->{graphUrl} = 'http://'.$host.'/serviceTest/bandwidthGraph.cgi?url=%maUrl&dst=%row&src=%col&length=2592000';
         }
         else {
             $check->{name} = 'Throughput';
@@ -491,8 +593,7 @@ sub __build_check {
         $check->{warning_description}  = "Loss rate is >= ".$ok_loss;
         $check->{critical_description}  = "Loss rate is >= ".$critical_loss;
 
-        $check->{params}->{graphUrl} = 'http://'.$host.'/serviceTest/delayGraph.cgi?url=%maUrl&dst=%col&src=%row&length=14400';
-        if ($is_full_mesh && $direction eq "reverse") {
+       if ($is_full_mesh && $direction eq "reverse") {
            $check->{name} = 'Loss Alternate MA';
            $check->{description} = 'Loss from %row to %col';
            $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_loss.' -c '.$critical_loss.' -r '.$check_time_range.' -l -p -s %row -d %col';
@@ -501,8 +602,6 @@ sub __build_check {
             $check->{name} = 'Loss Reverse';
             $check->{description} = 'Loss from %col to %row';
             $check->{params}->{command} =  $nagios_cmd.' -u %maUrl -w '.$ok_loss.' -c '.$critical_loss.' -r '.$check_time_range.' -l -p -s %col -d %row';
-            #change graph url to flip src and dst
-            $check->{params}->{graphUrl} = 'http://'.$host.'/serviceTest/delayGraph.cgi?url=%maUrl&dst=%row&src=%col&length=14400';
         }
         else {
             $check->{name} = 'Loss';
@@ -625,6 +724,43 @@ sub __normalize_addrs {
     
     return $addresses;            
 }
+
+sub __get_hostname_ip_type {
+    my ($name) = @_;
+    
+    my $type = '';
+    my $v4_count = 0;
+    my $v6_count = 0;
+    my @addresses = resolve_address($name);
+    foreach my $addr (@addresses){
+        if(is_ipv4($addr)){
+            $v4_count++;
+        }elsif(is_ipv6($addr)){
+            $v6_count++;
+        }
+    }
+    $type = 'ipv4' if($v4_count > 0);
+    $type .= 'ipv6' if($v6_count > 0);;
+    
+    return $type;
+}
+
+sub __get_hostname_ip {
+    my ($name, $type) = @_;
+    
+    my @addresses = resolve_address($name);
+    foreach my $addr (@addresses){
+        if($type eq 'ipv4' && is_ipv4($addr)){
+            return $addr;
+        }elsif($type eq 'ipv6' && is_ipv6($addr)){
+            return $addr;
+        }
+    }
+    
+    return '';
+}
+
+
 1;
 
 __END__
