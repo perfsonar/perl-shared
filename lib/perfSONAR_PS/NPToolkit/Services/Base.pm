@@ -131,14 +131,31 @@ sub can_disable {
 sub disabled {
     my ($self) = @_;
 
+    # Check if the service is "on" in this run level.
+
     unless ($self->{INIT_SCRIPT}) {
 	$self->{LOGGER}->error("No init script specified for this service");
 	return -1;
     }
 
-    system( "chkconfig --list " . $self->{INIT_SCRIPT} . " &> /dev/null");
+    my $curr_runlevel;
+    my $runlevel_output = `runlevel`;
+    if ( $? == 0 ) {
+        if ($runlevel_output =~ /[N0-9] (\d)/) {
+            $curr_runlevel = $1;
+        }
+    }
 
-    return $? != 0;
+    return 1 unless $curr_runlevel;
+
+    my $disabled = 1;
+
+    my $chkconfig_output = `chkconfig --list $self->{INIT_SCRIPT} 2> /dev/null`;
+    foreach my $line (split('\n', $chkconfig_output)) {
+        $disabled = 0 if ($line =~ /$curr_runlevel:on/);
+    }
+
+    return $disabled;
 }
 
 sub enable_startup {
