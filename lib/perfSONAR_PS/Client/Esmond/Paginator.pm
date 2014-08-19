@@ -79,4 +79,23 @@ sub prev_offset {
     return $prev;
 }
 
+sub page_offset {
+    my ($self, $page) = @_;
+    
+    #get the total
+    my $total = $self->metadata->[0]->metadata_count_total();
+    return undef unless $total;
+    
+    #get the limit
+    my $limit = $self->filters->limit();
+    return undef unless $limit;
+    
+    my $offset = $limit  * ($page-1);
+    if($offset >= $total){
+        return undef;
+    }
+    
+    return $offset;
+}
+
 1;
