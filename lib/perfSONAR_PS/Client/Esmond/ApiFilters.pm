@@ -112,6 +112,26 @@ sub dns_match_rule{
     return $self->metadata_filters->{'dns-match-rule'};
 }
 
+sub limit{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->metadata_filters->{'limit'} = $val;
+    }
+    
+    return $self->metadata_filters->{'limit'};
+}
+
+sub offset{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->metadata_filters->{'offset'} = $val;
+    }
+    
+    return $self->metadata_filters->{'offset'};
+}
+
 sub dns_match_only_v4{
     my $self = shift;
     return $self->dns_match_rule('only-v4');

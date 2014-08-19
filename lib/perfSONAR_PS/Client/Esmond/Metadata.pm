@@ -120,6 +120,13 @@ sub get_event_type(){
     return undef;
 }
 
+sub metadata_count_total(){
+    my ($self) = @_;
+    
+    #cannot set, only get
+    return $self->data->{'metadata-count-total'};
+}
+
 sub generate_event_type_bulk_post(){
     my $self = shift;
     
