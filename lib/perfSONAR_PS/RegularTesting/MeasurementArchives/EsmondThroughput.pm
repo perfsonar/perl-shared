@@ -248,7 +248,7 @@ sub handle_streams_throughput(){
     if(defined $results->summary_results && scalar( @{$results->summary_results->streams} > 0)){
         my @stream_throughputs = ();
         #make sure sorted by stream id
-        foreach my $stream(sort {$a->stream_id <=> $b->stream_id} @{$results->summary_results->streams}){
+        foreach my $stream(sort {$a->stream_id cmp $b->stream_id} @{$results->summary_results->streams}){
              #don't even try to store really messed up stream
             return undef if(!defined $stream->throughput);
             push @stream_throughputs, $stream->throughput;
@@ -267,7 +267,7 @@ sub handle_streams_retransmits(){
     if(defined $results->summary_results && scalar( @{$results->summary_results->streams} > 0)){
         my @stream_retransmits = ();
         #make sure sorted by stream id
-        foreach my $stream(sort {$a->stream_id <=> $b->stream_id} @{$results->summary_results->streams}){
+        foreach my $stream(sort {$a->stream_id cmp $b->stream_id} @{$results->summary_results->streams}){
              #don't even try to store really messed up stream
             return undef if(!defined $stream->retransmits);
             push @stream_retransmits, $stream->retransmits;
