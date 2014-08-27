@@ -50,12 +50,10 @@ override 'event_types' => sub {
     
     my @event_types = (
         'failures',
-        'packet-retransmits',
         'throughput',
         'throughput-subintervals',
         );
     if($test_parameters->streams > 1){
-        push @event_types, 'streams-packet-retransmits';
         push @event_types, 'streams-throughput';
         push @event_types, 'streams-throughput-subintervals';
     }
@@ -64,7 +62,15 @@ override 'event_types' => sub {
         push @event_types, 'packet-count-lost';
         push @event_types, 'packet-count-sent';
     }
-        
+    else {
+        push @event_types, 'packet-retransmits';
+        push @event_types, 'packet-retransmits-subintervals';
+        if($test_parameters->streams > 1){
+            push @event_types, 'streams-packet-retransmits';
+            push @event_types, 'streams-packet-retransmits-subintervals';
+        }
+    }
+
     return \@event_types;
 };
 
@@ -102,12 +108,16 @@ override 'add_datum' => sub {
         return $self->handle_packet_loss_rate(results=>$results);
     }elsif($event_type eq 'packet-retransmits'){
         return $self->handle_packet_retransmits(results=>$results);
+    }elsif($event_type eq 'packet-retransmits-subintervals'){
+        return $self->handle_packet_retransmits_subintervals(results=>$results);
     }elsif($event_type eq 'throughput'){
         return $self->handle_throughput(results=>$results);
     }elsif($event_type eq 'throughput-subintervals'){
         return $self->handle_throughput_subintervals(results=>$results);
     }elsif($event_type eq 'streams-packet-retransmits'){
         return $self->handle_streams_retransmits(results=>$results);
+    }elsif($event_type eq 'streams-packet-retransmits-subintervals'){
+        return $self->handle_streams_packet_retransmits_subintervals(results=>$results);
     }elsif($event_type eq 'streams-throughput'){
         return $self->handle_streams_throughput(results=>$results);
     }elsif($event_type eq 'streams-throughput-subintervals'){
@@ -118,6 +128,93 @@ override 'add_datum' => sub {
         return undef;
     }
 };
+
+sub handle_subinterval_parameter {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1, parameter_name => 1});
+    my $results = $parameters->{results};
+    my $parameter_name = $parameters->{parameter_name};
+    
+    if(defined $results->intervals && scalar( @{$results->intervals} > 0)){
+        my @esmond_subintervals = ();
+        #make sure sorted by start time
+        foreach my $interval(sort {$a->start <=> $b->start} @{$results->intervals}){
+             #don't even try to store really messed up subinterval
+            return undef if(!defined $interval->start || !defined $interval->duration);
+            my $tmpObj = {
+                'start' => sprintf("%f", $interval->start), 
+                'duration' => sprintf("%f", $interval->duration), 
+                'val' => undef
+                };
+            if(defined $interval->summary_results and $interval->summary_results->can($parameter_name)) {
+                $tmpObj->{'val'} = $interval->summary_results->$parameter_name;
+            }
+            push @esmond_subintervals, $tmpObj;
+        }
+        return \@esmond_subintervals;
+    }
+
+    return;
+}
+
+sub handle_streams_subinterval_parameter {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1, parameter_name => 1});
+    my $results = $parameters->{results};
+    my $parameter_name = $parameters->{parameter_name};
+
+    if(defined $results->intervals && scalar( @{$results->intervals} > 0)){
+        #build subintervals for each stream id
+        my %stream_map = ();
+        #make sure sorted by start time
+        foreach my $interval(sort {$a->start <=> $b->start} @{$results->intervals}){
+             #don't even try to store really messed up subinterval
+            return undef if(!defined $interval->start || !defined $interval->duration);
+            foreach my $stream(@{$interval->streams}){
+                return undef if(!defined $stream->stream_id);
+                if(!exists $stream_map{$stream->stream_id}){
+                    $stream_map{$stream->stream_id} = [];
+                }
+                my $tmpObj = {
+                    'start' => sprintf("%f", $interval->start), 
+                    'duration' => sprintf("%f", $interval->duration), 
+                    'val' => $stream->$parameter_name
+                };
+                push @{$stream_map{$stream->stream_id}}, $tmpObj;
+            }
+        }
+        
+        #sort by stream id
+        my @stream_ints = ();
+        foreach my $stream_id(sort keys %stream_map){
+            push @stream_ints, $stream_map{$stream_id};
+        }
+        return \@stream_ints;
+    }
+        
+    return;
+}
+
+sub handle_streams_parameter{
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1, parameter_name => 1});
+    my $results = $parameters->{results};
+    my $parameter_name = $parameters->{parameter_name};
+
+    if(defined $results->summary_results && scalar( @{$results->summary_results->streams} > 0)){
+        my @stream = ();
+        #make sure sorted by stream id
+        foreach my $stream(sort {$a->stream_id cmp $b->stream_id} @{$results->summary_results->streams}){
+             #don't even try to store really messed up stream
+            return undef unless defined $stream->$parameter_name;
+            push @stream, $stream->$parameter_name;
+        }
+        return \@stream;
+    }
+
+    return;
+}
+
 
 sub handle_packets_sent(){
     my ($self, @args) = @_;
@@ -176,31 +273,28 @@ sub handle_packet_retransmits(){
     return undef;
 }
 
+sub handle_packet_retransmits_subintervals(){
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+
+    return $self->handle_subinterval_parameter(results => $results, parameter_name => "retransmits");
+}
+
+sub handle_streams_packet_retransmits_subintervals(){
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {results => 1});
+    my $results = $parameters->{results};
+    
+    return $self->handle_streams_subinterval_parameter(results => $results, parameter_name => "retransmits");
+}
+
 sub handle_throughput_subintervals(){
     my ($self, @args) = @_;
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if(defined $results->intervals && scalar( @{$results->intervals} > 0)){
-        my @esmond_subintervals = ();
-        #make sure sorted by start time
-        foreach my $interval(sort {$a->start <=> $b->start} @{$results->intervals}){
-             #don't even try to store really messed up subinterval
-            return undef if(!defined $interval->start || !defined $interval->duration);
-            my $tmpObj = {
-                'start' => sprintf("%f", $interval->start), 
-                'duration' => sprintf("%f", $interval->duration), 
-                'val' => undef
-                };
-            if(defined $interval->summary_results){
-                $tmpObj->{'val'} = $interval->summary_results->throughput;
-            }
-            push @esmond_subintervals, $tmpObj;
-        }
-        return \@esmond_subintervals;
-    }
-        
-    return undef;
+    return $self->handle_subinterval_parameter(results => $results, parameter_name => "throughput");
 }
 
 sub handle_streams_throughput_subintervals(){
@@ -208,36 +302,7 @@ sub handle_streams_throughput_subintervals(){
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if(defined $results->intervals && scalar( @{$results->intervals} > 0)){
-        #build subintervals for each stream id
-        my %stream_map = ();
-        #make sure sorted by start time
-        foreach my $interval(sort {$a->start <=> $b->start} @{$results->intervals}){
-             #don't even try to store really messed up subinterval
-            return undef if(!defined $interval->start || !defined $interval->duration);
-            foreach my $stream(@{$interval->streams}){
-                return undef if(!defined $stream->stream_id);
-                if(!exists $stream_map{$stream->stream_id}){
-                    $stream_map{$stream->stream_id} = [];
-                }
-                my $tmpObj = {
-                    'start' => sprintf("%f", $interval->start), 
-                    'duration' => sprintf("%f", $interval->duration), 
-                    'val' => $stream->throughput
-                };
-                push @{$stream_map{$stream->stream_id}}, $tmpObj;
-            }
-        }
-        
-        #sort by stream id
-        my @stream_ints = ();
-        foreach my $stream_id(sort keys %stream_map){
-            push @stream_ints, $stream_map{$stream_id};
-        }
-        return \@stream_ints;
-    }
-        
-    return undef;
+    return $self->handle_streams_subinterval_parameter(results => $results, parameter_name => "throughput");
 }
 
 sub handle_streams_throughput(){
@@ -245,18 +310,7 @@ sub handle_streams_throughput(){
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if(defined $results->summary_results && scalar( @{$results->summary_results->streams} > 0)){
-        my @stream_throughputs = ();
-        #make sure sorted by stream id
-        foreach my $stream(sort {$a->stream_id cmp $b->stream_id} @{$results->summary_results->streams}){
-             #don't even try to store really messed up stream
-            return undef if(!defined $stream->throughput);
-            push @stream_throughputs, $stream->throughput;
-        }
-        return \@stream_throughputs;
-    }
-        
-    return undef;
+    return $self->handle_streams_parameter(results => $results, parameter_name => "throughput");
 }
 
 sub handle_streams_retransmits(){
@@ -264,17 +318,8 @@ sub handle_streams_retransmits(){
     my $parameters = validate( @args, {results => 1});
     my $results = $parameters->{results};
     
-    if(defined $results->summary_results && scalar( @{$results->summary_results->streams} > 0)){
-        my @stream_retransmits = ();
-        #make sure sorted by stream id
-        foreach my $stream(sort {$a->stream_id cmp $b->stream_id} @{$results->summary_results->streams}){
-             #don't even try to store really messed up stream
-            return undef if(!defined $stream->retransmits);
-            push @stream_retransmits, $stream->retransmits;
-        }
-        return \@stream_retransmits;
-    }
-        
+    return $self->handle_streams_parameter(results => $results, parameter_name => "retransmits");
+
     return undef;
 }
 
