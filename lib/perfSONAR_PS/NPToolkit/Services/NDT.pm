@@ -3,6 +3,8 @@ package perfSONAR_PS::NPToolkit::Services::NDT;
 use strict;
 use warnings;
 
+use Data::Validate::IP qw(is_ipv6);
+
 use base 'perfSONAR_PS::NPToolkit::Services::NetworkBase';
 
 sub init {
@@ -26,6 +28,8 @@ sub get_addresses {
 
     my @addresses = ();
     foreach my $address (@interfaces) {
+        $address = "[".$address."]" if is_ipv6($address);
+
         push @addresses, "http://".$address.":7123/";
         push @addresses, "tcp://".$address.":3001";
     }

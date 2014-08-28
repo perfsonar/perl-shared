@@ -3,6 +3,8 @@ package perfSONAR_PS::NPToolkit::Services::BWCTL;
 use strict;
 use warnings;
 
+use Data::Validate::IP qw(is_ipv6);
+
 use base 'perfSONAR_PS::NPToolkit::Services::NetworkBase';
 
 sub init {
@@ -28,6 +30,8 @@ sub get_addresses {
 
     my @addresses = ();
     foreach my $address (@interfaces) {
+        $address = "[".$address."]" if is_ipv6($address);
+
         push @addresses, "tcp://".$address.":4823";
     }
 
