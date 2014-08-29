@@ -174,7 +174,7 @@ sub generate_maddash_config {
             
             my $columnAlgorithm = "all";
             if ($test->members->type eq "star") {
-                $test->members->center_address = __normalize_addr($test->members->center_address);
+                $test->members->center_address(__normalize_addr($test->members->center_address));
                 push @row_members, $test->members->center_address;
                 foreach my $member (@{__normalize_addrs($test->members->members)}) {
                     push @column_members, $member unless $member eq $test->members->center_address;
