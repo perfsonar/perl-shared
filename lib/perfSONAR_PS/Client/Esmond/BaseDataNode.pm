@@ -1,6 +1,6 @@
 package perfSONAR_PS::Client::Esmond::BaseDataNode;
 
-use Moose;
+use Mouse;
 use perfSONAR_PS::Client::Esmond::DataPayload;
 use perfSONAR_PS::Client::Esmond::Utils qw(send_http_request build_err_msg);
 use JSON qw(from_json);
@@ -60,5 +60,7 @@ sub get_data {
     }
     return \@ts_objs;
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;

@@ -1,6 +1,6 @@
 package perfSONAR_PS::Client::Esmond::Metadata;
 
-use Moose;
+use Mouse;
 use perfSONAR_PS::Client::Esmond::ApiFilters;
 use perfSONAR_PS::Client::Esmond::EventType;
 use perfSONAR_PS::Client::Esmond::EventTypeBulkPost;
@@ -196,5 +196,6 @@ sub post_metadata() {
     return 0;
 }
 
+__PACKAGE__->meta->make_immutable;
 
 1;

@@ -10,7 +10,7 @@ A client for interacting with the MA as implemented by esmond
 
 =cut
 
-use Moose;
+use Mouse;
 use Params::Validate qw(:all);
 use  perfSONAR_PS::Client::Esmond::ApiFilters;
 use  perfSONAR_PS::Client::Esmond::DataConnect;
@@ -69,5 +69,7 @@ sub get_data() {
     $self->_set_error($data_client->error) if($data_client->error);
     return $data;
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;

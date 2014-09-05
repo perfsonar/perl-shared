@@ -1,6 +1,6 @@
 package perfSONAR_PS::Client::Esmond::Summary;
 
-use Moose;
+use Mouse;
 use  perfSONAR_PS::Client::Esmond::ApiFilters;
 
 extends 'perfSONAR_PS::Client::Esmond::BaseDataNode';
@@ -38,5 +38,7 @@ sub datetime_updated {
     }
     return undef;
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;

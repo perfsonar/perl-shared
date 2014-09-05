@@ -1,6 +1,6 @@
 package perfSONAR_PS::Client::Esmond::Paginator;
 
-use Moose;
+use Mouse;
 use POSIX;
 
 has 'metadata' => (is => 'rw', isa => 'ArrayRef', default => sub { [] });
@@ -97,5 +97,7 @@ sub page_offset {
     
     return $offset;
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;

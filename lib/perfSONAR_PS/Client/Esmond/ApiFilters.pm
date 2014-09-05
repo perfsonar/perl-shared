@@ -1,6 +1,6 @@
 package perfSONAR_PS::Client::Esmond::ApiFilters;
 
-use Moose;
+use Mouse;
 
 has 'metadata_filters' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'time_filters' => (is => 'rw', isa => 'HashRef', default => sub { {} });
@@ -206,5 +206,7 @@ sub headers {
     
     return $headers;
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;

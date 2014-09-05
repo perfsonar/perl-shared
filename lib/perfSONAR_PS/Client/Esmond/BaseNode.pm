@@ -1,6 +1,6 @@
 package perfSONAR_PS::Client::Esmond::BaseNode;
 
-use Moose;
+use Mouse;
 use perfSONAR_PS::Client::Esmond::ApiFilters;
 use perfSONAR_PS::Client::Esmond::Utils qw(send_http_request build_err_msg);
 
@@ -37,5 +37,7 @@ sub _post {
 
     return $response->content;
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;

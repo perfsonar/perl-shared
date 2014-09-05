@@ -1,6 +1,6 @@
 package perfSONAR_PS::Client::Esmond::EventType;
 
-use Moose;
+use Mouse;
 use perfSONAR_PS::Client::Esmond::ApiFilters;
 use perfSONAR_PS::Client::Esmond::Summary;
 use JSON qw(to_json);
@@ -82,5 +82,7 @@ sub post_data {
     
     return 0;
 }
+
+__PACKAGE__->meta->make_immutable;
 
 1;
