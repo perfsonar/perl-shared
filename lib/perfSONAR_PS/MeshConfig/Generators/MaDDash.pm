@@ -310,8 +310,8 @@ sub generate_maddash_config {
                 }
                 
                 #determine base graph url
+                my $enable_combined_graphs = __get_check_option({ option => "enable_combined_graphs", test_type => $test->parameters->type, grid_name => $grid_name, maddash_options => $maddash_options });
                 my $graph_url = __get_check_option({ option => "graph_url", test_type => $test->parameters->type, grid_name => $grid_name, maddash_options => $maddash_options });
-                $graph_url = '/serviceTest/graphWidget.cgi' unless $graph_url;
                 $graph_url .= '?' if($graph_url !~ /\?$/);
                 my $rev_graph_url = $graph_url;
                 
@@ -329,7 +329,7 @@ sub generate_maddash_config {
                         $graph_url = '/serviceTest/delayGraph.cgi?url=%maUrl&dst=%col&src=%row&length=14400';
                         $rev_graph_url = '/serviceTest/delayGraph.cgi?url=%maUrl&dst=%row&src=%col&length=14400';
                     }
-                } else {
+                }elsif($enable_combined_graphs){
                     #New MA so use new graphs that try to plot all latency and throughput data together
                     my $is_source_ma = $tester eq $src_addr ? 1 : 0;
                     foreach my $src_site_host(@{$src_site_hosts}){
@@ -376,7 +376,10 @@ sub generate_maddash_config {
                             }
                         }
                     }
-                 }
+                }else{
+                    $graph_url .= "url=%maUrl&source=%row&dest=%col";
+                    $rev_graph_url .= "url=%maUrl&source=%col&dest=%row";
+                } 
                 
                 if ($row_hosts{$src_addr}) {
                     my $ma_url = $ma->read_url;
@@ -509,6 +512,7 @@ sub __quote_ipv6_address {
 
     $yaml =~ s/($IPv6_re)/\'$1\'/gm;
     $yaml =~ s/\'\'/\'/gm;
+    $yaml =~ s/\=\'($IPv6_re)\'/=$1/gm;
     return $yaml; 
 }
 
@@ -519,6 +523,8 @@ my %maddash_default_check_options = (
         check_time_range => 900,
         acceptable_loss_rate => 0,
         critical_loss_rate => 0.01,
+        enable_combined_graphs => 0,
+        graph_url => '/serviceTest/graphWidget.cgi'
     },
     "perfsonarbuoy/bwctl" => {
         check_command => "/opt/perfsonar_ps/nagios/bin/check_throughput.pl",
@@ -526,6 +532,8 @@ my %maddash_default_check_options = (
         check_time_range => 86400,
         acceptable_throughput => 900,
         critical_throughput => 500,
+        enable_combined_graphs => 0,
+        graph_url => '/serviceTest/graphWidget.cgi'
     },
 );
 
