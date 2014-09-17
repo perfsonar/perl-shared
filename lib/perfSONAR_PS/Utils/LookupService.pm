@@ -114,6 +114,12 @@ sub is_host_registered{
     my ($address) = @_;
      
     my $ls_url = discover_primary_lookup_service();
+
+    if (! $ls_url){
+	$logger->error("Unable to determine ls_url");
+	return;
+    }
+
     my $server = SimpleLookupService::Client::SimpleLS->new();
     my $uri = URI->new($ls_url); 
     my $ls_port =$uri->port();
