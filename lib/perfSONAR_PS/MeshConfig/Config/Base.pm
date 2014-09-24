@@ -41,6 +41,10 @@ sub parse {
         $type = $type.""; # convert to string
 
         if ($type =~ /ArrayRef\[(.*)\]/) {
+            unless (ref($description->{$variable}) and ref($description->{$variable}) eq "ARRAY") {
+                die("Mesh element '".$variable."' is supposed to be an array, but isn't one in the mesh");
+            }
+
             my $array_type = $1;
 
             my @array = ();
