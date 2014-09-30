@@ -5,7 +5,7 @@ use warnings;
 
 use Log::Log4perl qw(:easy);
 use RPM2;
-
+use File::Spec;
 use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES';
 
 sub new {
@@ -98,10 +98,15 @@ sub check_running {
 
             chomp( $p_id ) if ( defined $p_id );
             if ( $p_id ) {
-                open( PSVIEW, "ps -p " . $p_id . " | grep " . $self->{PROCESS_NAMES}[$i] . " |" );
-                my @output = <PSVIEW>;
+		my $running = 0;
+		open( PSVIEW, "-|", "ps -p " . $p_id );
+		while ( <PSVIEW> ) {
+		    if (/$self->{PROCESS_NAMES}[$i]/) {
+			$running = 1;
+                    }
+		}
                 close( PSVIEW );
-                if ( $? != 0 ) {
+		unless ( $? == 0 and $running ) {
                     return;
                 }
             }
@@ -150,7 +155,15 @@ sub disabled {
 
     my $disabled = 1;
 
-    my $chkconfig_output = `chkconfig --list $self->{INIT_SCRIPT} 2> /dev/null`;
+    # turn off stderr
+    open(my $stderr, ">&STDERR");
+    open(STDERR, ">", File::Spec->devnull());
+
+    my $chkconfig_output = `chkconfig --list $self->{INIT_SCRIPT}`;    
+
+    # restore stderr
+    open(STDERR, ">&", $stderr);
+
     foreach my $line (split('\n', $chkconfig_output)) {
         $disabled = 0 if ($line =~ /$curr_runlevel:on/);
     }
@@ -166,7 +179,19 @@ sub enable_startup {
 	return -1;
     }
 
-    return system( "chkconfig --add  " . $self->{INIT_SCRIPT} . " &> /dev/null" );
+    # turn off stderr + stdout
+    open(my $stderr, ">&STDERR");
+    open(my $stdout, ">&STDOUT");
+    open(STDERR, ">", File::Spec->devnull());
+    open(STDOUT, ">", File::Spec->devnull());
+
+    my $ret = system( "chkconfig --add  " . $self->{INIT_SCRIPT} );
+
+    # restore stderr + stdout
+    open(STDERR, ">&", $stderr);
+    open(STDERR, ">&", $stdout);
+
+    return $ret;
 }
 
 sub disable_startup {
@@ -177,7 +202,19 @@ sub disable_startup {
 	return -1;
     }
 
-    return system( "chkconfig --del " . $self->{INIT_SCRIPT} . " &> /dev/null");
+    # turn off stderr + stdout
+    open(my $stderr, ">&STDERR");
+    open(my $stdout, ">&STDOUT");
+    open(STDERR, ">", File::Spec->devnull());
+    open(STDOUT, ">", File::Spec->devnull());
+
+    my $ret = system( "chkconfig --del " . $self->{INIT_SCRIPT} . " &> /dev/null");
+
+    # restore stderr + stdout
+    open(STDERR, ">&", $stderr);
+    open(STDERR, ">&", $stdout);
+
+    return $ret;
 }
 
 sub run_init {
@@ -188,12 +225,25 @@ sub run_init {
 	return -1;
     }
 
-    my $shell_cmd = "service " . $self->{INIT_SCRIPT} . " " . $cmd . "&> /dev/null";
+    # turn off stderr + stdout
+    open(my $stderr, ">&STDERR");
+    open(my $stdout, ">&STDOUT");
+    open(STDERR, ">", File::Spec->devnull());
+    open(STDOUT, ">", File::Spec->devnull());
+
+    my $shell_cmd = "service " . $self->{INIT_SCRIPT} . " " . $cmd;
 
     $self->{LOGGER}->debug($shell_cmd);
 
-    return system( $shell_cmd );
+    my $ret = system( $shell_cmd );
+
+    # restore stderr + stdout
+    open(STDERR, ">&", $stderr);
+    open(STDERR, ">&", $stdout);
+
+    return $ret;
 }
+
 
 sub start {
     my ($self) = @_;
