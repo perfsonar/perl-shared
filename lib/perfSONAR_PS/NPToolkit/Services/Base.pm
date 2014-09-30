@@ -208,7 +208,7 @@ sub disable_startup {
     open(STDERR, ">", File::Spec->devnull());
     open(STDOUT, ">", File::Spec->devnull());
 
-    my $ret = system( "chkconfig --del " . $self->{INIT_SCRIPT} . " &> /dev/null");
+    my $ret = system( "chkconfig --del " . $self->{INIT_SCRIPT});
 
     # restore stderr + stdout
     open(STDERR, ">&", $stderr);
