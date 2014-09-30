@@ -189,7 +189,7 @@ sub enable_startup {
 
     # restore stderr + stdout
     open(STDERR, ">&", $stderr);
-    open(STDERR, ">&", $stdout);
+    open(STDOUT, ">&", $stdout);
 
     return $ret;
 }
@@ -212,7 +212,7 @@ sub disable_startup {
 
     # restore stderr + stdout
     open(STDERR, ">&", $stderr);
-    open(STDERR, ">&", $stdout);
+    open(STDOUT, ">&", $stdout);
 
     return $ret;
 }
@@ -239,7 +239,7 @@ sub run_init {
 
     # restore stderr + stdout
     open(STDERR, ">&", $stderr);
-    open(STDERR, ">&", $stdout);
+    open(STDOUT, ">&", $stdout);
 
     return $ret;
 }
