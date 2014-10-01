@@ -21,6 +21,7 @@ use perfSONAR_PS::NPToolkit::Services::NPAD;
 use perfSONAR_PS::NPToolkit::Services::NTP;
 use perfSONAR_PS::NPToolkit::Services::OWAMP;
 use perfSONAR_PS::NPToolkit::Services::RegularTesting;
+use perfSONAR_PS::NPToolkit::Services::YumCron;
 
 our @EXPORT_OK = qw( get_service_object get_service_name get_all_service_names );
 
@@ -39,6 +40,7 @@ my %name_to_service_map = (
     ntp => "perfSONAR_PS::NPToolkit::Services::NTP",
     owamp => "perfSONAR_PS::NPToolkit::Services::OWAMP",
     regular_testing => "perfSONAR_PS::NPToolkit::Services::RegularTesting",
+    yum_cron => "perfSONAR_PS::NPToolkit::Services::YumCron",
 );
 
 sub get_service_object {
