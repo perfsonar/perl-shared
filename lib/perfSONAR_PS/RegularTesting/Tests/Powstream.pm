@@ -78,8 +78,8 @@ sub get_individual_tests {
     foreach my $target (@{ $test->targets }) {
         my $target_parameters = $test->get_target_parameters(target => $target);
 
-        unless ($test->parameters->send_only) {
-            if (is_hostname($target->address) and $test->parameters->test_ipv4_ipv6) {
+        unless ($target_parameters->send_only) {
+            if (is_hostname($target->address) and $target_parameters->test_ipv4_ipv6 and not $target_parameters->force_ipv4 and not $target_parameters->force_ipv6) {
                 push @tests, { target => $target, receiver => 1, force_ipv4 => 1, test_parameters => $target_parameters };
                 push @tests, { target => $target, receiver => 1, force_ipv6 => 1, test_parameters => $target_parameters };
             }
@@ -87,14 +87,14 @@ sub get_individual_tests {
                 push @tests, {
                                target => $target,
                                receiver => 1,
-                               force_ipv4 => $test->parameters->force_ipv4,
-                               force_ipv6 => $test->parameters->force_ipv6,
+                               force_ipv4 => $target_parameters->force_ipv4,
+                               force_ipv6 => $target_parameters->force_ipv6,
                                test_parameters => $target_parameters,
                              };
             }
         }
-        unless ($test->parameters->receive_only) {
-            if (is_hostname($target->address) and $test->parameters->test_ipv4_ipv6) {
+        unless ($target_parameters->receive_only) {
+            if (is_hostname($target->address) and $target_parameters->test_ipv4_ipv6 and not $target_parameters->force_ipv4 and not $target_parameters->force_ipv6) {
                 push @tests, { target => $target, sender => 1, force_ipv4 => 1, test_parameters => $target_parameters };
                 push @tests, { target => $target, sender => 1, force_ipv6 => 1, test_parameters => $target_parameters };
             }
@@ -102,8 +102,8 @@ sub get_individual_tests {
                 push @tests, {
                                target => $target,
                                sender => 1,
-                               force_ipv4 => $test->parameters->force_ipv4,
-                               force_ipv6 => $test->parameters->force_ipv6,
+                               force_ipv4 => $target_parameters->force_ipv4,
+                               force_ipv6 => $target_parameters->force_ipv6,
                                test_parameters => $target_parameters,
                              };
             }

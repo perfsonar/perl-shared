@@ -80,7 +80,7 @@ sub get_individual_tests {
         $local_address = $test->local_address   if $test->local_address;
 
         unless ($target_parameters->send_only) {
-            if (is_hostname($target->address) and $target_parameters->test_ipv4_ipv6) {
+            if (is_hostname($target->address) and $target_parameters->test_ipv4_ipv6 and not $target_parameters->force_ipv4 and not $target_parameters->force_ipv6) {
                 push @tests, { target => $target, local_destination => 0, source => $local_address, destination => $target->address, force_ipv4 => 1, test_parameters => $target_parameters };
                 push @tests, { target => $target, local_destination => 0, source => $local_address, destination => $target->address, force_ipv6 => 1, test_parameters => $target_parameters };
             }
@@ -98,7 +98,7 @@ sub get_individual_tests {
             }
         }
         unless ($target_parameters->receive_only) {
-            if (is_hostname($target->address) and $target_parameters->test_ipv4_ipv6) {
+            if (is_hostname($target->address) and $target_parameters->test_ipv4_ipv6 and not $target_parameters->force_ipv4 and not $target_parameters->force_ipv6) {
                 push @tests, { target => $target, local_destination => 1, source => $target->address, destination => $local_address, force_ipv4 => 1, test_parameters => $target_parameters };
                 push @tests, { target => $target, local_destination => 1, source => $target->address, destination => $local_address, force_ipv6 => 1, test_parameters => $target_parameters };
             }
