@@ -1133,6 +1133,7 @@ sub parse_regular_testing_config {
 
             ($status, $res) = $self->add_test_bwctl_throughput({
                                           description => $test->description,
+                                          local_interface => $test->local_interface,
                                           tool => $test->parameters->tool,
                                           protocol => $protocol,
                                           duration => $test->parameters->duration,
