@@ -48,6 +48,8 @@ sub https_get {
     my $ca_certificate_file = $parameters->{ca_certificate_file};
     my $max_redirects = $parameters->{max_redirects};
 
+    $max_redirects = 3 unless defined $max_redirects;
+
     my $curr_url = $url;
 
 RETRY:
