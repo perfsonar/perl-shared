@@ -92,7 +92,7 @@ sub check_running {
     else {
         my $i = 0;
         foreach my $pid_file ( @{ $self->{PID_FILES} } ) {
-            open( PIDFILE, $pid_file ) or return (-1, "Couldn't open $pid_file");
+            open( PIDFILE, $pid_file ) or return;
             my $p_id = <PIDFILE>;
             close( PIDFILE );
 
