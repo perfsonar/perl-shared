@@ -185,6 +185,8 @@ sub enable_startup {
     open(STDERR, ">", File::Spec->devnull());
     open(STDOUT, ">", File::Spec->devnull());
 
+    system( "chkconfig --del  " . $self->{INIT_SCRIPT} );
+
     my $ret = system( "chkconfig --add  " . $self->{INIT_SCRIPT} );
 
     # restore stderr + stdout
