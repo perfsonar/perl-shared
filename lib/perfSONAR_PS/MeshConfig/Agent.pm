@@ -326,6 +326,12 @@ sub __configure_host {
             # Find the host block associated with this machine
             my $hosts = $mesh->lookup_hosts({ addresses => $self->addresses });
             unless ($hosts->[0]) {
+                if ($mesh_params->{permit_non_participation}) {
+                    my $msg = "This machine is not included in any tests for this mesh: ".join(", ", @{ $self->addresses });
+                    $logger->info($msg);
+                    next;
+                }
+
                 if ($mesh_params->{required}) {
                     $dont_change = 1;
                 }
