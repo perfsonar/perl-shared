@@ -48,31 +48,39 @@ sub load_mesh {
 
     my $json = $res;
 
-    # parse any "include" attributes
-    ($status, $res) = __process_include_directives({ 
-                                                     hash                 => $json,
-                                                     validate_certificate => $validate_certificate,
-                                                     ca_certificate_file  => $ca_certificate_file,
-                                                     ca_certificate_path  => $ca_certificate_path,
-                                                  });
-    unless ($status == 0) {
-        return ($status, $res);
+    $json = [ $json ] if (ref($json) ne "ARRAY");
+
+    my @meshes = ();
+
+    foreach my $mesh_hash (@$json) {
+        # parse any "include" attributes
+        ($status, $res) = __process_include_directives({ 
+                                                         hash                 => $mesh_hash,
+                                                         validate_certificate => $validate_certificate,
+                                                         ca_certificate_file  => $ca_certificate_file,
+                                                         ca_certificate_path  => $ca_certificate_path,
+                                                      });
+        unless ($status == 0) {
+            return ($status, $res);
+        }
+
+
+        my $config;
+        eval {
+            my $strict = ($relaxed_checking?0:1);
+
+            $config = perfSONAR_PS::MeshConfig::Config::Mesh->parse($mesh_hash, $strict);
+        };
+        if ($@) {
+            my $msg = "Invalid mesh configuration: ".$@;
+            $logger->error($msg);
+            return (-1, $msg);
+        }
+
+        push @meshes, $config;
     }
 
-
-    my $config;
-    eval {
-        my $strict = ($relaxed_checking?0:1);
-
-        $config = perfSONAR_PS::MeshConfig::Config::Mesh->parse($json, $strict);
-    };
-    if ($@) {
-        my $msg = "Invalid mesh configuration: ".$@;
-        $logger->error($msg);
-        return (-1, $msg);
-    }
-
-    return (0, $config);
+    return (0, \@meshes);
 }
 
 sub __process_include_directives {
