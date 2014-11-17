@@ -271,21 +271,6 @@ sub lookup_test {
     return ( 0, \%test_info );
 }
 
-=head2 sanitize({ content => 1 })
-    Sanitizes the content passed to it so we are not saving dangerous characters to the config file.
-    Takes a string of content as the argument and returns the sanitized content.
-=cut
-
-sub sanitize {
-    my ( $self, @params ) = @_;
-    my $parameters = validate (
-        @params, 
-        { content => 1 }
-    );
-    my $content = $parameters->{content};
-    $content =~ s/[^a-zA-Z0-9 ]//g;
-    return $content;
-}
 
 =head2 add_test_owamp({ mesh_type => 1, name => 0, description => 1, packet_padding => 1, packet_interval => 1, bucket_width => 1, loss_threshold => 1, session_count => 1 })
     Adds a new OWAMP test to the list. mesh_type must be "star" as mesh tests
@@ -327,7 +312,6 @@ sub add_test_owamp {
     $test{id}          = $test_id;
     $test{type}        = "owamp";
     $test{name}        = $parameters->{name};
-    $parameters->{description} = $self->sanitize({ content => $parameters->{description} } )    if ( defined $parameters->{description} );
     $test{description} = $parameters->{description} if ( defined $parameters->{description} );
     $test{added_by_mesh} = $parameters->{added_by_mesh};
 
@@ -386,7 +370,6 @@ sub update_test_owamp {
     return ( -1, "Test is not owamp" ) unless ( $test->{type} eq "owamp" );
     return ( -1, "Test was added by the mesh configuration agent. It can't be updated.") if ($test->{added_by_mesh});
 
-    $parameters->{description} = $self->sanitize({ content => $parameters->{description} } )    if ( defined $parameters->{description} );
 
     $test->{name}                           = $parameters->{name}             if ( defined $parameters->{name} );
     $test->{description}                    = $parameters->{description}      if ( defined $parameters->{description} );
@@ -445,7 +428,6 @@ sub add_test_bwctl_throughput {
     my %test = ();
     $test{id}          = $test_id;
     $test{name}        = $parameters->{name};
-    $parameters->{description} = $self->sanitize({ content => $parameters->{description} } )    if ( defined $parameters->{description} );
     $test{description} = $parameters->{description};
     $test{type}        = "bwctl/throughput";
     $test{added_by_mesh} = $parameters->{added_by_mesh};
@@ -513,7 +495,6 @@ sub update_test_bwctl_throughput {
     return ( -1, "Test is not bwctl/throughput" ) unless ( $test->{type} eq "bwctl/throughput" );
     return ( -1, "Test was added by the mesh configuration agent. It can't be updated.") if ($test->{added_by_mesh});
 
-    $parameters->{description} = $self->sanitize({ content => $parameters->{description} } )    if ( defined $parameters->{description} );
 
     $test->{name}                                    = $parameters->{name}                      if ( defined $parameters->{name} );
     $test->{description}                             = $parameters->{description}               if ( defined $parameters->{description} );
@@ -561,7 +542,6 @@ sub add_test_pinger {
     );
 
     my $description     = $parameters->{description};
-    $description = $self->sanitize({ content => $description } )    if ( defined $description );
     my $packet_interval = $parameters->{packet_interval};
     my $packet_count    = $parameters->{packet_count};
     my $packet_size     = $parameters->{packet_size};
@@ -637,7 +617,6 @@ sub update_test_pinger {
     return ( -1, "Invalid test specified" ) unless ( $test );
     return ( -1, "Test was added by the mesh configuration agent. It can't be updated.") if ($test->{added_by_mesh});
 
-    $parameters->{description} = $self->sanitize({ content => $parameters->{description} } )    if ( defined $parameters->{description} );
     $test->{description} = $parameters->{description} if ( defined $parameters->{description} );
 
     $test->{parameters}->{packet_interval} = $parameters->{packet_interval} if ( defined $parameters->{packet_interval} );
@@ -688,7 +667,6 @@ sub add_test_traceroute {
     my %test = ();
     $test{id}          = $test_id;
     $test{name}        = $parameters->{name};
-    $parameters->{description} = $self->sanitize({ content => $parameters->{description} } )    if ( defined $parameters->{description} );
     $test{description} = $parameters->{description};
     $test{type}        = "traceroute";
     $test{added_by_mesh} = $parameters->{added_by_mesh};
@@ -751,7 +729,6 @@ sub update_test_traceroute {
     return ( -1, "Test does not exist" ) unless ( $test );
     return ( -1, "Test is not traceroute" ) unless ( $test->{type} eq "traceroute" );
 
-    $parameters->{description} = $self->sanitize({ content => $parameters->{description} } )    if ( defined $parameters->{description} );
 
     $test->{name}                                    = $parameters->{name}                      if ( defined $parameters->{name} );
     $test->{description}                             = $parameters->{description}               if ( defined $parameters->{description} );
@@ -872,7 +849,6 @@ sub add_test_member {
     $member{address}     = $address;
     $member{name}        = $name;
     $member{port}        = $parameters->{port};
-    $parameters->{description} = $self->sanitize({ content => $parameters->{description} } )    if ( defined $parameters->{description} );
     $member{description} = $parameters->{description};
     $member{sender}      = $parameters->{sender};
     $member{receiver}    = $parameters->{receiver};

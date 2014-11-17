@@ -94,6 +94,7 @@ sub parse_file {
         elsif (/^(\S+)\s+(.+)$/) {
             $variable = $1;
             $value    = $2;
+            $value =~ s/\\(.)/$1/g;
         }
         else {
             my $msg = "Line $line malformed";
