@@ -22,7 +22,7 @@ use base 'Exporter';
 use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger);
 
-use Net::Interface qw/mac_bin2hex/;
+use IO::Interface;
 use Net::CIDR;
 use Net::IP;
 use Data::Validate::IP qw(is_ipv4);
@@ -173,9 +173,9 @@ sub get_interface_speed {
 sub get_interface_mtu {
 	my $parameters = validate( @_, { interface_name => 1, } );
     my $interface_name = $parameters->{interface_name};
-    my @all_ifs = Net::Interface->interfaces();
+    my @all_ifs = IO::Interface::Simple->interfaces();
     foreach my $if (@all_ifs){
-        if($if->name eq $interface_name  && $if->mtu){
+        if($if eq $interface_name  && $if->mtu){
           return $if->mtu;
         }
     }
@@ -184,20 +184,12 @@ sub get_interface_mtu {
 sub get_interface_mac {
 	my $parameters = validate( @_, { interface_name => 1, } );
     my $interface_name = $parameters->{interface_name};
-    my @all_ifs = Net::Interface->interfaces();
-
+    my @all_ifs = IO::Interface::Simple->interfaces();
     foreach my $if (@all_ifs){
-        next unless $if->name eq $interface_name;
-        my $info = $if->info();
-
-        if ($info->{mac}) {
-            return mac_bin2hex($info->{mac});
+        if($if eq $interface_name  && $if->hwaddr){
+          return $if->hwaddr;
         }
-
-        last;
     }
-
-    return;
 }
 
 

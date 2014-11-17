@@ -1,0 +1,4 @@
+Client          /usr/share/perl5/SimpleLookupService/
+Keywords        /usr/share/perl5/SimpleLookupService/
+QueryObjects    /usr/share/perl5/SimpleLookupService/
+Records         /usr/share/perl5/SimpleLookupService/
