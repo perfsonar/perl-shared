@@ -138,6 +138,11 @@ sub generate_maddash_config {
                     "label" => $description, 
                     "added_by_mesh_agent" => 'yes' #force a string 
                     };
+                if($host->toolkit_url eq 'auto'){
+                    $member_params->{pstoolkiturl} = "http://$address/toolkit";
+                }elsif($host->toolkit_url){
+                    $member_params->{pstoolkiturl} = $host->toolkit_url;
+                }
                 push @{$groupMembers}, $member_params;
             }
         }
@@ -513,6 +518,7 @@ sub __quote_ipv6_address {
     $yaml =~ s/($IPv6_re)/\'$1\'/gm;
     $yaml =~ s/\'\'/\'/gm;
     $yaml =~ s/\=\'($IPv6_re)\'/=$1/gm;
+    $yaml =~ s/(https?)\:\/\/\'($IPv6_re)\'(.*)/'$1:\/\/[$2]$3'/gm;
     return $yaml; 
 }
 
