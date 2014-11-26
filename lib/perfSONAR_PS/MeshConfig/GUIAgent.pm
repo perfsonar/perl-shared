@@ -207,20 +207,22 @@ sub __configure_guis {
             return;
         }
 
-        my $mesh = $res;
+        my $meshes = $res;
 
-        # Make sure that the mesh is valid
-        eval {
-            $mesh->validate_mesh();
-        };
-        if ($@) {
-            my $msg = "Invalid mesh configuration: ".$@;
-            $logger->error($msg);
-            $self->__add_error({ mesh => $mesh, error_msg => $msg });
-            next;
+        foreach my $mesh (@$meshes) {
+            # Make sure that the mesh is valid
+            eval {
+                $mesh->validate_mesh();
+            };
+            if ($@) {
+                my $msg = "Invalid mesh configuration: ".$@;
+                $logger->error($msg);
+                $self->__add_error({ mesh => $mesh, error_msg => $msg });
+                next;
+            }
+
+            push @meshes, $mesh;
         }
-
-        push @meshes, $mesh;
     }
 
     my ($status, $res) = $self->__generate_maddash_config({ meshes => \@meshes });

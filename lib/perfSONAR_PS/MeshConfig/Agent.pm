@@ -294,100 +294,108 @@ sub __configure_host {
             next;
         }
 
-        my $mesh = $res;
+        my $meshes = $res;
 
-        # Make sure that the mesh is valid
-        eval {
-            $mesh->validate_mesh();
-        };
-        if ($@) {
-            if ($mesh_params->{required}) {
-                $dont_change = 1;
-            }
-
-            my $msg = "Invalid mesh configuration: ".$@;
-            $logger->error($msg);
-            $self->__add_error({ mesh => $mesh, error_msg => $msg });
-            next;
-        }
-
-        if ($mesh->has_unknown_attributes) {
-            if ($mesh_params->{required}) {
-                $dont_change = 1;
-            }
-
-            my $msg = "Mesh has unknown attributes: ".join(", ", keys %{ $mesh->get_unknown_attributes });
-            $logger->error($msg);
-            $self->__add_error({ mesh => $mesh, error_msg => $msg });
-            next;
-        }
-
-        # Find the host block associated with this machine
-        my $hosts = $mesh->lookup_hosts({ addresses => $self->addresses });
-        unless ($hosts->[0]) {
-            if ($mesh_params->{required}) {
-                $dont_change = 1;
-            }
-
-            my $msg = "Can't find any host blocks associated with the addresses on this machine: ".join(", ", @{ $self->addresses });
-            $logger->error($msg);
-            $self->__add_error({ mesh => $mesh, error_msg => $msg });
-            next;
-        }
-
-        if (scalar(@$hosts) > 1) {
-            if ($mesh_params->{required}) {
-                $dont_change = 1;
-            }
-
-            my $msg = "Multiple 'host' elements associated with the addresses on this machine: ".join(", ", @{ $self->addresses });
-            $logger->error($msg);
-            $self->__add_error({ mesh => $mesh, error_msg => $msg });
-            next;
-        }
-
-        my $host = $hosts->[0];
-
-        if ($host->has_unknown_attributes) {
-            if ($mesh_params->{required}) {
-                $dont_change = 1;
-            }
-
-            my $msg = "Host block associated with this machine has unknown attributes: ".join(", ", keys %{ $host->get_unknown_attributes });
-            $logger->error($msg);
-            $self->__add_error({ mesh => $mesh, error_msg => $msg });
-            next;
-        }
-
-        # Find the tests that this machine is expected to run
-        my $tests = $mesh->lookup_tests_by_addresses({ addresses => $host->addresses });
-        if (scalar(@$tests) == 0) {
-            if ($mesh_params->{required}) {
-                $dont_change = 1;
-            }
-
-            my $msg = "No tests for this host to run: ".join(", ", @{ $self->addresses });
-            $logger->error($msg);
-            $self->__add_error({ mesh => $mesh, host => $host, error_msg => $msg });
-            next;
-        }
-
-        foreach my $service (@services) {
-            # Add the tests to the various service configurations
+        foreach my $mesh (@$meshes) {
+            # Make sure that the mesh is valid
             eval {
-                $service->{generator}->add_mesh_tests({ mesh => $mesh,
-                                                        tests => $tests,
-                                                        host => $host,
-                                                     });
+                $mesh->validate_mesh();
             };
             if ($@) {
                 if ($mesh_params->{required}) {
                     $dont_change = 1;
                 }
 
-                my $msg = "Problem adding ".$service->{name}." tests: $@";
+                my $msg = "Invalid mesh configuration: ".$@;
+                $logger->error($msg);
+                $self->__add_error({ mesh => $mesh, error_msg => $msg });
+                next;
+            }
+
+            if ($mesh->has_unknown_attributes) {
+                if ($mesh_params->{required}) {
+                    $dont_change = 1;
+                }
+
+                my $msg = "Mesh has unknown attributes: ".join(", ", keys %{ $mesh->get_unknown_attributes });
+                $logger->error($msg);
+                $self->__add_error({ mesh => $mesh, error_msg => $msg });
+                next;
+            }
+
+            # Find the host block associated with this machine
+            my $hosts = $mesh->lookup_hosts({ addresses => $self->addresses });
+            unless ($hosts->[0]) {
+                if ($mesh_params->{permit_non_participation}) {
+                    my $msg = "This machine is not included in any tests for this mesh: ".join(", ", @{ $self->addresses });
+                    $logger->info($msg);
+                    next;
+                }
+
+                if ($mesh_params->{required}) {
+                    $dont_change = 1;
+                }
+
+                my $msg = "Can't find any host blocks associated with the addresses on this machine: ".join(", ", @{ $self->addresses });
+                $logger->error($msg);
+                $self->__add_error({ mesh => $mesh, error_msg => $msg });
+                next;
+            }
+
+            if (scalar(@$hosts) > 1) {
+                if ($mesh_params->{required}) {
+                    $dont_change = 1;
+                }
+
+                my $msg = "Multiple 'host' elements associated with the addresses on this machine: ".join(", ", @{ $self->addresses });
+                $logger->error($msg);
+                $self->__add_error({ mesh => $mesh, error_msg => $msg });
+                next;
+            }
+
+            my $host = $hosts->[0];
+
+            if ($host->has_unknown_attributes) {
+                if ($mesh_params->{required}) {
+                    $dont_change = 1;
+                }
+
+                my $msg = "Host block associated with this machine has unknown attributes: ".join(", ", keys %{ $host->get_unknown_attributes });
+                $logger->error($msg);
+                $self->__add_error({ mesh => $mesh, error_msg => $msg });
+                next;
+            }
+
+            # Find the tests that this machine is expected to run
+            my $tests = $mesh->lookup_tests_by_addresses({ addresses => $host->addresses });
+            if (scalar(@$tests) == 0) {
+                if ($mesh_params->{required}) {
+                    $dont_change = 1;
+                }
+
+                my $msg = "No tests for this host to run: ".join(", ", @{ $self->addresses });
                 $logger->error($msg);
                 $self->__add_error({ mesh => $mesh, host => $host, error_msg => $msg });
+                next;
+            }
+
+            foreach my $service (@services) {
+                # Add the tests to the various service configurations
+                eval {
+                    $service->{generator}->add_mesh_tests({ mesh => $mesh,
+                                                            tests => $tests,
+                                                            host => $host,
+                                                         });
+                };
+                if ($@) {
+                    if ($mesh_params->{required}) {
+                        $dont_change = 1;
+                    }
+
+                    my $msg = "Problem adding ".$service->{name}." tests: $@";
+                    $logger->error($msg);
+                    $self->__add_error({ mesh => $mesh, host => $host, error_msg => $msg });
+                }
             }
         }
     }

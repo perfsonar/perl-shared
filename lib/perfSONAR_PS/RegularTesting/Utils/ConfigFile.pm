@@ -54,7 +54,7 @@ sub parse_file {
         s/([^\\])#.*/$1/g;
 
         # Strip out comments that are at the start of the line
-        s/^\s+#.*/$1/g;
+        s/^\s*#.*//g;
 
         # Strip leading and trailing whitespace
         s/^\s+//;
@@ -94,6 +94,7 @@ sub parse_file {
         elsif (/^(\S+)\s+(.+)$/) {
             $variable = $1;
             $value    = $2;
+            $value =~ s/\\(.)/$1/g;
         }
         else {
             my $msg = "Line $line malformed";
