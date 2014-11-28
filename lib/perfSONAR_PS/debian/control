@@ -10,7 +10,7 @@ Vcs-Browser: https://code.google.com/p/perfsonar-ps/source/browse?repo=default
 
 Package: libperfsonar-perl
 Architecture: any
-Depends: ${misc:Depends}, ${perl:Depends}, perl, liblog-log4perl-perl, libxml-libxml-perl, libnet-cidr-perl, libnet-ip-perl, libio-interface-perl, libdata-validate-ip-perl, libnet-dns-perl, libnetaddr-ip-perl, libregexp-common-perl, libmouse-perl, libdbi-perl, libconfig-general-perl
+Depends: ${misc:Depends}, ${perl:Depends}, perl, liblog-log4perl-perl, libxml-libxml-perl, libnet-cidr-perl, libnet-ip-perl, libio-interface-perl, libdata-validate-ip-perl, libnet-dns-perl, libnetaddr-ip-perl, libregexp-common-perl, libmouse-perl, libdbi-perl, libconfig-general-perl, ethtool
 Description: perfSONAR perl library
  The perfSONAR perl library provides all common perl modules for all
  perfSONAR related services.
