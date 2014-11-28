@@ -3,7 +3,7 @@ package perfSONAR_PS::NPToolkit::Config::Version;
 use strict;
 use warnings;
 
-our $VERSION = 3.4.1;
+our $VERSION = "3.4.1";
 
 =head1 NAME
 
