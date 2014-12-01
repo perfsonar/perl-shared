@@ -306,26 +306,31 @@ sub __configure_host {
                 }
 
                 my $msg = "Multiple 'host' elements associated with the addresses on this machine: ".join(", ", @{ $self->addresses });
-                $logger->error($msg);
-                $self->__add_error({ mesh => $mesh, error_msg => $msg });
-                next;
+                $logger->warn($msg);
             }
 
-            my $host = $hosts->[0];
+            my %addresses = ();
+            foreach my $host (@$hosts) {
+                if ($host->has_unknown_attributes) {
+                    if ($mesh_params->{required}) {
+                        $dont_change = 1;
+                    }
 
-            if ($host->has_unknown_attributes) {
-                if ($mesh_params->{required}) {
-                    $dont_change = 1;
+                    my $msg = "Host block associated with this machine has unknown attributes: ".join(", ", keys %{ $host->get_unknown_attributes });
+                    $logger->error($msg);
+                    $self->__add_error({ mesh => $mesh, error_msg => $msg });
+                    next;
                 }
 
-                my $msg = "Host block associated with this machine has unknown attributes: ".join(", ", keys %{ $host->get_unknown_attributes });
-                $logger->error($msg);
-                $self->__add_error({ mesh => $mesh, error_msg => $msg });
-                next;
+                foreach my $address (@{ $host->addresses }) {
+                    $addresses{$address} = 1;
+                }
             }
 
+            my @addresses = keys %addresses;
+
             # Find the tests that this machine is expected to run
-            my $tests = $mesh->lookup_tests_by_addresses({ addresses => $host->addresses });
+            my $tests = $mesh->lookup_tests_by_addresses({ addresses => \@addresses });
             if (scalar(@$tests) == 0) {
                 if ($mesh_params->{required}) {
                     $dont_change = 1;
@@ -333,7 +338,7 @@ sub __configure_host {
 
                 my $msg = "No tests for this host to run: ".join(", ", @{ $self->addresses });
                 $logger->error($msg);
-                $self->__add_error({ mesh => $mesh, host => $host, error_msg => $msg });
+                $self->__add_error({ mesh => $mesh, host => $hosts->[0], error_msg => $msg });
                 next;
             }
 
@@ -341,7 +346,7 @@ sub __configure_host {
             eval {
                 $generator->add_mesh_tests({ mesh => $mesh,
                                              tests => $tests,
-                                             host => $host,
+                                             hosts => $hosts,
                                            });
             };
             if ($@) {
@@ -351,7 +356,7 @@ sub __configure_host {
 
                 my $msg = "Problem adding Regular Testing tests: $@";
                 $logger->error($msg);
-                $self->__add_error({ mesh => $mesh, host => $host, error_msg => $msg });
+                $self->__add_error({ mesh => $mesh, host => $hosts->[0], error_msg => $msg });
             }
         }
     }
