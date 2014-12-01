@@ -25,9 +25,6 @@ use perfSONAR_PS::MeshConfig::Utils qw(load_mesh);
 
 use perfSONAR_PS::MeshConfig::Config::Mesh;
 use perfSONAR_PS::MeshConfig::Generators::perfSONARRegularTesting;
-use perfSONAR_PS::MeshConfig::Generators::PingER;
-use perfSONAR_PS::MeshConfig::Generators::perfSONARBUOY;
-use perfSONAR_PS::MeshConfig::Generators::TracerouteMaster;
 
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
@@ -40,14 +37,8 @@ has 'restart_services'       => (is => 'rw', isa => 'Bool');
 
 has 'meshes'                 => (is => 'rw', isa => 'ArrayRef[HashRef]', default => sub { [] });
 
-has 'use_regular_testing'    => (is => 'rw', isa => 'Bool', default => 1);
-
 has 'regular_testing_conf'   => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/regular_testing/etc/regular_testing.conf");
 has 'force_bwctl_owamp'      => (is => 'rw', isa => 'Bool', default => 0);
-
-has 'traceroute_master_conf' => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/traceroute_ma/etc/traceroute-master.conf");
-has 'owmesh_conf'            => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/perfsonarbuoy_ma/etc/owmesh.conf");
-has 'pinger_landmarks'       => (is => 'rw', isa => 'Str', default => "/opt/perfsonar_ps/PingER/etc/pinger-landmarks.xml");
 
 has 'addresses'              => (is => 'rw', isa => 'ArrayRef[Str]');
 
@@ -225,48 +216,15 @@ sub __configure_host {
         $logger->warn("No meshes defined in the configuration");
     }
 
-    my @services = ();
-    if ($self->use_regular_testing) {
-        my $service = {
-            name => "Regular Testing",
-            config_file => $self->regular_testing_conf,
-            generator => perfSONAR_PS::MeshConfig::Generators::perfSONARRegularTesting->new(),
-            services => [ "regular_testing" ]
-        };
-
-        $service->{generator}->force_bwctl_owamp($self->force_bwctl_owamp);
-
-        push @services, $service;
-    }
-    else {
-        push @services, {
-            name => "perfSONARBUOY",
-            config_file => $self->owmesh_conf,
-            generator => perfSONAR_PS::MeshConfig::Generators::perfSONARBUOY->new(),
-            services => [ "perfsonarbuoy_owamp", "perfsonarbuoy_bwctl" ]
-        };
-        push @services, {
-            name => "Traceroute MA",
-            config_file => $self->traceroute_master_conf,
-            generator => perfSONAR_PS::MeshConfig::Generators::TracerouteMaster->new(),
-            services => [ "traceroute_scheduler" ]
-        };
-        push @services, {
-            name => "PingER",
-            config_file => $self->pinger_landmarks,
-            generator => perfSONAR_PS::MeshConfig::Generators::PingER->new(),
-            services => [ "pinger" ]
-        };
-    }
-
-    foreach my $service (@services) {
-        my ($status, $res) = $service->{generator}->init({ config_file => $service->{config_file}, skip_duplicates => $self->skip_redundant_tests });
-        if ($status != 0) {
-            my $msg = "Problem initializing ".$service->{name}.": ".$res;
-            $logger->error($msg);
-            $self->__add_error({ error_msg => $msg });
-            return;
-        }
+    my $generator = perfSONAR_PS::MeshConfig::Generators::perfSONARRegularTesting->new();
+    my ($status, $res) = $generator->init({ config_file => $self->regular_testing_conf,
+                                            skip_duplicates => $self->skip_redundant_tests,
+                                            force_bwctl_owamp => $self->force_bwctl_owamp });
+    if ($status != 0) {
+        my $msg = "Problem initializing Regular Testing configuration: ".$res;
+        $logger->error($msg);
+        $self->__add_error({ error_msg => $msg });
+        return;
     }
 
     # The $dont_change variable lets us know at the end whether or not we
@@ -379,23 +337,21 @@ sub __configure_host {
                 next;
             }
 
-            foreach my $service (@services) {
-                # Add the tests to the various service configurations
-                eval {
-                    $service->{generator}->add_mesh_tests({ mesh => $mesh,
-                                                            tests => $tests,
-                                                            host => $host,
-                                                         });
-                };
-                if ($@) {
-                    if ($mesh_params->{required}) {
-                        $dont_change = 1;
-                    }
-
-                    my $msg = "Problem adding ".$service->{name}." tests: $@";
-                    $logger->error($msg);
-                    $self->__add_error({ mesh => $mesh, host => $host, error_msg => $msg });
+            # Add the tests to the various service configurations
+            eval {
+                $generator->add_mesh_tests({ mesh => $mesh,
+                                             tests => $tests,
+                                             host => $host,
+                                           });
+            };
+            if ($@) {
+                if ($mesh_params->{required}) {
+                    $dont_change = 1;
                 }
+
+                my $msg = "Problem adding Regular Testing tests: $@";
+                $logger->error($msg);
+                $self->__add_error({ mesh => $mesh, host => $host, error_msg => $msg });
             }
         }
     }
@@ -407,23 +363,17 @@ sub __configure_host {
         return;
     }
 
-    foreach my $service (@services) {
-        my $config = $service->{generator}->get_config();
+    my $config = $generator->get_config();
 
-        my ($status, $res);
+    $status = $self->__write_file({ file => $self->regular_testing_conf, contents => $config });
 
-        $status = $self->__write_file({ file => $service->{config_file}, contents => $config });
-
-        if ($status and $self->restart_services) {
-            foreach my $service_script (@{ $service->{services} }) {
-                ($status, $res) = $self->__restart_service({ name => $service_script });
-                if ($status != 0) {
-                    my $msg = "Problem restarting service ".$service->{name}.": ".$res;
-                    $logger->error($msg);
-                    foreach my $mesh_params (@{ $self->meshes }) {
-                        $self->__add_error({ mesh => $mesh_params->{mesh}, host => $mesh_params->{host}, error_msg => $msg });
-                    }
-                }
+    if ($status and $self->restart_services) {
+        ($status, $res) = $self->__restart_service({ name => "regular_testing" });
+        if ($status != 0) {
+            my $msg = "Problem restarting Revular Testing: ".$res;
+            $logger->error($msg);
+            foreach my $mesh_params (@{ $self->meshes }) {
+                $self->__add_error({ mesh => $mesh_params->{mesh}, host => $mesh_params->{host}, error_msg => $msg });
             }
         }
     }
