@@ -14,3 +14,11 @@ Depends: ${misc:Depends}, ${perl:Depends}, perl, liblog-log4perl-perl, libxml-li
 Description: perfSONAR perl library
  The perfSONAR perl library provides all common perl modules for all
  perfSONAR related services.
+
+Package: perfsonar-common
+Architecture: any
+Depends: ${misc:Depends}, adduser
+Description: perfSONAR common metapackage
+ The perfSONAR common metapackage creates a perfsonar user for all
+ perfSONAR services. All executables perfSONAR packages should
+ depend on it.
