@@ -1,6 +1,4 @@
 Client          /usr/share/perl5/perfSONAR_PS/
-Config          /usr/share/perl5/perfSONAR_PS/
-MeshConfig      /usr/share/perl5/perfSONAR_PS/
 NPToolkit       /usr/share/perl5/perfSONAR_PS/
 RegularTesting  /usr/share/perl5/perfSONAR_PS/
 Utils           /usr/share/perl5/perfSONAR_PS/
