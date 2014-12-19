@@ -9,8 +9,9 @@ Vcs-Git: https://code.google.com/p/perfsonar-ps/
 Vcs-Browser: https://code.google.com/p/perfsonar-ps/source/browse?repo=default
 
 Package: libperfsonar-sls-perl
-Architecture: any
-Depends: ${misc:Depends}, ${perl:Depends}, perl, libyaml-syck-perl, libparams-validate-perl, libjson-perl, libdatetime-format-iso8601-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}, perl, libyaml-syck-perl,
+ libparams-validate-perl, libjson-perl, libdatetime-format-iso8601-perl
 Description: perfSONAR Simple Lookup Service perl library
  The perfSONAR Simple Lookup Service perl library provides all common perl
  modules to interact with the perfSONAR Simple Lookup Service.
