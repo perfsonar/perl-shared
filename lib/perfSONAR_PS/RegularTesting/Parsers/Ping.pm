@@ -40,12 +40,14 @@ sub parse_ping_output {
 
     for my $line (split('\n', $stdout)) {
         # PING www.slashdot.org (216.34.181.48) from 207.75.165.146 : 56(84) bytes of data.
-        if ($line =~ /PING ([^ ]*) \(([^ ]*)\) from ([^ ]*)/) {
+        # PING nsrc.org(2607:8400:2880:4::80df:9d13) from 2607:8400:2880:4::80df:9d13 : 56 data bytes
+        if ($line =~ /PING ([^ ]*) ?\(([^ ]*)\) from ([^ ]*)/) {
             $source_addr = $3;
         }
 
         # PING www.slashdot.org (216.34.181.48) 56(84) bytes of data.
-        if ($line =~ /PING ([^ ]*) \(([^ ]*)\)/) {
+        # PING nsrc.org(2607:8400:2880:4::80df:9d13) 56 data bytes
+        if ($line =~ /PING ([^ ]*) ?\(([^ ]*)\)/) {
             $destination_addr = $2;
         }
 
