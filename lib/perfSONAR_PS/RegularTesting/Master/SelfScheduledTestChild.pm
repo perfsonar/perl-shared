@@ -104,7 +104,7 @@ sub save_results {
                 $logger->error("Problem saving test results to measurement archive");
             }
             else {
-                $logger->error("Enqueued test results for measurement archive: ".$measurement_archive->nonce);
+                $logger->debug("Enqueued test results for measurement archive: ".$measurement_archive->nonce);
                 $enqueued = 1;
             }
         }
