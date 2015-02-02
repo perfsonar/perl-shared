@@ -1252,6 +1252,7 @@ sub generate_regular_testing_config {
             $parameters->duration($test_desc->{parameters}->{duration}) if defined $test_desc->{parameters}->{duration};
             $parameters->udp_bandwidth($test_desc->{parameters}->{udp_bandwidth}) if defined $test_desc->{parameters}->{udp_bandwidth};
             $parameters->buffer_length($test_desc->{parameters}->{buffer_length}) if defined $test_desc->{parameters}->{buffer_length};
+            $parameters->window_size($test_desc->{parameters}->{window_size}) if defined $test_desc->{parameters}->{window_size};
             $parameters->packet_tos_bits($test_desc->{parameters}->{tos_bits}) if defined $test_desc->{parameters}->{tos_bits};
         }
         elsif ($test_desc->{type} eq "pinger") {
