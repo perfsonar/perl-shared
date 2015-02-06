@@ -78,6 +78,12 @@ sub parse_bwctl_output {
         elsif (($time) = $line =~ /bwctl: run_tool: sender: (.*)/) {
             $results{sender_address} = $1;
         }
+        elsif (($time) = $line =~ /bwctl: run_endpoint: receiver: (.*)/) {
+            $results{receiver_address} = $1;
+        }
+        elsif (($time) = $line =~ /bwctl: run_endpoint: sender: (.*)/) {
+            $results{sender_address} = $1;
+        }
         # Special-case some of the tool handling in case something happens
         # before exec can write the tester out.
         elsif ($line =~ /bwctl: exec_line: owping/) {

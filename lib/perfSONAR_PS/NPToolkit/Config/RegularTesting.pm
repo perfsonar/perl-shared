@@ -271,6 +271,7 @@ sub lookup_test {
     return ( 0, \%test_info );
 }
 
+
 =head2 add_test_owamp({ mesh_type => 1, name => 0, description => 1, packet_padding => 1, packet_interval => 1, bucket_width => 1, loss_threshold => 1, session_count => 1 })
     Adds a new OWAMP test to the list. mesh_type must be "star" as mesh tests
     aren't currently supported. 'name' can be used to give the test the name
@@ -368,6 +369,7 @@ sub update_test_owamp {
     return ( -1, "Test does not exist" ) unless ( $test );
     return ( -1, "Test is not owamp" ) unless ( $test->{type} eq "owamp" );
     return ( -1, "Test was added by the mesh configuration agent. It can't be updated.") if ($test->{added_by_mesh});
+
 
     $test->{name}                           = $parameters->{name}             if ( defined $parameters->{name} );
     $test->{description}                    = $parameters->{description}      if ( defined $parameters->{description} );
@@ -492,6 +494,7 @@ sub update_test_bwctl_throughput {
     return ( -1, "Test does not exist" ) unless ( $test );
     return ( -1, "Test is not bwctl/throughput" ) unless ( $test->{type} eq "bwctl/throughput" );
     return ( -1, "Test was added by the mesh configuration agent. It can't be updated.") if ($test->{added_by_mesh});
+
 
     $test->{name}                                    = $parameters->{name}                      if ( defined $parameters->{name} );
     $test->{description}                             = $parameters->{description}               if ( defined $parameters->{description} );
@@ -725,6 +728,7 @@ sub update_test_traceroute {
 
     return ( -1, "Test does not exist" ) unless ( $test );
     return ( -1, "Test is not traceroute" ) unless ( $test->{type} eq "traceroute" );
+
 
     $test->{name}                                    = $parameters->{name}                      if ( defined $parameters->{name} );
     $test->{description}                             = $parameters->{description}               if ( defined $parameters->{description} );
@@ -1248,6 +1252,7 @@ sub generate_regular_testing_config {
             $parameters->duration($test_desc->{parameters}->{duration}) if defined $test_desc->{parameters}->{duration};
             $parameters->udp_bandwidth($test_desc->{parameters}->{udp_bandwidth}) if defined $test_desc->{parameters}->{udp_bandwidth};
             $parameters->buffer_length($test_desc->{parameters}->{buffer_length}) if defined $test_desc->{parameters}->{buffer_length};
+            $parameters->window_size($test_desc->{parameters}->{window_size}) if defined $test_desc->{parameters}->{window_size};
             $parameters->packet_tos_bits($test_desc->{parameters}->{tos_bits}) if defined $test_desc->{parameters}->{tos_bits};
         }
         elsif ($test_desc->{type} eq "pinger") {
@@ -1265,7 +1270,7 @@ sub generate_regular_testing_config {
             $parameters->packet_max_ttl($test_desc->{parameters}->{max_ttl}) if defined $test_desc->{parameters}->{max_ttl};
             $parameters->receive_only(1);
         }
-
+       
         $parameters->test_ipv4_ipv6(1);
 
         my @targets = ();

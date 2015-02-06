@@ -97,7 +97,7 @@ sub parse_tracepath_output {
 
             my @fields = split(' ', $line);
 
-            if ($#fields > 2) {
+            if (@fields > 2) {
                 if ($fields[2] =~ /^\((.*)\)$/) {
                     $address = $1;
 
