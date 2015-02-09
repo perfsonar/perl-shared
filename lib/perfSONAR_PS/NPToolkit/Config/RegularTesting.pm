@@ -1134,6 +1134,8 @@ sub parse_regular_testing_config {
         }
         elsif ($test->parameters->type eq "bwctl") {
             my $protocol = ($test->parameters->use_udp?"udp":"tcp");
+            my $window_size = $test->parameters->window_size;
+            $window_size /= 1048576 if ($window_size > 1048576);
 
             ($status, $res) = $self->add_test_bwctl_throughput({
                                           description => $test->description,
@@ -1146,7 +1148,7 @@ sub parse_regular_testing_config {
 
                                           tos_bits => $test->parameters->packet_tos_bits,
                                           #report_interval => $test->parameters->report_interval,
-                                          window_size => $test->parameters->window_size,
+                                          window_size => $window_size,
                                           #test_interval_start_alpha => $test->parameters->random_start_percentage,
 
                                           test_interval => $test_interval,
@@ -1252,7 +1254,7 @@ sub generate_regular_testing_config {
             $parameters->duration($test_desc->{parameters}->{duration}) if defined $test_desc->{parameters}->{duration};
             $parameters->udp_bandwidth($test_desc->{parameters}->{udp_bandwidth}) if defined $test_desc->{parameters}->{udp_bandwidth};
             $parameters->buffer_length($test_desc->{parameters}->{buffer_length}) if defined $test_desc->{parameters}->{buffer_length};
-            $parameters->window_size($test_desc->{parameters}->{window_size}) if defined $test_desc->{parameters}->{window_size};
+            $parameters->window_size($test_desc->{parameters}->{window_size} * 1024 * 1024) if defined $test_desc->{parameters}->{window_size}; # convert to bps for the regular testing
             $parameters->packet_tos_bits($test_desc->{parameters}->{tos_bits}) if defined $test_desc->{parameters}->{tos_bits};
         }
         elsif ($test_desc->{type} eq "pinger") {
