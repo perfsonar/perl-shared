@@ -26,7 +26,7 @@ use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 use fields 'DAEMON', 'LOGGER', 'ACCESS_CONTROL', 'FIREWALL_SCRIPT';
 
 my %defaults = (
-    firewall_script => "/opt/perfsonar_ps/toolkit/scripts/configure_firewall"
+    firewall_script => "/opt/perfsonar_ps/toolkit/scripts/security/configure_firewall"
 );
 
 sub new {
