@@ -87,17 +87,17 @@ sub add_metadata {
     my $test_parameters = $parameters->{test_parameters};
     my $results = $parameters->{results};
     my $metadata = {};
-    if (!$results->{source}){
-        return (1, "No source provided", "");
-    }
-    if (!$results->{destination}){
-        return (1, "No destination provided", "");
-    }
-    if (!$results->{source}->{address}){
-        return (1, "No source address provided", "");
-    }
-    if (!$results->{destination}->{address}){
-        return (1, "No destination address provided", "");
+    
+    if (!$results->{source} || !$results->{destination}){
+        $logger->debug("TEST: ".Dumper($test));
+        return (1, "Test returned unparsable results. Turn on DEBUG logging for more information.", "");
+    }elsif(!$results->{source}->{address} || !$results->{destination}->{address}){
+        my $err = "Error running test ";
+        $err .= "from " . $results->{source}->{hostname} . " " if($results->{source}->{hostname});
+        $err .= "to " . $results->{destination}->{hostname} . " " if($results->{destination}->{hostname});
+        $err .= ($results->{raw_results} ? " with output " . $results->{raw_results} : " with unparsable output");
+        $logger->debug("TEST: ".Dumper($test));
+        return (1, $err, "");
     }
     
     $logger->debug("TEST: ".Dumper($test));
