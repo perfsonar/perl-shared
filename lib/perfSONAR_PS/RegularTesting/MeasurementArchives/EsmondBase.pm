@@ -53,7 +53,7 @@ override 'store_results' => sub {
         $logger->error("Error writing metadata ($mdcode) $mdmsg");
         return (1, "Error writing metadata: $mdmsg");
     }
-    $logger->info("Metadata URI: $metadata_uri");
+    $logger->debug("Metadata URI: $metadata_uri");
     
     #create full url (also handles untainting)
     my ($scheme, $auth, $path, $query, $frag) = uri_split($self->database);
