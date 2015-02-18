@@ -53,7 +53,7 @@ override 'store_results' => sub {
         $logger->error("Error writing metadata ($mdcode) $mdmsg");
         return (1, "Error writing metadata: $mdmsg");
     }
-    $logger->info("Metadata URI: $metadata_uri");
+    $logger->debug("Metadata URI: $metadata_uri");
     
     #create full url (also handles untainting)
     my ($scheme, $auth, $path, $query, $frag) = uri_split($self->database);
@@ -87,17 +87,17 @@ sub add_metadata {
     my $test_parameters = $parameters->{test_parameters};
     my $results = $parameters->{results};
     my $metadata = {};
-    if (!$results->{source}){
-        return (1, "No source provided", "");
-    }
-    if (!$results->{destination}){
-        return (1, "No destination provided", "");
-    }
-    if (!$results->{source}->{address}){
-        return (1, "No source address provided", "");
-    }
-    if (!$results->{destination}->{address}){
-        return (1, "No destination address provided", "");
+    
+    if (!$results->{source} || !$results->{destination}){
+        $logger->debug("TEST: ".Dumper($test));
+        return (1, "Test returned unparsable results. Turn on DEBUG logging for more information.", "");
+    }elsif(!$results->{source}->{address} || !$results->{destination}->{address}){
+        my $err = "Error running test ";
+        $err .= "from " . $results->{source}->{hostname} . " " if($results->{source}->{hostname});
+        $err .= "to " . $results->{destination}->{hostname} . " " if($results->{destination}->{hostname});
+        $err .= ($results->{raw_results} ? " with output " . $results->{raw_results} : " with unparsable output");
+        $logger->debug("TEST: ".Dumper($test));
+        return (1, $err, "");
     }
     
     $logger->debug("TEST: ".Dumper($test));
@@ -206,7 +206,7 @@ sub add_data {
         my $response = $self->send_post(url => $write_url, json => {'data' => $data});
         if($response->code() == 409){
             #if try to post duplicate datapoint, warn and move on
-            $logger->warn("Error posting data to MA: " + $response->content);
+            $logger->warn("Error posting data to MA: " . $response->content);
         }elsif(!$response->is_success){
             my $errmsg = $self->build_err_msg(http_response => $response);
             return ($response->code, $errmsg);
