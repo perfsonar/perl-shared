@@ -42,9 +42,8 @@ use constant {
     LS_KEY_SERVICE_VERSION => "service-version",
     LS_KEY_SERVICE_HOST => "service-host",
     LS_KEY_SERVICE_LOCATOR => "service-locator",
-    LS_KEY_SERVICE_ADMINISTRATORS => "service-administrators"
-    
-    
+    LS_KEY_SERVICE_ADMINISTRATORS => "service-administrators",
+    LS_KEY_SERVICE_AUTHN_TYPE => "service-authentication-type"
 };
 
 #host names
