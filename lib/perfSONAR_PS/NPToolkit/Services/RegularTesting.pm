@@ -15,7 +15,8 @@ sub init {
     $conf{package_names} = [ "perl-perfSONAR_PS-RegularTesting" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
-
+    $self->{REGULAR_RESTART} = 1;
+    
     return 0;
 }
 
@@ -30,11 +31,11 @@ sub kill {
 		system("pkill -9 -f Regular");
 	}
     
-    #No matter what, clean-up stray children
-    system('pkill -9 -f regular_testing/');
-    
-    #clean-up any old data
-    system('find /var/lib/perfsonar/regular_testing -type f -mtime +7 -exec rm {} \;');
+	#No matter what, clean-up stray children
+	system('pkill -9 -f regular_testing/');
+	
+	#clean-up any old data
+	system('find /var/lib/perfsonar/regular_testing -type f -mtime +1 -exec rm {} \;');
     
 	return (0, "");
 }
