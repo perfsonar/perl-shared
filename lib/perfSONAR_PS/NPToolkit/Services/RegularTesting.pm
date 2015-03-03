@@ -29,7 +29,13 @@ sub kill {
 	if ($status != 0) {
 		system("pkill -9 -f Regular");
 	}
-
+    
+    #No matter what, clean-up stray children
+    system('pkill -9 -f regular_testing/');
+    
+    #clean-up any old data
+    system('find /var/lib/perfsonar/regular_testing -type f -mtime +7 -exec rm {} \;');
+    
 	return (0, "");
 }
 
