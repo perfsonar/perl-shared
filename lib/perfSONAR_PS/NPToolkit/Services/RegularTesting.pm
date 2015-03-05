@@ -40,10 +40,4 @@ sub kill {
 	return (0, "");
 }
 
-sub needs_regular_restart {
-	my ($self) = @_;
-
-	return 0;
-}
-
 1;
