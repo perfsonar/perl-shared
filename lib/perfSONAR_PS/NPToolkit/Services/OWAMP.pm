@@ -18,7 +18,8 @@ sub init {
     $conf{package_names} = [ "owamp-client", "owamp-server" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
-
+    $self->{REGULAR_RESTART} = 1;
+    
     return 0;
 }
 
@@ -46,7 +47,9 @@ sub kill {
 	if ($status != 0) {
 		system("pkill -9 -f owampd");
 	}
-
+    
+	system('find /var/lib/owamp -type f -mtime +1 -exec rm {} \;');
+    
 	return (0, "");
 }
 

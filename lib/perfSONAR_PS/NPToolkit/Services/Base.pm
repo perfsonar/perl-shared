@@ -232,7 +232,7 @@ sub run_init {
     open(STDERR, ">", File::Spec->devnull());
     open(STDOUT, ">", File::Spec->devnull());
 
-    my $shell_cmd = "service " . $self->{INIT_SCRIPT} . " " . $cmd;
+    my $shell_cmd = "/sbin/service " . $self->{INIT_SCRIPT} . " " . $cmd;
 
     $self->{LOGGER}->debug($shell_cmd);
 
