@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Log::Log4perl qw(:easy);
-use RPM2;
 use File::Spec;
 use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES';
 
@@ -144,7 +143,7 @@ sub disabled {
     }
 
     my $curr_runlevel;
-    my $runlevel_output = `runlevel`;
+    my $runlevel_output = `/sbin/runlevel`;
     if ( $? == 0 ) {
         if ($runlevel_output =~ /[N0-9] (\d)/) {
             $curr_runlevel = $1;
@@ -159,7 +158,7 @@ sub disabled {
     open(my $stderr, ">&STDERR");
     open(STDERR, ">", File::Spec->devnull());
 
-    my $chkconfig_output = `chkconfig --list $self->{INIT_SCRIPT}`;    
+    my $chkconfig_output = `/sbin/chkconfig --list $self->{INIT_SCRIPT}`;    
 
     # restore stderr
     open(STDERR, ">&", $stderr);
@@ -185,9 +184,9 @@ sub enable_startup {
     open(STDERR, ">", File::Spec->devnull());
     open(STDOUT, ">", File::Spec->devnull());
 
-    system( "chkconfig --del  " . $self->{INIT_SCRIPT} );
+    system( "/sbin/chkconfig --del  " . $self->{INIT_SCRIPT} );
 
-    my $ret = system( "chkconfig --add  " . $self->{INIT_SCRIPT} );
+    my $ret = system( "/sbin/chkconfig --add  " . $self->{INIT_SCRIPT} );
 
     # restore stderr + stdout
     open(STDERR, ">&", $stderr);
@@ -210,7 +209,7 @@ sub disable_startup {
     open(STDERR, ">", File::Spec->devnull());
     open(STDOUT, ">", File::Spec->devnull());
 
-    my $ret = system( "chkconfig --del " . $self->{INIT_SCRIPT});
+    my $ret = system( "/sbin/chkconfig --del " . $self->{INIT_SCRIPT});
 
     # restore stderr + stdout
     open(STDERR, ">&", $stderr);
@@ -233,7 +232,7 @@ sub run_init {
     open(STDERR, ">", File::Spec->devnull());
     open(STDOUT, ">", File::Spec->devnull());
 
-    my $shell_cmd = "service " . $self->{INIT_SCRIPT} . " " . $cmd;
+    my $shell_cmd = "/sbin/service " . $self->{INIT_SCRIPT} . " " . $cmd;
 
     $self->{LOGGER}->debug($shell_cmd);
 

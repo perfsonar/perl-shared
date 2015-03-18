@@ -69,7 +69,7 @@ sub discover_lookup_services {
         my $http_request = HTTP::Request->new( GET => $url );
         my $http_response = $ua->request($http_request);
         if (!$http_response->is_success) {
-            $logger->error("Problem retrieving $url: " . $http_response->code);
+            $logger->error("Problem retrieving $url: " . $http_response->status_line);
             next;
         }
 

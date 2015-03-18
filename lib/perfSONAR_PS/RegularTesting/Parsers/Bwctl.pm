@@ -78,6 +78,12 @@ sub parse_bwctl_output {
         elsif (($time) = $line =~ /bwctl: run_tool: sender: (.*)/) {
             $results{sender_address} = $1;
         }
+        elsif (($time) = $line =~ /bwctl: run_endpoint: receiver: (.*)/) {
+            $results{receiver_address} = $1;
+        }
+        elsif (($time) = $line =~ /bwctl: run_endpoint: sender: (.*)/) {
+            $results{sender_address} = $1;
+        }
         # Special-case some of the tool handling in case something happens
         # before exec can write the tester out.
         elsif ($line =~ /bwctl: exec_line: owping/) {
@@ -114,7 +120,10 @@ sub parse_bwctl_output {
 
     $tool = $results{tool} unless $tool;
 
-    if ($tool eq "iperf") {
+    if(!$tool){
+        $results{error} = "Tool is not defined";
+    }
+    elsif ($tool eq "iperf") {
         $results{results} = parse_iperf_output({ stdout => $stdout });
     }
     elsif ($tool eq "iperf3") {
