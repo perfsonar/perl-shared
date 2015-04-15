@@ -8,12 +8,7 @@ use Log::Log4perl qw(get_logger :easy :levels);
 use POSIX;
 use Data::Dumper;
 use Sys::MemInfo qw(totalmem);
-use FindBin qw($RealBin);
 use Params::Validate qw(:all);
-
-my $basedir = "$RealBin/../../";
-
-use lib "$RealBin/../../../lib";
 
 use perfSONAR_PS::NPToolkit::Config::Version;
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
@@ -51,10 +46,6 @@ sub new {
 
 sub get_host_status {
     my $self = shift;
-    #my $config_file = $basedir . '/etc/web_admin.conf';
-    # TODO: look at this. do we want to provide the path to the config 
-    # or let the library figure it out?
-    $self->{LOGGER}->debug("basedir (class) " . $basedir);
     $self->{LOGGER}->debug("opening config file " . $self->{config_file});
     my $conf_obj = Config::General->new( -ConfigFile => $self->{config_file} );
     my %conf = $conf_obj->getall;
