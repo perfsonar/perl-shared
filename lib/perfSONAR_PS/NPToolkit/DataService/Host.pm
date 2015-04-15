@@ -1,5 +1,5 @@
 package perfSONAR_PS::NPToolkit::DataService::Host;
-use fields qw(LOGGER config_file);
+use fields qw(LOGGER config_file admin_info_conf config);
 
 use strict;
 use warnings;
@@ -38,27 +38,56 @@ sub new {
             config_file => 1
         }
     );
-
     $self->{config_file} = $parameters->{config_file};
+    my $config = Config::General->new( -ConfigFile => $self->{config_file} );
+    $self->{config} = { $config->getall() };
+    my $administrative_info_conf = perfSONAR_PS::NPToolkit::Config::AdministrativeInfo->new();
+    $administrative_info_conf->init( { administrative_info_file => $self->{config}->{administrative_info_file} } );
+    $self->{admin_info_conf} = $administrative_info_conf;
 
     return $self;
 }
 
-sub get_host_status {
+sub get_information {
     my $self = shift;
-    $self->{LOGGER}->debug("opening config file " . $self->{config_file});
-    my $conf_obj = Config::General->new( -ConfigFile => $self->{config_file} );
-    my %conf = $conf_obj->getall;
+    my $administrative_info_conf = $self->{admin_info_conf};
 
+    my $info = {
+        administrator => {
+            name => $administrative_info_conf->get_administrator_name(),
+            email => $administrative_info_conf->get_administrator_email(),
+        },
+        location => {
+            city => $administrative_info_conf->get_city(),
+            state => $administrative_info_conf->get_state(),
+            country => $administrative_info_conf->get_country(),
+            zipcode => $administrative_info_conf->get_zipcode(),
+            latitude => $administrative_info_conf->get_latitude(),
+            longitude => $administrative_info_conf->get_longitude(),
+        }
+    };
+    return $info;
+    
+}
 
-    my $start_time = gettimeofday();
-    my $end_time;
+sub get_status {
+    my $self = shift;
+    # get addresses, mtu, ntp status, globally registered, toolkit version, toolkit rpm version
+    # external address
+    # total RAM
+    
+    my $status = {};
+
 
     my $version_conf = perfSONAR_PS::NPToolkit::Config::Version->new();
     $version_conf->init();
 
+    $status->{toolkit_version} = $version_conf->get_version();
+
+
     # Getting the external addresses seems to be by far the slowest thing here (~0.9 sec)
 
+    my %conf = %{$self->{config}};
     my $external_addresses = discover_primary_address({
             interface => $conf{primary_interface},
             allow_rfc1918 => $conf{allow_internal_addresses},
@@ -75,6 +104,12 @@ sub get_host_status {
         $external_address_mtu = $external_addresses->{primary_iface_mtu};
         $external_address_ipv4 = $external_addresses->{primary_ipv4};
         $external_address_ipv6 = $external_addresses->{primary_ipv6};
+        $status->{external_address} = {
+            address => $external_address,
+            ipv4_address => $external_address_ipv4,
+            ipv6_address => $external_address_ipv6,
+            mtu => $external_address_mtu
+        };
     }
 
     if ($external_address) {
@@ -87,11 +122,29 @@ sub get_host_status {
             alarm(0);
         };
     }
-    my $start_time2;
 
-    $end_time = gettimeofday();
-    $self->{LOGGER}->debug( "getting external addresses: " . ($end_time - $start_time));
-    $start_time2 = $end_time;
+    $status->{globally_registered} = $is_registered;
+
+    my $toolkit_rpm_version;
+
+    # Make use of the fact that the config daemon is contained in the Toolkit RPM.
+    my $config_daemon = get_service_object("config_daemon");
+    if ($config_daemon) {
+        $toolkit_rpm_version = $config_daemon->package_version;
+    }
+    $status->{toolkit_rpm_version} = $toolkit_rpm_version;
+
+    my $ntp = get_service_object("ntp");
+    $status->{ntp}->{synchronized} = $ntp->is_synced();
+
+    $status->{host_memory} = int((&totalmem()/(1024*1024*1024) + .5)); #round to nearest GB
+
+    return $status;
+
+}
+
+sub get_services {
+    my $self = shift;
 
     my @bwctl_test_ports = ();
     my $bwctld_cfg = perfSONAR_PS::NPToolkit::Config::BWCTL->new();
@@ -146,27 +199,12 @@ sub get_host_status {
         };
     }
 
-    $end_time = gettimeofday();
-    $self->{LOGGER}->debug( "getting port ranges: " . ($end_time - $start_time2));
-    $start_time2 = $end_time;
-
-    my $administrative_info_conf = perfSONAR_PS::NPToolkit::Config::AdministrativeInfo->new();
-    $administrative_info_conf->init( { administrative_info_file => $conf{administrative_info_file} } );
-
     my $owamp = get_service_object("owamp");
     my $bwctl = get_service_object("bwctl");
     my $npad = get_service_object("npad");
     my $ndt = get_service_object("ndt");
     my $regular_testing = get_service_object("regular_testing");
-    my $ntp = get_service_object("ntp");
 
-    my $toolkit_rpm_version;
-
-    # Make use of the fact that the config daemon is contained in the Toolkit RPM.
-    my $config_daemon = get_service_object("config_daemon");
-    if ($config_daemon) {
-        $toolkit_rpm_version = $config_daemon->package_version;
-    }
 
     my %services = ();
 
@@ -211,55 +249,42 @@ sub get_host_status {
         $services{$service_name} = \%service_info;
     }
 
-    $end_time = gettimeofday();
-    $self->{LOGGER}->debug( "getting services/ports: " . ($end_time - $start_time2));
-    $start_time2 = $end_time;
 
     my @services = values %services;
 
-    my %json = (
-        administrator => {
-            name => $administrative_info_conf->get_administrator_name(),
-            email => $administrative_info_conf->get_administrator_email(),
-        },
-        location => {
-            city => $administrative_info_conf->get_city(),
-            state => $administrative_info_conf->get_state(),
-            country => $administrative_info_conf->get_country(),
-            zipcode => $administrative_info_conf->get_zipcode(),
-            latitude => $administrative_info_conf->get_latitude(),
-            longitude => $administrative_info_conf->get_longitude(),
-        },
-        keywords => $administrative_info_conf->get_keywords(),
-        toolkit_version => $version_conf->get_version(),
-        toolkit_rpm_version => $toolkit_rpm_version,
-        external_address => {
-            address => $external_address,
-            ipv4_address => $external_address_ipv4,
-            ipv6_address => $external_address_ipv6,
-            mtu => $external_address_mtu,
-        },
-        services => \@services,
-        ntp => {
-            synchronized => $ntp->is_synced(),
-        },
-        meshes => $self->get_meshes(),
-        globally_registered => $is_registered,
-        host_memory => int((&totalmem()/(1024*1024*1024) + .5)) #round to nearest GB
-    );
+    return {'services', \@services};
+}
 
-    $end_time = gettimeofday();
-    $self->{LOGGER}->debug( "getting other json values: " . ($end_time - $start_time2));
-    $start_time2 = $end_time;
+sub get_summary {
+    my $self = shift;
 
-    return \%json;
+    my $start_time = gettimeofday();
+    my $end_time;
+
+    my $administrative_info = $self->get_information();
+    my $status = $self->get_status();
+    my $services = $self->get_services();
+    my $communities = $self->get_communities();
+    my $meshes = $self->get_meshes();
+
+    my $results = { %$administrative_info, %$status, %$services, %$communities, %$meshes };
+
+    return $results;
+
+}
+
+sub get_communities {
+    my $self = shift;
+
+    my $communities = $self->{admin_info_conf}->get_keywords();
+
+    return {communities => $communities};
 
 }
 
 sub get_meshes {
     my $self = shift;
     my @mesh_urls = ();
-    my $start_time = gettimeofday();
     eval {
         my $mesh_config_conf = "/opt/perfsonar_ps/mesh_config/etc/agent_configuration.conf";
 
@@ -279,9 +304,7 @@ sub get_meshes {
     if ($@) {
         @mesh_urls = [];
     }
-    my $end_time = gettimeofday();
-    $self->{LOGGER}->debug( "getting meshes: " . ($end_time - $start_time));
-    return \@mesh_urls;
+    return {meshes => \@mesh_urls};
 }
 
 
