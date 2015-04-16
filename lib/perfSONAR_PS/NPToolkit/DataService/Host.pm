@@ -13,7 +13,7 @@ use Params::Validate qw(:all);
 use perfSONAR_PS::NPToolkit::Config::Version;
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 
-use perfSONAR_PS::Utils::Host qw( discover_primary_address );
+use perfSONAR_PS::Utils::Host qw(get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address);
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
 
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
@@ -96,20 +96,24 @@ sub get_status {
         });
     my $external_address;
     my $external_address_mtu;
+    my $external_address_speed;
     my $external_address_ipv4;
     my $external_address_ipv6;
     my $is_registered = 0;
     if ($external_addresses) {
         $external_address = $external_addresses->{primary_address};
         $external_address_mtu = $external_addresses->{primary_iface_mtu};
+        $external_address_speed = $external_addresses->{primary_iface_speed} if $external_addresses->{primary_iface_speed};
         $external_address_ipv4 = $external_addresses->{primary_ipv4};
         $external_address_ipv6 = $external_addresses->{primary_ipv6};
         $status->{external_address} = {
             address => $external_address,
             ipv4_address => $external_address_ipv4,
-            ipv6_address => $external_address_ipv6,
-            mtu => $external_address_mtu
+            ipv6_address => $external_address_ipv6
         };
+        $status->{external_address}->{speed} = $external_address_speed if $external_address_speed;
+        $status->{external_address}->{mtu} = $external_address_mtu if $external_address_mtu;
+
     }
 
     if ($external_address) {
@@ -122,6 +126,11 @@ sub get_status {
             alarm(0);
         };
     }
+
+    # TODO: add other interfaces, and their capacity and MTU
+    # see https://github.com/perfsonar/ls-registration-daemon/blob/master/lib/perfSONAR_PS/LSRegistrationDaemon/Host.pm#L190
+    #my @interfaces = get_ethernet_interfaces();
+    #warn "interfaces: " . Dumper @interfaces;
 
     $status->{globally_registered} = $is_registered;
 
@@ -137,7 +146,25 @@ sub get_status {
     my $ntp = get_service_object("ntp");
     $status->{ntp}->{synchronized} = $ntp->is_synced();
 
-    $status->{host_memory} = int((&totalmem()/(1024*1024*1024) + .5)); #round to nearest GB
+    # round to nearest GB
+    # but LS rounds to MB so may want to changes
+    $status->{host_memory} = int((&totalmem()/(1024*1024*1024) + .5));
+
+    # get OS info
+    my $os_info = get_operating_system_info();
+    $status->{kernel_version} = $os_info->{kernel_version};
+    $status->{distribution} = $os_info->{distribution_name} . " " . $os_info->{distribution_version};
+
+    # get CPU info
+    my $cpu_info = get_processor_info();
+    $status->{cpus} = $cpu_info->{count};
+    $status->{cpu_cores} = $cpu_info->{cores};
+    $status->{cpu_speed} = $cpu_info->{speed};
+
+
+    # get TCP info
+    # We don't need the TCP details at the moment but leaving this here to easily add
+    # my $tcp_info = get_tcp_configuration(); 
 
     return $status;
 
