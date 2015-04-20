@@ -22,7 +22,7 @@ use base 'Exporter';
 use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger);
 
-use IO::Interface::Simple;
+use Net::Interface qw/mac_bin2hex/;
 use Net::CIDR;
 use Net::IP;
 use Data::Validate::IP qw(is_ipv4);
@@ -142,14 +142,14 @@ sub get_interface_speed {
     # you're root.
     my $speed_file = "/sys/class/net/".$interface_name."/speed";
     if (-f $speed_file) {
-        my $raw_speed = `cat $speed_file 2>/dev/null`;
+        my $raw_speed = `cat $speed_file`;
         chomp($raw_speed);
         $speed = $raw_speed * 10**6 if $raw_speed;
     }
 
     unless ($speed) {
         my $ETHTOOL;
-        open( $ETHTOOL, "-|", "/sbin/ethtool $interface_name 2>/dev/null" ) or return;
+        open( $ETHTOOL, "-|", "/sbin/ethtool $interface_name" ) or return;
         while ( <$ETHTOOL> ) {
             if ( /^\s*Speed:\s+(\d+)\s*(\w)/ ) {
                 $speed = $1;
@@ -166,11 +166,6 @@ sub get_interface_speed {
         }
         close( $ETHTOOL );
     }
-
-    unless ($speed) {
-        # That situation can happen inside VM
-        $speed = "unknown";
-    }
  
     return $speed;
 }
@@ -178,9 +173,9 @@ sub get_interface_speed {
 sub get_interface_mtu {
 	my $parameters = validate( @_, { interface_name => 1, } );
     my $interface_name = $parameters->{interface_name};
-    my @all_ifs = IO::Interface::Simple->interfaces();
+    my @all_ifs = Net::Interface->interfaces();
     foreach my $if (@all_ifs){
-        if($if eq $interface_name  && $if->mtu){
+        if($if->name eq $interface_name  && $if->mtu){
           return $if->mtu;
         }
     }
@@ -189,12 +184,20 @@ sub get_interface_mtu {
 sub get_interface_mac {
 	my $parameters = validate( @_, { interface_name => 1, } );
     my $interface_name = $parameters->{interface_name};
-    my @all_ifs = IO::Interface::Simple->interfaces();
+    my @all_ifs = Net::Interface->interfaces();
+
     foreach my $if (@all_ifs){
-        if($if eq $interface_name  && $if->hwaddr){
-          return $if->hwaddr;
+        next unless $if->name eq $interface_name;
+        my $info = $if->info();
+
+        if ($info->{mac}) {
+            return mac_bin2hex($info->{mac});
         }
+
+        last;
     }
+
+    return;
 }
 
 

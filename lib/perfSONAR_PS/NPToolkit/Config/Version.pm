@@ -3,7 +3,7 @@ package perfSONAR_PS::NPToolkit::Config::Version;
 use strict;
 use warnings;
 
-our $VERSION = "3.4.1";
+our $VERSION = 3.3;
 
 =head1 NAME
 
@@ -99,7 +99,16 @@ sub get_version {
     my ( $self, @params ) = @_;
     my $parameters = validate( @params, {} );
 
-    return $VERSION;
+    my $version;
+
+    if ( open( OUTPUT, "-|", $self->{NPTOOLKIT_VERSION_BIN} ) ) {
+        $version = <OUTPUT>;
+        close( OUTPUT );
+
+        chomp( $version ) if ( $version );
+    }
+
+    return $version;
 }
 
 =head2 save_state()
