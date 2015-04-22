@@ -15,7 +15,7 @@ use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 
 use perfSONAR_PS::Utils::Host qw(get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address);
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
-
+use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
 use perfSONAR_PS::Web::Sidebar qw(set_sidebar_vars);
@@ -306,6 +306,19 @@ sub get_communities {
     my $communities = $self->{admin_info_conf}->get_keywords();
 
     return {communities => $communities};
+
+}
+
+sub get_all_communities {
+    my $self = shift;
+
+    my $keyword_client = perfSONAR_PS::Client::gLS::Keywords->new( { cache_directory => $self->{config}->{cache_directory} } );
+    my ($status, $res) = $keyword_client->get_keywords();
+    $self->{LOGGER}->debug("keyword status: $status");
+    if ( $status == 0) {
+        $self->{LOGGER}->debug("Got keywords: ".Dumper($res));
+    }
+    return $res;
 
 }
 

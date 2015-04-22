@@ -45,7 +45,7 @@ sub new {
         #callback => sub { $self->help(@_); }
     );
     #$help_method->add_parameter(
-    #    name            => "method_name",
+    #    name            => "parameter_name",
     #    pattern         => '^((\w+|\_)+)$',
     #    required        =>  0,
     #    description     => "optional method name, if provided will give details about this specific method",
@@ -100,14 +100,13 @@ sub handle_request {
     my ($self) = @_;
     my $cgi = $self->{cgi};
     my $fh = $self->{fh};
-    if ($cgi->param("method_name")) {
-        my $param_name = $cgi->param("method_name");
+    if ($cgi->param("method")) {
+        my $param_name = $cgi->param("method");
         if ($cgi->param("format")) {
             $self->set_format($cgi->param("format"));
         }
         if (exists $self->{methods}->{$param_name}) {
             my $method = $self->{methods}->{$param_name};
-            warn "using method name: " . Dumper $method;
             my $results = $method->handle_request($cgi, $fh);
             $self->_output_results($results);
         
@@ -115,7 +114,6 @@ sub handle_request {
     } else {
         my $method = $self->_get_default_method();
         if ($method) {
-            #warn "default method: " . Dumper $method;
             my $results = $method->handle_request($cgi, $fh);
             $self->_output_results($results);
         } else {    
