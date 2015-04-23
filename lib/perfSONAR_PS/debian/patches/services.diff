@@ -1,0 +1,106 @@
+--- a/NPToolkit/Services/MySQL.pm
++++ b/NPToolkit/Services/MySQL.pm
+@@ -9,8 +9,8 @@
+     my ( $self, %conf ) = @_;
+ 
+     $conf{description}  = "MySQL Daemon" unless $conf{description};
+-    $conf{init_script} = "mysqld" unless $conf{init_script};
+-    $conf{process_names} = [ "mysql" ] unless $conf{process_names};
++    $conf{init_script} = "mysql" unless $conf{init_script};
++    $conf{process_names} = [ "mysqld" ] unless $conf{process_names};
+     $conf{pid_files} = [ "/var/run/mysqld/mysqld.pid" ] unless $conf{pid_files};
+     $conf{regular_restart} = 1;
+     $conf{package_names} = [ "mysql-server" ] unless $conf{package_names};
+--- a/NPToolkit/Services/httpd.pm
++++ b/NPToolkit/Services/httpd.pm
+@@ -11,10 +11,10 @@
+     my ( $self, %conf ) = @_;
+ 
+     $conf{description}  = "Apache HTTP Server" unless $conf{description};
+-    $conf{init_script} = "httpd" unless $conf{init_script};
+-    $conf{process_names} = "httpd" unless $conf{process_names};
+-    $conf{pid_files} = "/var/run/httpd/httpd.pid" unless $conf{pid_files};
+-    $conf{package_names} = [ "httpd" ] unless $conf{package_names};
++    $conf{init_script} = "apache2" unless $conf{init_script};
++    $conf{process_names} = "apache2" unless $conf{process_names};
++    $conf{pid_files} = "/var/run/apache2.pid" unless $conf{pid_files};
++    $conf{package_names} = [ "apache2" ] unless $conf{package_names};
+ 
+     $self->SUPER::init( %conf );
+ 
+--- a/NPToolkit/Services/Cassandra.pm
++++ b/NPToolkit/Services/Cassandra.pm
+@@ -12,7 +12,7 @@
+     $conf{init_script} = "cassandra" unless $conf{init_script};
+     $conf{process_names} = "java" unless $conf{process_names};
+     $conf{pid_files} = "/var/run/cassandra/cassandra.pid" unless $conf{pid_files};
+-    $conf{package_names} = [ "cassandra20" ] unless $conf{package_names};
++    $conf{package_names} = [ "cassandra" ] unless $conf{package_names};
+ 
+     $self->SUPER::init( %conf );
+ 
+--- a/NPToolkit/Services/BWCTL.pm
++++ b/NPToolkit/Services/BWCTL.pm
+@@ -11,7 +11,7 @@
+     my ( $self, %conf ) = @_;
+ 
+     $conf{description}  = "BWCTL" unless $conf{description};
+-    $conf{init_script} = "bwctld" unless $conf{init_script};
++    $conf{init_script} = "bwctl-server" unless $conf{init_script};
+     $conf{process_names} = "bwctld" unless $conf{process_names};
+     $conf{pid_files} = "/var/run/bwctld.pid" unless $conf{pid_files};
+     $conf{package_names} = [ "bwctl-server", "bwctl-client" ] unless $conf{package_names};
+--- a/NPToolkit/Services/RegularTesting.pm
++++ b/NPToolkit/Services/RegularTesting.pm
+@@ -9,10 +9,10 @@
+     my ( $self, %conf ) = @_;
+ 
+     $conf{description}  = "perfSONAR-PS Regular Testing" unless $conf{description};
+-    $conf{pid_files} = [ "/var/run/regular_testing.pid" ] unless $conf{pid_files};
+-    $conf{process_names} = [ "daemon" ] unless $conf{process_names};
+-    $conf{init_script} = "regular_testing" unless $conf{init_script};
+-    $conf{package_names} = [ "perl-perfSONAR_PS-RegularTesting" ] unless $conf{package_names};
++    $conf{pid_files} = [ "/var/run/regulartesting.pid" ] unless $conf{pid_files};
++    $conf{process_names} = [ "perfSONAR_PS" ] unless $conf{process_names};
++    $conf{init_script} = "perfsonar-regulartesting" unless $conf{init_script};
++    $conf{package_names} = [ "perfsonar-regulartesting" ] unless $conf{package_names};
+ 
+     $self->SUPER::init( %conf );
+     $self->{REGULAR_RESTART} = 1;
+@@ -35,7 +35,7 @@
+ 	system('pkill -9 -f regular_testing/');
+ 	
+ 	#clean-up any old data
+-	system('find /var/lib/perfsonar/regular_testing -type f -mtime +1 -exec rm {} \;');
++	system('find /var/lib/perfsonar/regulartesting -type f -mtime +1 -exec rm {} \;');
+     
+ 	return (0, "");
+ }
+--- a/NPToolkit/Services/LSRegistrationDaemon.pm
++++ b/NPToolkit/Services/LSRegistrationDaemon.pm
+@@ -9,10 +9,10 @@
+     my ( $self, %conf ) = @_;
+ 
+     $conf{description}  = "LS Registration Daemon" unless $conf{description};
+-    $conf{init_script} = "ls_registration_daemon" unless $conf{init_script};
+-    $conf{pid_files} = "/var/run/ls_registration_daemon.pid";
+-    $conf{process_names} = "daemon.pl";
+-    $conf{package_names} = [ "perl-perfSONAR_PS-LSRegistrationDaemon" ] unless $conf{package_names};
++    $conf{init_script} = "perfsonar-lsregistrationdaemon" unless $conf{init_script};
++    $conf{pid_files} = "/var/run/lsregistrationdaemon.pid";
++    $conf{process_names} = "lsregistration";
++    $conf{package_names} = [ "perfsonar-lsregistrationdaemon" ] unless $conf{package_names};
+ 
+     $self->SUPER::init( %conf );
+ 
+--- a/NPToolkit/Services/Base.pm
++++ b/NPToolkit/Services/Base.pm
+@@ -232,7 +232,7 @@
+     open(STDERR, ">", File::Spec->devnull());
+     open(STDOUT, ">", File::Spec->devnull());
+ 
+-    my $shell_cmd = "/sbin/service " . $self->{INIT_SCRIPT} . " " . $cmd;
++    my $shell_cmd = "/usr/sbin/service " . $self->{INIT_SCRIPT} . " " . $cmd;
+ 
+     $self->{LOGGER}->debug($shell_cmd);
+ 
