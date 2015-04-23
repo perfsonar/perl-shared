@@ -20,7 +20,7 @@ Depends: ${misc:Depends}, ${perl:Depends}, perl, liblog-log4perl-perl,
  libhttp-message-perl, libio-socket-ssl-perl, libipc-run-perl, libjson-perl,
  libwww-perl, libmath-int64-perl, libmoose-perl, libnet-ip-perl,
  libnet-traceroute-perl, libparams-validate-perl, libstatistics-descriptive-perl,
- liburi-perl, librpc-xml-perl, libnet-ntp-perl
+ liburi-perl, librpc-xml-perl, libnet-ntp-perl, libtemplate-perl
 Description: perfSONAR perl library
  The perfSONAR perl library provides all common perl modules for all
  perfSONAR related services.
