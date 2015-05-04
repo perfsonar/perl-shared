@@ -6,6 +6,12 @@ use HTTP::Request;
 use Params::Validate qw(:all);
 use JSON qw(from_json);
 
+## Use IO::Socket::INET6 instead of IO::Socket::INET6 in Net::HTTP.
+BEGIN {
+    $Net::HTTP::SOCKET_CLASS = 'IO::Socket::INET6';
+    require Net::HTTP;
+}
+
 our @EXPORT_OK = qw( send_http_request build_err_msg );
 
 # establishes a HTTP connection and sends the message
