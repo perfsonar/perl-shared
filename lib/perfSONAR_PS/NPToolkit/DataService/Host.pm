@@ -56,6 +56,7 @@ sub get_information {
         administrator => {
             name => $administrative_info_conf->get_administrator_name(),
             email => $administrative_info_conf->get_administrator_email(),
+            organization => $administrative_info_conf->get_organization_name()
         },
         location => {
             city => $administrative_info_conf->get_city(),
@@ -95,13 +96,16 @@ sub get_status {
             disable_ipv6_reverse_lookup => $conf{disable_ipv6_reverse_lookup},
         });
     my $external_address;
+    my $external_address_iface;
     my $external_address_mtu;
     my $external_address_speed;
     my $external_address_ipv4;
     my $external_address_ipv6;
     my $is_registered = 0;
     if ($external_addresses) {
+        #warn "external_addresses: " . Dumper $external_addresses;
         $external_address = $external_addresses->{primary_address};
+        $external_address_iface = $external_addresses->{primary_address_iface};
         $external_address_mtu = $external_addresses->{primary_iface_mtu};
         $external_address_speed = $external_addresses->{primary_iface_speed} if $external_addresses->{primary_iface_speed};
         $external_address_ipv4 = $external_addresses->{primary_ipv4};
@@ -111,6 +115,7 @@ sub get_status {
             ipv4_address => $external_address_ipv4,
             ipv6_address => $external_address_ipv6
         };
+        $status->{external_address}->{iface} = $external_address_iface if $external_address_iface;
         $status->{external_address}->{speed} = $external_address_speed if $external_address_speed;
         $status->{external_address}->{mtu} = $external_address_mtu if $external_address_mtu;
 
