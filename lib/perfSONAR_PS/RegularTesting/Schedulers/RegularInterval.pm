@@ -13,6 +13,8 @@ extends 'perfSONAR_PS::RegularTesting::Schedulers::Base';
 
 has 'interval' => (is => 'rw', isa => 'Int');
 
+has 'random_start_percentage' => (is => 'rw', isa => 'Int');
+
 has '_next_run_time'  => (is => 'rw', isa => 'Int');
 
 my $logger = get_logger(__PACKAGE__);
