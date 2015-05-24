@@ -1,5 +1,5 @@
-libperfsonar-sls-perl (3.4.2-1) UNRELEASED; urgency=low
+libperfsonar-sls-perl (3.4.2-1) perfsonar-wheezy-staging; urgency=low
 
   * Port to Debian.
 
- -- Antoine Delvaux <antoine.delvaux@dante.net>  Wed, 13 May 2015 18:57:37 +0000
+ -- Antoine Delvaux <antoine.delvaux@dante.net>  Sun, 24 May 2015 19:15:47 +0000
