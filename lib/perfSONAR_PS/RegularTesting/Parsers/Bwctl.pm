@@ -120,8 +120,10 @@ sub parse_bwctl_output {
 
     $tool = $results{tool} unless $tool;
 
-    if(!$tool){
-        $results{error} = "Tool is not defined";
+    if (not $tool) {
+        unless ($results{error}) {
+            $results{error} = "Tool is not defined";
+        }
     }
     elsif ($tool eq "iperf") {
         $results{results} = parse_iperf_output({ stdout => $stdout });

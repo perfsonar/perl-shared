@@ -289,6 +289,7 @@ sub build_cmd {
     }
     elsif ($schedule->type eq "regular_intervals") {
         push @cmd, ( '-I', $schedule->interval );
+        push @cmd, ( '-R', $schedule->random_start_percentage ) if(defined $schedule->random_start_percentage);
     }
     elsif ($schedule->type eq "time_schedule") {
         my $schedule_str = join(",", @{ $schedule->time_slots });

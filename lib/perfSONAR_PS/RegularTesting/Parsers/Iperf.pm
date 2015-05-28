@@ -70,7 +70,7 @@ sub parse_iperf_output {
             $source_addr = $src_ip;
         }
 
-        if (   ( ( $id, $si, $ei, $txfr, $bw, $jitter, $nlost, $nsent ) = ($line =~ m#\[\s*(\d+|SUM)\s*\]\s+([0-9\.]+)\s*\-\s*([0-9\.]+)\s+sec\s+(\d+)\s+Bytes\s+(\d+)\s+bits/sec\s+([0-9\.]+)\s+ms\s+(\d+)/(\d+)\s+# ))
+        if (   ( ( $id, $si, $ei, $txfr, $bw, $jitter, $nlost, $nsent ) = ($line =~ m#\[\s*(\d+|SUM)\s*\]\s+([0-9\.]+)\s*\-\s*([0-9\.]+)\s+sec\s+(\d+)\s+Bytes\s+(\d+)\s+bits/sec\s+([0-9\.]+)\s+ms\s+(\d+)/\s*(\d+)\s+# ))
             || ( ( $id, $si, $ei, $txfr, $bw ) = ($line =~ m#\[\s*(\d+|SUM)\s*\]\s+([0-9\.]+)\s*\-\s*([0-9\.]+)\s+sec\s+(\d+)\s+Bytes\s+(\d+)\s+bits/sec# ) ) )
         {
 
@@ -121,8 +121,8 @@ sub parse_iperf_output {
                 end   => $summary->[2],
                 throughput => $summary->[3],
                 jitter => $summary->[4],
-                packets_sent => $summary->[5],
-                packets_lost => $summary->[6],
+                packets_lost => $summary->[5],
+                packets_sent => $summary->[6],
             };
         }
 
@@ -137,8 +137,8 @@ sub parse_iperf_output {
                 end   => $summary_session->[2],
                 throughput => $summary_session->[3],
                 jitter => $summary_session->[4],
-                packets_sent => $summary_session->[5],
-                packets_lost => $summary_session->[6],
+                packets_lost => $summary_session->[5],
+                packets_sent => $summary_session->[6],
             }
         };
 
