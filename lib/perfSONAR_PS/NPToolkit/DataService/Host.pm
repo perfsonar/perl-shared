@@ -246,13 +246,15 @@ sub get_services {
         $self->{LOGGER}->debug("Checking ".$service_name);
         my $is_running = $service->check_running();
 
+        my $daemon_port = -1;
         my @addr_list;
         if ($service->can("get_addresses")) {
             @addr_list = @{$service->get_addresses()};
             if (@addr_list > 0) {
                 my @del_indexes = reverse(grep { $addr_list[$_] =~ /^tcp/ } 0..$#addr_list);
-                #my @del_indexes = reverse(grep { $addr_list[$_] =~ /^tcp:/ } 0..$#addr_list);
                 foreach my $index (@del_indexes) {
+                    #$service->{'daemon_port'} = _get_port_from_url($addr_list[$index]);
+                    $daemon_port = $self->_get_port_from_url($addr_list[$index]);
                     splice (@addr_list, $index, 1);
                 }
             }
@@ -267,6 +269,7 @@ sub get_services {
         my %service_info = ();
         $service_info{"name"}       = $service_name;
         $service_info{"is_running"} = $is_running_output;
+        $service_info{"daemon_port"} = $daemon_port if ($daemon_port != -1);
         $service_info{"addresses"}  = \@addr_list;
         $service_info{"version"}    = $service->package_version;
 
@@ -285,6 +288,17 @@ sub get_services {
     my @services = values %services;
 
     return {'services', \@services};
+}
+
+sub _get_port_from_url {
+    my $self = shift;
+    my $url = shift;
+    my $port = -1;
+    if ($url =~ m|tcp://.+:(\d+)|) {
+        $port = $1;
+    }
+    return $port;
+
 }
 
 sub get_summary {
