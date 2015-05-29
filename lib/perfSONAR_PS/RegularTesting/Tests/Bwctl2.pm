@@ -1,4 +1,4 @@
-package perfSONAR_PS::RegularTesting::Tests::Bwctl;
+package perfSONAR_PS::RegularTesting::Tests::Bwctl2;
 
 use strict;
 use warnings;
@@ -9,14 +9,15 @@ use IPC::Run qw( start pump );
 use Log::Log4perl qw(get_logger);
 use Params::Validate qw(:all);
 use File::Temp qw(tempdir);
-
-use perfSONAR_PS::RegularTesting::Parsers::Bwctl qw(parse_bwctl_output fill_iperf_data fill_iperf3_data);
+use Data::Dumper;
+use perfSONAR_PS::RegularTesting::Parsers::Bwctl qw(fill_iperf_data fill_iperf3_data);
+use perfSONAR_PS::RegularTesting::Parsers::Bwctl2 qw(parse_bwctl2_output);
 
 use Moose;
 
-extends 'perfSONAR_PS::RegularTesting::Tests::BwctlBase';
+extends 'perfSONAR_PS::RegularTesting::Tests::Bwctl2Base';
 
-has 'bwctl_cmd' => (is => 'rw', isa => 'Str', default => '/usr/bin/bwctl');
+has 'bwctl_cmd' => (is => 'rw', isa => 'Str', default => '/usr/bin/bwctl2');
 has 'tool' => (is => 'rw', isa => 'Str', default => 'iperf');
 has 'use_udp' => (is => 'rw', isa => 'Bool', default => 0);
 has 'streams' => (is => 'rw', isa => 'Int', default => 1);
@@ -29,7 +30,7 @@ has 'window_size'   => (is => 'rw', isa => 'Int');
 
 my $logger = get_logger(__PACKAGE__);
 
-override 'type' => sub { "bwctl" };
+override 'type' => sub { "bwctl2" };
 
 override 'build_cmd' => sub {
     my ($self, @args) = @_;
@@ -65,9 +66,6 @@ override 'build_cmd' => sub {
 
     # Set a default reporting interval
     push @cmd, ( '-i', '1' );
-
-    # Have the tool use the most parsable format
-    push @cmd, ( '--parsable' );
 
     return @cmd;
 };
@@ -111,11 +109,12 @@ override 'build_results' => sub {
     $results->raw_results($output);
 
     # Parse the bwctl output, and add it in
-    my $bwctl_results = parse_bwctl_output({ stdout => $output });
+    my $bwctl_results = parse_bwctl2_output({ stdout => $output });
 
     # Fill in the data that came directly from BWCTL itself
     $results->source->address($bwctl_results->{sender_address}) if $bwctl_results->{sender_address};
     $results->destination->address($bwctl_results->{receiver_address}) if $bwctl_results->{receiver_address};
+    $logger->debug("Build Results: ".Dumper($bwctl_results));
     $results->tool($bwctl_results->{tool});
     
     push @{ $results->errors }, $bwctl_results->{error} if ($bwctl_results->{error});
@@ -134,7 +133,7 @@ override 'build_results' => sub {
         push @{ $results->errors }, "Unknown tool type: ".$bwctl_results->{tool};
     }
 
-    use Data::Dumper;
+    
     $logger->debug("Build Results: ".Dumper($results->unparse));
 
     return $results;
