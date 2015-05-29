@@ -34,6 +34,8 @@ has 'hops'             => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTes
 
 has 'raw_results'     => (is => 'rw', isa => 'Str');
 
+has 'tool'            => (is => 'rw', isa => 'Str');
+
 override 'type' => sub { return "traceroute" };
 
 no Moose;
