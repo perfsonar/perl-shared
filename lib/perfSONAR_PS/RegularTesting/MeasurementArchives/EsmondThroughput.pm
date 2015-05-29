@@ -35,6 +35,8 @@ override 'tool_name' => sub {
 
     if($test_parameters->type eq 'bwctl'){
         return 'bwctl/' . $results->tool;
+    }elsif($test_parameters->type eq 'bwctl2'){
+        return 'bwctl2/' . $results->tool;
     }
     
     #unrecognized so just return type directly

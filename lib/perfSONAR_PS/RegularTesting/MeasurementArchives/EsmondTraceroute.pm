@@ -35,6 +35,8 @@ override 'tool_name' => sub {
 
     if($test_parameters->type() eq 'bwtraceroute'){
         return 'bwctl/' . $results->tool;
+    }elsif($test_parameters->type() eq 'bwtraceroute2'){
+        return 'bwctl2/' . $results->tool;
     }
     
     #unrecognized so just return type directly
