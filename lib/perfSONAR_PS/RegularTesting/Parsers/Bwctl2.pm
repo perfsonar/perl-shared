@@ -57,12 +57,12 @@ sub parse_bwctl2_output {
     }
     
     my %results = ();
-    $results{start_time} = DateTime::Format::ISO8601->parse_datetime($bwctl_obj->{'bwctl'}->{'requested_time'});
-    $results{end_time} = DateTime::Format::ISO8601->parse_datetime($bwctl_obj->{'bwctl'}->{'end_time'});
+    $results{start_time} = DateTime::Format::ISO8601->parse_datetime($bwctl_obj->{'bwctl'}->{'requested_time'}) if($bwctl_obj->{'bwctl'}->{'requested_time'});
+    $results{end_time} = DateTime::Format::ISO8601->parse_datetime($bwctl_obj->{'bwctl'}->{'end_time'}) if($bwctl_obj->{'bwctl'}->{'end_time'});
     $results{sender_address} = $bwctl_obj->{'send'}->{'address'};
     $results{receiver_address} = $bwctl_obj->{'recv'}->{'address'};
     $results{tool} = $bwctl_obj->{'bwctl'}->{'tool'};
-    $results{error} = join ' ', $bwctl_obj->{'bwctl'}->{'errors'} if(@{$bwctl_obj->{'bwctl'}->{'errors'}} > 0);
+    $results{error} = join ' ', @{$bwctl_obj->{'bwctl'}->{'errors'}} if(@{$bwctl_obj->{'bwctl'}->{'errors'}} > 0);
 
     if (not $results{tool}) {
         unless ($results{error}) {

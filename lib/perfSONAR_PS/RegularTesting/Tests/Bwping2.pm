@@ -130,7 +130,8 @@ override 'build_results' => sub {
     }
 
     $results->start_time($bwctl_results->{start_time});
-    $results->end_time($bwctl_results->{end_time});
+    #end time may not be set if authz failure or similar, so set to start
+    $results->end_time($bwctl_results->{end_time} ? $bwctl_results->{end_time} : $bwctl_results->{start_time});
 
     $results->raw_results($output);
 

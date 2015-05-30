@@ -120,7 +120,8 @@ override 'build_results' => sub {
     push @{ $results->errors }, $bwctl_results->{error} if ($bwctl_results->{error});
 
     $results->start_time($bwctl_results->{start_time});
-    $results->end_time($bwctl_results->{end_time});
+    #end time may not be set if authz failure or similar, so set to start
+    $results->end_time($bwctl_results->{end_time} ? $bwctl_results->{end_time} : $bwctl_results->{start_time});
 
     # Fill in the data that came from the tool itself
     if ($bwctl_results->{tool} eq "iperf") {
