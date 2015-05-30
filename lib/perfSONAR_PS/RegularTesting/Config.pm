@@ -30,6 +30,7 @@ use perfSONAR_PS::RegularTesting::Tests::Bwctl2;
 use perfSONAR_PS::RegularTesting::Tests::Bwping;
 use perfSONAR_PS::RegularTesting::Tests::Bwping2;
 use perfSONAR_PS::RegularTesting::Tests::BwpingOwamp;
+use perfSONAR_PS::RegularTesting::Tests::Bwping2Owamp;
 use perfSONAR_PS::RegularTesting::Tests::Bwtraceroute;
 use perfSONAR_PS::RegularTesting::Tests::Bwtraceroute2;
 use perfSONAR_PS::RegularTesting::Tests::Powstream;
