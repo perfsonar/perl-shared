@@ -3,6 +3,7 @@ package perfSONAR_PS::Utils::Host;
 use strict;
 use warnings;
 
+
 our $VERSION = 3.3;
 
 =head1 NAME
@@ -27,6 +28,8 @@ use Net::CIDR;
 use Net::IP;
 use Data::Validate::IP qw(is_ipv4);
 
+use Linux::SysInfo qw(sysinfo);
+
 use perfSONAR_PS::Utils::DNS qw(reverse_dns_multi);
 
 my $logger = get_logger(__PACKAGE__);
@@ -43,6 +46,8 @@ our @EXPORT_OK = qw(
     get_operating_system_info
     get_processor_info
     get_tcp_configuration
+
+    get_health_info
 );
 
 =head2 get_ips()
@@ -442,6 +447,13 @@ sub get_processor_info {
     }
      
     return \%cpuinfo;
+}
+
+sub get_health_info{
+    
+    my $loadinfo = sysinfo;
+    return $loadinfo;
+
 }
 
 sub get_tcp_configuration {

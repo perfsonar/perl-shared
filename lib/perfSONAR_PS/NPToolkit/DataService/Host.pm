@@ -13,7 +13,7 @@ use Params::Validate qw(:all);
 use perfSONAR_PS::NPToolkit::Config::Version;
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 
-use perfSONAR_PS::Utils::Host qw(get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address);
+use perfSONAR_PS::Utils::Host qw(get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info);
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
@@ -25,6 +25,7 @@ use perfSONAR_PS::NPToolkit::Config::OWAMP;
 
 use Config::General;
 use Time::HiRes qw(gettimeofday tv_interval);
+
 
 sub new {
     my ( $class, @params ) = @_;
@@ -364,6 +365,14 @@ sub get_meshes {
         @mesh_urls = [];
     }
     return {meshes => \@mesh_urls};
+}
+
+sub get_system_health(){
+    
+    my $health = get_health_info();
+
+    return $health;
+
 }
 
 
