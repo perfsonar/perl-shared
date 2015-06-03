@@ -28,7 +28,7 @@ use Net::CIDR;
 use Net::IP;
 use Data::Validate::IP qw(is_ipv4);
 
-use Linux::SysInfo qw(sysinfo);
+use Sys::Statistics::Linux;
 
 use perfSONAR_PS::Utils::DNS qw(reverse_dns_multi);
 
@@ -451,9 +451,28 @@ sub get_processor_info {
 
 sub get_health_info{
     
-    my $loadinfo = sysinfo;
-    return $loadinfo;
+         my $lxs = Sys::Statistics::Linux->new(
+        sysinfo   => 1,
+        cpustats  => 1,
+        procstats => 1,
+        memstats  => 1,
+        netstats  => 1,
+        diskstats => 1,
+        diskusage => 1,
+        loadavg   => 1,
+        filestats => 1,
+        processes => 1,
+    );
 
+    sleep 1;
+    my $stat = $lxs->get;
+    my $result;
+
+    $result->{'cpustats'}=$stat->{'cpustats'};
+    $result->{'memstats'}=$stat->{'memstats'};
+    $result->{'diskusage'}=$stat->{'diskusage'};
+    $result->{'loadavg'}=$stat->{'loadavg'}; 
+    return $result;
 }
 
 sub get_tcp_configuration {

@@ -370,8 +370,27 @@ sub get_meshes {
 sub get_system_health(){
     
     my $health = get_health_info();
+    
+    my $result = ();
+    print $health->{'memstats'};
+    $result->{'cpu_util'} = $health->{'cpustats'}->{'cpu'}->{'total'};
+    $result->{'mem_used'} = $health->{'memstats'}->{'memused'};
+    $result->{'mem_total'}= $health->{'memstats'}->{'memtotal'};
+    $result->{'swap_used'} = $health->{'memstats'}->{'swapused'};
+    $result->{'swap_total'} = $health->{'memstats'}->{'swaptotal'};
+    $result->{'load_avg'}= $health->{'loadavg'};
 
-    return $health;
+    #disk usage
+    my $disk = $health->{'diskusage'};
+
+    foreach my $key (keys %$disk){
+        if ($disk->{$key}->{"mountpoint"} eq "/"){ 
+             $result->{"rootfs"}->{"used"}= $disk->{$key}->{"usage"};
+             $result->{"rootfs"}->{"total"} = $disk->{$key}->{"total"};
+             last;
+        }
+    }
+    return $result;
 
 }
 
