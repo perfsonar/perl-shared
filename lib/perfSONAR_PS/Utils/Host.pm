@@ -451,23 +451,18 @@ sub get_processor_info {
 
 sub get_health_info{
     
-         my $lxs = Sys::Statistics::Linux->new(
-        sysinfo   => 1,
+    my $lxs = Sys::Statistics::Linux->new(
         cpustats  => 1,
-        procstats => 1,
         memstats  => 1,
-        netstats  => 1,
-        diskstats => 1,
         diskusage => 1,
         loadavg   => 1,
-        filestats => 1,
-        processes => 1,
     );
 
     sleep 1;
     my $stat = $lxs->get;
+    
     my $result;
-
+    #the following helps to decouple the output from the underlyign package used
     $result->{'cpustats'}=$stat->{'cpustats'};
     $result->{'memstats'}=$stat->{'memstats'};
     $result->{'diskusage'}=$stat->{'diskusage'};
