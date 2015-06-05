@@ -370,14 +370,16 @@ sub get_meshes {
 sub get_system_health(){
     
     my $health = get_health_info();
-    
+   
+    my $multiplier = 1024; # the underlying service returns RAM/disk in kilobytes, we want bytes
+
     my $result = ();
     print $health->{'memstats'};
     $result->{'cpu_util'} = $health->{'cpustats'}->{'cpu'}->{'total'};
-    $result->{'mem_used'} = $health->{'memstats'}->{'memused'};
-    $result->{'mem_total'}= $health->{'memstats'}->{'memtotal'};
-    $result->{'swap_used'} = $health->{'memstats'}->{'swapused'};
-    $result->{'swap_total'} = $health->{'memstats'}->{'swaptotal'};
+    $result->{'mem_used'} = $health->{'memstats'}->{'memused'} * $multiplier;
+    $result->{'mem_total'}= $health->{'memstats'}->{'memtotal'} * $multiplier;
+    $result->{'swap_used'} = $health->{'memstats'}->{'swapused'} * $multiplier;
+    $result->{'swap_total'} = $health->{'memstats'}->{'swaptotal'} * $multiplier;
     $result->{'load_avg'}= $health->{'loadavg'};
 
     #disk usage
@@ -385,8 +387,8 @@ sub get_system_health(){
 
     foreach my $key (keys %$disk){
         if ($disk->{$key}->{"mountpoint"} eq "/"){ 
-             $result->{"rootfs"}->{"used"}= $disk->{$key}->{"usage"};
-             $result->{"rootfs"}->{"total"} = $disk->{$key}->{"total"};
+             $result->{"rootfs"}->{"used"}= $disk->{$key}->{"usage"} * $multiplier;
+             $result->{"rootfs"}->{"total"} = $disk->{$key}->{"total"} * $multiplier;
              last;
         }
     }
