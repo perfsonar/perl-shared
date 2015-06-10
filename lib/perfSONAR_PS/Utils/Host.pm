@@ -417,27 +417,39 @@ sub get_operating_system_info {
 }
 
 sub get_processor_info {
-    my %parse_map = (
+    my %lscpu_parse_map = (
         'CPU MHz' => 'speed',
         'CPU socket(s)' => 'count',
         'Socket(s)' => 'count', #alternative label for sockets
         'CPU(s)' => 'cores',
     );
+     my %cpuinfo_parse_map = (
+        'model name' => 'model_name',
+    );
+    my %cpuinfo = ();
     
     my @lscpu = `lscpu`;
-    if($?){
-        return;
-    }
-
-    my %cpuinfo = ();
-
-    foreach my $line(@lscpu){
-        chomp $line ;
-        my @cols = split /\:\s+/, $line;
-        next if(@cols != 2);
+    unless($?){
+        foreach my $line(@lscpu){
+            chomp $line ;
+            my @cols = split /\:\s+/, $line;
+            next if(@cols != 2);
         
-        if($parse_map{$cols[0]}){
-            $cpuinfo{$parse_map{$cols[0]}} = $cols[1];
+            if($lscpu_parse_map{$cols[0]}){
+                $cpuinfo{$lscpu_parse_map{$cols[0]}} = $cols[1];
+            }
+        }
+    }
+    
+    my @cpuinfo = `cat /proc/cpuinfo`;
+    unless($?){
+        foreach my $line(@cpuinfo){
+            chomp $line ;
+            my @cols = split /\s*:\s*/, $line;
+            next if(@cols != 2);
+            if($cpuinfo_parse_map{$cols[0]}){
+                $cpuinfo{$cpuinfo_parse_map{$cols[0]}} = $cols[1];
+            }
         }
     }
      

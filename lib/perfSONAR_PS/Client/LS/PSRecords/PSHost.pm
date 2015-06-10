@@ -32,12 +32,69 @@ sub init {
     return 0;
 }
 
+sub getRole {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_ROLE)};
+}
+
+sub setRole {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_ROLE), value=>$value  );
+    
+}
+
+sub getAccessPolicy {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_ACCESSPOLICY)};
+}
+
+sub setAccessPolicy {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_ACCESSPOLICY), value=>$value  );
+    
+}
+
+sub getAccessNotes {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_ACCESSNOTES)};
+}
+
+sub setAccessNotes {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_ACCESSNOTES), value=>$value  );
+    
+}
+
+sub getBundle {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_BUNDLE)};
+}
+
+sub setBundle {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_BUNDLE), value=>$value  );
+    
+}
+
+sub getBundleVersion {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_BUNDLEVERSION)};
+}
+
+sub setBundleVersion {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_BUNDLEVERSION), value=>$value  );
+    
+}
+
 sub getToolkitVersion {
+    #Deprecated in favor of getBundleVersion
     my $self = shift;
     return $self->{RECORD_HASH}->{(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_TOOLKITVERSION)};
 }
 
 sub setToolkitVersion {
+    #Deprecated in favor of setBundleVersion
     my ( $self, $value ) = @_;
     $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_TOOLKITVERSION), value=>$value  );
     

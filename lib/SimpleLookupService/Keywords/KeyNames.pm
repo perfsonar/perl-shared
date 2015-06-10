@@ -53,6 +53,7 @@ use constant {
     LS_KEY_HOST_HARDWARE_PROCESSORSPEED => "host-hardware-processorspeed",
     LS_KEY_HOST_HARDWARE_PROCESSORCOUNT => "host-hardware-processorcount",
     LS_KEY_HOST_HARDWARE_PROCESSORCORE => "host-hardware-processorcore",
+    LS_KEY_HOST_HARDWARE_CPUID => "host-hardware-cpuid",
     
     LS_KEY_HOST_OS_NAME => "host-os-name",
     LS_KEY_HOST_OS_VERSION => "host-os-version",
@@ -64,7 +65,10 @@ use constant {
     LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER_SEND => "host-net-tcp-autotunemaxbuffer-send",
     LS_KEY_HOST_NET_TCP_AUTOTUNEMAXBUFFER_RECV => "host-net-tcp-autotunemaxbuffer-recv",
     LS_KEY_HOST_NET_TCP_MAXBACKLOG => "host-net-tcp-maxbacklog",
+    LS_KEY_HOST_NET_TCP_MAXACHIEVABLE => "host-net-tcp-maxachievable",
     LS_KEY_HOST_NET_TCP_INTERFACES => "host-net-interfaces",
+    
+    LS_KEY_HOST_VM => "host-vm",
     
     LS_KEY_HOST_ADMINISTRATORS => "host-administrators"
 };
