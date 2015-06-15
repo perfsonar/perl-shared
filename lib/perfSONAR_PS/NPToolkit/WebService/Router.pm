@@ -85,6 +85,7 @@ sub help {
 
 sub set_format {
     my ($self, $format) = @_;
+    $format = 'json' if (!defined $format);
     if (lc($format) eq 'xml') {
         $self->{format} = 'xml';
         $self->{output_type} = 'application/xml';
@@ -102,13 +103,15 @@ sub handle_request {
     my $fh = $self->{fh};
     if ($cgi->param("method")) {
         my $param_name = $cgi->param("method");
-        if ($cgi->param("format")) {
-            $self->set_format($cgi->param("format"));
-        }
+        $self->set_format($cgi->param("format"));
         if (exists $self->{methods}->{$param_name}) {
             my $method = $self->{methods}->{$param_name};
             my $results = $method->handle_request($cgi, $fh);
-            $self->_output_results($results);
+            if ($results) {
+                $self->_output_results($results);
+            } else {
+                $self->_output_error($method->{error_message}, $method->{error_code});
+            }
         
         }
     } else {
@@ -134,21 +137,25 @@ sub _output_results {
 sub _output_error {
     my ($self, $error, $status) = @_;
     my $fh = $self->{fh};
-    $self->{status} =  $status || 500;
+    $status = "$status $error";
+    $self->{status} = $status;
     $self->_set_headers();
     my $formatter = $self->{formatter};
-    print { $fh } &$formatter({'error' => $error });
-
+    #print { $fh } $error;
+    #print { $fh } &$formatter({'error' => $error });
 }
 
 sub _set_headers {
     my ($self, $results) = @_;
     my $fh = $self->{fh};
-    print $fh header(
+    my $status = $self->{status} || '200 OK';
+    my $expires = $self->{expires} || '-1d';
+    my $head = header( 
         -type => $self->{output_type},
-        -expires => $self->{expires} || '-1d',
-        -status => $self->{status} || '200'
+        -expires => $expires,
+        -status => $status,
         );
+    print { $fh } $head;
 }
 
 sub _get_default_method {

@@ -10,25 +10,29 @@ sub new {
     my $class =ref($that) || $that;
 
     my %valid_parameter_list = (
-        'expires' => 1,
-        'output_type' => 1,
-        'output_formatter' => 1,
-        'name' => 1,
-        'callback' => 1,
-        'description' => 1,
-        'is_default' => 1,
-        'debug' => 1,
+        'expires'           => 1,
+        'output_type'       => 1,
+        'output_formatter'  => 1,        
+        'name'              => 1,
+        'callback'          => 1,
+        'description'       => 1,
+        'auth_required'     => 1,
+        'logged_in'         => 1,
+        'is_default'        => 1,
+        'debug'             => 1,
     );
 
     # set the defaults
     my %args = (
-        expires           => "-1d",
-        output_type   => "application/json",
-        output_formatter => sub { encode_json( shift ) },
-        name      => undef,
-        callback    => undef,
-        description   => undef,
-        debug                   => 0,
+        expires             => "-1d",
+        output_type         => "application/json",
+        output_formatter    => sub { encode_json( shift ) },
+        name                => undef,
+        callback            => undef,
+        description         => undef,
+        auth_required       => 0,
+        logged_in           => 0,
+        debug               => 0,
         @_
     );
 
@@ -59,13 +63,17 @@ sub new {
         return;
     }
 
-
     return $self;
 
 }
 
 sub handle_request {
     my ($self, $cgi, $fh) = @_;
+
+    if ( $self->{'auth_required'} == 1 && ( !defined( $cgi->auth_type() ) || $cgi->auth_type() eq '' )) {
+        $self->_return_error(401, "Unauthorized");
+        return;
+    }
 
     # call the callback
     my $callback    = $self->{'callback'};
@@ -74,8 +82,7 @@ sub handle_request {
     if (!defined $results) {
         $self->_return_error();
         return;
-    }
-    else {
+    } else {
         return $self->_return_results($results);
     }
 
@@ -93,8 +100,9 @@ sub _return_results {
 }
 
 sub _return_error {
-    my ($self, $error_code) = @_;
+    my ($self, $error_code, $error_message) = @_;
     $self->{error_code} = $error_code || 500;
+    $self->{error_message} = $error_message if (defined $error_message);
 
     return;
 
