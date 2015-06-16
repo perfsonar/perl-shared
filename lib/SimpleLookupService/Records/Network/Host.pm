@@ -29,11 +29,12 @@ sub init {
     my ( $self, @args ) = @_;
     my %parameters = validate( @args, { hostName => 1, memory => 0, 
     									processorSpeed =>0, processorCount =>0, processorCore => 0,
-    									osName=>0, osVersion=>0, osKernel => 0, 
+    									cpuId => 0, osName=>0, osVersion=>0, osKernel => 0, 
     									interfaces =>0, tcpCongestionAlgorithm =>0,
     									 tcpMaxBufferSend =>0, tcpAutoMaxBufferSend =>0, 
     									 tcpMaxBufferRecv =>0, tcpAutoMaxBufferRecv =>0, 
-    									 tcpMaxBacklog =>0, administrators=>0, domains =>0,
+    									 tcpMaxBacklog =>0, tcpMaxAchievable =>0,
+    									 vm=> 0, administrators=>0, domains =>0,
     									 siteName => 0 , city => 0, region => 0,
     									 country => 0, zipCode => 0, latitude =>0, longitude => 0 } );
     
@@ -73,6 +74,14 @@ sub init {
     
     if(defined $parameters{processorCore}){
     	my $ret = $self->setProcessorCore($parameters{processorCore});
+    	if($ret <0){
+    		cluck "Error initializing Host record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{cpuId}){
+    	my $ret = $self->setCpuId($parameters{cpuId});
     	if($ret <0){
     		cluck "Error initializing Host record";
     		return $ret;
@@ -155,6 +164,22 @@ sub init {
     
     if(defined $parameters{tcpMaxBacklog}){
     	my $ret = $self->setTcpMaxBacklog($parameters{tcpMaxBacklog});
+    	if($ret <0){
+    		cluck "Error initializing Host record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{tcpMaxAchievable}){
+    	my $ret = $self->setTcpMaxAchievable($parameters{tcpMaxAchievable});
+    	if($ret <0){
+    		cluck "Error initializing Host record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{vm}){
+    	my $ret = $self->setVm($parameters{vm});
     	if($ret <0){
     		cluck "Error initializing Host record";
     		return $ret;
@@ -290,6 +315,17 @@ sub setProcessorCore {
     
 }
 
+sub getCpuId {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_HARDWARE_CPUID)};
+}
+
+sub setCpuId {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_HARDWARE_CPUID), value=>$value  );
+    
+}
+
 sub getOSName {
     my $self = shift;
     return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_NAME)};
@@ -397,6 +433,28 @@ sub getTcpMaxBacklog {
 sub setTcpMaxBacklog {
     my ( $self, $value ) = @_;
     $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXBACKLOG), value=>$value  );
+    
+}
+
+sub getTcpMaxAchievable {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXACHIEVABLE)};
+}
+
+sub setTcpMaxAchievable {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXACHIEVABLE), value=>$value  );
+    
+}
+
+sub getVm {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_VM)};
+}
+
+sub setVm {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_VM), value=>$value  );
     
 }
 
