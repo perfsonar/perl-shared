@@ -1,5 +1,5 @@
 package perfSONAR_PS::NPToolkit::DataService::Host;
-use fields qw(LOGGER config_file admin_info_conf config);
+use fields qw(LOGGER config_file admin_info_conf config authenticated);
 
 use strict;
 use warnings;
@@ -13,7 +13,7 @@ use Params::Validate qw(:all);
 use perfSONAR_PS::NPToolkit::Config::Version;
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 
-use perfSONAR_PS::Utils::Host qw(get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info);
+use perfSONAR_PS::Utils::Host qw(get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on);
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
@@ -53,6 +53,8 @@ sub get_information {
     my $self = shift;
     my $administrative_info_conf = $self->{admin_info_conf};
 
+
+
     my $info = {
         administrator => {
             name => $administrative_info_conf->get_administrator_name(),
@@ -77,9 +79,12 @@ sub get_status {
     # get addresses, mtu, ntp status, globally registered, toolkit version, toolkit rpm version
     # external address
     # total RAM
-    
-    my $status = {};
 
+    my $caller = shift;
+
+    $self->{authenticated} = $caller->{logged_in};
+ 
+    my $status = {};
 
     my $version_conf = perfSONAR_PS::NPToolkit::Config::Version->new();
     $version_conf->init();
@@ -158,7 +163,7 @@ sub get_status {
 
     # get OS info
     my $os_info = get_operating_system_info();
-    $status->{kernel_version} = $os_info->{kernel_version};
+    
     $status->{distribution} = $os_info->{distribution_name} . " " . $os_info->{distribution_version};
 
     # get CPU info
@@ -166,6 +171,21 @@ sub get_status {
     $status->{cpus} = $cpu_info->{count};
     $status->{cpu_cores} = $cpu_info->{cores};
     $status->{cpu_speed} = $cpu_info->{speed};
+
+
+    # add parameters that need authentication
+    if($self->{authenticated}){
+        $status->{kernel_version} = $os_info->{kernel_version};
+        if(is_auto_updates_on()){
+            $status->{auto_updates} = "On";    
+        }else{
+            $status->{auto_updates} = "Off";
+        }
+        
+    }else{
+        $status->{kernel_version} = "N/A";
+        $status->{auto_updates} = "N/A";
+    }
 
 
     # get TCP info
@@ -368,26 +388,42 @@ sub get_meshes {
 }
 
 sub get_system_health(){
-    
+    my $self = shift;
+
+    my $caller = shift;
+
+    $self->{authenticated} = $caller->{logged_in};
     my $health = get_health_info();
    
     my $multiplier = 1024; # the underlying service returns RAM/disk in kilobytes, we want bytes
 
     my $result = ();
-    print $health->{'memstats'};
-    $result->{'cpu_util'} = $health->{'cpustats'}->{'cpu'}->{'total'};
-    $result->{'mem_used'} = $health->{'memstats'}->{'memused'} * $multiplier;
+
+    if($self->{authenticated}){
+        $result->{'cpu_util'} = $health->{'cpustats'}->{'cpu'}->{'total'};
+        $result->{'mem_used'} = $health->{'memstats'}->{'memused'} * $multiplier;
+        $result->{'swap_used'} = $health->{'memstats'}->{'swapused'} * $multiplier;
+        $result->{'load_avg'}= $health->{'loadavg'};
+    }else{
+        $result->{'cpu_util'} = 0;
+        $result->{'mem_used'} = 0;
+        $result->{'swap_used'} = 0;
+        $result->{'load_avg'}= 0;
+    }
+    
     $result->{'mem_total'}= $health->{'memstats'}->{'memtotal'} * $multiplier;
-    $result->{'swap_used'} = $health->{'memstats'}->{'swapused'} * $multiplier;
+   
     $result->{'swap_total'} = $health->{'memstats'}->{'swaptotal'} * $multiplier;
-    $result->{'load_avg'}= $health->{'loadavg'};
+    
 
     #disk usage
     my $disk = $health->{'diskusage'};
 
     foreach my $key (keys %$disk){
         if ($disk->{$key}->{"mountpoint"} eq "/"){ 
-             $result->{"rootfs"}->{"used"}= $disk->{$key}->{"usage"} * $multiplier;
+            if($self->{'authenticated'}){
+                $result->{"rootfs"}->{"used"}= $disk->{$key}->{"usage"} * $multiplier;
+            }
              $result->{"rootfs"}->{"total"} = $disk->{$key}->{"total"} * $multiplier;
              last;
         }
