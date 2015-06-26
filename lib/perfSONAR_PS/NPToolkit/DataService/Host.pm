@@ -182,9 +182,6 @@ sub get_status {
             $status->{auto_updates} = "Off";
         }
         
-    }else{
-        $status->{kernel_version} = "N/A";
-        $status->{auto_updates} = "N/A";
     }
 
 
@@ -404,11 +401,6 @@ sub get_system_health(){
         $result->{'mem_used'} = $health->{'memstats'}->{'memused'} * $multiplier;
         $result->{'swap_used'} = $health->{'memstats'}->{'swapused'} * $multiplier;
         $result->{'load_avg'}= $health->{'loadavg'};
-    }else{
-        $result->{'cpu_util'} = 0;
-        $result->{'mem_used'} = 0;
-        $result->{'swap_used'} = 0;
-        $result->{'load_avg'}= 0;
     }
     
     $result->{'mem_total'}= $health->{'memstats'}->{'memtotal'} * $multiplier;
@@ -421,7 +413,7 @@ sub get_system_health(){
 
     foreach my $key (keys %$disk){
         if ($disk->{$key}->{"mountpoint"} eq "/"){ 
-            if($self->{'authenticated'}){
+            if($self->{authenticated}){
                 $result->{"rootfs"}->{"used"}= $disk->{$key}->{"usage"} * $multiplier;
             }
              $result->{"rootfs"}->{"total"} = $disk->{$key}->{"total"} * $multiplier;
