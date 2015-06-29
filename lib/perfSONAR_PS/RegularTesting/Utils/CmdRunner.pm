@@ -48,6 +48,8 @@ sub run {
         my @remaining_cmds = ();
 
         foreach my $cmd (@{ $self->cmds_not_run }) {
+            $cmd->last_result_time(time + 0); # reset to now
+            $logger->debug("Initialized  last_result_time to " . $cmd->last_result_time);
             unless (not $cmd->last_exec_time or ($cmd->restart_interval and $cmd->restart_interval + $cmd->last_exec_time < time)) {
                 push @remaining_cmds, $cmd;
                 next;
@@ -89,6 +91,8 @@ sub run {
             foreach my $cmd (@{ $self->cmds }) {
                 if ($cmd->contains(fh => $fh)) {
                     $cmd_fh = $cmd;
+                    $cmd->last_result_time(time + 0);
+                    $logger->debug("Got result. Set last_result_time to " . $cmd->last_result_time);
                     last;
                 }
             }
@@ -121,6 +125,17 @@ sub run {
 
         last if $self->exiting;
 
+        # make sure we have seen results recently
+        foreach my $cmd (@{ $self->cmds }) {
+            if($cmd->last_result_time < (time - $cmd->result_timeout) ){
+                $logger->error("No results in " . $cmd->result_timeout . "seconds (last result " . $cmd->last_result_time . "). Killing process.");
+                $cmd->kill();
+                sleep(2);
+                $cmd->kill(force => 1);
+            }
+        }
+
+        # make sure processes are still running
         while( ( my $pid = waitpid( -1, &WNOHANG ) ) > 0 ) {
             last if $self->exiting;
 

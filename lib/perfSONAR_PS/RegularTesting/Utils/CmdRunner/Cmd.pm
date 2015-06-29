@@ -33,6 +33,9 @@ has 'stderr_prev_line'  => (is => 'rw', isa => 'Str');
 
 has 'last_exec_time'   => (is => 'rw', isa => 'Int');
 
+has 'result_timeout' => (is => 'rw', isa => 'Int', default => -1);
+has 'last_result_time' => (is => 'rw', isa => 'Int');
+
 sub cmd_str {
     my ($self, @args) = @_;
     my $parameters = validate( @args, { });
