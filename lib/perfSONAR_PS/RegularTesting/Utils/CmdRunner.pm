@@ -127,7 +127,7 @@ sub run {
 
         # make sure we have seen results recently
         foreach my $cmd (@{ $self->cmds }) {
-            if($cmd->last_result_time < (time - $cmd->result_timeout) ){
+            if(defined $cmd->result_timeout && $cmd->last_result_time < (time - $cmd->result_timeout) ){
                 $logger->error("No results in " . $cmd->result_timeout . "seconds (last result " . $cmd->last_result_time . "). Killing process.");
                 $cmd->kill();
                 sleep(2);
