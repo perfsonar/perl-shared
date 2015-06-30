@@ -46,6 +46,9 @@ sub kill {
 
 	if ($status != 0) {
 		system("pkill -9 -f owampd");
+	}else{
+	    sleep(30);
+	    system("pkill -9 -f owampd");
 	}
     
 	system('find /var/lib/owamp -type f -mtime +1 -exec rm {} \;');

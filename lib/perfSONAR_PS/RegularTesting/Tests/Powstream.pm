@@ -177,6 +177,7 @@ override 'run_test' => sub {
         $cmd->cmd(\@cmd);
         $cmd->private($individual_test);
         $cmd->restart_interval(300);
+        $cmd->result_timeout($test_parameters->resolution * 3); #restart process if no result in three times the resolution time
         $cmd->result_cb(sub {
             my ($cmd, @args) = @_;
             my $parameters = validate( @args, { stdout => 0, stderr => 0 });
