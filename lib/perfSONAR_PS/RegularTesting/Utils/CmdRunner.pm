@@ -128,7 +128,7 @@ sub run {
         # make sure we have seen results recently
         foreach my $cmd (@{ $self->cmds }) {
             if(defined $cmd->result_timeout && $cmd->last_result_time < (time - $cmd->result_timeout) ){
-                $logger->error("No results in " . $cmd->result_timeout . "seconds (last result " . $cmd->last_result_time . "). Killing process.");
+                $logger->error("No results in " . $cmd->result_timeout . " seconds (last result " . $cmd->last_result_time . "). Killing process.");
                 $cmd->kill();
                 sleep(2);
                 $cmd->kill(force => 1);
@@ -145,7 +145,7 @@ sub run {
                 unless ($self->exiting) {
                     my $remaining_seconds = ($cmd->restart_interval + $cmd->last_exec_time) - time;
 
-                    $logger->error("Command exited, will restart in ".$remaining_seconds." seconds: ".$cmd->cmd_str);
+                    $logger->error("Command exited, will restart " . ($remaining_seconds > 0 ? "in $remaining_seconds seconds" : "immediately") . " : ".$cmd->cmd_str);
                 }
 
                 $select->remove($cmd->stdout_fh) if $cmd->stdout_fh;
