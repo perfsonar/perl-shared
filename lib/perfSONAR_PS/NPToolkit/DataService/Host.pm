@@ -82,7 +82,7 @@ sub get_status {
 
     my $caller = shift;
 
-    $self->{authenticated} = $caller->{logged_in};
+    $self->{authenticated} = $caller->{authenticated};
  
     my $status = {};
 

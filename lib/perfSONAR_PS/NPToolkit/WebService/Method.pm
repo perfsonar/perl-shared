@@ -17,7 +17,7 @@ sub new {
         'callback'          => 1,
         'description'       => 1,
         'auth_required'     => 1,
-        'logged_in'         => 1,
+        'authenticated'         => 1,
         'is_default'        => 1,
         'debug'             => 1,
     );
@@ -31,7 +31,7 @@ sub new {
         callback            => undef,
         description         => undef,
         auth_required       => 0,
-        logged_in           => 0,
+        authenticated           => 0,
         debug               => 0,
         @_
     );
@@ -79,7 +79,7 @@ sub handle_request {
 
     if(defined $cgi->auth_type() && $cgi->auth_type ne '' && defined $cgi->remote_user()){      
         $authorized = 1;
-        $self->{logged_in} = 1;
+        $self->{authenticated} = 1;
     }
 
     # call the callback
