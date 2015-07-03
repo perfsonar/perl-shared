@@ -389,7 +389,7 @@ sub get_system_health(){
 
     my $caller = shift;
 
-    $self->{authenticated} = $caller->{logged_in};
+    $self->{authenticated} = $caller->{authenticated};
     my $health = get_health_info();
    
     my $multiplier = 1024; # the underlying service returns RAM/disk in kilobytes, we want bytes
