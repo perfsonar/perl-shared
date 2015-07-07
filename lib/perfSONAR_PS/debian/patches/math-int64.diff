@@ -1,0 +1,65 @@
+--- a/RegularTesting/MeasurementArchives/perfSONARBUOYBase.pm
++++ b/RegularTesting/MeasurementArchives/perfSONARBUOYBase.pm
+@@ -8,7 +8,6 @@
+ use Log::Log4perl qw(get_logger);
+ use Params::Validate qw(:all);
+ 
+-use Math::Int64 qw(uint64 uint64_to_number);
+ use Digest::MD5;
+ 
+ use DBI;
+--- a/RegularTesting/Utils.pm
++++ b/RegularTesting/Utils.pm
+@@ -26,7 +26,7 @@
+ use Data::Validate::IP qw(is_ipv4 is_ipv6);
+ use Net::IP;
+ 
+-use Math::Int64 qw(uint64 uint64_to_number);
++use Math::BigInt;
+ 
+ use DateTime;
+ 
+@@ -88,8 +88,10 @@
+ sub owptime2datetime {
+     my ($owptime) = @_;
+ 
+-    my $tstamp = uint64($owptime);
+-    $tstamp = uint64_to_number(($tstamp >> 32) & 0xFFFFFFFF);
++    my $tstamp = Math::BigInt->new($owptime);
++    $tstamp->brsft(32);
++    $tstamp->band(0xFFFFFFFF);
++    $tstamp = $tstamp->numify();
+     $tstamp -= JAN_1970;
+     return DateTime->from_epoch(epoch => $tstamp);
+ }
+@@ -113,12 +115,12 @@
+ sub datetime2owptime {
+     my ($datetime) = @_;
+ 
+-    my $bigtime = uint64($datetime->epoch());
+-    $bigtime = ($bigtime + JAN_1970) * $scale;
++    my $bigtime = Math::BigInt->new($datetime->epoch());
++    $bigtime->badd(JAN_1970);
++    $bigtime->bmul($scale);
+     print "Big Time: $bigtime\n";
+-    $bigtime += $datetime->nanosecond();
+-    $bigtime =~ s/^\+//;
+-    return uint64_to_number($bigtime);
++    $bigtime->badd($datetime->nanosecond());
++    return $bigtime->numify();
+ }
+ 
+ =head2 datetime2owptstampi($datetime)
+@@ -127,9 +129,10 @@
+ sub datetime2owptstampi{
+     my ($datetime) = @_;
+ 
+-    my $bigtime = uint64(datetime2owptime($datetime));
++    my $bigtime = Math::BigInt->new(datetime2owptime($datetime));
++    $bigtime->brsft(32);
+ 
+-    return uint64_to_number($bigtime>>32);
++    return $bigtime->numify();
+ }
+ 
+ 1;
