@@ -53,8 +53,6 @@ sub get_information {
     my $self = shift;
     my $administrative_info_conf = $self->{admin_info_conf};
 
-
-
     my $info = {
         administrator => {
             name => $administrative_info_conf->get_administrator_name(),
@@ -72,6 +70,45 @@ sub get_information {
     };
     return $info;
     
+}
+
+sub set_information {
+    my $self = shift;
+    # TODO: create the set_information webservice method
+}
+
+sub set_config_information  {
+    my ( $self, $organization_name, $host_location, $city, $state, $country, $zipcode, $administrator_name, $administrator_email, $latitude, $longitude, $subscribe ) = @_;
+    my $administrative_info_conf = $self->{admin_info_conf};
+
+    $administrative_info_conf->set_organization_name( { organization_name => $organization_name } );
+    $administrative_info_conf->set_city( { city => $city } );
+    $administrative_info_conf->set_state( { state => $state } );
+    $administrative_info_conf->set_country( { country => $country } );
+    $administrative_info_conf->set_zipcode( { zipcode => $zipcode } );
+    $administrative_info_conf->set_latitude( { latitude => $latitude } );
+    $administrative_info_conf->set_longitude( { longitude => $longitude } );
+    $administrative_info_conf->set_administrator_name( { administrator_name => $administrator_name } );
+    $administrative_info_conf->set_administrator_email( { administrator_email => $administrator_email } );
+
+    #if($administrator_email && $subscribe eq "true"){
+    #    subscribe($administrator_email);
+    #}
+    #$is_modified = 1;
+
+    $self->save_state();
+
+    my $status_msg = "Host information updated. NOTE: You must click the Save button to save your changes.";
+    return $status_msg;
+}
+
+sub save_state {
+    my $self = shift;
+    my $administrative_info_conf = $self->{admin_info_conf};
+    my $state = $administrative_info_conf->save_state();
+    #$session->param( "administrative_info_conf", $state );
+    #$session->param( "is_modified", $is_modified );
+    #$session->param( "initial_state_time", $initial_state_time );
 }
 
 sub get_status {

@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use JSON::XS;
 use Carp qw( cluck confess );
+use perfSONAR_PS::NPToolkit::WebService::ParameterTypes;
 
 sub new {
     my $that  = shift;
@@ -82,6 +83,13 @@ sub handle_request {
         $self->{authenticated} = 1;
     }
 
+    # TODO: PICK UP HERE!! and ADAPT THIS
+    my $res = $self->_parse_input_parameters( $cgi );
+    if (!defined $res) {
+        $self->_return_error(400, "Bad Request");
+        return;
+    }
+
     # call the callback
     my $callback    = $self->{'callback'};
     my $results     =  &$callback($self);
@@ -100,6 +108,61 @@ sub set_router {
     $self->{router} = $router;
 }
 
+sub add_input_parameter {
+    my $self = shift;
+    my %args = (
+        type => 'text',
+        required => 1,
+        min_length => undef,
+        max_length => 512,
+        @_
+    );
+
+    if (!defined $args{'name'}) {
+        Carp::confess("name is a required parameter");
+        return;
+    }
+
+    if (!defined $args{'description'}) {
+        Carp::confess("description is a required parameter");
+        return;
+    }
+
+    if (!exists $parameter_types->{ $args{'type'} } ) {
+        Carp::confess("Invalid parameter type " . $args{'type'});
+        return;
+    }
+
+    my $parameter_type = $parameter_types->{ $args{'type'} };
+    my $name = $args{'name'};
+    $args{'pattern'} = $parameter_type->{'pattern'};
+    $args{'error_text'} = "Parameter '$name' " . $parameter_type->{'error_text'};
+
+    $self->{'input_params'}{ $name } = \%args;
+
+    return 1;
+}
+
+sub get_input_parameters {
+    my $self = shift;
+    return $self->{'input_params'};
+}
+
+sub _parse_input_parameters {
+    my ($self, $cgi) = @_;
+    my $params = $self->{input_params}
+
+    foreach my $param_name(sort keys (%$params})) {
+        my $param = $params{$param_name};
+        my $type = $param{'type'};
+        my $required = $param{'required'};
+        my $min_length = $param{'min_length'};
+        my $max_length = $param{'max_length'};
+
+
+    }
+
+}
 
 sub _return_results {
     my ($self, $results) = @_;
@@ -112,7 +175,6 @@ sub _return_error {
     $self->{error_message} = $error_message if (defined $error_message);
 
     return;
-
 }
 
 1;
