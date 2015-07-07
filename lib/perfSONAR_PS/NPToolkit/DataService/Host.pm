@@ -177,9 +177,9 @@ sub get_status {
     if($self->{authenticated}){
         $status->{kernel_version} = $os_info->{kernel_version};
         if(is_auto_updates_on()){
-            $status->{auto_updates} = "On";    
+            $status->{auto_updates} = 1; 
         }else{
-            $status->{auto_updates} = "Off";
+            $status->{auto_updates} = 0;
         }
         
     }
