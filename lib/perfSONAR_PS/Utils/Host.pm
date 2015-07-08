@@ -48,6 +48,8 @@ our @EXPORT_OK = qw(
     get_tcp_configuration
 
     get_health_info
+
+    is_auto_updates_on
 );
 
 =head2 get_ips()
@@ -493,6 +495,21 @@ sub get_tcp_configuration {
         tcp_autotune_max_buffer_recv => _max_buffer_auto("net.ipv4.tcp_rmem"),
         tcp_max_backlog => _call_sysctl("net.core.netdev_max_backlog"),
     };
+}
+
+sub is_auto_updates_on{
+
+    my ($self) = @_;
+
+    my $enabled = "enabled";
+
+    my $result = `/etc/init.d/yum-cron status`;
+
+    if(index($result, $enabled) != -1){
+        return 1;
+    }else{
+        return 0;
+    }
 }
 
 sub _call_sysctl {
