@@ -36,6 +36,10 @@ override 'tool_name' => sub {
         return 'powstream';
     }elsif($test_parameters->type eq 'bwping/owamp'){
         return 'bwctl/owping';
+    }elsif($test_parameters->type eq 'bwping2/owamp'){
+        return 'bwctl2/owping';
+    }elsif($test_parameters->type eq 'bwping2'){
+        return 'bwctl2/ping';
     }
     
     #unrecognized so just return type directly

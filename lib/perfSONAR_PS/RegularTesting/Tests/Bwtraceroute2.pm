@@ -1,4 +1,4 @@
-package perfSONAR_PS::RegularTesting::Tests::Bwtraceroute;
+package perfSONAR_PS::RegularTesting::Tests::Bwtraceroute2;
 
 use strict;
 use warnings;
@@ -9,16 +9,17 @@ use IPC::Run qw( start pump );
 use Log::Log4perl qw(get_logger);
 use Params::Validate qw(:all);
 use File::Temp qw(tempdir);
+use Data::Dumper;
 
 use perfSONAR_PS::RegularTesting::Results::TracerouteTest;
 
-use perfSONAR_PS::RegularTesting::Parsers::Bwctl qw(parse_bwctl_output);
+use perfSONAR_PS::RegularTesting::Parsers::Bwctl2 qw(parse_bwctl2_output);
 
 use Moose;
 
-extends 'perfSONAR_PS::RegularTesting::Tests::BwctlBase';
+extends 'perfSONAR_PS::RegularTesting::Tests::Bwctl2Base';
 
-has 'bwtraceroute_cmd' => (is => 'rw', isa => 'Str', default => '/usr/bin/bwtraceroute');
+has 'bwtraceroute_cmd' => (is => 'rw', isa => 'Str', default => '/usr/bin/bwtraceroute2');
 has 'tool' => (is => 'rw', isa => 'Str', default => 'tracepath,traceroute');
 has 'packet_length' => (is => 'rw', isa => 'Int');
 has 'packet_first_ttl' => (is => 'rw', isa => 'Int', );
@@ -27,7 +28,7 @@ has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
 
 my $logger = get_logger(__PACKAGE__);
 
-override 'type' => sub { "bwtraceroute" };
+override 'type' => sub { "bwtraceroute2" };
 
 override 'build_cmd' => sub {
     my ($self, @args) = @_;
@@ -63,8 +64,9 @@ override 'build_cmd' => sub {
     # Prevent traceroute from doing DNS lookups since Net::Traceroute doesn't
     # like them...
     push @cmd, ( '-y', 'a' );
-
-    push @cmd, '-E' unless $local_destination;
+    
+    #Don;t support this yet, should add it back when we do
+    #push @cmd, '-E' unless $local_destination;
 
     return @cmd;
 };
@@ -95,7 +97,7 @@ override 'build_results' => sub {
     $results->packet_max_ttl($test_parameters->packet_max_ttl);
 
     # Parse the bwctl output, and add it in
-    my $bwctl_results = parse_bwctl_output({ stdout => $output });
+    my $bwctl_results = parse_bwctl2_output({ stdout => $output });
 
     $logger->debug("BWCTL Results: ".Dumper($bwctl_results));
 
@@ -130,11 +132,11 @@ override 'build_results' => sub {
     }
 
     $results->start_time($bwctl_results->{start_time});
-    $results->end_time($bwctl_results->{end_time});
+    #end time may not be set if authz failure or similar, so set to start
+    $results->end_time($bwctl_results->{end_time} ? $bwctl_results->{end_time} : $bwctl_results->{start_time});
 
     $results->raw_results($output);
 
-    use Data::Dumper;
     $logger->debug("Results: ".Dumper($results->unparse));
 
     return $results;

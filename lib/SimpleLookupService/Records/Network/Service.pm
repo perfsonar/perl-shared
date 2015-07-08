@@ -28,7 +28,7 @@ use Carp qw(cluck);
 sub init {
     my ( $self, @args ) = @_;
     my %parameters = validate( @args, { serviceLocator => 1, serviceType => 1, 
-    									serviceName => 0, serviceVersion => 0, 
+    									serviceName => 0, serviceVersion => 0, authnType => 0, 
     									serviceHost => 0, domains => 0, administrators => 0, 
     									siteName => 0 , city => 0, region => 0,
     									country => 0, zipCode => 0, latitude =>0, longitude => 0 } );
@@ -82,6 +82,14 @@ sub init {
     
     if(defined $parameters{administrators}){
     	my $ret = $self->setServiceAdministrators($parameters{administrators});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{authnType}){
+    	my $ret = $self->setAuthnType($parameters{authnType});
     	if($ret <0){
     		cluck "Error initializing Service record";
     		return $ret;
@@ -283,6 +291,21 @@ sub setDNSDomains {
 
     
 }
+
+sub getAuthnType{
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_AUTHN_TYPE)};
+}
+
+sub setAuthnType {
+    my ( $self, $value ) = @_;
+    	
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    
+    return $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_SERVICE_AUTHN_TYPE), value=>$value  );
+}    
 
 sub getSiteName{
     my $self = shift;

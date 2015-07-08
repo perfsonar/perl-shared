@@ -82,6 +82,16 @@ sub event_type{
     return $self->metadata_filters->{'event-type'};
 }
 
+sub subject_type{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->metadata_filters->{'subject-type'} = $val;
+    }
+    
+    return $self->metadata_filters->{'subject-type'};
+}
+
 sub summary_type{
     my ($self, $val) = @_;
     

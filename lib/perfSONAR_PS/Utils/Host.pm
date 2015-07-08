@@ -3,6 +3,7 @@ package perfSONAR_PS::Utils::Host;
 use strict;
 use warnings;
 
+
 our $VERSION = 3.3;
 
 =head1 NAME
@@ -27,6 +28,8 @@ use Net::CIDR;
 use Net::IP;
 use Data::Validate::IP qw(is_ipv4);
 
+use Sys::Statistics::Linux;
+
 use perfSONAR_PS::Utils::DNS qw(reverse_dns_multi);
 
 my $logger = get_logger(__PACKAGE__);
@@ -43,6 +46,8 @@ our @EXPORT_OK = qw(
     get_operating_system_info
     get_processor_info
     get_tcp_configuration
+
+    get_health_info
 );
 
 =head2 get_ips()
@@ -417,31 +422,64 @@ sub get_operating_system_info {
 }
 
 sub get_processor_info {
-    my %parse_map = (
+    my %lscpu_parse_map = (
         'CPU MHz' => 'speed',
         'CPU socket(s)' => 'count',
         'Socket(s)' => 'count', #alternative label for sockets
         'CPU(s)' => 'cores',
     );
+     my %cpuinfo_parse_map = (
+        'model name' => 'model_name',
+    );
+    my %cpuinfo = ();
     
     my @lscpu = `lscpu`;
-    if($?){
-        return;
-    }
-
-    my %cpuinfo = ();
-
-    foreach my $line(@lscpu){
-        chomp $line ;
-        my @cols = split /\:\s+/, $line;
-        next if(@cols != 2);
+    unless($?){
+        foreach my $line(@lscpu){
+            chomp $line ;
+            my @cols = split /\:\s+/, $line;
+            next if(@cols != 2);
         
-        if($parse_map{$cols[0]}){
-            $cpuinfo{$parse_map{$cols[0]}} = $cols[1];
+            if($lscpu_parse_map{$cols[0]}){
+                $cpuinfo{$lscpu_parse_map{$cols[0]}} = $cols[1];
+            }
+        }
+    }
+    
+    my @cpuinfo = `cat /proc/cpuinfo`;
+    unless($?){
+        foreach my $line(@cpuinfo){
+            chomp $line ;
+            my @cols = split /\s*:\s*/, $line;
+            next if(@cols != 2);
+            if($cpuinfo_parse_map{$cols[0]}){
+                $cpuinfo{$cpuinfo_parse_map{$cols[0]}} = $cols[1];
+            }
         }
     }
      
     return \%cpuinfo;
+}
+
+sub get_health_info{
+    
+    my $lxs = Sys::Statistics::Linux->new(
+        cpustats  => 1,
+        memstats  => 1,
+        diskusage => 1,
+        loadavg   => 1,
+    );
+
+    sleep 1;
+    my $stat = $lxs->get;
+    
+    my $result;
+    #the following helps to decouple the output from the underlyign package used
+    $result->{'cpustats'}=$stat->{'cpustats'};
+    $result->{'memstats'}=$stat->{'memstats'};
+    $result->{'diskusage'}=$stat->{'diskusage'};
+    $result->{'loadavg'}=$stat->{'loadavg'}; 
+    return $result;
 }
 
 sub get_tcp_configuration {
