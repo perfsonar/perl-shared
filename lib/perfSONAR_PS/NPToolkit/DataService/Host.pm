@@ -258,7 +258,7 @@ sub get_services {
 
     my %services = ();
 
-    foreach my $service_name ( "owamp", "bwctl", "npad", "ndt", "regular_testing", "esmond", "iperf3" ) {
+    foreach my $service_name ( "owamp", "bwctl", "npad", "ndt", "regular_testing", "esmond" ) {
         my $service = get_service_object($service_name);
 
         $self->{LOGGER}->debug("Checking ".$service_name);
