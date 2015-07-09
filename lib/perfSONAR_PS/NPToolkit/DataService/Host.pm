@@ -72,9 +72,10 @@ sub get_information {
     
 }
 
-sub set_information {
+sub update_information {
     my $self = shift;
     # TODO: create the set_information webservice method
+    return {"info" => 'something'};
 }
 
 sub set_config_information  {

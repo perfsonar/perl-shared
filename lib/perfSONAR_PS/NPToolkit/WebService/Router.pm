@@ -149,7 +149,7 @@ sub _output_error {
     $self->_set_headers();
     my $formatter = $self->{formatter};
     #print { $fh } $error;
-    #print { $fh } &$formatter({'error' => $error });
+    print { $fh } &$formatter({'error' => $error });
 }
 
 sub _set_headers {

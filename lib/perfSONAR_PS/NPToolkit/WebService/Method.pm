@@ -5,6 +5,7 @@ use warnings;
 use JSON::XS;
 use Carp qw( cluck confess );
 use perfSONAR_PS::NPToolkit::WebService::ParameterTypes;
+use Data::Dumper;
 
 sub new {
     my $that  = shift;
@@ -86,8 +87,8 @@ sub handle_request {
     # TODO: PICK UP HERE!! and ADAPT THIS
     my $res = $self->_parse_input_parameters( $cgi );
     if (!defined $res) {
-        $self->_return_error(400, "Bad Request");
-        return;
+        #$self->_return_error(400, "Invalid parameters");
+        return $res;
     }
 
     # call the callback
@@ -115,6 +116,7 @@ sub add_input_parameter {
         required => 1,
         min_length => undef,
         max_length => 512,
+        allow_empty => 1,
         @_
     );
 
@@ -150,15 +152,58 @@ sub get_input_parameters {
 
 sub _parse_input_parameters {
     my ($self, $cgi) = @_;
-    my $params = $self->{input_params}
+    my $params = $self->{'input_params'} || {};
 
-    foreach my $param_name(sort keys (%$params})) {
-        my $param = $params{$param_name};
-        my $type = $param{'type'};
-        my $required = $param{'required'};
-        my $min_length = $param{'min_length'};
-        my $max_length = $param{'max_length'};
+    # If there are no parameters, return success
+    if (keys %$params == 0) {
+        return 1;
+    }
 
+    warn "params: " . Dumper $self->{'input_params'};
+    # process each parameter
+    foreach my $param_name(sort keys (%{$params})) {
+        my $param = $params->{$param_name};
+        my $type = $param->{'type'};
+        my $required = $param->{'required'};
+        my $min_length = $param->{'min_length'};
+        my $max_length = $param->{'max_length'};
+        my $allow_empty = $param->{'allow_empty'};
+
+        my $value = $cgi->param($param_name);
+        warn "param: " . $param_name . " value: $value";
+
+        if ( ! defined($value) && $required ) {
+            $self->_return_error(400, "Required input parameter ${param_name} is missing");
+            return;
+        }
+
+        # trim whitespace from beginning and end
+        $value =~ s/^\s+|\s+$//g;
+
+        if ( $value eq '' and !$allow_empty ) {
+            $self->_return_error(400, "Required input parameter ${param_name} is empty");
+            return;
+        }
+
+        if ( defined ($min_length) && length($value) < $min_length) {
+            $self->_return_error(400, "Input parameter ${param_name} is shorter than the minimum required length of $min_length");
+            return;
+        }
+        
+        if ( defined ($max_length) && length($value) > $max_length) {
+            $self->_return_error(400, "Input parameter ${param_name} is longer than the maximum allowed length of $max_length");
+            return;
+        }
+
+        my $pattern = $parameter_types->{$type}->{'pattern'}; 
+        my $error_text = $parameter_types->{$type}->{'error_text'}; 
+        if ( $value !~ /$pattern/ ) {
+            #$self->_return_error(400, "Input parameter ${param_name} is not the correct type $type");
+            $self->_return_error(400, "Input parameter ${param_name} $error_text");
+
+            return;
+            
+        }
 
     }
 

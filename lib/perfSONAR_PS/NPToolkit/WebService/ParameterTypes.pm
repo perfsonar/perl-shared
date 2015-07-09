@@ -18,7 +18,7 @@ our @EXPORT = qw( $parameter_types );
 
 our $parameter_types = {};
 
-$parameter_types->{'numeral'}->{'pattern'} = '^(d+)$';
+$parameter_types->{'numeral'}->{'pattern'} = '^(\d+)$';
 $parameter_types->{'numeral'}->{'error_text'} = 'only accepts numerals (0 through 9)';
 
 $parameter_types->{'integer'}->{'pattern'} = '^(\-?\d+)$';
@@ -29,6 +29,9 @@ $parameter_types->{'positive_integer'}->{'error_text'} = 'only accepts positive 
 
 $parameter_types->{'float'}->{'pattern'} = '^(\-?\d+.\d+)$';
 $parameter_types->{'float'}->{'error_text'} = 'only accepts decimal numbers';
+
+$parameter_types->{'number'}->{'pattern'} = '^(\-?\d+(.\d+)?)$';
+$parameter_types->{'number'}->{'error_text'} = 'only accepts numbers';
 
 $parameter_types->{'text'}->{'pattern'} = '^([[:print:][:space:]]+)$';
 $parameter_types->{'text'}->{'error_text'} = 'only accepts text';
