@@ -52,7 +52,7 @@ sub new {
 sub get_information {
     my $self = shift;
     my $administrative_info_conf = $self->{admin_info_conf};
-
+    my %conf = %{$self->{config}};
 
 
     my $info = {
@@ -68,8 +68,14 @@ sub get_information {
             zipcode => $administrative_info_conf->get_zipcode(),
             latitude => $administrative_info_conf->get_latitude(),
             longitude => $administrative_info_conf->get_longitude(),
-        }
+        },
+
+        toolkit_name => $conf{toolkit_name}
     };
+
+    
+
+
     return $info;
     
 }
