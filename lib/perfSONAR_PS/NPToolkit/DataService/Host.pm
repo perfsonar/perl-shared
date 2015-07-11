@@ -183,9 +183,9 @@ sub get_status {
     if($self->{authenticated}){
         $status->{kernel_version} = $os_info->{kernel_version};
         if(is_auto_updates_on()){
-            $status->{auto_updates} = "On";    
+            $status->{auto_updates} = 1; 
         }else{
-            $status->{auto_updates} = "Off";
+            $status->{auto_updates} = 0;
         }
         
     }
@@ -264,7 +264,7 @@ sub get_services {
 
     my %services = ();
 
-    foreach my $service_name ( "owamp", "bwctl", "npad", "ndt", "regular_testing", "esmond", "iperf3" ) {
+    foreach my $service_name ( "owamp", "bwctl", "npad", "ndt", "regular_testing", "esmond" ) {
         my $service = get_service_object($service_name);
 
         $self->{LOGGER}->debug("Checking ".$service_name);
