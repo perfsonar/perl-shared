@@ -225,10 +225,14 @@ sub discover_primary_address {
 
     if ( $interface ) {
         my @ips = get_interface_addresses( { interface => $interface } );
-        $ips_by_iface = { $interface => \@ips };
+        if(@ips){
+            $ips_by_iface = { $interface => \@ips };   
+        }
+        
     }
-    else {
-        # If they've not told us which interface to use, it's time to guess.
+    if(!$interface or !$ips_by_iface) {
+        # If they've not told us which interface to use or if the chosen interface does not seem to have been configured,
+        # it's time to guess.
         $ips_by_iface = get_ips({ by_interface => 1 });
     }
 
