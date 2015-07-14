@@ -70,7 +70,7 @@ sub get_information {
             longitude => $administrative_info_conf->get_longitude(),
         },
 
-        toolkit_name => $conf{toolkit_name}
+        #toolkit_name => $conf{toolkit_name}
     };
 
     
@@ -87,6 +87,7 @@ sub get_status {
     # total RAM
 
     my $caller = shift;
+    my %conf = %{$self->{config}};
 
     $self->{authenticated} = $caller->{authenticated};
  
@@ -100,7 +101,6 @@ sub get_status {
 
     # Getting the external addresses seems to be by far the slowest thing here (~0.9 sec)
 
-    my %conf = %{$self->{config}};
     my $external_addresses = discover_primary_address({
             interface => $conf{primary_interface},
             allow_rfc1918 => $conf{allow_internal_addresses},
@@ -113,7 +113,9 @@ sub get_status {
     my $external_address_speed;
     my $external_address_ipv4;
     my $external_address_ipv6;
+    my $external_dns_name = "";
     my $is_registered = 0;
+
     if ($external_addresses) {
         #warn "external_addresses: " . Dumper $external_addresses;
         $external_address = $external_addresses->{primary_address};
@@ -122,16 +124,32 @@ sub get_status {
         $external_address_speed = $external_addresses->{primary_iface_speed} if $external_addresses->{primary_iface_speed};
         $external_address_ipv4 = $external_addresses->{primary_ipv4};
         $external_address_ipv6 = $external_addresses->{primary_ipv6};
+        $external_dns_name = $external_addresses->{primary_dns_name}; 
+
+        
+
         $status->{external_address} = {
             address => $external_address,
             ipv4_address => $external_address_ipv4,
-            ipv6_address => $external_address_ipv6
+            ipv6_address => $external_address_ipv6,
         };
+        $status->{external_address}->{dns_name} = $external_dns_name;
         $status->{external_address}->{iface} = $external_address_iface if $external_address_iface;
         $status->{external_address}->{speed} = $external_address_speed if $external_address_speed;
         $status->{external_address}->{mtu} = $external_address_mtu if $external_address_mtu;
 
     }
+
+    $status->{toolkit_name}=$conf{toolkit_name};
+
+
+    #if($external_addresses->{primary_ipv4} != ""){
+     #  $external_dns_name = $external_addresses->{primary_ipv4};  
+    #}elsif($external_addresses->{primary_ipv6} != ""){
+     #       $external_dns_name = $external_addresses->{primary_ipv6};     
+      #  }else{
+       #     $external_dns_name = $conf{toolkit_name};  
+       # }
 
     if ($external_address) {
         eval {

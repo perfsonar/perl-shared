@@ -239,6 +239,9 @@ sub discover_primary_address {
     my $chosen_address;
     my $ipv4_address;
     my $ipv6_address;
+    my $chosen_dns_name;
+    my $ipv4_dns_name;
+    my $ipv6_dns_name;
     my $chosen_interface;
     my $ipv4_interface;
     my $ipv6_interface;
@@ -271,12 +274,14 @@ sub discover_primary_address {
                 my $dns_name = $reverse_dns_mapping->{$ip}->[0];
 
                 unless ( $chosen_address ) { 
-                    $chosen_address = $dns_name;
+                    $chosen_dns_name = $dns_name;
+                    $chosen_address = $ip;
                     $chosen_interface = $iface;
                 }
     
                 unless ( $ipv4_address ) {
-                    $ipv4_address   = $dns_name;
+                    $ipv4_dns_name = $dns_name;
+                    $ipv4_address   = $ip;
                     $ipv4_interface = $iface;
                 }
 
@@ -297,12 +302,14 @@ sub discover_primary_address {
                 my $dns_name = $reverse_dns_mapping->{$ip}->[0];
     
                 unless ( $chosen_address ) { 
-                    $chosen_address = $dns_name;
+                    $chosen_dns_name = $dns_name;
+                    $chosen_address = $ip;
                     $chosen_interface = $iface;
                 }
 
                 unless ( $ipv6_address ) {
-                    $ipv6_address   = $dns_name;
+                    $ipv6_dns_name = $dns_name;
+                    $ipv6_address   = $ip;
                     $ipv6_interface = $iface;
                 }
 
@@ -324,11 +331,14 @@ sub discover_primary_address {
                 $logger->debug("$ip isn't private or we're okay with private addresses");
 
                 unless ( $chosen_address ) { 
+                    $chosen_dns_name = "";
                     $chosen_address = $ip;
                     $chosen_interface = $iface;
                 }
 
                 unless ( $ipv4_address ) {
+                    
+                    $ipv4_dns_name = "";
                     $ipv4_address   = $ip;
                     $ipv4_interface = $iface;
                 }
@@ -345,11 +355,13 @@ sub discover_primary_address {
                 $logger->debug("$ip is IPv6");
 
                 unless ( $chosen_address ) { 
+                    $chosen_dns_name = "";
                     $chosen_address = $ip;
                     $chosen_interface = $iface;
                 }
 
                 unless ( $ipv6_address ) {
+                    $ipv4_dns_name = "";
                     $ipv6_address   = $ip;
                     $ipv6_interface = $iface;
                 }
@@ -387,9 +399,12 @@ sub discover_primary_address {
     }
 
     return {
+        primary_dns_name => $chosen_dns_name,
         primary_address => $chosen_address,
         primary_ipv6 => $ipv6_address,
         primary_ipv4 => $ipv4_address,
+        primary_ipv4_dns_name => $ipv4_dns_name,
+        primary_ipv6_dns_name => $ipv6_dns_name,
         primary_address_iface => $chosen_interface,
         primary_ipv6_iface => $ipv6_interface,
         primary_ipv4_iface => $ipv4_interface,
