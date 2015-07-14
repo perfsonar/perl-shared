@@ -105,8 +105,8 @@ override 'build_results' => sub {
 
     my @pings = ();
 
-    $results->packets_sent($bwctl_results->{results}->{sent});
-    $results->packets_received($bwctl_results->{results}->{recv});
+    $results->packets_sent($bwctl_results->{results}->{sent}) if defined $bwctl_results->{results}->{sent};
+    $results->packets_received($bwctl_results->{results}->{recv}) if defined $bwctl_results->{results}->{recv};
 
     if ($bwctl_results->{results}->{pings}) {
         foreach my $ping (@{ $bwctl_results->{results}->{pings} }) {
