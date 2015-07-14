@@ -105,8 +105,9 @@ sub ping {
         }
 
         my $remaining_time = $end_time - time;
-
-        while (scalar(my @ready = $select->can_read($remaining_time)) > 0) {
+        
+        #cap time spent here a 5 seconds
+        while (scalar(my @ready = $select->can_read($remaining_time < 5 ? $remaining_time : 5 )) > 0) {
             foreach my $socket (@ready) {
                 my $portaddr = recv($socket, $MSG, 1024, 0);
                 my $error_msg = "recv: $!" unless $portaddr;
@@ -205,3 +206,4 @@ All rights reserved.
 =cut
 
 # vim: expandtab shiftwidth=4 tabstop=4
+
