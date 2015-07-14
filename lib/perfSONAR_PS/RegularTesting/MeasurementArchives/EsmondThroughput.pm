@@ -64,7 +64,7 @@ override 'event_types' => sub {
         push @event_types, 'packet-count-lost';
         push @event_types, 'packet-count-sent';
     }
-    else {
+    elsif($test_parameters->tool eq 'iperf3') {
         push @event_types, 'packet-retransmits';
         push @event_types, 'packet-retransmits-subintervals';
         if($test_parameters->streams > 1){
