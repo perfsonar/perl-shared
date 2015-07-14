@@ -13,7 +13,7 @@ use Params::Validate qw(:all);
 use perfSONAR_PS::NPToolkit::Config::Version;
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 
-use perfSONAR_PS::Utils::Host qw(get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on);
+use perfSONAR_PS::Utils::Host qw(get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_speed get_interface_mtu get_interface_mac);
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
@@ -98,6 +98,19 @@ sub get_status {
 
     $status->{toolkit_version} = $version_conf->get_version();
 
+    my @interfaces = get_ethernet_interfaces();
+    my @interfaceDetails;
+    foreach my $interface (@interfaces){
+        my $iface;
+        $iface->{iface} = $interface;
+        $iface->{mtu} = get_interface_mtu({interface_name=>$interface});
+        $iface->{speed} = get_interface_speed({interface_name=>$interface});
+        $iface->{address} = get_interface_addresses({interface=>$interface});
+        $iface->{mac} = get_interface_mac({interface_name=>$interface});
+        push @interfaceDetails, $iface;
+    }
+    $status->{interfaces} = \@interfaceDetails;
+
 
     # Getting the external addresses seems to be by far the slowest thing here (~0.9 sec)
 
@@ -107,6 +120,8 @@ sub get_status {
             disable_ipv4_reverse_lookup => $conf{disable_ipv4_reverse_lookup},
             disable_ipv6_reverse_lookup => $conf{disable_ipv6_reverse_lookup},
         });
+
+    
     my $external_address;
     my $external_address_iface;
     my $external_address_mtu;
@@ -126,8 +141,6 @@ sub get_status {
         $external_address_ipv6 = $external_addresses->{primary_ipv6};
         $external_dns_name = $external_addresses->{primary_dns_name}; 
 
-        
-
         $status->{external_address} = {
             address => $external_address,
             ipv4_address => $external_address_ipv4,
@@ -141,15 +154,6 @@ sub get_status {
     }
 
     $status->{toolkit_name}=$conf{toolkit_name};
-
-
-    #if($external_addresses->{primary_ipv4} != ""){
-     #  $external_dns_name = $external_addresses->{primary_ipv4};  
-    #}elsif($external_addresses->{primary_ipv6} != ""){
-     #       $external_dns_name = $external_addresses->{primary_ipv6};     
-      #  }else{
-       #     $external_dns_name = $conf{toolkit_name};  
-       # }
 
     if ($external_address) {
         eval {
