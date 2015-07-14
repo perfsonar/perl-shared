@@ -73,9 +73,26 @@ sub get_information {
 }
 
 sub update_information {
-    my $self = shift;
+    my ($self, $args) = @_;
     # TODO: create the set_information webservice method
-    return {"info" => 'something'};
+    warn 'dataservice args: ' . Dumper $args;
+    my $value = $args->{'organization_name'}->{'value'}; 
+    #warn "value: $value";
+    #my $res;
+    my $res = $self->set_config_information($value);
+    if ($res) {
+    return {
+        "info" => 'something',
+        "organization_name" => $value,
+        "status_message" => $res,
+    
+    };
+
+    } else {
+        return {
+            "error" => "didn't work",
+        }
+    }
 }
 
 sub set_config_information  {
@@ -83,6 +100,7 @@ sub set_config_information  {
     my $administrative_info_conf = $self->{admin_info_conf};
 
     $administrative_info_conf->set_organization_name( { organization_name => $organization_name } );
+    if (0) {
     $administrative_info_conf->set_city( { city => $city } );
     $administrative_info_conf->set_state( { state => $state } );
     $administrative_info_conf->set_country( { country => $country } );
@@ -91,6 +109,7 @@ sub set_config_information  {
     $administrative_info_conf->set_longitude( { longitude => $longitude } );
     $administrative_info_conf->set_administrator_name( { administrator_name => $administrator_name } );
     $administrative_info_conf->set_administrator_email( { administrator_email => $administrator_email } );
+    }
 
     #if($administrator_email && $subscribe eq "true"){
     #    subscribe($administrator_email);
@@ -106,10 +125,31 @@ sub set_config_information  {
 sub save_state {
     my $self = shift;
     my $administrative_info_conf = $self->{admin_info_conf};
+    # TODO: Clean this up
     my $state = $administrative_info_conf->save_state();
     #$session->param( "administrative_info_conf", $state );
     #$session->param( "is_modified", $is_modified );
     #$session->param( "initial_state_time", $initial_state_time );
+    return $self->save_config();
+}
+
+sub save_config {
+    my $self = shift;
+    my $administrative_info_conf = $self->{admin_info_conf};
+    # TODO: Clean this up and see if the service restart is necessary
+    my ($status, $res) = $administrative_info_conf->save( { restart_services => 0 } );
+    my $error_msg;
+    my $status_msg;
+    if ($status != 0) {
+        $error_msg = "Problem saving configuration: $res";
+    } else {
+        $status_msg = "Configuration Saved And Services Restarted";
+        #$is_modified = 0;
+        #$initial_state_time = $administrative_info_conf->last_modified();
+    }
+    #save_state();
+
+    return "status_msg: $status_msg error_msg $error_msg";
 }
 
 sub get_status {

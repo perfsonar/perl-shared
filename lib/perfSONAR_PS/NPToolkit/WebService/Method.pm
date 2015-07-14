@@ -19,9 +19,10 @@ sub new {
         'callback'          => 1,
         'description'       => 1,
         'auth_required'     => 1,
-        'authenticated'         => 1,
+        'authenticated'     => 1,
         'is_default'        => 1,
         'debug'             => 1,
+        'request_methods'   => 1,
     );
 
     # set the defaults
@@ -33,8 +34,9 @@ sub new {
         callback            => undef,
         description         => undef,
         auth_required       => 0,
-        authenticated           => 0,
+        authenticated       => 0,
         debug               => 0,
+        request_methods     => undef,
         @_
     );
 
@@ -77,6 +79,11 @@ sub handle_request {
         return;
     }
 
+    # TODO: implement request method check
+    #if ( defined ($self->{'request_methods'} && $self->{'request_methods'} ne $cgi->request_method() ) {
+    #    $self->_return_error(405, "Method Not Allowed; Allowed: " . $self->{'request_methods'});
+    #    return;
+    #}
     my $authorized=0;
 
     if(defined $cgi->auth_type() && $cgi->auth_type ne '' && defined $cgi->remote_user()){      
@@ -84,7 +91,6 @@ sub handle_request {
         $self->{authenticated} = 1;
     }
 
-    # TODO: PICK UP HERE!! and ADAPT THIS
     my $res = $self->_parse_input_parameters( $cgi );
     if (!defined $res) {
         #$self->_return_error(400, "Invalid parameters");
@@ -93,7 +99,9 @@ sub handle_request {
 
     # call the callback
     my $callback    = $self->{'callback'};
-    my $results     =  &$callback($self);
+    warn "handle_request params " . Dumper $self->{'input_params'};
+    my $args = $self->{'input_params'};
+    my $results     =  &$callback($args);
 
     if (!defined $results) {
         $self->_return_error();
@@ -172,6 +180,9 @@ sub _parse_input_parameters {
         my $value = $cgi->param($param_name);
         warn "param: " . $param_name . " value: $value";
 
+        undef($self->{'input_params'}{$param_name}{'value'});
+        $self->{'input_params'}{$param_name}{'is_set'} = 0;
+
         if ( ! defined($value) && $required ) {
             $self->_return_error(400, "Required input parameter ${param_name} is missing");
             return;
@@ -204,6 +215,9 @@ sub _parse_input_parameters {
             return;
             
         }
+
+        $self->{'input_params'}{$param_name}{'value'} = $value;
+        $self->{'input_params'}{$param_name}{'is_set'} = 1;
 
     }
 
