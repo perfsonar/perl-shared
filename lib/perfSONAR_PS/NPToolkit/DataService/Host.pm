@@ -261,11 +261,27 @@ sub get_services {
     my $ndt = get_service_object("ndt");
     my $regular_testing = get_service_object("regular_testing");
 
+    my @service_names = qw(owamp bwctl regular_testing esmond);
+
+    print $npad->is_installed();
+
+    if($npad->is_installed()){
+        push @service_names, "npad";
+    }
+
+    if($ndt->is_installed()){
+        push @service_names, "ndt";
+    }
+
 
     my %services = ();
 
-    foreach my $service_name ( "owamp", "bwctl", "npad", "ndt", "regular_testing", "esmond" ) {
+    
+
+    foreach my $service_name ( @service_names ) {
         my $service = get_service_object($service_name);
+
+
 
         $self->{LOGGER}->debug("Checking ".$service_name);
         my $is_running = $service->check_running();
