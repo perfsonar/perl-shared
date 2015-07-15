@@ -23,6 +23,7 @@ sub new {
         'is_default'        => 1,
         'debug'             => 1,
         'request_methods'   => 1,
+        'min_params'        => 1,
     );
 
     # set the defaults
@@ -37,6 +38,7 @@ sub new {
         authenticated       => 0,
         debug               => 0,
         request_methods     => undef,
+        min_params          => 0,
         @_
     );
 
@@ -168,6 +170,8 @@ sub _parse_input_parameters {
     }
 
     warn "params: " . Dumper $self->{'input_params'};
+    my $min_params = $self->{'min_params'};
+    my $set_params = {};
     # process each parameter
     foreach my $param_name(sort keys (%{$params})) {
         my $param = $params->{$param_name};
@@ -177,15 +181,21 @@ sub _parse_input_parameters {
         my $max_length = $param->{'max_length'};
         my $allow_empty = $param->{'allow_empty'};
 
+        # TODO: add min and max numerical value constraints
+
         my $value = $cgi->param($param_name);
-        warn "param: " . $param_name . " value: $value";
+        warn "param: " . $param_name . " value: " . ($value || "'N/A'");
 
         undef($self->{'input_params'}{$param_name}{'value'});
         $self->{'input_params'}{$param_name}{'is_set'} = 0;
 
-        if ( ! defined($value) && $required ) {
-            $self->_return_error(400, "Required input parameter ${param_name} is missing");
-            return;
+        if ( ! defined($value) ) {
+           if ($required ) {
+                $self->_return_error(400, "Required input parameter ${param_name} is missing");
+                return;
+            } else {
+                next;
+            }
         }
 
         # trim whitespace from beginning and end
@@ -208,7 +218,8 @@ sub _parse_input_parameters {
 
         my $pattern = $parameter_types->{$type}->{'pattern'}; 
         my $error_text = $parameter_types->{$type}->{'error_text'}; 
-        if ( $value !~ /$pattern/ ) {
+        warn "value: $value pattern: $pattern";
+        if ( $value !~ /$pattern/ || ($value eq '' and !$allow_empty) ) {
             #$self->_return_error(400, "Input parameter ${param_name} is not the correct type $type");
             $self->_return_error(400, "Input parameter ${param_name} $error_text");
 
@@ -218,7 +229,12 @@ sub _parse_input_parameters {
 
         $self->{'input_params'}{$param_name}{'value'} = $value;
         $self->{'input_params'}{$param_name}{'is_set'} = 1;
+        $self->{'set_params'}{$param_name} = $self->{'input_params'}{$param_name};
 
+    }
+    if (scalar keys %{$self->{'set_params'}} < $min_params) {
+        $self->_return_error(400, "Must provide at least $min_params parameter(s)");
+        return;
     }
 
 }
