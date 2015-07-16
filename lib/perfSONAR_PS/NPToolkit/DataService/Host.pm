@@ -13,7 +13,8 @@ use Params::Validate qw(:all);
 use perfSONAR_PS::NPToolkit::Config::Version;
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 
-use perfSONAR_PS::Utils::Host qw(get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on);
+use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
+; 
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
@@ -49,9 +50,10 @@ sub new {
     return $self;
 }
 
-sub get_information {
+sub get_admin_information {
     my $self = shift;
     my $administrative_info_conf = $self->{admin_info_conf};
+    #my %conf = %{$self->{config}};
 
     my $info = {
         administrator => {
@@ -66,8 +68,14 @@ sub get_information {
             zipcode => $administrative_info_conf->get_zipcode(),
             latitude => $administrative_info_conf->get_latitude(),
             longitude => $administrative_info_conf->get_longitude(),
-        }
+        },
+
+        #toolkit_name => $conf{toolkit_name}
     };
+
+    
+
+
     return $info;
     
 }
@@ -180,13 +188,14 @@ sub save_config {
     };
 }
 
-sub get_status {
+sub get_details {
     my $self = shift;
     # get addresses, mtu, ntp status, globally registered, toolkit version, toolkit rpm version
     # external address
     # total RAM
 
     my $caller = shift;
+    my %conf = %{$self->{config}};
 
     $self->{authenticated} = $caller->{authenticated};
  
@@ -197,23 +206,42 @@ sub get_status {
 
     $status->{toolkit_version} = $version_conf->get_version();
 
+    my @interfaces = get_ethernet_interfaces();
+    my @interfaceDetails;
+    foreach my $interface (@interfaces){
+        my $iface;
+
+        my $address = get_interface_addresses_by_type({interface=>$interface});
+        $iface = $address;
+        $iface->{iface} = $interface;
+        $iface->{mtu} = get_interface_mtu({interface_name=>$interface});
+        $iface->{speed} = get_interface_speed({interface_name=>$interface});
+        
+        $iface->{mac} = get_interface_mac({interface_name=>$interface});
+        push @interfaceDetails, $iface;
+    }
+    $status->{interfaces} = \@interfaceDetails;
+
 
     # Getting the external addresses seems to be by far the slowest thing here (~0.9 sec)
 
-    my %conf = %{$self->{config}};
     my $external_addresses = discover_primary_address({
             interface => $conf{primary_interface},
             allow_rfc1918 => $conf{allow_internal_addresses},
             disable_ipv4_reverse_lookup => $conf{disable_ipv4_reverse_lookup},
             disable_ipv6_reverse_lookup => $conf{disable_ipv6_reverse_lookup},
         });
+
+    
     my $external_address;
     my $external_address_iface;
     my $external_address_mtu;
     my $external_address_speed;
     my $external_address_ipv4;
     my $external_address_ipv6;
+    my $external_dns_name = "";
     my $is_registered = 0;
+
     if ($external_addresses) {
         #warn "external_addresses: " . Dumper $external_addresses;
         $external_address = $external_addresses->{primary_address};
@@ -222,16 +250,21 @@ sub get_status {
         $external_address_speed = $external_addresses->{primary_iface_speed} if $external_addresses->{primary_iface_speed};
         $external_address_ipv4 = $external_addresses->{primary_ipv4};
         $external_address_ipv6 = $external_addresses->{primary_ipv6};
+        $external_dns_name = $external_addresses->{primary_dns_name}; 
+
         $status->{external_address} = {
             address => $external_address,
             ipv4_address => $external_address_ipv4,
-            ipv6_address => $external_address_ipv6
+            ipv6_address => $external_address_ipv6,
         };
+        $status->{external_address}->{dns_name} = $external_dns_name;
         $status->{external_address}->{iface} = $external_address_iface if $external_address_iface;
         $status->{external_address}->{speed} = $external_address_speed if $external_address_speed;
         $status->{external_address}->{mtu} = $external_address_mtu if $external_address_mtu;
 
     }
+
+    $status->{toolkit_name}=$conf{toolkit_name};
 
     if ($external_address) {
         eval {
@@ -283,9 +316,9 @@ sub get_status {
     if($self->{authenticated}){
         $status->{kernel_version} = $os_info->{kernel_version};
         if(is_auto_updates_on()){
-            $status->{auto_updates} = "On";    
+            $status->{auto_updates} = 1; 
         }else{
-            $status->{auto_updates} = "Off";
+            $status->{auto_updates} = 0;
         }
         
     }
@@ -296,6 +329,17 @@ sub get_status {
     # my $tcp_info = get_tcp_configuration(); 
 
     return $status;
+
+}
+
+sub get_ntp_information{
+#    my $self = shift;
+ #   my $response = get_ntp_info();
+
+    my $result;
+  #  print "HI"+$response;
+    $result->{ntp} = "";
+    return $result;
 
 }
 
@@ -361,11 +405,27 @@ sub get_services {
     my $ndt = get_service_object("ndt");
     my $regular_testing = get_service_object("regular_testing");
 
+    my @service_names = qw(owamp bwctl regular_testing esmond);
+
+    print $npad->is_installed();
+
+    if($npad->is_installed()){
+        push @service_names, "npad";
+    }
+
+    if($ndt->is_installed()){
+        push @service_names, "ndt";
+    }
+
 
     my %services = ();
 
-    foreach my $service_name ( "owamp", "bwctl", "npad", "ndt", "regular_testing", "esmond", "iperf3" ) {
+    
+
+    foreach my $service_name ( @service_names ) {
         my $service = get_service_object($service_name);
+
+
 
         $self->{LOGGER}->debug("Checking ".$service_name);
         my $is_running = $service->check_running();
@@ -431,8 +491,8 @@ sub get_summary {
     my $start_time = gettimeofday();
     my $end_time;
 
-    my $administrative_info = $self->get_information();
-    my $status = $self->get_status();
+    my $administrative_info = $self->get_admin_information();
+    my $status = $self->get_details();
     my $services = $self->get_services();
     my $communities = $self->get_communities();
     my $meshes = $self->get_meshes();

@@ -21,8 +21,8 @@ extends 'perfSONAR_PS::RegularTesting::MeasurementArchives::Base';
 
 my $logger = get_logger(__PACKAGE__);
 
-has 'username' => (is => 'rw', isa => 'Str');
-has 'password' => (is => 'rw', isa => 'Str');
+has 'username' => (is => 'rw', isa => 'Str|Undef');
+has 'password' => (is => 'rw', isa => 'Str|Undef');
 has 'database' => (is => 'rw', isa => 'Str');
 has 'summary' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondSummary]', default => sub { [] });
 has 'disable_default_summaries' => (is => 'rw', isa => 'Bool', default => sub { 0 });
@@ -240,7 +240,7 @@ sub send_post {
     my $parameters = validate( @args, {url => 1, json => 1});
     my $url = $parameters->{url};
     my $json = $parameters->{json};
-    my $auth_string = $self->username . ":" . $self->password;
+    my $auth_string = ($self->username && $self->password) ? $self->username . ":" . $self->password : "";
     my $client = LWP::UserAgent->new();
     $client->timeout($self->timeout);
     $client->env_proxy();
@@ -250,10 +250,19 @@ sub send_post {
     
     $logger->debug("Writing to esmond at " . $self->database);
     $logger->debug("Esmond request: " . to_json($json));
-    my $response = $client->post($url, 
-        'Content-Type' => 'application/json',
-        'Authorization' => "ApiKey $auth_string",
-        'Content' => to_json($json));
+    my $response = {};
+    if($auth_string){
+        #API Key authentication
+        $response = $client->post($url, 
+            'Content-Type' => 'application/json',
+            'Authorization' => "ApiKey $auth_string",
+            'Content' => to_json($json));
+    }else{
+        #IP authentication
+        $response = $client->post($url, 
+            'Content-Type' => 'application/json',
+            'Content' => to_json($json));
+    }
     $logger->debug("Esmond repsonse: " . $response->content);
     
     return $response;
@@ -331,7 +340,7 @@ sub measurement_agent {
     #untaint addresses
     my $src_address = $1 if($results->{source}->{address} =~ /(.+)/);
     my $dst_address = $1 if($results->{destination}->{address} =~ /(.+)/);
-    my $local_address = $1 if($test->local_address =~ /(.+)/);
+    my $local_address = $1 if($test->local_address && $test->local_address =~ /(.+)/);
     my $target_address = $1 if($target->address =~ /(.+)/);
     
     # Check if this host is the destination first

@@ -22,6 +22,19 @@ sub init {
     return 0;
 }
 
+sub is_installed{
+    my ($self) = @_;
+    my $response = `rpm -qi npad`;
+
+    my $substr = 'not installed';
+
+    if(index($response, $substr) == -1){
+        #installed
+        return 1;
+    }
+    return 0; 
+}
+
 sub get_addresses {
     my ($self) = @_;
 

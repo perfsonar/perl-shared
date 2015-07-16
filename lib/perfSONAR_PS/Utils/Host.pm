@@ -38,10 +38,13 @@ our @EXPORT_OK = qw(
     get_ips
     get_ethernet_interfaces
     get_interface_addresses
+    get_interface_addresses_by_type
     get_interface_speed
     get_interface_mtu
     get_interface_mac
     discover_primary_address
+
+    get_ntp_info
 
     get_operating_system_info
     get_processor_info
@@ -139,6 +142,33 @@ sub get_interface_addresses {
     }
 }
 
+sub get_interface_addresses_by_type {
+
+    my $parameters = validate( @_, { interface => 1, } );
+    my $interface = $parameters->{interface};
+
+
+    my @addresses = get_interface_addresses({interface => $interface });
+    my @ipv4_addresses;
+    my @ipv6_addresses;
+    my @dns_names;
+
+    foreach my $address (@addresses){
+        if (is_ipv4($address)){
+            push @ipv4_addresses, $address
+        }elsif (Net::IP::ip_is_ipv6($address)){
+            push @ipv6_addresses, $address
+        }
+    }
+
+    my $result;
+    $result->{ipv4_address} = \@ipv4_addresses;
+    $result->{ipv6_address} = \@ipv6_addresses;
+
+    return $result;
+
+}
+
 sub get_interface_speed {
     my $parameters = validate( @_, { interface_name => 0, } );
     my $interface_name = $parameters->{interface_name};
@@ -225,16 +255,23 @@ sub discover_primary_address {
 
     if ( $interface ) {
         my @ips = get_interface_addresses( { interface => $interface } );
-        $ips_by_iface = { $interface => \@ips };
+        if(@ips){
+            $ips_by_iface = { $interface => \@ips };   
+        }
+        
     }
-    else {
-        # If they've not told us which interface to use, it's time to guess.
+    if(!$interface or !$ips_by_iface) {
+        # If they've not told us which interface to use or if the chosen interface does not seem to have been configured,
+        # it's time to guess.
         $ips_by_iface = get_ips({ by_interface => 1 });
     }
 
     my $chosen_address;
     my $ipv4_address;
     my $ipv6_address;
+    my $chosen_dns_name;
+    my $ipv4_dns_name;
+    my $ipv6_dns_name;
     my $chosen_interface;
     my $ipv4_interface;
     my $ipv6_interface;
@@ -267,12 +304,14 @@ sub discover_primary_address {
                 my $dns_name = $reverse_dns_mapping->{$ip}->[0];
 
                 unless ( $chosen_address ) { 
-                    $chosen_address = $dns_name;
+                    $chosen_dns_name = $dns_name;
+                    $chosen_address = $ip;
                     $chosen_interface = $iface;
                 }
     
                 unless ( $ipv4_address ) {
-                    $ipv4_address   = $dns_name;
+                    $ipv4_dns_name = $dns_name;
+                    $ipv4_address   = $ip;
                     $ipv4_interface = $iface;
                 }
 
@@ -293,12 +332,14 @@ sub discover_primary_address {
                 my $dns_name = $reverse_dns_mapping->{$ip}->[0];
     
                 unless ( $chosen_address ) { 
-                    $chosen_address = $dns_name;
+                    $chosen_dns_name = $dns_name;
+                    $chosen_address = $ip;
                     $chosen_interface = $iface;
                 }
 
                 unless ( $ipv6_address ) {
-                    $ipv6_address   = $dns_name;
+                    $ipv6_dns_name = $dns_name;
+                    $ipv6_address   = $ip;
                     $ipv6_interface = $iface;
                 }
 
@@ -320,11 +361,14 @@ sub discover_primary_address {
                 $logger->debug("$ip isn't private or we're okay with private addresses");
 
                 unless ( $chosen_address ) { 
+                    $chosen_dns_name = "";
                     $chosen_address = $ip;
                     $chosen_interface = $iface;
                 }
 
                 unless ( $ipv4_address ) {
+                    
+                    $ipv4_dns_name = "";
                     $ipv4_address   = $ip;
                     $ipv4_interface = $iface;
                 }
@@ -341,11 +385,13 @@ sub discover_primary_address {
                 $logger->debug("$ip is IPv6");
 
                 unless ( $chosen_address ) { 
+                    $chosen_dns_name = "";
                     $chosen_address = $ip;
                     $chosen_interface = $iface;
                 }
 
                 unless ( $ipv6_address ) {
+                    $ipv4_dns_name = "";
                     $ipv6_address   = $ip;
                     $ipv6_interface = $iface;
                 }
@@ -383,9 +429,12 @@ sub discover_primary_address {
     }
 
     return {
+        primary_dns_name => $chosen_dns_name,
         primary_address => $chosen_address,
         primary_ipv6 => $ipv6_address,
         primary_ipv4 => $ipv4_address,
+        primary_ipv4_dns_name => $ipv4_dns_name,
+        primary_ipv6_dns_name => $ipv6_dns_name,
         primary_address_iface => $chosen_interface,
         primary_ipv6_iface => $ipv6_interface,
         primary_ipv4_iface => $ipv4_interface,
@@ -393,6 +442,16 @@ sub discover_primary_address {
         primary_iface_mtu => $interface_mtu,
         primary_iface_mac => $interface_mac,
     };
+}
+
+sub get_ntp_info {
+    my $ntp;
+
+    my $ntp_response = `/usr/sbin/ntpdc -p`;
+    print $ntp_response;
+
+    return $ntp_response;
+
 }
 
 sub get_operating_system_info {

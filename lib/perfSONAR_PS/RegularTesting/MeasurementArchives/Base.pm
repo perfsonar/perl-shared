@@ -20,6 +20,7 @@ has 'description'     => (is => 'rw', isa => 'Str');
 has 'max_parallelism' => (is => 'rw', isa => 'Int', default => 5);
 
 has 'queue_directory' => (is => 'rw', isa => 'Str');
+has 'added_by_mesh'   => (is => 'rw', isa => 'Bool');
 
 sub type {
     die("'type' needs to be overridden");
