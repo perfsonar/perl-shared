@@ -81,8 +81,12 @@ sub get_admin_information {
 }
 
 sub update_information {
-    my ($self, $args) = @_;
+    my $self = shift;
     #warn 'dataservice args: ' . Dumper $args;
+    my $caller = shift;
+    my $args = $caller->{'input_params'};
+
+    $self->{authenticated} = $caller->{authenticated};
     my %config_args = ();
     my @field_names = (
         'organization_name', 'admin_name', 'admin_email', 'city', 'state',

@@ -103,7 +103,7 @@ sub handle_request {
     my $callback    = $self->{'callback'};
     #warn "handle_request params " . Dumper $self->{'input_params'};
     my $args = $self->{'input_params'};
-    my $results     =  &$callback($args);
+    my $results     =  &$callback($self);
 
     if (!defined $results) {
         $self->_return_error();
