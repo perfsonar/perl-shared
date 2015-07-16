@@ -38,10 +38,13 @@ our @EXPORT_OK = qw(
     get_ips
     get_ethernet_interfaces
     get_interface_addresses
+    get_interface_addresses_by_type
     get_interface_speed
     get_interface_mtu
     get_interface_mac
     discover_primary_address
+
+    get_ntp_info
 
     get_operating_system_info
     get_processor_info
@@ -137,6 +140,33 @@ sub get_interface_addresses {
     else {
         return ();
     }
+}
+
+sub get_interface_addresses_by_type {
+
+    my $parameters = validate( @_, { interface => 1, } );
+    my $interface = $parameters->{interface};
+
+
+    my @addresses = get_interface_addresses({interface => $interface });
+    my @ipv4_addresses;
+    my @ipv6_addresses;
+    my @dns_names;
+
+    foreach my $address (@addresses){
+        if (is_ipv4($address)){
+            push @ipv4_addresses, $address
+        }elsif (Net::IP::ip_is_ipv6($address)){
+            push @ipv6_addresses, $address
+        }
+    }
+
+    my $result;
+    $result->{ipv4_address} = \@ipv4_addresses;
+    $result->{ipv6_address} = \@ipv6_addresses;
+
+    return $result;
+
 }
 
 sub get_interface_speed {
@@ -412,6 +442,16 @@ sub discover_primary_address {
         primary_iface_mtu => $interface_mtu,
         primary_iface_mac => $interface_mac,
     };
+}
+
+sub get_ntp_info {
+    my $ntp;
+
+    my $ntp_response = `/usr/sbin/ntpdc -p`;
+    print $ntp_response;
+
+    return $ntp_response;
+
 }
 
 sub get_operating_system_info {

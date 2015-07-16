@@ -13,7 +13,8 @@ use Params::Validate qw(:all);
 use perfSONAR_PS::NPToolkit::Config::Version;
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 
-use perfSONAR_PS::Utils::Host qw(get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_speed get_interface_mtu get_interface_mac);
+use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
+; 
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
@@ -49,7 +50,7 @@ sub new {
     return $self;
 }
 
-sub get_information {
+sub get_admin_information {
     my $self = shift;
     my $administrative_info_conf = $self->{admin_info_conf};
     my %conf = %{$self->{config}};
@@ -80,7 +81,7 @@ sub get_information {
     
 }
 
-sub get_status {
+sub get_details {
     my $self = shift;
     # get addresses, mtu, ntp status, globally registered, toolkit version, toolkit rpm version
     # external address
@@ -102,10 +103,13 @@ sub get_status {
     my @interfaceDetails;
     foreach my $interface (@interfaces){
         my $iface;
+
+        my $address = get_interface_addresses_by_type({interface=>$interface});
+        $iface = $address;
         $iface->{iface} = $interface;
         $iface->{mtu} = get_interface_mtu({interface_name=>$interface});
         $iface->{speed} = get_interface_speed({interface_name=>$interface});
-        $iface->{address} = get_interface_addresses({interface=>$interface});
+        
         $iface->{mac} = get_interface_mac({interface_name=>$interface});
         push @interfaceDetails, $iface;
     }
@@ -218,6 +222,17 @@ sub get_status {
     # my $tcp_info = get_tcp_configuration(); 
 
     return $status;
+
+}
+
+sub get_ntp_information{
+#    my $self = shift;
+ #   my $response = get_ntp_info();
+
+    my $result;
+  #  print "HI"+$response;
+    $result->{ntp} = "";
+    return $result;
 
 }
 
@@ -369,8 +384,8 @@ sub get_summary {
     my $start_time = gettimeofday();
     my $end_time;
 
-    my $administrative_info = $self->get_information();
-    my $status = $self->get_status();
+    my $administrative_info = $self->get_admin_information();
+    my $status = $self->get_details();
     my $services = $self->get_services();
     my $communities = $self->get_communities();
     my $meshes = $self->get_meshes();
