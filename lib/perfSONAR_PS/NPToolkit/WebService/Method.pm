@@ -101,7 +101,7 @@ sub handle_request {
 
     # call the callback
     my $callback    = $self->{'callback'};
-    warn "handle_request params " . Dumper $self->{'input_params'};
+    #warn "handle_request params " . Dumper $self->{'input_params'};
     my $args = $self->{'input_params'};
     my $results     =  &$callback($args);
 
@@ -169,7 +169,7 @@ sub _parse_input_parameters {
         return 1;
     }
 
-    warn "params: " . Dumper $self->{'input_params'};
+    #warn "params: " . Dumper $self->{'input_params'};
     my $min_params = $self->{'min_params'};
     my $set_params = {};
     # process each parameter
@@ -184,7 +184,7 @@ sub _parse_input_parameters {
         # TODO: add min and max numerical value constraints
 
         my $value = $cgi->param($param_name);
-        warn "param: " . $param_name . " value: " . ($value || "'N/A'");
+        #warn "param: " . $param_name . " value: " . ($value || "'N/A'");
 
         undef($self->{'input_params'}{$param_name}{'value'});
         $self->{'input_params'}{$param_name}{'is_set'} = 0;
@@ -218,9 +218,7 @@ sub _parse_input_parameters {
 
         my $pattern = $parameter_types->{$type}->{'pattern'}; 
         my $error_text = $parameter_types->{$type}->{'error_text'}; 
-        warn "value: $value pattern: $pattern";
         if ( $value !~ /$pattern/ || ($value eq '' and !$allow_empty) ) {
-            #$self->_return_error(400, "Input parameter ${param_name} is not the correct type $type");
             $self->_return_error(400, "Input parameter ${param_name} $error_text");
 
             return;

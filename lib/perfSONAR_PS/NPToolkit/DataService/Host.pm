@@ -74,11 +74,7 @@ sub get_information {
 
 sub update_information {
     my ($self, $args) = @_;
-    # TODO: create the set_information webservice method
-    warn 'dataservice args: ' . Dumper $args;
-    #my $value = $args->{'organization_name'}->{'value'}; 
-    #warn "value: $value";
-    #my $res;
+    #warn 'dataservice args: ' . Dumper $args;
     my %config_args = ();
     my @field_names = (
         'organization_name', 'admin_name', 'admin_email', 'city', 'state',
@@ -87,7 +83,7 @@ sub update_information {
     );
     foreach my $field (@field_names) {
         if ($args->{$field}->{is_set} == 1) {
-            warn "adding parameter to set: $field";
+            #warn "adding parameter to set: $field";
             $config_args{$field} = $args->{$field}->{value};
         }
 
