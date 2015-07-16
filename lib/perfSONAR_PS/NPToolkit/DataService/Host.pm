@@ -226,13 +226,10 @@ sub get_details {
 }
 
 sub get_ntp_information{
-#    my $self = shift;
- #   my $response = get_ntp_info();
-
-    my $result;
-  #  print "HI"+$response;
-    $result->{ntp} = "";
-    return $result;
+    
+    my $self = shift;
+    my $response = get_ntp_info();
+    return $response;
 
 }
 
