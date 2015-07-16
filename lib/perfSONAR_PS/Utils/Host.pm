@@ -478,6 +478,7 @@ sub get_operating_system_info {
     my ($distribution_name, $distribution_version, $os_type, $kernel_version);
 
     if (open(FILE, "/etc/redhat-release")) {
+        # Redhat style
         my @lines = <FILE>;
         close(FILE);
         if(@lines > 0){
@@ -487,6 +488,26 @@ sub get_operating_system_info {
                 $distribution_name = $osinfo[0];
                 $distribution_version = $osinfo[1];
             }
+        }
+    } elsif (open(FILE, "/etc/os_version")) {
+        # Ubuntu style
+        while(<FILE>) {
+            if (/^NAME="(.*)"/) {
+                $distribution_name = $1;
+            }
+            if (/^VERSION="(.*)"/) {
+                $distribution_version = $1;
+            }
+        }
+        close(FILE);
+    } elsif (open(FILE, "/etc/debian_version")) {
+        # Debian style (must come after Ubuntu style because also existing on Ubuntu hosts)
+        my @lines = <FILE>;
+        close(FILE);
+        if(@lines > 0){
+            chomp $lines[0];
+            $distribution_name = "Debian";
+            $distribution_version = $lines[0];
         }
     }
 

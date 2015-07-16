@@ -53,8 +53,7 @@ sub new {
 sub get_admin_information {
     my $self = shift;
     my $administrative_info_conf = $self->{admin_info_conf};
-    my %conf = %{$self->{config}};
-
+    #my %conf = %{$self->{config}};
 
     my $info = {
         administrator => {
@@ -79,6 +78,118 @@ sub get_admin_information {
 
     return $info;
     
+}
+
+sub update_information {
+    my $self = shift;
+    #warn 'dataservice args: ' . Dumper $args;
+    my $caller = shift;
+    my $args = $caller->{'input_params'};
+
+    $self->{authenticated} = $caller->{authenticated};
+    my %config_args = ();
+    my @field_names = (
+        'organization_name', 'admin_name', 'admin_email', 'city', 'state',
+        'postal_code', 'country', 'latitude', 'longitude', 'subscribe'
+
+    );
+    foreach my $field (@field_names) {
+        if ($args->{$field}->{is_set} == 1) {
+            #warn "adding parameter to set: $field";
+            $config_args{$field} = $args->{$field}->{value};
+        }
+
+    }
+    my $res = $self->set_config_information(%config_args);
+    if ($res) {
+    return {
+        %$res,
+    
+    };
+
+    } else {
+        return {
+            "error" => "didn't work",
+        }
+    }
+}
+
+sub set_config_information  {
+    my ( $self, %args) = @_; # $organization_name, $host_location, $city, $state, $country, $zipcode, $administrator_name, $administrator_email, $latitude, $longitude, $subscribe ) = @_;
+
+    my $organization_name = $args{organization_name}; #  if (exists $args{organization_name});
+    my $administrator_name = $args{admin_name}; # if (exists $args{administrator_name});
+    my $administrator_email = $args{admin_email}; # if (exists $args{administrator_email});
+    my $city = $args{city};
+    my $state = $args{state};
+    my $zipcode = $args{postal_code};
+    my $country = $args{country};
+    my $latitude = $args{latitude};
+    my $longitude = $args{longitude};
+    my $subscribe = $args{subscribe};
+
+
+
+    my $administrative_info_conf = $self->{admin_info_conf};
+
+    $administrative_info_conf->set_organization_name( { organization_name => $organization_name } ) if defined $organization_name;
+    $administrative_info_conf->set_administrator_name( { administrator_name => $administrator_name } ) if defined $administrator_name;
+    $administrative_info_conf->set_administrator_email( { administrator_email => $administrator_email } ) if defined $administrator_email;
+    $administrative_info_conf->set_city( { city => $city } ) if defined $city;
+    $administrative_info_conf->set_state( { state => $state } ) if defined $state;
+    $administrative_info_conf->set_country( { country => $country } ) if defined $country;
+    $administrative_info_conf->set_zipcode( { zipcode => $zipcode } ) if defined $zipcode;
+    $administrative_info_conf->set_latitude( { latitude => $latitude } ) if defined $latitude;
+    $administrative_info_conf->set_longitude( { longitude => $longitude } ) if defined $longitude;
+    if (0) {
+    $administrative_info_conf->set_administrator_name( { administrator_name => $administrator_name } );
+    $administrative_info_conf->set_administrator_email( { administrator_email => $administrator_email } );
+    }
+
+    if($administrator_email && $subscribe == 1){
+        subscribe($administrator_email);
+    }
+    #$is_modified = 1;
+
+    #my $state = $administrative_info_conf->save_state();
+
+    return $self->save_state();
+
+}
+
+sub save_state {
+    my $self = shift;
+    my $administrative_info_conf = $self->{admin_info_conf};
+    # TODO: Clean this up
+    my $state = $administrative_info_conf->save_state();
+    #$session->param( "administrative_info_conf", $state );
+    #$session->param( "is_modified", $is_modified );
+    #$session->param( "initial_state_time", $initial_state_time );
+    return $self->save_config();
+}
+
+sub save_config {
+    my $self = shift;
+    my $administrative_info_conf = $self->{admin_info_conf};
+    # TODO: Clean this up and see if the service restart is necessary
+    my ($status, $res) = $administrative_info_conf->save( { restart_services => 0 } );
+    my $error_msg;
+    my $status_msg;
+    if ($status != 0) {
+        $error_msg = "Problem saving configuration: $res";
+    } else {       
+        #$status_msg = "Configuration Saved And Services Restarted";
+        $status_msg = "Configuration saved";
+        #$is_modified = 0;
+        #$initial_state_time = $administrative_info_conf->last_modified();
+    }
+    #save_state();
+
+    return { 
+        status_msg => $status_msg,
+        #error_msg => $error_msg,
+        success => 1,
+    };
 }
 
 sub get_details {
