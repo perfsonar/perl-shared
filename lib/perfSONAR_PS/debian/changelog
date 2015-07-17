@@ -1,11 +1,11 @@
-libperfsonar-perl (3.5-2~2.rc1-1) perfsonar-wheezy-staging; urgency=low
+libperfsonar-perl (3.5-2~2.1.rc1-1) UNRELEASED; urgency=low
 
   * Release Candidate 1
   * Add support for upcoming bwctl2
   * Replace Math::Int64 with Math::BigInt for easier support on Ubuntu-14
   * Posting Debian and Ubuntu OS and version information to the Lookup Service
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Fri, 17 Jul 2015 16:19:33 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Fri, 17 Jul 2015 16:25:09 +0000
 
 libperfsonar-perl (3.4.2-1) perfsonar-wheezy-staging; urgency=low
 
