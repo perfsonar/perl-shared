@@ -44,6 +44,7 @@ sub new {
         callback => \&help
         #callback => sub { $self->help(@_); }
     );
+
     #$help_method->add_parameter(
     #    name            => "parameter_name",
     #    pattern         => '^((\w+|\_)+)$',
@@ -72,12 +73,18 @@ sub add_method {
 
 sub help {
     my $method_ref = shift;
-    my $route_ref = $method_ref->{router};
+    my $params = shift;
 
+    my $route_ref = $method_ref->{router};
     my $results = [];
     my $methods = $route_ref->{methods};
+    #my $method_name = $params->{'method_name'}->{'value'};
     while ( my ($name, $method) = each %$methods) {
-        push @$results, { 'name' => $name, 'description' => $method->{description}};
+        my $args = {};
+        $args->{name} = $name;
+        $args->{description} = $method->{description};
+        $args->{parameters} = $method->get_input_parameters() if $method->get_input_parameters();
+        push @$results, $args;
     }
 
     return {'methods' => $results};
@@ -142,7 +149,7 @@ sub _output_error {
     $self->_set_headers();
     my $formatter = $self->{formatter};
     #print { $fh } $error;
-    #print { $fh } &$formatter({'error' => $error });
+    print { $fh } &$formatter({'error' => $error });
 }
 
 sub _set_headers {

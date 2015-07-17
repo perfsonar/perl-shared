@@ -38,10 +38,13 @@ our @EXPORT_OK = qw(
     get_ips
     get_ethernet_interfaces
     get_interface_addresses
+    get_interface_addresses_by_type
     get_interface_speed
     get_interface_mtu
     get_interface_mac
     discover_primary_address
+
+    get_ntp_info
 
     get_operating_system_info
     get_processor_info
@@ -137,6 +140,33 @@ sub get_interface_addresses {
     else {
         return ();
     }
+}
+
+sub get_interface_addresses_by_type {
+
+    my $parameters = validate( @_, { interface => 1, } );
+    my $interface = $parameters->{interface};
+
+
+    my @addresses = get_interface_addresses({interface => $interface });
+    my @ipv4_addresses;
+    my @ipv6_addresses;
+    my @dns_names;
+
+    foreach my $address (@addresses){
+        if (is_ipv4($address)){
+            push @ipv4_addresses, $address
+        }elsif (Net::IP::ip_is_ipv6($address)){
+            push @ipv6_addresses, $address
+        }
+    }
+
+    my $result;
+    $result->{ipv4_address} = \@ipv4_addresses;
+    $result->{ipv6_address} = \@ipv6_addresses;
+
+    return $result;
+
 }
 
 sub get_interface_speed {
@@ -414,10 +444,41 @@ sub discover_primary_address {
     };
 }
 
+sub get_ntp_info {
+    my $ntp;
+
+    my $ntp_result = `/usr/sbin/ntpdc -p`;
+
+    my @ntp_response = split /\n/, $ntp_result;
+    
+    my $result;
+    foreach my $line (@ntp_response){
+        my @ntp_fields = split /\s+/, $line;
+
+        if($line =~ m/^\*/){
+            print @ntp_fields;
+            my @host = split /\*/, $ntp_fields[0];
+            $result->{host} = $host[1];
+            $result->{address} = $ntp_fields[1];
+            $result->{strat} = $ntp_fields[2];
+            $result->{poll} = $ntp_fields[3];
+            $result->{reach} = $ntp_fields[4];
+            $result->{delay} = $ntp_fields[5];
+            $result->{offset} = $ntp_fields[6];
+            $result->{disp} = $ntp_fields[7];
+            last;
+        }
+    }
+
+    return $result;
+
+}
+
 sub get_operating_system_info {
     my ($distribution_name, $distribution_version, $os_type, $kernel_version);
 
     if (open(FILE, "/etc/redhat-release")) {
+        # Redhat style
         my @lines = <FILE>;
         close(FILE);
         if(@lines > 0){
@@ -427,6 +488,26 @@ sub get_operating_system_info {
                 $distribution_name = $osinfo[0];
                 $distribution_version = $osinfo[1];
             }
+        }
+    } elsif (open(FILE, "/etc/os_version")) {
+        # Ubuntu style
+        while(<FILE>) {
+            if (/^NAME="(.*)"/) {
+                $distribution_name = $1;
+            }
+            if (/^VERSION="(.*)"/) {
+                $distribution_version = $1;
+            }
+        }
+        close(FILE);
+    } elsif (open(FILE, "/etc/debian_version")) {
+        # Debian style (must come after Ubuntu style because also existing on Ubuntu hosts)
+        my @lines = <FILE>;
+        close(FILE);
+        if(@lines > 0){
+            chomp $lines[0];
+            $distribution_name = "Debian";
+            $distribution_version = $lines[0];
         }
     }
 
