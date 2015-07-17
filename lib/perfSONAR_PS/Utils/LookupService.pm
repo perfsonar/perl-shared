@@ -99,6 +99,7 @@ sub discover_lookup_services {
             	if($ret==0){
             		$ls->connect();
             		my $latency = $ls->getLatency();
+                        next unless(defined $latency);
             		$latency =~ s/ms$//; #strip units
             		$activehost->{latency} = $latency;
                 	push @active_hosts, $activehost;

@@ -13,7 +13,8 @@ use Params::Validate qw(:all);
 use perfSONAR_PS::NPToolkit::Config::Version;
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 
-use perfSONAR_PS::Utils::Host qw(get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on);
+use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
+; 
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
@@ -49,11 +50,10 @@ sub new {
     return $self;
 }
 
-sub get_information {
+sub get_admin_information {
     my $self = shift;
     my $administrative_info_conf = $self->{admin_info_conf};
-
-
+    #my %conf = %{$self->{config}};
 
     my $info = {
         administrator => {
@@ -68,19 +68,138 @@ sub get_information {
             zipcode => $administrative_info_conf->get_zipcode(),
             latitude => $administrative_info_conf->get_latitude(),
             longitude => $administrative_info_conf->get_longitude(),
-        }
+        },
+
+        #toolkit_name => $conf{toolkit_name}
     };
+
+    
+
+
     return $info;
     
 }
 
-sub get_status {
+sub update_information {
+    my $self = shift;
+    #warn 'dataservice args: ' . Dumper $args;
+    my $caller = shift;
+    my $args = $caller->{'input_params'};
+
+    $self->{authenticated} = $caller->{authenticated};
+    my %config_args = ();
+    my @field_names = (
+        'organization_name', 'admin_name', 'admin_email', 'city', 'state',
+        'postal_code', 'country', 'latitude', 'longitude', 'subscribe'
+
+    );
+    foreach my $field (@field_names) {
+        if ($args->{$field}->{is_set} == 1) {
+            #warn "adding parameter to set: $field";
+            $config_args{$field} = $args->{$field}->{value};
+        }
+
+    }
+    my $res = $self->set_config_information(%config_args);
+    if ($res) {
+    return {
+        %$res,
+    
+    };
+
+    } else {
+        return {
+            "error" => "didn't work",
+        }
+    }
+}
+
+sub set_config_information  {
+    my ( $self, %args) = @_; # $organization_name, $host_location, $city, $state, $country, $zipcode, $administrator_name, $administrator_email, $latitude, $longitude, $subscribe ) = @_;
+
+    my $organization_name = $args{organization_name}; #  if (exists $args{organization_name});
+    my $administrator_name = $args{admin_name}; # if (exists $args{administrator_name});
+    my $administrator_email = $args{admin_email}; # if (exists $args{administrator_email});
+    my $city = $args{city};
+    my $state = $args{state};
+    my $zipcode = $args{postal_code};
+    my $country = $args{country};
+    my $latitude = $args{latitude};
+    my $longitude = $args{longitude};
+    my $subscribe = $args{subscribe};
+
+
+
+    my $administrative_info_conf = $self->{admin_info_conf};
+
+    $administrative_info_conf->set_organization_name( { organization_name => $organization_name } ) if defined $organization_name;
+    $administrative_info_conf->set_administrator_name( { administrator_name => $administrator_name } ) if defined $administrator_name;
+    $administrative_info_conf->set_administrator_email( { administrator_email => $administrator_email } ) if defined $administrator_email;
+    $administrative_info_conf->set_city( { city => $city } ) if defined $city;
+    $administrative_info_conf->set_state( { state => $state } ) if defined $state;
+    $administrative_info_conf->set_country( { country => $country } ) if defined $country;
+    $administrative_info_conf->set_zipcode( { zipcode => $zipcode } ) if defined $zipcode;
+    $administrative_info_conf->set_latitude( { latitude => $latitude } ) if defined $latitude;
+    $administrative_info_conf->set_longitude( { longitude => $longitude } ) if defined $longitude;
+    if (0) {
+    $administrative_info_conf->set_administrator_name( { administrator_name => $administrator_name } );
+    $administrative_info_conf->set_administrator_email( { administrator_email => $administrator_email } );
+    }
+
+    if($administrator_email && $subscribe == 1){
+        subscribe($administrator_email);
+    }
+    #$is_modified = 1;
+
+    #my $state = $administrative_info_conf->save_state();
+
+    return $self->save_state();
+
+}
+
+sub save_state {
+    my $self = shift;
+    my $administrative_info_conf = $self->{admin_info_conf};
+    # TODO: Clean this up
+    my $state = $administrative_info_conf->save_state();
+    #$session->param( "administrative_info_conf", $state );
+    #$session->param( "is_modified", $is_modified );
+    #$session->param( "initial_state_time", $initial_state_time );
+    return $self->save_config();
+}
+
+sub save_config {
+    my $self = shift;
+    my $administrative_info_conf = $self->{admin_info_conf};
+    # TODO: Clean this up and see if the service restart is necessary
+    my ($status, $res) = $administrative_info_conf->save( { restart_services => 0 } );
+    my $error_msg;
+    my $status_msg;
+    if ($status != 0) {
+        $error_msg = "Problem saving configuration: $res";
+    } else {       
+        #$status_msg = "Configuration Saved And Services Restarted";
+        $status_msg = "Configuration saved";
+        #$is_modified = 0;
+        #$initial_state_time = $administrative_info_conf->last_modified();
+    }
+    #save_state();
+
+    return { 
+        status_msg => $status_msg,
+        #error_msg => $error_msg,
+        success => 1,
+    };
+}
+
+sub get_details {
     my $self = shift;
     # get addresses, mtu, ntp status, globally registered, toolkit version, toolkit rpm version
     # external address
     # total RAM
 
     my $caller = shift;
+    my %conf = %{$self->{config}};
 
     $self->{authenticated} = $caller->{authenticated};
  
@@ -91,23 +210,42 @@ sub get_status {
 
     $status->{toolkit_version} = $version_conf->get_version();
 
+    my @interfaces = get_ethernet_interfaces();
+    my @interfaceDetails;
+    foreach my $interface (@interfaces){
+        my $iface;
+
+        my $address = get_interface_addresses_by_type({interface=>$interface});
+        $iface = $address;
+        $iface->{iface} = $interface;
+        $iface->{mtu} = get_interface_mtu({interface_name=>$interface});
+        $iface->{speed} = get_interface_speed({interface_name=>$interface});
+        
+        $iface->{mac} = get_interface_mac({interface_name=>$interface});
+        push @interfaceDetails, $iface;
+    }
+    $status->{interfaces} = \@interfaceDetails;
+
 
     # Getting the external addresses seems to be by far the slowest thing here (~0.9 sec)
 
-    my %conf = %{$self->{config}};
     my $external_addresses = discover_primary_address({
             interface => $conf{primary_interface},
             allow_rfc1918 => $conf{allow_internal_addresses},
             disable_ipv4_reverse_lookup => $conf{disable_ipv4_reverse_lookup},
             disable_ipv6_reverse_lookup => $conf{disable_ipv6_reverse_lookup},
         });
+
+    
     my $external_address;
     my $external_address_iface;
     my $external_address_mtu;
     my $external_address_speed;
     my $external_address_ipv4;
     my $external_address_ipv6;
+    my $external_dns_name = "";
     my $is_registered = 0;
+
     if ($external_addresses) {
         #warn "external_addresses: " . Dumper $external_addresses;
         $external_address = $external_addresses->{primary_address};
@@ -116,16 +254,21 @@ sub get_status {
         $external_address_speed = $external_addresses->{primary_iface_speed} if $external_addresses->{primary_iface_speed};
         $external_address_ipv4 = $external_addresses->{primary_ipv4};
         $external_address_ipv6 = $external_addresses->{primary_ipv6};
+        $external_dns_name = $external_addresses->{primary_dns_name}; 
+
         $status->{external_address} = {
             address => $external_address,
             ipv4_address => $external_address_ipv4,
-            ipv6_address => $external_address_ipv6
+            ipv6_address => $external_address_ipv6,
         };
+        $status->{external_address}->{dns_name} = $external_dns_name;
         $status->{external_address}->{iface} = $external_address_iface if $external_address_iface;
         $status->{external_address}->{speed} = $external_address_speed if $external_address_speed;
         $status->{external_address}->{mtu} = $external_address_mtu if $external_address_mtu;
 
     }
+
+    $status->{toolkit_name}=$conf{toolkit_name};
 
     if ($external_address) {
         eval {
@@ -193,6 +336,14 @@ sub get_status {
 
 }
 
+sub get_ntp_information{
+    
+    my $self = shift;
+    my $response = get_ntp_info();
+    return $response;
+
+}
+
 sub get_services {
     my $self = shift;
 
@@ -255,11 +406,27 @@ sub get_services {
     my $ndt = get_service_object("ndt");
     my $regular_testing = get_service_object("regular_testing");
 
+    my @service_names = qw(owamp bwctl regular_testing esmond);
+
+    print $npad->is_installed();
+
+    if($npad->is_installed()){
+        push @service_names, "npad";
+    }
+
+    if($ndt->is_installed()){
+        push @service_names, "ndt";
+    }
+
 
     my %services = ();
 
-    foreach my $service_name ( "owamp", "bwctl", "npad", "ndt", "regular_testing", "esmond", "iperf3" ) {
+    
+
+    foreach my $service_name ( @service_names ) {
         my $service = get_service_object($service_name);
+
+
 
         $self->{LOGGER}->debug("Checking ".$service_name);
         my $is_running = $service->check_running();
@@ -325,8 +492,8 @@ sub get_summary {
     my $start_time = gettimeofday();
     my $end_time;
 
-    my $administrative_info = $self->get_information();
-    my $status = $self->get_status();
+    my $administrative_info = $self->get_admin_information();
+    my $status = $self->get_details();
     my $services = $self->get_services();
     my $communities = $self->get_communities();
     my $meshes = $self->get_meshes();
