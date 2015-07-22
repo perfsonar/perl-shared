@@ -11,9 +11,8 @@ perfSONAR_PS::NPToolkit::Config::Version
 
 =head1 DESCRIPTION
 
-Module for retrieving the current NPToolkit version. Currently, the toolkit
-version is stored in /usr/local/bin/NPToolkit.version . Longer term, we need to
-come up with a better way of doing it. For now, this just reads that in.
+Module for retrieving the current Toolkit version. Currently, the toolkit
+version is stored in /opt/perfsonar_ps/toolkit/etc/toolkit.version.
 
 =cut
 
@@ -27,7 +26,7 @@ use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger :nowarn);
 use Storable qw(store retrieve freeze thaw dclone);
 
-my %defaults = ( nptoolkit_version_bin => "/opt/perfsonar_ps/toolkit/scripts/NPToolkit.version", );
+my %defaults = ( nptoolkit_version_bin => "/opt/perfsonar_ps/toolkit/etc/toolkit.version", );
 
 =head2 init({ nptoolkit_version_bin => 0 })
 
@@ -101,11 +100,14 @@ sub get_version {
 
     my $version;
 
-    if ( open( OUTPUT, "-|", $self->{NPTOOLKIT_VERSION_BIN} ) ) {
-        $version = <OUTPUT>;
-        close( OUTPUT );
-
-        chomp( $version ) if ( $version );
+    if ( open( FIN, "<", $self->{NPTOOLKIT_VERSION_BIN} ) ) {
+        while($version = <FIN>){
+            if ( $version ){
+                 chomp( $version );
+                 last;
+            }
+        }
+        close( FIN );
     }
 
     return $version;
