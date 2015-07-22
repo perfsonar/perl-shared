@@ -218,7 +218,7 @@ sub _parse_input_parameters {
 
         my $pattern = $parameter_types->{$type}->{'pattern'}; 
         my $error_text = $parameter_types->{$type}->{'error_text'}; 
-        if ( $value !~ /$pattern/ || ($value eq '' and !$allow_empty) ) {
+        if ( ( $value !~ /$pattern/ and $value ne ''  )  || ($value eq '' and !$allow_empty) ) {
             $self->_return_error(400, "Input parameter ${param_name} $error_text");
 
             return;

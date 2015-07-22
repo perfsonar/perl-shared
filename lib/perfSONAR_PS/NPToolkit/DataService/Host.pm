@@ -128,8 +128,6 @@ sub set_config_information  {
     my $longitude = $args{longitude};
     my $subscribe = $args{subscribe};
 
-
-
     my $administrative_info_conf = $self->{admin_info_conf};
 
     $administrative_info_conf->set_organization_name( { organization_name => $organization_name } ) if defined $organization_name;
@@ -177,19 +175,22 @@ sub save_config {
     my $status_msg;
     if ($status != 0) {
         $error_msg = "Problem saving configuration: $res";
+        return { 
+            error_msg => $error_msg,
+            success => 0,
+        };
     } else {       
         #$status_msg = "Configuration Saved And Services Restarted";
         $status_msg = "Configuration saved";
         #$is_modified = 0;
         #$initial_state_time = $administrative_info_conf->last_modified();
+        return { 
+            status_msg => $status_msg,
+            success => 1,
+        };
     }
     #save_state();
 
-    return { 
-        status_msg => $status_msg,
-        #error_msg => $error_msg,
-        success => 1,
-    };
 }
 
 sub get_details {

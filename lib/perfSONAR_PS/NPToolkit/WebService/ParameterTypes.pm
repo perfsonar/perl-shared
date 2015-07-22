@@ -33,7 +33,9 @@ $parameter_types->{'float'}->{'error_text'} = 'only accepts decimal numbers';
 $parameter_types->{'number'}->{'pattern'} = '^(\-?\d+(.\d+)?)$';
 $parameter_types->{'number'}->{'error_text'} = 'only accepts numbers';
 
-$parameter_types->{'text'}->{'pattern'} = '^([[:print:][:space:]]+)$';
+# for now, accept any input for text (not just ascii)
+#$parameter_types->{'text'}->{'pattern'} = '^([[:print:][:space:]]+)$';
+$parameter_types->{'text'}->{'pattern'} = '.+';
 $parameter_types->{'text'}->{'error_text'} = 'only accepts text';
 
 $parameter_types->{'boolean'}->{'pattern'} = '^(0|1)$';
