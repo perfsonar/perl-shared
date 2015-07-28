@@ -12,6 +12,7 @@ use Params::Validate qw(:all);
 
 use perfSONAR_PS::NPToolkit::Config::Version;
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
+use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file start_service restart_service stop_service );
 
 use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
 ; 
@@ -139,10 +140,6 @@ sub set_config_information  {
     $administrative_info_conf->set_zipcode( { zipcode => $zipcode } ) if defined $zipcode;
     $administrative_info_conf->set_latitude( { latitude => $latitude } ) if defined $latitude;
     $administrative_info_conf->set_longitude( { longitude => $longitude } ) if defined $longitude;
-    if (0) {
-    $administrative_info_conf->set_administrator_name( { administrator_name => $administrator_name } );
-    $administrative_info_conf->set_administrator_email( { administrator_email => $administrator_email } );
-    }
 
     if($administrator_email && $subscribe == 1){
         subscribe($administrator_email);
@@ -409,15 +406,15 @@ sub get_services {
 
     my @service_names = qw(owamp bwctl regular_testing esmond);
 
-    print $npad->is_installed();
+    #print $npad->is_installed();
 
-    if($npad->is_installed()){
+    #if($npad->is_installed()){
         push @service_names, "npad";
-    }
+        #}
 
-    if($ndt->is_installed()){
+        #if($ndt->is_installed()){
         push @service_names, "ndt";
-    }
+        #}
 
 
     my %services = ();
@@ -451,13 +448,21 @@ sub get_services {
         if ($service->disabled) {
             $is_running_output = "disabled" unless $is_running;
         }
+        my $is_installed;
+        if ( $service->can('is_installed') ) {
+            $is_installed = $service->is_installed();
+        }
+
+        my $enabled = (not $service->disabled) || 0;
 
         my %service_info = ();
-        $service_info{"name"}       = $service_name;
-        $service_info{"is_running"} = $is_running_output;
-        $service_info{"daemon_port"} = $daemon_port if ($daemon_port != -1);
-        $service_info{"addresses"}  = \@addr_list;
-        $service_info{"version"}    = $service->package_version;
+        $service_info{"name"}          = $service_name;
+        $service_info{"enabled"}       = $enabled;
+        $service_info{"is_running"}    = $is_running_output;
+        $service_info{"is_installed"}  = $is_installed if (defined $is_installed);
+        $service_info{"daemon_port"}   = $daemon_port if ($daemon_port != -1);
+        $service_info{"addresses"}     = \@addr_list;
+        $service_info{"version"}       = $service->package_version;
 
         if ($service_name eq "bwctl") {
             $service_info{"testing_ports"} = \@bwctl_test_ports;
@@ -476,6 +481,70 @@ sub get_services {
     return {'services', \@services};
 }
 
+sub update_enabled_services {
+    my $self = shift;
+    my $caller = shift;
+    my $params = $caller->{'input_params'};
+
+    my ($success, $res);
+
+    my $logger = $self->{LOGGER};
+
+    $logger->error("CONFIG: ".Dumper($params));
+
+    # be optimistic
+    $success = 1;
+
+    warn "params " . Dumper $params;
+
+    foreach my $name (keys %$params) {
+        # skip the function name
+        next if ($name eq 'fname');
+        next if not $params->{$name}->{is_set};
+        unless (get_service_object($name)) {
+            $logger->error("Service $name not found");
+            warn "Service $name not found";
+            next;
+        }
+
+        if ($params->{$name}->{'value'} == 1) {
+            warn "enabling $name";
+            $res = start_service( { name => $name, enable => 1 });
+        } else {
+            warn "disabling $name";
+            $res = stop_service( { name => $name, disable => 1 });
+        }
+
+        $success = 0 if ($res != 0);
+    }
+
+    my %resp;
+
+    if ($success) {
+        %resp = ( message => "Configuration Saved And Services Restarted" );	
+    }
+    else {
+        %resp = ( error => "Error while restarting services, configuration NOT saved. Please consult the logs for more information.");
+    }
+    
+    return \%resp;
+}
+
+#sub get_services_list {
+#    my $self = shift;
+#    my %service_list = ();
+#
+#    foreach my $service_name ("bwctl", "owamp", "ndt", "npad", "yum_cron") {
+#        my $service = get_service_object($service_name);
+#
+#        next unless $service;
+#
+#        $service_list{$service_name}->{enabled} = not $service->disabled;
+#    }
+#
+#    return \%service_list;
+#}
+#
 sub _get_port_from_url {
     my $self = shift;
     my $url = shift;
@@ -552,7 +621,7 @@ sub get_meshes {
     return {meshes => \@mesh_urls};
 }
 
-sub get_system_health(){
+sub get_system_health {
     my $self = shift;
 
     my $caller = shift;

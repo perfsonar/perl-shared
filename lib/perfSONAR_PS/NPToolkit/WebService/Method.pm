@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use JSON::XS;
 use Carp qw( cluck confess );
+use perfSONAR_PS::NPToolkit::WebService::Auth qw( is_authenticated  );
 use perfSONAR_PS::NPToolkit::WebService::ParameterTypes;
 use Data::Dumper;
 
@@ -76,7 +77,10 @@ sub new {
 sub handle_request {
     my ($self, $cgi, $fh) = @_;
     
-    if ( $self->{'auth_required'} == 1 && ( !defined( $cgi->auth_type() ) || $cgi->auth_type() eq '' )) {
+    if( is_authenticated($cgi) ){      
+        $self->{authenticated} = 1;
+    } 
+    if ( $self->{'auth_required'} == 1 && !$self->{authenticated} ) { 
         $self->_return_error(401, "Unauthorized");
         return;
     }
@@ -86,12 +90,7 @@ sub handle_request {
     #    $self->_return_error(405, "Method Not Allowed; Allowed: " . $self->{'request_methods'});
     #    return;
     #}
-    my $authorized=0;
 
-    if(defined $cgi->auth_type() && $cgi->auth_type ne '' && defined $cgi->remote_user()){      
-        $authorized = 1;
-        $self->{authenticated} = 1;
-    }
 
     my $res = $self->_parse_input_parameters( $cgi );
     if (!defined $res) {
