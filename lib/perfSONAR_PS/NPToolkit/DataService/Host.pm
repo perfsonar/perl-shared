@@ -83,7 +83,6 @@ sub get_admin_information {
 
 sub update_information {
     my $self = shift;
-    #warn 'dataservice args: ' . Dumper $args;
     my $caller = shift;
     my $args = $caller->{'input_params'};
 
@@ -96,7 +95,6 @@ sub update_information {
     );
     foreach my $field (@field_names) {
         if ($args->{$field}->{is_set} == 1) {
-            #warn "adding parameter to set: $field";
             $config_args{$field} = $args->{$field}->{value};
         }
 
@@ -245,7 +243,6 @@ sub get_details {
     my $is_registered = 0;
 
     if ($external_addresses) {
-        #warn "external_addresses: " . Dumper $external_addresses;
         $external_address = $external_addresses->{primary_address};
         $external_address_iface = $external_addresses->{primary_address_iface};
         $external_address_mtu = $external_addresses->{primary_iface_mtu};
@@ -495,23 +492,18 @@ sub update_enabled_services {
     # be optimistic
     $success = 1;
 
-    warn "params " . Dumper $params;
-
     foreach my $name (keys %$params) {
         # skip the function name
         next if ($name eq 'fname');
         next if not $params->{$name}->{is_set};
         unless (get_service_object($name)) {
             $logger->error("Service $name not found");
-            warn "Service $name not found";
             next;
         }
 
         if ($params->{$name}->{'value'} == 1) {
-            warn "enabling $name";
             $res = start_service( { name => $name, enable => 1 });
         } else {
-            warn "disabling $name";
             $res = stop_service( { name => $name, disable => 1 });
         }
 

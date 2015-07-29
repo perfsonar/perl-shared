@@ -85,11 +85,12 @@ sub handle_request {
         return;
     }
 
-    # TODO: implement request method check
-    #if ( defined ($self->{'request_methods'} && $self->{'request_methods'} ne $cgi->request_method() ) {
-    #    $self->_return_error(405, "Method Not Allowed; Allowed: " . $self->{'request_methods'});
-    #    return;
-    #}
+    my $method = $cgi->request_method();
+    if ( defined ($self->{'request_methods'} )
+            && !grep { $method eq $_ } @{$self->{'request_methods'}} ) { 
+        $self->_return_error(405, "Method Not Allowed; Allowed: " . join ', ', @{$self->{'request_methods'}});
+        return;
+    }
 
 
     my $res = $self->_parse_input_parameters( $cgi );
