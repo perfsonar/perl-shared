@@ -108,9 +108,10 @@ sub handle_request {
     my ($self) = @_;
     my $cgi = $self->{cgi};
     my $fh = $self->{fh};
-    if ($cgi->param("method")) {
-        my $param_name = $cgi->param("method");
-        $self->set_format($cgi->param("format"));
+    my $param_name = $cgi->param("method") || $cgi->url_param("method");
+    if (defined $param_name) {
+        my $format = $cgi->param("format") || $cgi->url_param("format");
+        $self->set_format($format);
         if (exists $self->{methods}->{$param_name}) {
             my $method = $self->{methods}->{$param_name};
             my $results = $method->handle_request($cgi, $fh);

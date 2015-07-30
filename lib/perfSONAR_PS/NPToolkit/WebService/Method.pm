@@ -101,7 +101,6 @@ sub handle_request {
 
     # call the callback
     my $callback    = $self->{'callback'};
-    #warn "handle_request params " . Dumper $self->{'input_params'};
     my $args = $self->{'input_params'};
     my $results     =  &$callback($self);
 
@@ -183,8 +182,13 @@ sub _parse_input_parameters {
 
         # TODO: add min and max numerical value constraints
 
-        my $value = $cgi->param($param_name);
-        #warn "param: " . $param_name . " value: " . ($value || "'N/A'");
+        my $value;
+        if (defined $cgi->param($param_name)) {
+            $value = $cgi->param($param_name);
+        } elsif (defined $cgi->url_param($param_name)) {
+            $value = $cgi->url_param($param_name);
+
+        }
 
         undef($self->{'input_params'}{$param_name}{'value'});
         $self->{'input_params'}{$param_name}{'is_set'} = 0;

@@ -139,7 +139,7 @@ sub set_config_information  {
     $administrative_info_conf->set_latitude( { latitude => $latitude } ) if defined $latitude;
     $administrative_info_conf->set_longitude( { longitude => $longitude } ) if defined $longitude;
 
-    if($administrator_email && $subscribe == 1){
+    if($administrator_email && defined ($subscribe) && $subscribe == 1){
         subscribe($administrator_email);
     }
     #$is_modified = 1;
