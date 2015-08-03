@@ -57,6 +57,7 @@ override 'build_cmd' => sub {
 
     # XXX: need to set interpacket time
 
+    push @cmd, ( '-T', $test_parameters->tool ) if $test_parameters->tool;
     push @cmd, ( '-F', $test_parameters->packet_first_ttl ) if $test_parameters->packet_first_ttl;
     push @cmd, ( '-M', $test_parameters->packet_max_ttl ) if $test_parameters->packet_max_ttl;
     push @cmd, ( '-l', $test_parameters->packet_length ) if $test_parameters->packet_length;

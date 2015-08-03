@@ -31,6 +31,7 @@ use perfSONAR_PS::RegularTesting::Parsers::Owamp      qw(parse_owamp_raw_output)
 use perfSONAR_PS::RegularTesting::Parsers::Ping       qw(parse_ping_output);
 use perfSONAR_PS::RegularTesting::Parsers::Traceroute qw(parse_traceroute_output);
 use perfSONAR_PS::RegularTesting::Parsers::Tracepath  qw(parse_tracepath_output);
+use perfSONAR_PS::RegularTesting::Parsers::ParisTraceroute  qw(parse_paristraceroute_output);
 
 use perfSONAR_PS::RegularTesting::Utils qw(owptstampi2datetime);
 
@@ -96,6 +97,9 @@ sub parse_bwctl_output {
         elsif ($line =~ /bwctl: exec_line: tracepath/) {
             $results{tool} = "tracepath";
         }
+        elsif ($line =~ /bwctl: exec_line: paris-traceroute/) {
+            $results{tool} = "paris-traceroute";
+        }
         elsif ($line =~ /bwctl: exec_line: iperf/) {
             $results{tool} = "iperf";
         }
@@ -137,6 +141,9 @@ sub parse_bwctl_output {
     }
     elsif ($tool eq "tracepath") {
         $results{results} = parse_tracepath_output({ stdout => $output_without_bwctl });
+    }
+    elsif ($tool eq "paris-traceroute") {
+        $results{results} = parse_paristraceroute_output({ stdout => $output_without_bwctl });
     }
     elsif ($tool eq "ping") {
         $results{results} = parse_ping_output({ stdout => $stdout });
