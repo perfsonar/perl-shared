@@ -6,6 +6,7 @@ use warnings;
 use Log::Log4perl qw(:easy);
 use File::Spec;
 use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES';
+use RPM2;
 
 sub new {
     my ( $package ) = @_;

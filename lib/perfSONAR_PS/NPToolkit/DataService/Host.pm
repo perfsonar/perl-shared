@@ -20,8 +20,6 @@ use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
-use perfSONAR_PS::Web::Sidebar qw(set_sidebar_vars);
-
 use perfSONAR_PS::NPToolkit::Config::BWCTL;
 use perfSONAR_PS::NPToolkit::Config::OWAMP;
 
