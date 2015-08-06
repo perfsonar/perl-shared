@@ -564,27 +564,27 @@ sub get_summary {
 
 }
 
-sub get_communities {
-    my $self = shift;
+# sub get_communities {
+#     my $self = shift;
 
-    my $communities = $self->{admin_info_conf}->get_keywords();
+#     my $communities = $self->{admin_info_conf}->get_keywords();
 
-    return {communities => $communities};
+#     return {communities => $communities};
 
-}
+# }
 
-sub get_all_communities {
-    my $self = shift;
+# sub get_all_communities {
+#     my $self = shift;
 
-    my $keyword_client = perfSONAR_PS::Client::gLS::Keywords->new( { cache_directory => $self->{config}->{cache_directory} } );
-    my ($status, $res) = $keyword_client->get_keywords();
-    $self->{LOGGER}->debug("keyword status: $status");
-    if ( $status == 0) {
-        $self->{LOGGER}->debug("Got keywords: ".Dumper($res));
-    }
-    return $res;
+#     my $keyword_client = perfSONAR_PS::Client::gLS::Keywords->new( { cache_directory => $self->{config}->{cache_directory} } );
+#     my ($status, $res) = $keyword_client->get_keywords();
+#     $self->{LOGGER}->debug("keyword status: $status");
+#     if ( $status == 0) {
+#         $self->{LOGGER}->debug("Got keywords: ".Dumper($res));
+#     }
+#     return $res;
 
-}
+# }
 
 sub get_meshes {
     my $self = shift;
