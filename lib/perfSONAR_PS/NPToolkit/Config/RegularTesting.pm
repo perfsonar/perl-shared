@@ -654,6 +654,7 @@ sub add_test_traceroute {
             protocol      => 0,
             added_by_mesh => 0,
             local_interface => 0,
+            tool => 0,
         }
     );
 
@@ -682,7 +683,7 @@ sub add_test_traceroute {
     $test_parameters{pause}                     = $parameters->{pause}                     if ( defined $parameters->{pause} );
     $test_parameters{protocol}                  = $parameters->{protocol}                  if ( defined $parameters->{protocol} );
     $test_parameters{local_interface}           = $parameters->{local_interface}           if ( defined $parameters->{local_interface} );
-    
+    $test_parameters{tool}                      = $parameters->{tool}                      if ( defined $parameters->{tool} );
 
     $test{parameters} = \%test_parameters;
 
@@ -719,6 +720,7 @@ sub update_test_traceroute {
             pause         => 0,
             protocol      => 0,
             local_interface => 0,
+            tool          => 0,
         }
     );
 
@@ -742,6 +744,7 @@ sub update_test_traceroute {
     $test->{parameters}->{pause}                     = $parameters->{pause}                     if ( defined $parameters->{pause} );
     $test->{parameters}->{protocol}                  = $parameters->{protocol}                  if ( defined $parameters->{protocol} );
     $test->{parameters}->{local_interface}           = $parameters->{local_interface}           if ( defined $parameters->{local_interface} );
+    $test->{parameters}->{tool}                      = $parameters->{tool}                      if ( defined $parameters->{tool} );
     
     return ( 0, "" );
 }
@@ -1123,6 +1126,7 @@ sub parse_regular_testing_config {
             ($status, $res) = $self->add_test_traceroute({
                                           description => $test->description,
                                           local_interface => $test->local_interface,
+                                          tool => $test->parameters->tool,
                                           packet_size => $test->parameters->packet_length,
                                           first_ttl => $test->parameters->packet_first_ttl,
                                           max_ttl  => $test->parameters->packet_max_ttl,
@@ -1267,6 +1271,7 @@ sub generate_regular_testing_config {
         }
         elsif ($test_desc->{type} eq "traceroute") {
             $parameters = perfSONAR_PS::RegularTesting::Tests::Bwtraceroute->new();
+            $parameters->tool($test_desc->{parameters}->{tool}) if $test_desc->{parameters}->{tool};
             $parameters->packet_length($test_desc->{parameters}->{packet_size}) if defined $test_desc->{parameters}->{packet_size};
             $parameters->packet_first_ttl($test_desc->{parameters}->{first_ttl}) if defined $test_desc->{parameters}->{first_ttl};
             $parameters->packet_max_ttl($test_desc->{parameters}->{max_ttl}) if defined $test_desc->{parameters}->{max_ttl};
