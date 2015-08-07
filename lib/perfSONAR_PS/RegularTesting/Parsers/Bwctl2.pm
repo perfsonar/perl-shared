@@ -83,7 +83,7 @@ sub parse_bwctl2_output {
         $results{results} = parse_tracepath_output({ stdout => $bwctl_obj->{'send'}->{'results'} });
     }
     elsif ($tool eq "paris-traceroute") {
-        $results{results} = parse_paristraceroute_output({ stdout => $output_without_bwctl });
+        $results{results} = parse_paristraceroute_output({ stdout => $bwctl_obj->{'send'}->{'results'} });
     }
     elsif ($results{tool} eq "ping") {
         $results{results} = parse_ping_output({ stdout => $bwctl_obj->{'send'}->{'results'} });
