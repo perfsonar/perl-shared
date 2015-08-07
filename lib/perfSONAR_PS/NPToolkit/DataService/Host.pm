@@ -106,7 +106,7 @@ sub update_information {
 
     } else {
         return {
-            "error" => "didn't work",
+            "error" => "Error updating administrative information",
         }
     }
 }
