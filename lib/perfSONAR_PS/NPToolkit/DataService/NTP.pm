@@ -187,6 +187,52 @@ sub delete_server {
     #return display_body();
 }
 
+sub enable_server {
+    my $self = shift;
+    my $caller = shift;
+    my $address = $caller->{'input_params'}->{'address'}->{'value'};
+    my $state = 'enabled';
+
+    return $self->_set_server_state($address, $state);
+}
+
+sub disable_server {
+    my $self = shift;
+    my $caller = shift;
+    my $address = $caller->{'input_params'}->{'address'}->{'value'};
+    my $state = 'disabled';
+
+    return $self->_set_server_state($address, $state);
+}
+
+sub _set_server_state {
+    my ($self, $address, $state) = @_;
+
+    my $ntp_conf = $self->{'ntp_conf'};
+
+    #$logger->info( "Toggling server $address" );
+
+    return unless ( $ntp_conf->lookup_server( { address => $address } ) );
+
+    if ( $state and $state eq "on" ) {
+        $status_msg = "Server $address selected";
+        #$logger->info( "Enabling server $address: '$state'" );
+        $ntp_conf->update_server( { address => $address, selected => 1 } );
+    }
+    else {
+        $logger->info( "Disabling server $address: '$state'" );
+        #$status_msg = "Server $address unselected";
+        $ntp_conf->update_server( { address => $address, selected => 0 } );
+    }
+
+    #$is_modified = 1;
+
+    #save_state();
+
+    #return display_body();
+    return $self->save_config();
+}
+
 sub save_config {
     my $self = shift;
     my ($status, $res) = $self->{'ntp_conf'}->save( { restart_services => 1 } );
