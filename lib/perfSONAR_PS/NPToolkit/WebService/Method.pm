@@ -25,6 +25,7 @@ sub new {
         'debug'             => 1,
         'request_methods'   => 1,
         'min_params'        => 1,
+        'input_params'      => 1
     );
 
     # set the defaults

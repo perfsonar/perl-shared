@@ -1,7 +1,5 @@
 package perfSONAR_PS::NPToolkit::DataService::Communities;
 
-use fields qw(LOGGER config_file admin_info_conf config authenticated);
-
 use strict;
 use warnings;
 
@@ -13,34 +11,57 @@ use Data::Dumper;
 
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 
-sub new {
-    my ( $class, @params ) = @_;
-
-    my $self = fields::new( $class );
-
-    $self->{LOGGER} = get_logger( $class );
-    my $parameters = validate(
-        @params,
-        {
-            config_file => 1
-        }
-    );
-    $self->{config_file} = $parameters->{config_file};
-    my $config = Config::General->new( -ConfigFile => $self->{config_file} );
-    $self->{config} = { $config->getall() };
-    my $administrative_info_conf = perfSONAR_PS::NPToolkit::Config::AdministrativeInfo->new();
-    $administrative_info_conf->init( { administrative_info_file => $self->{config}->{administrative_info_file} } );
-    $self->{admin_info_conf} = $administrative_info_conf;
-
-    return $self;
-}
+use base 'perfSONAR_PS::NPToolkit::DataService::BaseConfig';
 
 sub get_host_communities {
+
     my $self = shift;
 
     my $communities = $self->{admin_info_conf}->get_keywords();
 
     return {communities => $communities};
+
+}
+
+sub add_host_communities {
+    my $self = shift;
+    my $caller = shift;
+    my $args = $caller->{'input_params'};
+    my $community = $args->{'community'};
+    print %{$community};
+    my $result;
+    if($community && $community->{'is_set'}){
+         my $community_value = $args->{'community'}->{'value'};
+         print $community_value;
+         my @values = split(',',$community_value);
+         foreach my $value (@values){
+            $result = $self->{admin_info_conf}->add_keyword({keyword=>$value});
+         }
+    }
+
+    my $save_result = $self->save_state();
+    return $save_result;
+
+}
+
+sub remove_host_communities {
+    my $self = shift;
+    my $caller = shift;
+    my $args = $caller->{'input_params'};
+    my $community = $args->{'community'};
+    print %{$community};
+    my $result;
+    if($community && $community->{'is_set'}){
+         my $community_value = $args->{'community'}->{'value'};
+         print $community_value;
+         my @values = split(',',$community_value);
+         foreach my $value (@values){
+            $result = $self->{admin_info_conf}->delete_keyword({keyword=>$value});
+         }
+    }
+
+    my $save_result = $self->save_state();
+    return $save_result;
 
 }
 
