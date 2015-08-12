@@ -481,7 +481,7 @@ sub update_auto_updates {
     my $caller = shift;
     my $params = $caller->{'input_params'};
 
-    # The "auto updates" are turned off by enabling/disabling the 'yum_cron' service
+    # The "auto updates" are turned on and off by enabling/disabling the 'yum_cron' service
     my $name = 'yum_cron';
     my $enabled = $params->{'enabled'}->{'value'};
 
