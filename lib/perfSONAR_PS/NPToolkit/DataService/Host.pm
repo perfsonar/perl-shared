@@ -82,7 +82,7 @@ sub update_information {
 
     } else {
         return {
-            "error" => "didn't work",
+            "error" => "Error updating administrative information",
         }
     }
 }
@@ -414,6 +414,48 @@ sub get_services {
     my @services = values %services;
 
     return {'services', \@services};
+}
+
+sub update_auto_updates {
+    my $self = shift;
+    my $caller = shift;
+    my $params = $caller->{'input_params'};
+
+    # The "auto updates" are turned on and off by enabling/disabling the 'yum_cron' service
+    my $name = 'yum_cron';
+    my $enabled = $params->{'enabled'}->{'value'};
+
+    my ($res, $message);
+    my $success = 1;
+
+    my $logger = $self->{LOGGER};
+
+    unless (get_service_object($name)) {
+        $logger->error("Service $name not found");
+        return { error => "Error configuring auto updates" };
+    }
+
+    if ($enabled == 1) {
+        $res = start_service( { name => $name, enable => 1 });
+        $message = "Auto updates succesfully enabled";
+    } else {
+        $res = stop_service( { name => $name, disable => 1 });
+        $message = "Auto updates succesfully disabled";
+    }
+
+    $success = 0 if ($res != 0);
+
+    my %resp;
+
+    if ($success) {
+        %resp = ( message => $message );
+    }
+    else {
+        %resp = ( error => "Error while configuring auto updates, configuration NOT saved. Please consult the logs for more information.");
+    }
+    
+    return \%resp;
+
 }
 
 sub update_enabled_services {
