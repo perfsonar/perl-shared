@@ -11,7 +11,7 @@ use Sys::MemInfo qw(totalmem);
 
 
 use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
-; 
+
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
@@ -22,7 +22,7 @@ use perfSONAR_PS::NPToolkit::Config::OWAMP;
 
 use Time::HiRes qw(gettimeofday tv_interval);
 
-use base perfSONAR_PS::NPToolkit::DataService::BaseConfig;
+use base qw(perfSONAR_PS::NPToolkit::DataService::BaseConfig);
 
 
 sub get_admin_information {
