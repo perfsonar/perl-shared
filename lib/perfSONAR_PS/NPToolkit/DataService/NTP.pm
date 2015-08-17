@@ -8,6 +8,7 @@ use POSIX;
 use Data::Dumper;
 use Params::Validate qw(:all);
 use Net::IP;
+use JSON qw(from_json);
 
 use Data::Validate::IP qw(is_ipv4);
 
@@ -16,6 +17,7 @@ use perfSONAR_PS::Utils::DNS qw( reverse_dns resolve_address );
 use perfSONAR_PS::NPToolkit::Config::NTP;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 use perfSONAR_PS::Utils::Host qw(get_ntp_info);
+use perfSONAR_PS::Utils::NTP qw( ping );
 
 
 sub new {
@@ -51,6 +53,30 @@ sub get_ntp_information {
 }
 
 sub get_ntp_configuration {
+    my $self = shift;
+    my $caller = shift;
+    my $ntp_conf = $self->{'ntp_conf'};
+
+    my %config = ();
+
+    my $selected_servers = $ntp_conf->get_selected_servers( { as_hash => 1 } );
+    #my $selected_servers = $self->get_selected_servers();
+    my $known_servers = $ntp_conf->get_servers();
+    #my $known_servers = $self->get_known_servers();
+
+    $config{'selected_servers'} = $selected_servers;
+    $config{'known_servers'} = $known_servers;
+
+
+    return \%config;
+}
+
+sub update_ntp_configuration {
+    my $self = shift;
+    my $caller = shift;
+    my $ntp_conf = $self->{'ntp_conf'};
+
+    my %config = ();
 
 }
 
@@ -97,6 +123,59 @@ sub _format_servers {
     return \@vars_servers;
 
 
+}
+
+sub select_closest {
+    my $self = shift;
+    my $caller = shift;
+    my $count = $caller->{'input_params'}->{'count'}->{'value'} || 5;
+
+    my @servers = ();
+    my $failed_connect = {};
+    my ($error_msg, $status_msg);
+
+    my $ntp_conf = $self->{'ntp_conf'};
+    my $ntp_servers = $ntp_conf->get_servers();
+
+    foreach my $key ( keys %{$ntp_servers} ) {
+        my $ntp_server = $ntp_servers->{$key};
+
+        push @servers, $ntp_server->{address};
+    }
+
+    my ( $status, $res1, $res2 ) = $self->find_closest_servers( { servers => \@servers, maximum_number => $count } );
+    if ( $status != 0 ) {
+        $error_msg = "Error finding closest servers";
+        return { error => $error_msg };
+    }
+
+    foreach my $key ( keys %{$ntp_servers} ) {
+        my $ntp_server = $ntp_servers->{$key};
+
+        $ntp_conf->update_server( { address => $ntp_server->{address}, selected => 0 } );
+    }
+
+    foreach my $address ( @$res1 ) {
+        $ntp_conf->update_server( { address => $address->{address}, selected => 1 } );
+    }
+
+    my %new_failed_connect = ();
+    foreach my $address ( @$res2 ) {
+        $new_failed_connect{$address} = 1;
+    }
+    $failed_connect = \%new_failed_connect;
+
+    #$is_modified = 1;
+
+    #save_state();
+
+    $status_msg = "Selected Closest";
+    #return display_body();
+    #return $self->save_config();
+    return { selected => $res1,
+             message  => 'Selected closest servers',
+             failed_connect => $res2,   
+    };
 }
 
 sub find_closest_servers {
@@ -161,7 +240,7 @@ sub add_server {
 
     #save_state();
 
-    #$self->{logger}->info( "Server $address added" );
+    $self->{LOGGER}->info( "Server $address added" );
 
     my $status_msg = "Server $address added";
 
@@ -173,7 +252,9 @@ sub delete_server {
     my $self = shift;
     my $caller = shift;
     my $address = $caller->{'input_params'}->{'address'}->{'value'};
-    #$logger->info( "Deleting Server: $address" );
+    my $logger = $self->{LOGGER};
+
+    $logger->info( "Deleting Server: $address" );
 
     $self->{'ntp_conf'}->delete_server( { address => $address } );
 
@@ -185,6 +266,52 @@ sub delete_server {
     #return { message => $status_msg };
     return $self->save_config();
     #return display_body();
+}
+
+sub enable_server {
+    my $self = shift;
+    my $caller = shift;
+    my $address = $caller->{'input_params'}->{'address'}->{'value'};
+    my $state = 'enabled';
+
+    return $self->_set_server_state($address, $state);
+}
+
+sub disable_server {
+    my $self = shift;
+    my $caller = shift;
+    my $address = $caller->{'input_params'}->{'address'}->{'value'};
+    my $state = 'disabled';
+
+    return $self->_set_server_state($address, $state);
+}
+
+sub _set_server_state {
+    my ($self, $address, $state) = @_;
+
+    my $ntp_conf = $self->{'ntp_conf'};
+    my $logger = $self->{'LOGGER'};
+
+    return unless ( $ntp_conf->lookup_server( { address => $address } ) );
+
+    my $status_msg;
+
+    if ( $state and $state eq "enabled" ) {
+        $status_msg = "Server $address selected";
+        $logger->info( "Enabling server $address" );
+        $ntp_conf->update_server( { address => $address, selected => 1 } );
+    } else {
+        $logger->info( "Disabling server $address" );
+        $status_msg = "Server $address unselected";
+        $ntp_conf->update_server( { address => $address, selected => 0 } );
+    }
+
+    #$is_modified = 1;
+
+    #save_state();
+
+    #return display_body();
+    return $self->save_config();
 }
 
 sub save_config {

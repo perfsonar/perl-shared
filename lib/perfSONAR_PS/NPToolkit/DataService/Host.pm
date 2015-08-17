@@ -1,21 +1,17 @@
 package perfSONAR_PS::NPToolkit::DataService::Host;
-use fields qw(LOGGER config_file admin_info_conf config authenticated);
 
 use strict;
 use warnings;
 
-use Log::Log4perl qw(get_logger :easy :levels);
-use POSIX;
-use Data::Dumper;
-use Sys::MemInfo qw(totalmem);
-use Params::Validate qw(:all);
 
-use perfSONAR_PS::NPToolkit::Config::Version;
-use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
-use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file start_service restart_service stop_service );
+use POSIX;
+
+use Sys::MemInfo qw(totalmem);
+
+
 
 use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
-; 
+
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
@@ -23,31 +19,11 @@ use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 use perfSONAR_PS::NPToolkit::Config::BWCTL;
 use perfSONAR_PS::NPToolkit::Config::OWAMP;
 
-use Config::General;
+
 use Time::HiRes qw(gettimeofday tv_interval);
 
+use base qw(perfSONAR_PS::NPToolkit::DataService::BaseConfig);
 
-sub new {
-    my ( $class, @params ) = @_;
-
-    my $self = fields::new( $class );
-
-    $self->{LOGGER} = get_logger( $class );
-    my $parameters = validate(
-        @params,
-        {
-            config_file => 1
-        }
-    );
-    $self->{config_file} = $parameters->{config_file};
-    my $config = Config::General->new( -ConfigFile => $self->{config_file} );
-    $self->{config} = { $config->getall() };
-    my $administrative_info_conf = perfSONAR_PS::NPToolkit::Config::AdministrativeInfo->new();
-    $administrative_info_conf->init( { administrative_info_file => $self->{config}->{administrative_info_file} } );
-    $self->{admin_info_conf} = $administrative_info_conf;
-
-    return $self;
-}
 
 sub get_admin_information {
     my $self = shift;
@@ -148,43 +124,7 @@ sub set_config_information  {
 
 }
 
-sub save_state {
-    my $self = shift;
-    my $administrative_info_conf = $self->{admin_info_conf};
-    # TODO: Clean this up
-    my $state = $administrative_info_conf->save_state();
-    #$session->param( "administrative_info_conf", $state );
-    #$session->param( "is_modified", $is_modified );
-    #$session->param( "initial_state_time", $initial_state_time );
-    return $self->save_config();
-}
 
-sub save_config {
-    my $self = shift;
-    my $administrative_info_conf = $self->{admin_info_conf};
-    # TODO: Clean this up and see if the service restart is necessary
-    my ($status, $res) = $administrative_info_conf->save( { restart_services => 0 } );
-    my $error_msg;
-    my $status_msg;
-    if ($status != 0) {
-        $error_msg = "Problem saving configuration: $res";
-        return { 
-            error_msg => $error_msg,
-            success => 0,
-        };
-    } else {       
-        #$status_msg = "Configuration Saved And Services Restarted";
-        $status_msg = "Configuration saved";
-        #$is_modified = 0;
-        #$initial_state_time = $administrative_info_conf->last_modified();
-        return { 
-            status_msg => $status_msg,
-            success => 1,
-        };
-    }
-    #save_state();
-
-}
 
 sub get_details {
     my $self = shift;
@@ -474,6 +414,48 @@ sub get_services {
     my @services = values %services;
 
     return {'services', \@services};
+}
+
+sub update_auto_updates {
+    my $self = shift;
+    my $caller = shift;
+    my $params = $caller->{'input_params'};
+
+    # The "auto updates" are turned on and off by enabling/disabling the 'yum_cron' service
+    my $name = 'yum_cron';
+    my $enabled = $params->{'enabled'}->{'value'};
+
+    my ($res, $message);
+    my $success = 1;
+
+    my $logger = $self->{LOGGER};
+
+    unless (get_service_object($name)) {
+        $logger->error("Service $name not found");
+        return { error => "Error configuring auto updates" };
+    }
+
+    if ($enabled == 1) {
+        $res = start_service( { name => $name, enable => 1 });
+        $message = "Auto updates succesfully enabled";
+    } else {
+        $res = stop_service( { name => $name, disable => 1 });
+        $message = "Auto updates succesfully disabled";
+    }
+
+    $success = 0 if ($res != 0);
+
+    my %resp;
+
+    if ($success) {
+        %resp = ( message => $message );
+    }
+    else {
+        %resp = ( error => "Error while configuring auto updates, configuration NOT saved. Please consult the logs for more information.");
+    }
+    
+    return \%resp;
+
 }
 
 sub update_enabled_services {

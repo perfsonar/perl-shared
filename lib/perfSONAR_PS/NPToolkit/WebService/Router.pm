@@ -121,6 +121,8 @@ sub handle_request {
                 $self->_output_error($method->{error_message}, $method->{error_code});
             }
         
+        } else {
+                $self->_output_error("Specified webservice method does not exist", "400 Bad Request");
         }
     } else {
         my $method = $self->_get_default_method();
