@@ -9,6 +9,7 @@ use constant {
     LS_KEY_EXPIRES => "expires",
     LS_KEY_TTL => "ttl",
     LS_KEY_URI => "uri",
+    LS_KEY_CLIENT_UUID => "client-uuid",
 };
 
 #General keys

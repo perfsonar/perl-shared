@@ -28,8 +28,9 @@ use SimpleLookupService::Client::SimpleLS;
 use perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject;
 use SimpleLookupService::Client::Query;
 use URI;
+use Data::UUID;
 
-our @EXPORT_OK = qw( discover_lookup_services discover_primary_lookup_service is_host_registered);
+our @EXPORT_OK = qw( discover_lookup_services discover_primary_lookup_service is_host_registered get_client_uuid set_client_uuid);
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -142,6 +143,48 @@ sub is_host_registered{
     }
     
     return 0;
+}
+
+=head2 get_client_uuid ({})
+    Returns the UUID to use in the client-uuid field from a file
+=cut
+
+sub get_client_uuid {
+    my ( @params ) = @_;
+    my $parameters = validate( @params, {file => 1} );
+    my $uuid_file = $parameters->{file};
+    
+    my $uuid;
+
+    if ( open( FIN, "<", $uuid_file ) ) {
+        while($uuid = <FIN>){
+            if ( $uuid ){
+                 chomp( $uuid );
+                 last;
+            }
+        }
+        close( FIN );
+    }
+
+    return $uuid;
+}
+
+=head2 set_client_uuid ({})
+    Generates a UUID and stores in a file
+=cut
+
+sub set_client_uuid {
+    my ( @params ) = @_;
+    my $parameters = validate( @params, {file => 1} );
+    my $uuid_file = $parameters->{file};
+    my $ug   = new Data::UUID;
+    my $uuid = $ug->create_str();
+
+    open( FOUT, ">", $uuid_file ) or die "unable to open $uuid_file: $@";
+    print FOUT "$uuid";
+    close( FOUT );
+    
+    return $uuid;
 }
 
 1;
