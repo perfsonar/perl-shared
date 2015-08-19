@@ -75,8 +75,53 @@ sub update_ntp_configuration {
     my $self = shift;
     my $caller = shift;
     my $ntp_conf = $self->{'ntp_conf'};
+    #my %config = ();
+    my $input_data = $caller->{'input_params'}->{'POSTDATA'};
+    my $json_text = $input_data->{'value'};
 
-    my %config = ();
+    my $data = from_json($json_text);
+
+    my %result;
+
+    if($data){
+        my $enabled_servers =  $data->{'data'}->{'enabled_servers'};
+        my %enable_result;
+        if($enabled_servers){
+            foreach my $enabled_server (keys %{$enabled_servers}){ 
+                my $success = $self->{'ntp_conf'}->update_server( { address => $enabled_server, selected => 1 } );
+                $enable_result{$enabled_server} = $success;  
+            }
+        }
+
+
+        my $disabled_servers = $data->{'data'}->{'disabled_servers'};
+        my %disable_result;
+        if($disabled_servers){
+            foreach my $disabled_server (keys %{$disabled_servers}){ 
+                my $success = $self->{'ntp_conf'}->update_server( { address => $disabled_server, selected => 0 } );    
+                $disable_result{$disabled_server} = $success;
+            }
+        }
+
+        my $deleted_servers =  $data->{'data'}->{'deleted_servers'};
+        my %deleted_result;
+        if($deleted_servers){
+            foreach my $del_server (@{$deleted_servers}){           
+                my $success = $self->{'ntp_conf'}->delete_server( { address => $del_server } );  
+                $deleted_result{$del_server} =$success ;
+            }
+        }
+
+        $result{'enabled_servers'} = \%enable_result;
+        $result{'disabled_servers'} = \%disable_result;
+        $result{'deleted_servers'} = \%deleted_result;
+
+
+
+        $result{'save_config'} = $self->save_config();
+    }
+
+    return \%result;
 
 }
 

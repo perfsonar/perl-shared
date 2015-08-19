@@ -19,10 +19,14 @@ use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 use perfSONAR_PS::NPToolkit::Config::BWCTL;
 use perfSONAR_PS::NPToolkit::Config::OWAMP;
 
+use Data::Dumper;
+
 
 use Time::HiRes qw(gettimeofday tv_interval);
 
 use base qw(perfSONAR_PS::NPToolkit::DataService::BaseConfig);
+
+use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file start_service restart_service stop_service );
 
 
 sub get_admin_information {
@@ -465,9 +469,10 @@ sub update_enabled_services {
 
     my ($success, $res);
 
+
     my $logger = $self->{LOGGER};
 
-    $logger->error("CONFIG: ".Dumper($params));
+    $self->{LOGGER}->error("CONFIG: ".Dumper($params));
 
     # be optimistic
     $success = 1;
@@ -477,9 +482,11 @@ sub update_enabled_services {
         next if ($name eq 'fname');
         next if not $params->{$name}->{is_set};
         unless (get_service_object($name)) {
-            $logger->error("Service $name not found");
+            #$logger->error("Service $name not found");
             next;
         }
+
+        $self->{LOGGER}->debug("Service $name found");
 
         if ($params->{$name}->{'value'} == 1) {
             $res = start_service( { name => $name, enable => 1 });
@@ -498,6 +505,7 @@ sub update_enabled_services {
     else {
         %resp = ( error => "Error while restarting services, configuration NOT saved. Please consult the logs for more information.");
     }
+
     
     return \%resp;
 }
