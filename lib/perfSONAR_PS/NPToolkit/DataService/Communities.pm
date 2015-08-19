@@ -9,6 +9,8 @@ use Params::Validate qw(:all);
 
 use Data::Dumper;
 
+use JSON;
+
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 
 use base 'perfSONAR_PS::NPToolkit::DataService::BaseConfig';
@@ -75,6 +77,53 @@ sub get_all_communities {
         $self->{LOGGER}->debug("Got keywords: ".Dumper($res));
     }
     return $res;
+
+}
+
+sub update_host_communities {
+    my $self = shift;
+    my $caller = shift;
+
+    #my %config = ();
+    my $input_data = $caller->{'input_params'}->{'POSTDATA'};
+
+    my $json_text = $input_data->{'value'};
+
+    my $data = from_json($json_text);
+
+       
+    my %result=();
+    
+
+     if($data){
+        
+
+         my $community_list =  $data->{'communities'};
+         my %community_result;
+        if($community_list){
+             my $success = $self->{admin_info_conf}->delete_all_keywords(); 
+             #if delete is successful then update, else return error without saving to config file.
+             if($success==0){
+                 foreach my $community (@{$community_list}){           
+                     my $success = $self->{admin_info_conf}->add_keyword({keyword=>$community}); 
+                     $community_result{$community} =$success ;
+                 }    
+             }else{
+                 $result{'delete_all_keywords'} = -1;
+                 return \%result;
+             }
+            
+         }
+
+         $result{'community'} = \%community_result;
+
+
+
+         $result{'save_config'} = $self->save_config();
+    }
+
+
+    return \%result;
 
 }
 

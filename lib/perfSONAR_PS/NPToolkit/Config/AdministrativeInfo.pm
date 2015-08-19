@@ -319,6 +319,21 @@ sub delete_keyword {
     return 0;
 }
 
+=head2 delete_all_keywords()
+
+Deletes all the keywords to the configuration file. Returns 0 on success, -1 on failure.
+No current failure conditions exist.
+
+=cut
+
+sub delete_all_keywords {
+    my ( $self ) = @_;
+    %{$self->{KEYWORDS}} = ();
+    return 0;
+}
+
+
+
 =head2 get_keywords ({})
 
 Returns the list of currently configured keywords as an array. 
