@@ -86,9 +86,24 @@ sub update_ntp_configuration {
     if($data){
         my $enabled_servers =  $data->{'data'}->{'enabled_servers'};
         my %enable_result;
+        my $available_servers = $ntp_conf->get_servers();
+
         if($enabled_servers){
-            foreach my $enabled_server (keys %{$enabled_servers}){ 
-                my $success = $self->{'ntp_conf'}->update_server( { address => $enabled_server, selected => 1 } );
+            foreach my $enabled_server (keys %{$enabled_servers}){
+                my $success;
+                if($available_servers->{$enabled_server}){
+                    $success = $ntp_conf->update_server( { address => $enabled_server, selected => 1 } );    
+                }else{
+                    
+                    $success = $ntp_conf->add_server(
+                        {
+                            address     => $enabled_server,
+                            description => $enabled_servers->{$enabled_server},
+                            selected    => 1,
+                        }
+                    );      
+                }
+                
                 $enable_result{$enabled_server} = $success;  
             }
         }
@@ -98,7 +113,7 @@ sub update_ntp_configuration {
         my %disable_result;
         if($disabled_servers){
             foreach my $disabled_server (keys %{$disabled_servers}){ 
-                my $success = $self->{'ntp_conf'}->update_server( { address => $disabled_server, selected => 0 } );    
+                my $success = $ntp_conf->update_server( { address => $disabled_server, selected => 0 } );    
                 $disable_result{$disabled_server} = $success;
             }
         }
@@ -107,7 +122,7 @@ sub update_ntp_configuration {
         my %deleted_result;
         if($deleted_servers){
             foreach my $del_server (@{$deleted_servers}){           
-                my $success = $self->{'ntp_conf'}->delete_server( { address => $del_server } );  
+                my $success = $ntp_conf->delete_server( { address => $del_server } );  
                 $deleted_result{$del_server} =$success ;
             }
         }
@@ -115,8 +130,6 @@ sub update_ntp_configuration {
         $result{'enabled_servers'} = \%enable_result;
         $result{'disabled_servers'} = \%disable_result;
         $result{'deleted_servers'} = \%deleted_result;
-
-
 
         $result{'save_config'} = $self->save_config();
     }
