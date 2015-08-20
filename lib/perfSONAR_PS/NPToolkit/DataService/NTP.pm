@@ -92,7 +92,13 @@ sub update_ntp_configuration {
             foreach my $enabled_server (keys %{$enabled_servers}){
                 my $success;
                 if($available_servers->{$enabled_server}){
-                    $success = $ntp_conf->update_server( { address => $enabled_server, selected => 1 } );    
+                    $success = $ntp_conf->update_server( 
+                        { 
+                            address => $enabled_server, 
+                            description => $enabled_servers->{$enabled_server},
+                            selected => 1 
+                        }
+                    );    
                 }else{
                     
                     $success = $ntp_conf->add_server(
@@ -113,7 +119,14 @@ sub update_ntp_configuration {
         my %disable_result;
         if($disabled_servers){
             foreach my $disabled_server (keys %{$disabled_servers}){ 
-                my $success = $ntp_conf->update_server( { address => $disabled_server, selected => 0 } );    
+                my $success = $ntp_conf->update_server( 
+                    { 
+                        address => $disabled_server, 
+                        description => $disabled_servers->{$disabled_server},
+                        selected => 0 
+                    } 
+
+                    );    
                 $disable_result{$disabled_server} = $success;
             }
         }
