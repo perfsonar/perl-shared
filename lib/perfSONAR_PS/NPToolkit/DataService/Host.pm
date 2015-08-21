@@ -18,6 +18,7 @@ use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
 use perfSONAR_PS::NPToolkit::Config::BWCTL;
 use perfSONAR_PS::NPToolkit::Config::OWAMP;
+use perfSONAR_PS::NPToolkit::DataService::Communities;
 
 use Data::Dumper;
 
@@ -542,10 +543,12 @@ sub get_summary {
     my $start_time = gettimeofday();
     my $end_time;
 
+    my $comm_obj = perfSONAR_PS::NPToolkit::DataService::Communities->new( {config_file => $self->{config_file} } );
+    
     my $administrative_info = $self->get_admin_information();
     my $status = $self->get_details();
     my $services = $self->get_services();
-    my $communities = $self->get_communities();
+    my $communities = $comm_obj->get_host_communities();
     my $meshes = $self->get_meshes();
 
     my $results = { %$administrative_info, %$status, %$services, %$communities, %$meshes };
