@@ -36,6 +36,7 @@ sub new {
     my $config = Config::General->new( -ConfigFile => $self->{config_file} );
     $self->{config} = { $config->getall() };
     my $ntp = get_service_object("ntp");
+    $self->{ntp} = $ntp;
     my $ntp_conf = perfSONAR_PS::NPToolkit::Config::NTP->new();
     $ntp_conf->init( { ntp_conf => $config->{ntp_conf} } );
     $self->{ntp_conf} = $ntp_conf;

@@ -454,18 +454,17 @@ sub get_ntp_info {
     my $result;
     foreach my $line (@ntp_response){
         my @ntp_fields = split /\s+/, $line;
-
         if($line =~ m/^\*/){
             print @ntp_fields;
             my @host = split /\*/, $ntp_fields[0];
             $result->{host} = $host[1];
             $result->{address} = $ntp_fields[1];
-            $result->{strat} = $ntp_fields[2];
-            $result->{poll} = $ntp_fields[3];
+            $result->{stratum} = $ntp_fields[2];
+            $result->{polling_interval} = $ntp_fields[3];
             $result->{reach} = $ntp_fields[4];
             $result->{delay} = $ntp_fields[5];
             $result->{offset} = $ntp_fields[6];
-            $result->{disp} = $ntp_fields[7];
+            $result->{dispersion} = $ntp_fields[7];
             last;
         }
     }

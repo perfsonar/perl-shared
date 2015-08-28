@@ -295,6 +295,8 @@ sub get_ntp_information{
     
     my $self = shift;
     my $response = get_ntp_info();
+    my $ntp = get_service_object("ntp");
+    $response->{synchronized} = $ntp->is_synced() || 0;
     return $response;
 
 }
@@ -568,7 +570,10 @@ sub get_summary {
     my $communities = $comm_obj->get_host_communities();
     my $meshes = $self->get_meshes();
 
-    my $results = { %$administrative_info, %$status, %$services, %$communities, %$meshes };
+    my $ntp_info = {'ntp' => ( $self->get_ntp_information() || {} ) };
+
+
+    my $results = { %$administrative_info, %$status, %$services, %$communities, %$meshes, %$ntp_info };
 
     return $results;
 
