@@ -19,6 +19,7 @@ use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 use perfSONAR_PS::NPToolkit::Config::BWCTL;
 use perfSONAR_PS::NPToolkit::Config::OWAMP;
 use perfSONAR_PS::NPToolkit::DataService::Communities;
+use perfSONAR_PS::Utils::GeoLookup qw(geoIPLookup);
 
 use Data::Dumper;
 
@@ -58,6 +59,22 @@ sub get_admin_information {
 
     return $info;
     
+}
+
+sub get_calculated_lat_lon {
+    my $self = shift;
+    my $caller = shift;
+
+    my $external_addresses = discover_primary_address({ disable_ipv4_reverse_lookup => 1, disable_ipv6_reverse_lookup => 1 });    
+    my $res = geoIPLookup($external_addresses->{primary_address});
+    my $result = {};
+
+    if($res->{longitude} && $res->{latitude} ){
+        $result->{longitude} = $res->{longitude};
+        $result->{latitude} = $res->{latitude};
+    } 
+    return $result;
+
 }
 
 sub update_information {
