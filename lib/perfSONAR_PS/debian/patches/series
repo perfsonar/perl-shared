@@ -1,4 +1,3 @@
-toolkit_get_version
 IO::Interface::Simple
 relocate.diff
 services.diff

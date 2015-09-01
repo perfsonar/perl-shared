@@ -67,12 +67,19 @@
  
      $self->SUPER::init( %conf );
      $self->{REGULAR_RESTART} = 1;
-@@ -35,7 +35,7 @@
- 	system('pkill -9 -f regular_testing/');
+@@ -32,12 +32,12 @@
+ 	}
+     
+ 	#No matter what, clean-up stray children
+-	system('pkill -9 -f regular_testing/');
++	system('pkill -9 -f regulartesting/');
  	
- 	#clean-up any old data
--	system('find /var/lib/perfsonar/regular_testing -type f -mtime +1 -exec rm {} \;');
-+	system('find /var/lib/perfsonar/regulartesting -type f -mtime +1 -exec rm {} \;');
+ 	#clean-up any data older than 5 minutes
+-	system('find /var/lib/perfsonar/regular_testing -type f -mmin +5 -exec rm {} \;');
++	system('find /var/lib/perfsonar/regulartesting -type f -mmin +5 -exec rm {} \;');
+ 	#delete empty directories
+-	system('find /var/lib/perfsonar/regular_testing/ -type d -empty -delete'); 
++	system('find /var/lib/perfsonar/regulartesting/ -type d -empty -delete'); 
      
  	return (0, "");
  }
@@ -95,7 +102,7 @@
  
 --- a/NPToolkit/Services/Base.pm
 +++ b/NPToolkit/Services/Base.pm
-@@ -232,7 +232,7 @@
+@@ -233,7 +233,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
  
