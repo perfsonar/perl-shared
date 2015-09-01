@@ -1,9 +1,9 @@
-libperfsonar-sls-perl (3.5-2~1.1.rc1-1) UNRELEASED; urgency=low
+libperfsonar-sls-perl (3.5-2~2.rc2-1) UNRELEASED; urgency=low
 
-  * Release Candidate 1
   * Adding some new host and service identification keys
+  * Add the client-uuid field to the Lookup Service records
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Wed, 08 Jul 2015 21:41:58 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Tue, 01 Sep 2015 20:09:09 +0000
 
 libperfsonar-sls-perl (3.4.2-1) perfsonar-wheezy-staging; urgency=low
 
