@@ -165,16 +165,29 @@ sub generate_server_list {
 =cut
 
 sub get_selected_servers {
-    my $self = shift();
+    my ( $self, @params ) = @_;
+    my $parameters = validate(
+        @params,
+        {
+            as_hash => { default => 0 }
+        }
+    );
+    my $as_hash = $parameters->{as_hash};
     my @servers = ();
+    my %hash = ();
 
     foreach my $key ( keys %{ $self->{NTP_SERVERS} } ) {
         my $ntp_server = $self->{NTP_SERVERS}->{$key};
         if ( $ntp_server->{selected} ) {
             push(@servers, $ntp_server);
+            $hash{$key} = $ntp_server;
         }
     }
-    return \@servers;
+    if ($as_hash) {
+        return \%hash;
+    } else {
+        return \@servers;
+    }
 }
 
 =head2 add_server({ address => 1, description => 1, selected => 1 })

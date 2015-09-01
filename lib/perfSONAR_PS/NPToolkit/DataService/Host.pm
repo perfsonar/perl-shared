@@ -1,54 +1,35 @@
 package perfSONAR_PS::NPToolkit::DataService::Host;
-use fields qw(LOGGER config_file admin_info_conf config authenticated);
 
 use strict;
 use warnings;
 
-use Log::Log4perl qw(get_logger :easy :levels);
-use POSIX;
-use Data::Dumper;
-use Sys::MemInfo qw(totalmem);
-use Params::Validate qw(:all);
 
-use perfSONAR_PS::NPToolkit::Config::Version;
-use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
+use POSIX;
+
+use Sys::MemInfo qw(totalmem);
+
+
 
 use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
-; 
+
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
-use perfSONAR_PS::Web::Sidebar qw(set_sidebar_vars);
-
 use perfSONAR_PS::NPToolkit::Config::BWCTL;
 use perfSONAR_PS::NPToolkit::Config::OWAMP;
+use perfSONAR_PS::NPToolkit::DataService::Communities;
+use perfSONAR_PS::Utils::GeoLookup qw(geoIPLookup);
 
-use Config::General;
+use Data::Dumper;
+
+
 use Time::HiRes qw(gettimeofday tv_interval);
 
+use base qw(perfSONAR_PS::NPToolkit::DataService::BaseConfig);
 
-sub new {
-    my ( $class, @params ) = @_;
+use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file start_service restart_service stop_service );
 
-    my $self = fields::new( $class );
-
-    $self->{LOGGER} = get_logger( $class );
-    my $parameters = validate(
-        @params,
-        {
-            config_file => 1
-        }
-    );
-    $self->{config_file} = $parameters->{config_file};
-    my $config = Config::General->new( -ConfigFile => $self->{config_file} );
-    $self->{config} = { $config->getall() };
-    my $administrative_info_conf = perfSONAR_PS::NPToolkit::Config::AdministrativeInfo->new();
-    $administrative_info_conf->init( { administrative_info_file => $self->{config}->{administrative_info_file} } );
-    $self->{admin_info_conf} = $administrative_info_conf;
-
-    return $self;
-}
 
 sub get_admin_information {
     my $self = shift;
@@ -80,9 +61,24 @@ sub get_admin_information {
     
 }
 
+sub get_calculated_lat_lon {
+    my $self = shift;
+    my $caller = shift;
+
+    my $external_addresses = discover_primary_address({ disable_ipv4_reverse_lookup => 1, disable_ipv6_reverse_lookup => 1 });    
+    my $res = geoIPLookup($external_addresses->{primary_address});
+    my $result = {};
+
+    if($res->{longitude} && $res->{latitude} ){
+        $result->{longitude} = $res->{longitude};
+        $result->{latitude} = $res->{latitude};
+    } 
+    return $result;
+
+}
+
 sub update_information {
     my $self = shift;
-    #warn 'dataservice args: ' . Dumper $args;
     my $caller = shift;
     my $args = $caller->{'input_params'};
 
@@ -95,7 +91,6 @@ sub update_information {
     );
     foreach my $field (@field_names) {
         if ($args->{$field}->{is_set} == 1) {
-            #warn "adding parameter to set: $field";
             $config_args{$field} = $args->{$field}->{value};
         }
 
@@ -109,7 +104,7 @@ sub update_information {
 
     } else {
         return {
-            "error" => "didn't work",
+            "error" => "Error updating administrative information",
         }
     }
 }
@@ -128,8 +123,6 @@ sub set_config_information  {
     my $longitude = $args{longitude};
     my $subscribe = $args{subscribe};
 
-
-
     my $administrative_info_conf = $self->{admin_info_conf};
 
     $administrative_info_conf->set_organization_name( { organization_name => $organization_name } ) if defined $organization_name;
@@ -141,12 +134,8 @@ sub set_config_information  {
     $administrative_info_conf->set_zipcode( { zipcode => $zipcode } ) if defined $zipcode;
     $administrative_info_conf->set_latitude( { latitude => $latitude } ) if defined $latitude;
     $administrative_info_conf->set_longitude( { longitude => $longitude } ) if defined $longitude;
-    if (0) {
-    $administrative_info_conf->set_administrator_name( { administrator_name => $administrator_name } );
-    $administrative_info_conf->set_administrator_email( { administrator_email => $administrator_email } );
-    }
 
-    if($administrator_email && $subscribe == 1){
+    if($administrator_email && defined ($subscribe) && $subscribe == 1){
         subscribe($administrator_email);
     }
     #$is_modified = 1;
@@ -157,40 +146,7 @@ sub set_config_information  {
 
 }
 
-sub save_state {
-    my $self = shift;
-    my $administrative_info_conf = $self->{admin_info_conf};
-    # TODO: Clean this up
-    my $state = $administrative_info_conf->save_state();
-    #$session->param( "administrative_info_conf", $state );
-    #$session->param( "is_modified", $is_modified );
-    #$session->param( "initial_state_time", $initial_state_time );
-    return $self->save_config();
-}
 
-sub save_config {
-    my $self = shift;
-    my $administrative_info_conf = $self->{admin_info_conf};
-    # TODO: Clean this up and see if the service restart is necessary
-    my ($status, $res) = $administrative_info_conf->save( { restart_services => 0 } );
-    my $error_msg;
-    my $status_msg;
-    if ($status != 0) {
-        $error_msg = "Problem saving configuration: $res";
-    } else {       
-        #$status_msg = "Configuration Saved And Services Restarted";
-        $status_msg = "Configuration saved";
-        #$is_modified = 0;
-        #$initial_state_time = $administrative_info_conf->last_modified();
-    }
-    #save_state();
-
-    return { 
-        status_msg => $status_msg,
-        #error_msg => $error_msg,
-        success => 1,
-    };
-}
 
 sub get_details {
     my $self = shift;
@@ -247,7 +203,6 @@ sub get_details {
     my $is_registered = 0;
 
     if ($external_addresses) {
-        #warn "external_addresses: " . Dumper $external_addresses;
         $external_address = $external_addresses->{primary_address};
         $external_address_iface = $external_addresses->{primary_address_iface};
         $external_address_mtu = $external_addresses->{primary_iface_mtu};
@@ -340,6 +295,8 @@ sub get_ntp_information{
     
     my $self = shift;
     my $response = get_ntp_info();
+    my $ntp = get_service_object("ntp");
+    $response->{synchronized} = $ntp->is_synced() || 0;
     return $response;
 
 }
@@ -408,15 +365,15 @@ sub get_services {
 
     my @service_names = qw(owamp bwctl regular_testing esmond);
 
-    print $npad->is_installed();
+    #print $npad->is_installed();
 
-    if($npad->is_installed()){
+    #if($npad->is_installed()){
         push @service_names, "npad";
-    }
+        #}
 
-    if($ndt->is_installed()){
+        #if($ndt->is_installed()){
         push @service_names, "ndt";
-    }
+        #}
 
 
     my %services = ();
@@ -450,13 +407,21 @@ sub get_services {
         if ($service->disabled) {
             $is_running_output = "disabled" unless $is_running;
         }
+        my $is_installed;
+        if ( $service->can('is_installed') ) {
+            $is_installed = $service->is_installed();
+        }
+
+        my $enabled = (not $service->disabled) || 0;
 
         my %service_info = ();
-        $service_info{"name"}       = $service_name;
-        $service_info{"is_running"} = $is_running_output;
-        $service_info{"daemon_port"} = $daemon_port if ($daemon_port != -1);
-        $service_info{"addresses"}  = \@addr_list;
-        $service_info{"version"}    = $service->package_version;
+        $service_info{"name"}          = $service_name;
+        $service_info{"enabled"}       = $enabled;
+        $service_info{"is_running"}    = $is_running_output;
+        $service_info{"is_installed"}  = $is_installed if (defined $is_installed);
+        $service_info{"daemon_port"}   = $daemon_port if ($daemon_port != -1);
+        $service_info{"addresses"}     = \@addr_list;
+        $service_info{"version"}       = $service->package_version;
 
         if ($service_name eq "bwctl") {
             $service_info{"testing_ports"} = \@bwctl_test_ports;
@@ -475,6 +440,111 @@ sub get_services {
     return {'services', \@services};
 }
 
+sub update_auto_updates {
+    my $self = shift;
+    my $caller = shift;
+    my $params = $caller->{'input_params'};
+
+    # The "auto updates" are turned on and off by enabling/disabling the 'yum_cron' service
+    my $name = 'yum_cron';
+    my $enabled = $params->{'enabled'}->{'value'};
+
+    my ($res, $message);
+    my $success = 1;
+
+    my $logger = $self->{LOGGER};
+
+    unless (get_service_object($name)) {
+        $logger->error("Service $name not found");
+        return { error => "Error configuring auto updates" };
+    }
+
+    if ($enabled == 1) {
+        $res = start_service( { name => $name, enable => 1 });
+        $message = "Auto updates succesfully enabled";
+    } else {
+        $res = stop_service( { name => $name, disable => 1 });
+        $message = "Auto updates succesfully disabled";
+    }
+
+    $success = 0 if ($res != 0);
+
+    my %resp;
+
+    if ($success) {
+        %resp = ( message => $message );
+    }
+    else {
+        %resp = ( error => "Error while configuring auto updates, configuration NOT saved. Please consult the logs for more information.");
+    }
+    
+    return \%resp;
+
+}
+
+sub update_enabled_services {
+    my $self = shift;
+    my $caller = shift;
+    my $params = $caller->{'input_params'};
+
+    my ($success, $res);
+
+
+    my $logger = $self->{LOGGER};
+
+    $self->{LOGGER}->error("CONFIG: ".Dumper($params));
+
+    # be optimistic
+    $success = 1;
+
+    foreach my $name (keys %$params) {
+        # skip the function name
+        next if ($name eq 'fname');
+        next if not $params->{$name}->{is_set};
+        unless (get_service_object($name)) {
+            #$logger->error("Service $name not found");
+            next;
+        }
+
+        $self->{LOGGER}->debug("Service $name found");
+
+        if ($params->{$name}->{'value'} == 1) {
+            $res = start_service( { name => $name, enable => 1 });
+        } else {
+            $res = stop_service( { name => $name, disable => 1 });
+        }
+
+        $success = 0 if ($res != 0);
+    }
+
+    my %resp;
+
+    if ($success) {
+        %resp = ( message => "Configuration Saved And Services Restarted" );	
+    }
+    else {
+        %resp = ( error => "Error while restarting services, configuration NOT saved. Please consult the logs for more information.");
+    }
+
+    
+    return \%resp;
+}
+
+#sub get_services_list {
+#    my $self = shift;
+#    my %service_list = ();
+#
+#    foreach my $service_name ("bwctl", "owamp", "ndt", "npad", "yum_cron") {
+#        my $service = get_service_object($service_name);
+#
+#        next unless $service;
+#
+#        $service_list{$service_name}->{enabled} = not $service->disabled;
+#    }
+#
+#    return \%service_list;
+#}
+#
 sub _get_port_from_url {
     my $self = shift;
     my $url = shift;
@@ -492,39 +562,44 @@ sub get_summary {
     my $start_time = gettimeofday();
     my $end_time;
 
+    my $comm_obj = perfSONAR_PS::NPToolkit::DataService::Communities->new( {config_file => $self->{config_file} } );
+    
     my $administrative_info = $self->get_admin_information();
     my $status = $self->get_details();
     my $services = $self->get_services();
-    my $communities = $self->get_communities();
+    my $communities = $comm_obj->get_host_communities();
     my $meshes = $self->get_meshes();
 
-    my $results = { %$administrative_info, %$status, %$services, %$communities, %$meshes };
+    my $ntp_info = {'ntp' => ( $self->get_ntp_information() || {} ) };
+
+
+    my $results = { %$administrative_info, %$status, %$services, %$communities, %$meshes, %$ntp_info };
 
     return $results;
 
 }
 
-sub get_communities {
-    my $self = shift;
+# sub get_communities {
+#     my $self = shift;
 
-    my $communities = $self->{admin_info_conf}->get_keywords();
+#     my $communities = $self->{admin_info_conf}->get_keywords();
 
-    return {communities => $communities};
+#     return {communities => $communities};
 
-}
+# }
 
-sub get_all_communities {
-    my $self = shift;
+# sub get_all_communities {
+#     my $self = shift;
 
-    my $keyword_client = perfSONAR_PS::Client::gLS::Keywords->new( { cache_directory => $self->{config}->{cache_directory} } );
-    my ($status, $res) = $keyword_client->get_keywords();
-    $self->{LOGGER}->debug("keyword status: $status");
-    if ( $status == 0) {
-        $self->{LOGGER}->debug("Got keywords: ".Dumper($res));
-    }
-    return $res;
+#     my $keyword_client = perfSONAR_PS::Client::gLS::Keywords->new( { cache_directory => $self->{config}->{cache_directory} } );
+#     my ($status, $res) = $keyword_client->get_keywords();
+#     $self->{LOGGER}->debug("keyword status: $status");
+#     if ( $status == 0) {
+#         $self->{LOGGER}->debug("Got keywords: ".Dumper($res));
+#     }
+#     return $res;
 
-}
+# }
 
 sub get_meshes {
     my $self = shift;
@@ -551,7 +626,7 @@ sub get_meshes {
     return {meshes => \@mesh_urls};
 }
 
-sub get_system_health(){
+sub get_system_health {
     my $self = shift;
 
     my $caller = shift;

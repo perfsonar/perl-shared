@@ -37,7 +37,7 @@ sub new {
 
 sub init {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, { type => 1, uri=>0, expires=>0, ttl=>0 } );
+    my %parameters = validate( @args, { type => 1, uri=>0, expires=>0, ttl=>0, client_uuid=>0 } );
     
     if(ref($parameters{type}) eq 'ARRAY' && scalar @{$parameters{type}} > 1){
     	cluck "Record Type array size cannot be > 1";
@@ -99,6 +99,14 @@ sub init {
     	}
     	
     } 
+    
+    if(defined $parameters{client_uuid} ){
+    	unless(ref($parameters{client_uuid}) eq 'ARRAY'){
+    		$parameters{client_uuid} = [$parameters{client_uuid}];
+    	}
+    	
+    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_CLIENT_UUID)} = $parameters{client_uuid};
+    }
      
     return 0;
 }
@@ -301,7 +309,20 @@ sub setRecordUri {
     return 0;
 }
 
+sub getRecordClientUUID {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_CLIENT_UUID)};
+}
 
+sub setRecordClientUUID {
+    my ( $self, $value ) = @_;
+
+	unless (ref($value) eq 'ARRAY'){
+		$value  = [$value];
+	}
+    $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_CLIENT_UUID)} = $value;
+    return 0;
+}
 
 sub toJson(){
 	my $self = shift;

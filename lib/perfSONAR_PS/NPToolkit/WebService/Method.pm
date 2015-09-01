@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use JSON::XS;
 use Carp qw( cluck confess );
+use perfSONAR_PS::NPToolkit::WebService::Auth qw( is_authenticated  );
 use perfSONAR_PS::NPToolkit::WebService::ParameterTypes;
 use Data::Dumper;
 
@@ -24,6 +25,7 @@ sub new {
         'debug'             => 1,
         'request_methods'   => 1,
         'min_params'        => 1,
+        'input_params'      => 1
     );
 
     # set the defaults
@@ -76,22 +78,21 @@ sub new {
 sub handle_request {
     my ($self, $cgi, $fh) = @_;
     
-    if ( $self->{'auth_required'} == 1 && ( !defined( $cgi->auth_type() ) || $cgi->auth_type() eq '' )) {
+    if( is_authenticated($cgi) ){      
+        $self->{authenticated} = 1;
+    } 
+    if ( $self->{'auth_required'} == 1 && !$self->{authenticated} ) { 
         $self->_return_error(401, "Unauthorized");
         return;
     }
 
-    # TODO: implement request method check
-    #if ( defined ($self->{'request_methods'} && $self->{'request_methods'} ne $cgi->request_method() ) {
-    #    $self->_return_error(405, "Method Not Allowed; Allowed: " . $self->{'request_methods'});
-    #    return;
-    #}
-    my $authorized=0;
-
-    if(defined $cgi->auth_type() && $cgi->auth_type ne '' && defined $cgi->remote_user()){      
-        $authorized = 1;
-        $self->{authenticated} = 1;
+    my $method = $cgi->request_method();
+    if ( defined ($self->{'request_methods'} )
+            && !grep { $method eq $_ } @{$self->{'request_methods'}} ) { 
+        $self->_return_error(405, "Method Not Allowed; Allowed: " . join ', ', @{$self->{'request_methods'}});
+        return;
     }
+
 
     my $res = $self->_parse_input_parameters( $cgi );
     if (!defined $res) {
@@ -101,7 +102,6 @@ sub handle_request {
 
     # call the callback
     my $callback    = $self->{'callback'};
-    #warn "handle_request params " . Dumper $self->{'input_params'};
     my $args = $self->{'input_params'};
     my $results     =  &$callback($self);
 
@@ -183,8 +183,13 @@ sub _parse_input_parameters {
 
         # TODO: add min and max numerical value constraints
 
-        my $value = $cgi->param($param_name);
-        #warn "param: " . $param_name . " value: " . ($value || "'N/A'");
+        my $value;
+        if (defined $cgi->param($param_name)) {
+            $value = $cgi->param($param_name);
+        } elsif (defined $cgi->url_param($param_name)) {
+            $value = $cgi->url_param($param_name);
+
+        }
 
         undef($self->{'input_params'}{$param_name}{'value'});
         $self->{'input_params'}{$param_name}{'is_set'} = 0;
@@ -218,7 +223,7 @@ sub _parse_input_parameters {
 
         my $pattern = $parameter_types->{$type}->{'pattern'}; 
         my $error_text = $parameter_types->{$type}->{'error_text'}; 
-        if ( $value !~ /$pattern/ || ($value eq '' and !$allow_empty) ) {
+        if ( ( $value !~ /$pattern/ and $value ne ''  )  || ($value eq '' and !$allow_empty) ) {
             $self->_return_error(400, "Input parameter ${param_name} $error_text");
 
             return;

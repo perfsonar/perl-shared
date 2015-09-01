@@ -11,9 +11,8 @@ perfSONAR_PS::NPToolkit::Config::Version
 
 =head1 DESCRIPTION
 
-Module for retrieving the current NPToolkit version. Currently, the toolkit
-version is stored in /usr/local/bin/NPToolkit.version . Longer term, we need to
-come up with a better way of doing it. For now, this just reads that in.
+Module for retrieving the current Toolkit version. Currently, the toolkit
+version is stored in /opt/perfsonar_ps/toolkit/etc/toolkit.version.
 
 =cut
 
@@ -21,13 +20,14 @@ use Data::Dumper;
 
 use base 'perfSONAR_PS::NPToolkit::Config::Base';
 
-use fields 'NPTOOLKIT_VERSION_BIN';
+use fields 'NPTOOLKIT_VERSION_BIN', 'NPTOOLKIT_INSTALL_TYPE_BIN';
 
 use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger :nowarn);
 use Storable qw(store retrieve freeze thaw dclone);
 
-my %defaults = ( nptoolkit_version_bin => "/opt/perfsonar_ps/toolkit/scripts/NPToolkit.version", );
+my %defaults = ( nptoolkit_version_bin => "/var/lib/perfsonar/bundles/bundle_version", 
+                 nptoolkit_install_type_bin => "/var/lib/perfsonar/bundles/bundle_type",);
 
 =head2 init({ nptoolkit_version_bin => 0 })
 
@@ -43,7 +43,8 @@ sub init {
 
     # Initialize the defaults
     $self->{NPTOOLKIT_VERSION_BIN} = $defaults{nptoolkit_version_bin};
-
+    $self->{NPTOOLKIT_INSTALL_TYPE_BIN} = $defaults{nptoolkit_install_type_bin};
+    
     # Override any
     $self->{NPTOOLKIT_VERSION_BIN} = $parameters->{enabled_services_file} if ( $parameters->{nptoolkit_version_bin} );
 
@@ -90,9 +91,8 @@ sub reset_state {
     return 0;
 }
 
-=head2 get_services ({})
-    Returns the list of services as a hash indexed by name. The hash values are
-    hashes containing the service's properties.
+=head2 get_version ({})
+    Returns the version of the installed package
 =cut
 
 sub get_version {
@@ -101,14 +101,40 @@ sub get_version {
 
     my $version;
 
-    if ( open( OUTPUT, "-|", $self->{NPTOOLKIT_VERSION_BIN} ) ) {
-        $version = <OUTPUT>;
-        close( OUTPUT );
-
-        chomp( $version ) if ( $version );
+    if ( open( FIN, "<", $self->{NPTOOLKIT_VERSION_BIN} ) ) {
+        while($version = <FIN>){
+            if ( $version ){
+                 chomp( $version );
+                 last;
+            }
+        }
+        close( FIN );
     }
 
     return $version;
+}
+
+=head2 get_install_type ({})
+    Returns the bundle type of the installed package
+=cut
+
+sub get_install_type {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, {} );
+
+    my $type;
+
+    if ( open( FIN, "<", $self->{NPTOOLKIT_INSTALL_TYPE_BIN} ) ) {
+        while($type = <FIN>){
+            if ( $type ){
+                 chomp( $type );
+                 last;
+            }
+        }
+        close( FIN );
+    }
+
+    return $type;
 }
 
 =head2 save_state()
@@ -120,7 +146,8 @@ sub save_state {
     my ( $self, @params ) = @_;
     my $parameters = validate( @params, {} );
 
-    my %state = ( nptoolkit_version_bin => $self->{NPTOOLKIT_VERSION_BIN}, );
+    my %state = ( nptoolkit_version_bin => $self->{NPTOOLKIT_VERSION_BIN},
+                  nptoolkit_install_type_bin =>  $self->{NPTOOLKIT_INSTALL_TYPE_BIN});
 
     my $str = freeze( \%state );
 
@@ -139,7 +166,8 @@ sub restore_state {
     my $state = thaw( $parameters->{state} );
 
     $self->{NPTOOLKIT_VERSION_BIN} = $state->{nptoolkit_version_bin};
-
+    $self->{NPTOOLKIT_INSTALL_TYPE_BIN} = $state->{nptoolkit_install_type_bin};
+    
     return;
 }
 

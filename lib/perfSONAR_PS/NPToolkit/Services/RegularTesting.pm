@@ -34,8 +34,10 @@ sub kill {
 	#No matter what, clean-up stray children
 	system('pkill -9 -f regular_testing/');
 	
-	#clean-up any old data
-	system('find /var/lib/perfsonar/regular_testing -type f -mtime +1 -exec rm {} \;');
+	#clean-up any data older than 5 minutes
+	system('find /var/lib/perfsonar/regular_testing -type f -mmin +5 -exec rm {} \;');
+	#delete empty directories
+	system('find /var/lib/perfsonar/regular_testing/ -type d -empty -delete'); 
     
 	return (0, "");
 }

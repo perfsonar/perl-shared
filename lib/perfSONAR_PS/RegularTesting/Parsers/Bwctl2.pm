@@ -28,6 +28,7 @@ use perfSONAR_PS::RegularTesting::Parsers::Owamp      qw(parse_owamp_raw_output)
 use perfSONAR_PS::RegularTesting::Parsers::Ping       qw(parse_ping_output);
 use perfSONAR_PS::RegularTesting::Parsers::Traceroute qw(parse_traceroute_output);
 use perfSONAR_PS::RegularTesting::Parsers::Tracepath  qw(parse_tracepath_output);
+use perfSONAR_PS::RegularTesting::Parsers::ParisTraceroute  qw(parse_paristraceroute_output);
 
 our @EXPORT_OK = qw( parse_bwctl2_output );
 
@@ -80,6 +81,9 @@ sub parse_bwctl2_output {
     }
     elsif ($results{tool} eq "tracepath") {
         $results{results} = parse_tracepath_output({ stdout => $bwctl_obj->{'send'}->{'results'} });
+    }
+    elsif ($tool eq "paris-traceroute") {
+        $results{results} = parse_paristraceroute_output({ stdout => $bwctl_obj->{'send'}->{'results'} });
     }
     elsif ($results{tool} eq "ping") {
         $results{results} = parse_ping_output({ stdout => $bwctl_obj->{'send'}->{'results'} });
