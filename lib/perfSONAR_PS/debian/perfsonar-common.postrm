@@ -28,12 +28,15 @@ case "$1" in
         if which delgroup > /dev/null 2>&1; then
             delgroup --quiet perfsonar > /dev/null || true
         fi
-
-        # Logging directory
-        rm -rf /var/log/perfsonar
     ;;
 
-    purge|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+    purge)
+        # Removing perfSONAR owned directories
+        rm -rf /var/log/perfsonar
+        rm -rf /var/lib/perfsonar
+    ;;
+
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
     ;;
 
     *)

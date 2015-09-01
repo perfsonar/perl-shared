@@ -27,9 +27,11 @@ case "$1" in
         adduser --force-badname --system --group --gecos "perfsonar user" --no-create-home --home /usr/lib/perfsonar perfsonar >/dev/null
     fi
 
-    # Logging directory
+    # Creating perfSONAR owned directories
     mkdir -p /var/log/perfsonar
     chown perfsonar:perfsonar /var/log/perfsonar
+    mkdir -p /var/lib/perfsonar
+    chown -R perfsonar:perfsonar /var/lib/perfsonar
 
     ;;
 
