@@ -36,6 +36,7 @@ sub set_sidebar_vars {
     $vars->{ntp_nav_class} = "warning" unless $ntpinfo->is_synced();
 
     my $cacti_available;
+    # TODO-debian: this will need a patch
     if (my $db = RPM2->open_rpm_db()) {
        my @packages = $db->find_by_name("cacti");
  

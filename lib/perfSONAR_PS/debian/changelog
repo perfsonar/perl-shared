@@ -1,4 +1,4 @@
-libperfsonar-perl (3.5-2~3.rc2-3) perfsonar-wheezy-staging; urgency=low
+libperfsonar-perl (3.5-2~3.1.rc2-3) UNRELEASED; urgency=low
 
   * Add support for upcoming bwctl2
   * Replace Math::Int64 with Math::BigInt for easier support on Ubuntu-14
@@ -7,7 +7,7 @@ libperfsonar-perl (3.5-2~3.rc2-3) perfsonar-wheezy-staging; urgency=low
   * Reading Toolkit bundle type from /var/lib/perfsonar/bundles/bundle_type
   * Add support for ParisTraceroute
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Tue, 08 Sep 2015 13:19:59 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Wed, 09 Sep 2015 10:47:10 +0000
 
 libperfsonar-perl (3.4.2-1) perfsonar-wheezy-staging; urgency=low
 
