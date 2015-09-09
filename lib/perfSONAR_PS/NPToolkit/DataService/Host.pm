@@ -12,7 +12,7 @@ use Sys::MemInfo qw(totalmem);
 
 use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
 
-use perfSONAR_PS::Utils::LookupService qw( is_host_registered );
+use perfSONAR_PS::Utils::LookupService qw( is_host_registered get_client_uuid );
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
@@ -224,7 +224,9 @@ sub get_details {
     }
 
     $status->{toolkit_name}=$conf{toolkit_name};
-
+    
+    $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/ls_registration_daemon/client_uuid');
+    
     if ($external_address) {
         eval {
             # Make sure it returns in a reasonable amount of time if reverse DNS
