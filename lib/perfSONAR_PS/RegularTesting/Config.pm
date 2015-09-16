@@ -21,7 +21,7 @@ extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
 has 'tests'                        => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::Test]', default => sub { [] });
 has 'default_parameters'           => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::Tests::Base]', default => sub { [] });
 has 'measurement_archives'         => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Base]', default => sub { [] });
-has 'test_result_directory'        => (is => 'rw', isa => 'Str', default => "/var/lib/perfsonar/regular_tests");
+has 'test_result_directory'        => (is => 'rw', isa => 'Str', default => "/var/lib/perfsonar/regular_testing");
 
 # Tests
 use perfSONAR_PS::RegularTesting::Tests::Base;
