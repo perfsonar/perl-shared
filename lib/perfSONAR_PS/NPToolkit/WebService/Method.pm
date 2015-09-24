@@ -157,7 +157,19 @@ sub add_input_parameter {
 
 sub get_input_parameters {
     my $self = shift;
-    return $self->{'input_params'};
+    my @params = ();
+    while( my ($key, $val) = each %{ $self->{'input_params'} } ) {
+        my %param = ();
+        $param{'name'} = $key;
+        $param{'description'} = $val->{'description'} if defined $val->{'description'};
+        $param{'type'} = $val->{'type'} if defined $val->{'type'};
+        push @params, \%param;
+    }
+    if (@params) {
+        return \@params;
+    } else {
+        return;
+    }
 }
 
 sub _parse_input_parameters {
