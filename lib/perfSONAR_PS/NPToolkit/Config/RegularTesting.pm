@@ -29,10 +29,10 @@ use Storable qw(store retrieve freeze thaw dclone);
 
 use JSON;
 
+use Data::Dumper;
 use Data::Validate::IP qw(is_ipv4);
 use Data::Validate::Domain qw(is_hostname);
 use Net::IP;
-
 
 use perfSONAR_PS::RegularTesting::Config;
 use perfSONAR_PS::RegularTesting::Test;
@@ -228,8 +228,7 @@ sub get_tests {
 
     my @tests = ();
     foreach my $key ( sort keys %{ $self->{TESTS} } ) {
-        use Data::Dumper;
-        $self->{LOGGER}->debug("lookup up test: ".$key.": ".Dumper($self->{TESTS}));
+        #$self->{LOGGER}->debug("lookup up test: ".$key.": ".Dumper($self->{TESTS}));
         my ( $status, $res ) = $self->lookup_test( { test_id => $key } );
 
         push @tests, $res;

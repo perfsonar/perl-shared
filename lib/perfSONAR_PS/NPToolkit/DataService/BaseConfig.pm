@@ -1,6 +1,6 @@
 package perfSONAR_PS::NPToolkit::DataService::BaseConfig;
 
-use fields qw(LOGGER config_file admin_info_conf config authenticated);
+use fields qw(LOGGER config_file admin_info_conf config authenticated regular_testing_conf load_regular_testing);
 
 use strict;
 use warnings;
@@ -22,18 +22,41 @@ sub new {
     my $self = fields::new( $class );
 
     $self->{LOGGER} = get_logger( $class );
+    # PARAMETERS
+    # config_file is required
+    # regular_testing_config_file is optional, even if load_regular_testing is specified
+    # load_regular_testing is optional
+        # if 1, load regular testing config
+        # if 0 or not specified, do not load the regular testing config        
     my $parameters = validate(
         @params,
         {
-            config_file => 1
+            config_file => 1,
+            regular_testing_config_file => 0, 
+            load_regular_testing => 0, 
         }
     );
+
     $self->{config_file} = $parameters->{config_file};
     my $config = Config::General->new( -ConfigFile => $self->{config_file} );
     $self->{config} = { $config->getall() };
     my $administrative_info_conf = perfSONAR_PS::NPToolkit::Config::AdministrativeInfo->new();
     $administrative_info_conf->init( { administrative_info_file => $self->{config}->{administrative_info_file} } );
     $self->{admin_info_conf} = $administrative_info_conf;
+
+    my $load_regular_testing = $parameters->{load_regular_testing} || 0;
+    $self->{load_regular_testing} = $load_regular_testing;
+    my $regular_testing_config_file = $parameters->{regular_testing_config_file};
+    $config->{regular_testing_config_file} = $regular_testing_config_file;
+
+    if ( $load_regular_testing ) {
+        my $testing_conf = perfSONAR_PS::NPToolkit::Config::RegularTesting->new();
+        my ( $status, $res ) = $testing_conf->init( { regular_testing_config_file => $regular_testing_config_file } );
+        if ( $status != 0 ) {
+            return { error => "Problem reading testing configuration: $res" };
+        }
+        $self->{regular_testing_conf} = $testing_conf;
+    }
 
     return $self;
 }
