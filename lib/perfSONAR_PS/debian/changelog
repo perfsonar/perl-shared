@@ -1,3 +1,9 @@
+libperfsonar-perl (3.5.0.1~0-1) UNSTABLE; urgency=low
+
+  * To be filled in...
+
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Wed, 14 Oct 2015 17:45:22 +0000
+
 libperfsonar-perl (3.5.0-1) perfsonar-wheezy-release; urgency=low
 
   * Add support for upcoming bwctl2
