@@ -25,7 +25,7 @@ sub new {
         'debug'             => 1,
         'request_methods'   => 1,
         'min_params'        => 1,
-        'input_params'      => 1
+        'input_params'      => 1,
     );
 
     # set the defaults
@@ -127,6 +127,7 @@ sub add_input_parameter {
         min_length => undef,
         max_length => 512,
         allow_empty => 1,
+        multiple    => 0,
         @_
     );
 
@@ -181,7 +182,6 @@ sub _parse_input_parameters {
         return 1;
     }
 
-    #warn "params: " . Dumper $self->{'input_params'};
     my $min_params = $self->{'min_params'};
     my $set_params = {};
     # process each parameter
@@ -196,10 +196,21 @@ sub _parse_input_parameters {
         # TODO: add min and max numerical value constraints
 
         my $value;
-        if (defined $cgi->param($param_name)) {
-            $value = $cgi->param($param_name);
+        my @role_values = $cgi->param('role');
+        if (defined $cgi->param($param_name)) { 
+            if ($param->{'multiple'} == 0) {
+                $value = $cgi->param($param_name);
+            } else {
+                my @values = $cgi->param($param_name);
+                $value = \@values;
+            }      
         } elsif (defined $cgi->url_param($param_name)) {
-            $value = $cgi->url_param($param_name);
+            if ($param->{'multiple'} == 0) {
+                $value = $cgi->url_param($param_name);
+            } else {
+                my @values = $cgi->url_param($param_name);
+                $value = \@values;
+            }
 
         }
 
