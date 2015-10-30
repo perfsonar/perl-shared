@@ -1,6 +1,6 @@
 package perfSONAR_PS::NPToolkit::DataService::BaseConfig;
 
-use fields qw(LOGGER config_file admin_info_conf config authenticated regular_testing_conf load_regular_testing);
+use fields qw(LOGGER config_file admin_info_conf config authenticated regular_testing_conf load_regular_testing ls_conf);
 
 use strict;
 use warnings;
@@ -13,6 +13,7 @@ use Config::General;
 
 use perfSONAR_PS::NPToolkit::Config::Version;
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
+use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file start_service restart_service stop_service );
 
 
@@ -34,6 +35,7 @@ sub new {
             config_file => 1,
             regular_testing_config_file => 0, 
             load_regular_testing => 0, 
+            load_ls_registration => 0,
         }
     );
 
@@ -56,6 +58,17 @@ sub new {
             return { error => "Problem reading testing configuration: $res" };
         }
         $self->{regular_testing_conf} = $testing_conf;
+    }
+
+    my $load_ls_registration = $parameters->{load_ls_registration} || 0;
+    if ($load_ls_registration) {
+        my $ls_conf = perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon->new();
+        my ( $status, $res ) = $ls_conf->init();
+        if ( $status != 0 ) {
+            return { error => "Problem reading LS registration daemon configuration: $res" };
+        }
+        $self->{ls_conf} = $ls_conf;
+
     }
 
     return $self;
@@ -98,6 +111,31 @@ sub save_config {
     }
     #save_state();
 
+}
+
+sub save_ls_config {
+    my $self = shift;
+    my $ls_conf = $self->{ls_conf};
+    my $error_msg;
+    my $status_msg;
+    my ($status, $res) = $ls_conf->save( { restart_services => 1 } );
+
+    if ($status != 0) {
+        $error_msg = "Problem saving LS configuration: $res";
+        return { 
+            error_msg => $error_msg,
+            success => 0,
+        };
+    } else {       
+        #$status_msg = "Configuration Saved And Services Restarted";
+        $status_msg = "LS Configuration saved";
+        #$is_modified = 0;
+        #$initial_state_time = $administrative_info_conf->last_modified();
+        return { 
+            status_msg => $status_msg,
+            success => 1,
+        };
+    }
 }
 
 1;

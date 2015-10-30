@@ -13,6 +13,7 @@ use Sys::MemInfo qw(totalmem);
 use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
 
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered get_client_uuid );
+use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
@@ -59,6 +60,56 @@ sub get_admin_information {
 
     return $info;
     
+}
+
+sub get_metadata {
+    my $self = shift;
+    my $meta = {};
+    my $ls_conf = $self->{ls_conf};
+    if (!defined $ls_conf) {
+        return { 'error' => 'LS Registration Daemon config object not found' };
+    }
+
+    my $config = $ls_conf->load_config( { file => $ls_conf->{'CONFIG_FILE'} } );
+
+    $meta->{'config'} = $config;
+
+    return $meta;
+
+}
+
+sub update_metadata {
+    my $self = shift;
+    my $caller = shift;
+    my $args = $caller->{'input_params'};
+    my $ls_conf = $self->{ls_conf};
+
+
+    my %config_args = ();
+    my @field_names = (
+        'role',
+        'access_policy',
+        'access_policy_notes',
+    );
+    foreach my $field (@field_names) {
+        if ($args->{$field}->{is_set} == 1) {
+            $config_args{$field} = $args->{$field}->{value};
+            if ( $args->{$field}->{multiple} == 1 && 0 ) { # TODO: remove this
+                my @row = split(',', $config_args{$field});
+                $config_args{$field} = \@row;
+            }
+        }
+
+    }
+    my $role = $config_args{'role'};
+    my $access_policy = $config_args{'access_policy'};
+    my $access_policy_notes = $config_args{'access_policy_notes'};
+
+    $ls_conf->set_role( { role => $role } ) if defined $role;
+    $ls_conf->set_access_policy( { access_policy => $access_policy } ) if defined $access_policy;
+    $ls_conf->set_access_policy_notes( { access_policy_notes => $access_policy_notes } ) if defined $access_policy_notes;
+    
+    return $self->save_ls_config();
 }
 
 sub get_calculated_lat_lon {
@@ -237,11 +288,6 @@ sub get_details {
             alarm(0);
         };
     }
-
-    # TODO: add other interfaces, and their capacity and MTU
-    # see https://github.com/perfsonar/ls-registration-daemon/blob/master/lib/perfSONAR_PS/LSRegistrationDaemon/Host.pm#L190
-    #my @interfaces = get_ethernet_interfaces();
-    #warn "interfaces: " . Dumper @interfaces;
 
     $status->{globally_registered} = $is_registered;
 
@@ -532,21 +578,6 @@ sub update_enabled_services {
     return \%resp;
 }
 
-#sub get_services_list {
-#    my $self = shift;
-#    my %service_list = ();
-#
-#    foreach my $service_name ("bwctl", "owamp", "ndt", "npad", "yum_cron") {
-#        my $service = get_service_object($service_name);
-#
-#        next unless $service;
-#
-#        $service_list{$service_name}->{enabled} = not $service->disabled;
-#    }
-#
-#    return \%service_list;
-#}
-#
 sub _get_port_from_url {
     my $self = shift;
     my $url = shift;
@@ -580,28 +611,6 @@ sub get_summary {
     return $results;
 
 }
-
-# sub get_communities {
-#     my $self = shift;
-
-#     my $communities = $self->{admin_info_conf}->get_keywords();
-
-#     return {communities => $communities};
-
-# }
-
-# sub get_all_communities {
-#     my $self = shift;
-
-#     my $keyword_client = perfSONAR_PS::Client::gLS::Keywords->new( { cache_directory => $self->{config}->{cache_directory} } );
-#     my ($status, $res) = $keyword_client->get_keywords();
-#     $self->{LOGGER}->debug("keyword status: $status");
-#     if ( $status == 0) {
-#         $self->{LOGGER}->debug("Got keywords: ".Dumper($res));
-#     }
-#     return $res;
-
-# }
 
 sub get_meshes {
     my $self = shift;
