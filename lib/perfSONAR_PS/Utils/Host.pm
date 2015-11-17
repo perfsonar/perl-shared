@@ -476,6 +476,7 @@ sub get_ntp_info {
 sub get_operating_system_info {
     my ($distribution_name, $distribution_version, $os_type, $kernel_version);
 
+    # TODO: We could use the perl module Linux::Distribution https://metacpan.org/pod/Linux::Distribution
     if (open(FILE, "/etc/redhat-release")) {
         # Redhat style
         my @lines = <FILE>;
@@ -488,13 +489,13 @@ sub get_operating_system_info {
                 $distribution_version = $osinfo[1];
             }
         }
-    } elsif (open(FILE, "/etc/os_version")) {
-        # Ubuntu style
+    } elsif (open(FILE, "/etc/lsb-release")) {
+        # LSB (Ubuntu) style
         while(<FILE>) {
-            if (/^NAME="(.*)"/) {
+            if (/^DISTRIB_ID=(.*)$/) {
                 $distribution_name = $1;
             }
-            if (/^VERSION="(.*)"/) {
+            if (/^DISTRIB_RELEASE=(.*)$/) {
                 $distribution_version = $1;
             }
         }
