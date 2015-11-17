@@ -1,8 +1,9 @@
-libperfsonar-perl (3.5.0.1-1) UNSTABLE; urgency=low
+libperfsonar-perl (3.5.0.1-1) perfsonar-wheezy-release; urgency=low
 
   * Checking node registration in the LS by hostname.
+  * Correcting Ubuntu distribution identification for LS registration
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Tue, 17 Nov 2015 13:23:50 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Tue, 17 Nov 2015 20:48:18 +0000
 
 libperfsonar-perl (3.5.0-1) perfsonar-wheezy-release; urgency=low
 
