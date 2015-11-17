@@ -1,8 +1,8 @@
-libperfsonar-perl (3.5.0.1~0-1) UNSTABLE; urgency=low
+libperfsonar-perl (3.5.0.1-1) UNSTABLE; urgency=low
 
-  * To be filled in...
+  * Checking node registration in the LS by hostname.
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Wed, 14 Oct 2015 17:45:22 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Tue, 17 Nov 2015 13:23:50 +0000
 
 libperfsonar-perl (3.5.0-1) perfsonar-wheezy-release; urgency=low
 
