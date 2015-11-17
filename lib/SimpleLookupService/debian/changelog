@@ -1,6 +1,6 @@
-libperfsonar-sls-perl (3.5.0.1~0-1) UNSTABLE; urgency=low
+libperfsonar-sls-perl (3.5.0.1-1) UNRELEASED; urgency=low
 
-  * To be filled in...
+  * Port to Jessie.
 
  -- Antoine Delvaux <adelvaux@man.poznan.pl>  Wed, 14 Oct 2015 17:45:22 +0000
 
