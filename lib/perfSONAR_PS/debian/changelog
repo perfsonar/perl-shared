@@ -1,8 +1,15 @@
-libperfsonar-perl (3.5.0.1-1) UNRELEASED; urgency=low
+libperfsonar-perl (3.5.1~0.a1-1) UNRELEASED ; urgency=low
 
   * Port to Jessie.
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Wed, 14 Oct 2015 17:45:22 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Tue, 17 Nov 2015 21:06:29 +0000
+
+libperfsonar-perl (3.5.0.1-1) perfsonar-wheezy-release; urgency=low
+
+  * Checking node registration in the LS by hostname.
+  * Correcting Ubuntu distribution identification for LS registration
+
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Tue, 17 Nov 2015 20:48:18 +0000
 
 libperfsonar-perl (3.5.0-1) perfsonar-wheezy-release; urgency=low
 
