@@ -7,8 +7,7 @@ use warnings;
 use POSIX;
 
 use Sys::MemInfo qw(totalmem);
-
-
+use Sys::Hostname;
 
 use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
 
@@ -277,16 +276,45 @@ sub get_details {
     $status->{toolkit_name}=$conf{toolkit_name};
     
     $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/ls_registration_daemon/client_uuid');
-    
+
+    my $logger = $self->{LOGGER};
+
+    # Check whether globally registered
     if ($external_address) {
         eval {
             # Make sure it returns in a reasonable amount of time if reverse DNS
             # lookups are failing for some reason.
-            local $SIG{ALRM} = sub { die "alarm" };
-            alarm(2);
+            local $SIG{ALRM} = sub { die "Timeout" };
+            alarm(5);
             $is_registered = is_host_registered($external_address);
             alarm(0);
         };
+        if($@){
+            $logger->error("Unable to find host record in LS using $external_address: $@");
+        }elsif($is_registered){
+            $logger->error("Found host record in LS using $external_address");
+        }else{
+            $logger->error("Unable to find host record in LS using $external_address");
+        }
+    }
+
+    #try hostname if not registered
+    unless($is_registered){
+        my $hostname = ""; 
+        eval{
+            local $SIG{ALRM} = sub { die "Timeout" };
+            alarm(5);
+            $hostname = hostname;
+            $is_registered = is_host_registered(hostname);
+            alarm(0);
+        };
+        if($@){
+            $logger->error("Unable to find host record in LS using hostname " . ( $hostname ? $hostname : "hostname" ) . ": $@");
+        }elsif($is_registered){
+            $logger->error("Found host record in LS using $hostname");
+        }else{
+            $logger->error("Unable to find host record in LS using hostname " . ( $hostname ? $hostname : "hostname" ));
+        }
     }
 
     $status->{globally_registered} = $is_registered;
