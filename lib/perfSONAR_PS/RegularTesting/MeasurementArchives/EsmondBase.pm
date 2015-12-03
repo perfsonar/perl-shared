@@ -263,7 +263,7 @@ sub send_post {
             'Content-Type' => 'application/json',
             'Content' => to_json($json));
     }
-    $logger->debug("Esmond repsonse: " . $response->content);
+    $logger->debug("Esmond response: " . $response->content);
     
     return $response;
 }
