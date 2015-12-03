@@ -60,7 +60,7 @@ sub new {
         $self->{regular_testing_conf} = $testing_conf;
     }
 
-    my $load_ls_registration = $parameters->{load_ls_registration} || 0;
+    my $load_ls_registration = $parameters->{load_ls_registration} || 1; # TODO: revisit this
     if ($load_ls_registration) {
         my $ls_conf = perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon->new();
         my ( $status, $res ) = $ls_conf->init();
@@ -118,7 +118,7 @@ sub save_ls_config {
     my $ls_conf = $self->{ls_conf};
     my $error_msg;
     my $status_msg;
-    my ($status, $res) = $ls_conf->save( { restart_services => 1 } );
+    my ($status, $res) = $ls_conf->save( { restart_services => 0 } );
 
     if ($status != 0) {
         $error_msg = "Problem saving LS configuration: $res";
