@@ -77,7 +77,7 @@ sub get_metadata {
     my $info = $self->get_admin_information();
     $meta = { %$meta, %$info };
 
-    my $communities = $self->{admin_info_conf}->get_keywords();
+    my $communities = $config->{site_project};
     if ( defined $communities ) {
         my $comm = { 'communities' => $communities };
         $meta = { %$meta, %$comm };
@@ -151,7 +151,7 @@ sub update_metadata {
         subscribe($administrator_email);
     }
 
-    $ls_conf->set_role( { role => $role } ) if defined $role;
+    $ls_conf->set_role( { role => $role } ) if defined $role && @$role >= 0;
     $ls_conf->set_access_policy( { access_policy => $access_policy } ) if defined $access_policy;
     $ls_conf->set_access_policy_notes( { access_policy_notes => $access_policy_notes } ) if defined $access_policy_notes;
     $ls_conf->set_projects( { projects => $communities } ) if defined $communities;

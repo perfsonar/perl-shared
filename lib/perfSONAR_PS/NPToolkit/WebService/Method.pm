@@ -192,6 +192,7 @@ sub _parse_input_parameters {
         my $min_length = $param->{'min_length'};
         my $max_length = $param->{'max_length'};
         my $allow_empty = $param->{'allow_empty'};
+        my $multiple = $param->{'multiple'};
 
         # TODO: add min and max numerical value constraints
 
@@ -203,7 +204,7 @@ sub _parse_input_parameters {
             } else {
                 my @values = $cgi->param($param_name);
                 $value = \@values;
-            }      
+            } 
         } elsif (defined $cgi->url_param($param_name)) {
             if ($param->{'multiple'} == 0) {
                 $value = $cgi->url_param($param_name);
@@ -242,6 +243,14 @@ sub _parse_input_parameters {
         if ( defined ($max_length) && length($value) > $max_length) {
             $self->_return_error(400, "Input parameter ${param_name} is longer than the maximum allowed length of $max_length");
             return;
+        }
+
+        # If it's a multiple value and it is an array like [ "" ]
+        # then just make it an empty array
+        # (this is what happens when the user supplies an empty value for 
+        # multiple value type parameter)
+        if ( $multiple == 1 && @$value && @$value == 1 && $value->[0] eq '' ) {
+            $value = [];
         }
 
         my $pattern = $parameter_types->{$type}->{'pattern'}; 
