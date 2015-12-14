@@ -62,11 +62,18 @@ sub get_test_configuration {
     foreach my $test (@$tests) {
         my $test_id = $test->{id};
         $test_id =~ s/test\.//g;
-        $test->{id_num} = $test_id;
+        $test->{test_id} = $test_id;
 
+        
         my $current_test = $test_id;
+        # This next line seems unnecessary. TODO: remove entirely (lookup_test)
+        #my ( $status, $res ) = $testing_conf->lookup_test( { test_id => $current_test } );
 
-        my ( $status, $res ) = $testing_conf->lookup_test( { test_id => $current_test } );
+        foreach my $member (@{ $test->{members} }) {
+            my $member_id = $member->{id};
+            $member_id =~ s/member\.//g;
+            $member->{member_id} = $member_id;
+        }
 
         # Skip the below section for now        
         next;
@@ -85,6 +92,7 @@ sub get_test_configuration {
             # Check whether or not the test members can do ipv4 or ipv6 tests
             foreach my $member (@{ $res->{members} }) {
                 next if ($member->{can_test_ipv4} or $member->{can_test_ipv6});
+
 
                 my $addr = $member->{address};
 
