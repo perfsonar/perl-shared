@@ -804,6 +804,19 @@ sub delete_test {
     return ( 0, "" );
 }
 
+=head2 delete_all_tests ()
+    Removes all the tests  from the list. Returns (0,
+    "") if the tests were deleted successfully or if no tests were present.
+=cut
+
+sub delete_all_tests {
+    my ( $self ) = shift;
+
+    $self->{TESTS} =();
+
+    return ( 0, "" );
+}
+
 =head2 add_test_member ({ test_id => 1, address => 1, port => 0, name => 0, description => 0, sender => 0, receiver => 0 })
     Adds a new address to the test. Address can be any of hostname/ipv4/ipv6.
     Port specifies which port should be connected to, this is ignored in ping

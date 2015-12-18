@@ -55,7 +55,6 @@ sub new {
 
 }
 
-# END use statements from old regular testing
 sub add_test_configuration {
 
     my $self = shift;
@@ -65,81 +64,57 @@ sub add_test_configuration {
 
     my $data = from_json($json_text);
 
-    my @result=[];
-    my $ret_val=-1;
-
-    my $regular_testing_conf = $self->{regular_testing_conf};
-
-    if($data){
-
-        my $tests = $data->{'data'};
-
-        if($tests){
-
-            foreach my $test (@{$tests}){
-
-                my $test_type =  $test->{'type'};
-                my $parameters =  $test->{'parameters'};
-                my $disabled = $test->{'disabled'};
-                my $description = $test->{'description'};
-                my $members = $test->{'members'};
-                
-                my $test_id;
-                if($test_type eq 'owamp'){
-
-                    $test_id = $regular_testing_conf->add_test_owamp($parameters);
-
-                }elsif($test_type eq 'bwctl'){
-
-                    $test_id = $regular_testing_conf->add_test_bwctl_throughput($parameters);
-
-                }elsif($test_type eq 'pinger'){
-
-                    $test_id = $regular_testing_conf->add_test_pinger($parameters);
-
-                }elsif($test_type eq 'traceroute'){
-                    $test_id = $regular_testing_conf->add_test_traceroute($parameters);
-
-                }
-
-                if($test_id){
-                    foreach my $member (@{$members}){
-                        $member->{'test_id'} = $test_id;
-                        my $ret = $regular_testing_conf->add_test_member($member);
-
-                    }
-                push @result, $test;
-                    
-                }
-
-            }  
-        } 
-        
-    }
-
-    my $response = ();
-    if(@result){
-        my ($ret_val, $ret_message) = $regular_testing_conf->save();
-        $response->{"tests_added"} = \@result;
-        $response->{"Config saved to disk"}= $ret_val;
-        $response->{"Error message"}= $ret_message;
-
-    }else{
-        $response->{"Config saved to disk"}= -1;
-        $response->{"Error message"}= "Error adding tests";
-        $response->{"tests_added"} = \@result;
-    }
-
-    
+    my $response = $self->_add_test_configuration($data);
     return $response;
+    
 
 }
+
+sub delete_all_tests{
+    my $self = shift;
+    my $regular_testing_conf = $self->{regular_testing_conf};
+    my ($ret_val, $ret_message) = $regular_testing_conf->delete_all_tests();
+
+    my $result = ();
+    $result->{"Error message"} = $ret_message;
+    $result->{"Return code"} = $ret_val;
+
+    return $result;
+
+
+}
+
+#deletes all the tests and adds the configuration
+sub update_test_configuration{
+
+    my $self = shift;
+    my $caller = shift;
+    my $input_data = $caller->{'input_params'}->{'POSTDATA'};
+    my $json_text = $input_data->{'value'};
+
+    my $data = from_json($json_text);
+
+
+    my $response = $self->delete_all_tests();
+
+    if($response->{"Return code"} == 0 and $input_data){
+        my $update_response = $self->_add_test_configuration($data);
+        return $update_response;
+    }
+
+    return $response->{"Error message"};
+    return $response;
+
+
+}
+
+
 
 sub get_test_configuration {
     my $self = shift;
     my $testing_conf = $self->{regular_testing_conf};
 
-    if ($self->{load_regular_testing} != 1) {
+    if (!($self->{regular_testing_conf})) {
         return {error => "Regular testing config must be loaded before getting test configuration"};
     }
 
@@ -362,6 +337,82 @@ sub get_status {
     $status_vars->{traceroute_tests}        = $traceroute_tests;
 
     return $status_vars;
+}
+
+
+sub _add_test_configuration{
+
+    my $self = shift;
+    my $data = shift;   
+
+    my @result=[];
+    my $ret_val=-1;
+
+    my $regular_testing_conf = $self->{regular_testing_conf};
+
+    if($data){
+
+        my $tests = $data->{'data'};
+
+        if($tests){
+
+            foreach my $test (@{$tests}){
+
+                my $test_type =  $test->{'type'};
+                my $parameters =  $test->{'parameters'};
+                my $disabled = $test->{'disabled'};
+                my $description = $test->{'description'};
+                my $members = $test->{'members'};
+                
+                my $test_id;
+                if($test_type eq 'owamp'){
+
+                    $test_id = $regular_testing_conf->add_test_owamp($parameters);
+
+                }elsif($test_type eq 'bwctl'){
+
+                    $test_id = $regular_testing_conf->add_test_bwctl_throughput($parameters);
+
+                }elsif($test_type eq 'pinger'){
+
+                    $test_id = $regular_testing_conf->add_test_pinger($parameters);
+
+                }elsif($test_type eq 'traceroute'){
+                    $test_id = $regular_testing_conf->add_test_traceroute($parameters);
+
+                }
+
+                if($test_id){
+                    foreach my $member (@{$members}){
+                        $member->{'test_id'} = $test_id;
+                        my $ret = $regular_testing_conf->add_test_member($member);
+
+                    }
+                push @result, $test;
+                    
+                }
+
+            }  
+        } 
+        
+    }
+
+    my $response = ();
+    if(@result){
+        my ($ret_val, $ret_message) = $regular_testing_conf->save();
+        $response->{"tests_added"} = \@result;
+        $response->{"Return code"}= $ret_val;
+        $response->{"Error message"}= $ret_message;
+
+    }else{
+        $response->{"Return code"}= -1;
+        $response->{"Error message"}= "Error adding tests";
+        $response->{"tests_added"} = \@result;
+    }
+
+    
+    return $response;
+
 }
 
 
