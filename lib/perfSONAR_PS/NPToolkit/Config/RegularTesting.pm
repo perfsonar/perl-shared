@@ -827,6 +827,7 @@ sub add_test_member {
             test_ipv4   => 0,
             test_ipv6   => 0,
             skip_default_rules => 0,
+            id          => 0
         }
     );
 

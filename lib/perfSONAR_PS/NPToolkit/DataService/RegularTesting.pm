@@ -37,8 +37,103 @@ use Data::Validate::Domain qw(is_hostname);
 use Net::IP;
 use Time::HiRes qw( time );
 
-# END use statements from old regular testing
+use JSON qw(from_json);
 
+sub new {
+
+    my ( $class, @params ) = @_;
+
+    my $self = fields::new( $class );
+
+    $self->{LOGGER} = get_logger( $class );
+
+    my $regular_testing_conf = perfSONAR_PS::NPToolkit::Config::RegularTesting->new();
+    $regular_testing_conf->init();
+    $self->{regular_testing_conf} = $regular_testing_conf;
+
+    return $self;
+
+}
+
+# END use statements from old regular testing
+sub add_test_configuration {
+
+    my $self = shift;
+    my $caller = shift;
+    my $input_data = $caller->{'input_params'}->{'POSTDATA'};
+    my $json_text = $input_data->{'value'};
+
+    my $data = from_json($json_text);
+
+    my @result=[];
+    my $ret_val=-1;
+
+    my $regular_testing_conf = $self->{regular_testing_conf};
+
+    if($data){
+
+        my $tests = $data->{'data'};
+
+        if($tests){
+
+            foreach my $test (@{$tests}){
+
+                my $test_type =  $test->{'type'};
+                my $parameters =  $test->{'parameters'};
+                my $disabled = $test->{'disabled'};
+                my $description = $test->{'description'};
+                my $members = $test->{'members'};
+                
+                my $test_id;
+                if($test_type eq 'owamp'){
+
+                    $test_id = $regular_testing_conf->add_test_owamp($parameters);
+
+                }elsif($test_type eq 'bwctl'){
+
+                    $test_id = $regular_testing_conf->add_test_bwctl_throughput($parameters);
+
+                }elsif($test_type eq 'pinger'){
+
+                    $test_id = $regular_testing_conf->add_test_pinger($parameters);
+
+                }elsif($test_type eq 'traceroute'){
+                    $test_id = $regular_testing_conf->add_test_traceroute($parameters);
+
+                }
+
+                if($test_id){
+                    foreach my $member (@{$members}){
+                        $member->{'test_id'} = $test_id;
+                        my $ret = $regular_testing_conf->add_test_member($member);
+
+                    }
+                push @result, $test;
+                    
+                }
+
+            }  
+        } 
+        
+    }
+
+    my $response = ();
+    if(@result){
+        my ($ret_val, $ret_message) = $regular_testing_conf->save();
+        $response->{"tests_added"} = \@result;
+        $response->{"Config saved to disk"}= $ret_val;
+        $response->{"Error message"}= $ret_message;
+
+    }else{
+        $response->{"Config saved to disk"}= -1;
+        $response->{"Error message"}= "Error adding tests";
+        $response->{"tests_added"} = \@result;
+    }
+
+    
+    return $response;
+
+}
 
 sub get_test_configuration {
     my $self = shift;
