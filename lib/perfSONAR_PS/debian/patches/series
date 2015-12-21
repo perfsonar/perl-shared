@@ -1,5 +1,4 @@
 RPM2
 IO::Interface::Simple
-relocate.diff
-services.diff
 math-int64.diff
+services.diff

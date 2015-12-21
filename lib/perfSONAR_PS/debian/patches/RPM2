@@ -1,10 +1,91 @@
 --- a/NPToolkit/Services/Base.pm
 +++ b/NPToolkit/Services/Base.pm
-@@ -6,7 +6,6 @@
+@@ -6,7 +6,8 @@
  use Log::Log4perl qw(:easy);
  use File::Spec;
  use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES';
 -use RPM2;
++use Dpkg::Control;
++use Dpkg::Version;
  
  sub new {
      my ( $package ) = @_;
+@@ -51,22 +52,29 @@
+     if ($self->{PACKAGE_NAMES}) {
+         my $min;
+ 
+-        if (my $db = RPM2->open_rpm_db()) {
+-            foreach my $package_name (@{ $self->{PACKAGE_NAMES} }) {
+-                my @packages = $db->find_by_name($package_name);
+-    
+-                foreach my $package (@packages) {
+-                    $min = $package unless $min;
+-    
+-                    my $result = ($package <=> $min);
++        my %wanted = map { ($_, 1) } @{ $self->{PACKAGE_NAMES} };
++        my $installed = 'install ok installed';
++        my $dpkg_status = '/var/lib/dpkg/status';
++
++        if (open(DPKG_STATUS, $dpkg_status)) {
++            my $ctrl;
++            while (defined($ctrl = Dpkg::Control->new(type => CTRL_FILE_STATUS))
++                   && $ctrl->parse(\*DPKG_STATUS, $dpkg_status))
++            {
++                if ($wanted{ $ctrl->{Package} } && $ctrl->{Status} eq $installed) {
++                    $min = $ctrl->{Version} unless $min;
++
++                    my $result = version_compare($ctrl->{Version}, $min);
+                     if ($result < 0) {
+-                        $min = $package;
++                        $min = $ctrl->{Version};
+                     }
+                 }
+             }
++
++            close(DPKG_STATUS);
+         }
+ 
+-        $version = $min->version."-".$min->release if $min;
++        $version = $min;
+     }
+ 
+     return $version;
+--- a/Web/Sidebar.pm
++++ b/Web/Sidebar.pm
+@@ -9,7 +9,7 @@
+ use Params::Validate;
+ use Data::Dumper;
+ 
+-use RPM2;
++use Dpkg::Control;
+ 
+ use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
+ 
+@@ -36,11 +36,22 @@
+     $vars->{ntp_nav_class} = "warning" unless $ntpinfo->is_synced();
+ 
+     my $cacti_available;
+-    # TODO-debian: this will need a patch
+-    if (my $db = RPM2->open_rpm_db()) {
+-       my @packages = $db->find_by_name("cacti");
+- 
+-       $cacti_available = 1 if scalar(@packages) > 0;
++
++    my $ctrl;
++    my $dpkg_status = '/var/lib/dpkg/status';
++    if (open(DPKG_STATUS, $dpkg_status)) {
++        while (defined($ctrl = Dpkg::Control->new(type => CTRL_FILE_STATUS))
++               && $ctrl->parse(\*DPKG_STATUS, $dpkg_status))
++        {
++             if ($ctrl->{Package} eq "cacti"
++                 && $ctrl->{Status} eq "install ok installed")
++             {
++                 $cacti_available = 1;
++                 last;
++             }
++        }
++
++        close(DPKG_STATUS);
+     }
+ 
+     $vars->{cacti_available} = $cacti_available;

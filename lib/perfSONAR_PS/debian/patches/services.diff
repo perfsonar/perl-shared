@@ -1,3 +1,16 @@
+--- a/NPToolkit/Config/NTP.pm
++++ b/NPToolkit/Config/NTP.pm
+@@ -35,8 +35,8 @@
+ # These are the defaults for the current NPToolkit
+ my %defaults = (
+     ntp_conf          => "/etc/ntp.conf",
+-    known_servers     => "/opt/perfsonar_ps/toolkit/etc/ntp_known_servers",
+-    ntp_conf_template => "/opt/perfsonar_ps/toolkit/templates/config/ntp_conf.tmpl",
++    known_servers     => "/etc/perfsonar/toolkit/ntp_known_servers",
++    ntp_conf_template => "/usr/lib/perfsonar/templates/config/ntp_conf.tmpl",
+     step_tickers_file => "/etc/ntp/step-tickers",
+ );
+ 
 --- a/NPToolkit/Services/MySQL.pm
 +++ b/NPToolkit/Services/MySQL.pm
 @@ -9,8 +9,8 @@
@@ -79,7 +92,7 @@
 +	system('find /var/lib/perfsonar/regulartesting -type f -mmin +5 -exec rm {} \;');
  	#delete empty directories
 -	system('find /var/lib/perfsonar/regular_testing/ -type d -empty -delete'); 
-+	system('find /var/lib/perfsonar/regulartesting/ -type d -empty -delete'); 
++	system('find /var/lib/perfsonar/regulartesting/ -type d -empty -delete');
      
  	return (0, "");
  }
@@ -102,7 +115,7 @@
  
 --- a/NPToolkit/Services/Base.pm
 +++ b/NPToolkit/Services/Base.pm
-@@ -233,7 +233,7 @@
+@@ -241,7 +241,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
  
@@ -111,3 +124,153 @@
  
      $self->{LOGGER}->debug($shell_cmd);
  
+--- a/NPToolkit/Services/NPAD.pm
++++ b/NPToolkit/Services/NPAD.pm
+@@ -24,9 +24,9 @@
+ 
+ sub is_installed{
+     my ($self) = @_;
+-    my $response = `rpm -qi npad`;
++    my $response = `dpkg -l npad 2>&1`;
+ 
+-    my $substr = 'not installed';
++    my $substr = 'no packages found';
+ 
+     if(index($response, $substr) == -1){
+         #installed
+--- a/NPToolkit/Services/NDT.pm
++++ b/NPToolkit/Services/NDT.pm
+@@ -53,9 +53,9 @@
+ 
+ sub is_installed{
+     my ($self) = @_;
+-    my $response = `rpm -qi ndt`;
++    my $response = `dpkg -l ndt 2>&1`;
+ 
+-    my $substr = 'not installed';
++    my $substr = 'no packages found';
+ 
+     if(index($response, $substr) == -1){
+         #installed
+--- a/Utils/Host.pm
++++ b/Utils/Host.pm
+@@ -444,7 +444,7 @@
+ sub get_ntp_info {
+     my $ntp;
+ 
+-    my $ntp_result = `/usr/sbin/ntpdc -p`;
++    my $ntp_result = `/usr/bin/ntpdc -p`;
+ 
+     my @ntp_response = split /\n/, $ntp_result;
+     
+@@ -595,16 +595,11 @@
+ }
+ 
+ sub is_auto_updates_on{
+-
+     my ($self) = @_;
+ 
+-    my $enabled = "enabled";
+-
+-    my $result = `/etc/init.d/yum-cron status`;
+-
+-    if(index($result, $enabled) != -1){
++    if(-e '/etc/cron-apt/action.d/5-upgrade'){
+         return 1;
+-    }else{
++    } else {
+         return 0;
+     }
+ }
+@@ -612,7 +607,7 @@
+ sub _call_sysctl {
+     my ($var_name) = @_;
+     
+-    my $result = `sysctl $var_name`;
++    my $result = `/sbin/sysctl $var_name`;
+     if($?){
+         return;
+     }
+--- a/NPToolkit/Services/ConfigDaemon.pm
++++ b/NPToolkit/Services/ConfigDaemon.pm
+@@ -12,7 +12,7 @@
+     $conf{init_script} = "config_daemon" unless $conf{init_script};
+     $conf{process_names} = "config_daemon" unless $conf{process_names};
+     $conf{pid_files} = "/var/run/config_daemon.pid" unless $conf{pid_files};
+-    $conf{package_names} = [ "perl-perfSONAR_PS-Toolkit" ] unless $conf{package_names};
++    $conf{package_names} = [ "perfsonar-toolkit" ] unless $conf{package_names};
+ 
+     $self->SUPER::init( %conf );
+ 
+--- a/NPToolkit/Config/AdministrativeInfo.pm
++++ b/NPToolkit/Config/AdministrativeInfo.pm
+@@ -31,7 +31,7 @@
+ use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
+ 
+ # These are the defaults for the current NPToolkit
+-my %defaults = ( administrative_info_file => "/opt/perfsonar_ps/toolkit/etc/administrative_info", );
++my %defaults = ( administrative_info_file => "/etc/perfsonar/toolkit/administrative_info", );
+ 
+ =head2 init({ administrative_info_file => 0 })
+ 
+--- a/NPToolkit/Services/YumCron.pm
++++ b/NPToolkit/Services/YumCron.pm
+@@ -8,40 +8,36 @@
+ sub init {
+     my ( $self, %conf ) = @_;
+ 
+-    $conf{description}  = "Yum Automatic Updates" unless $conf{description};
+-    $conf{init_script} = "yum-cron" unless $conf{init_script};
+-    $conf{process_names} = "yum" unless $conf{process_names};
+-    $conf{pid_files} = "/var/lock/yum-cron.lock/pidfile" unless $conf{pid_files};
+-    $conf{package_names} = [ "yum-cron" ] unless $conf{package_names};
++    $conf{description}  = "APT Automatic Updates" unless $conf{description};
++    $conf{package_names} = [ "cron-apt" ] unless $conf{package_names};
+ 
+     $self->SUPER::init( %conf );
+ 
+     return 0;
+ }
+ 
++sub disable_startup {
++    my ($self) = @_;
++
++    unlink '/etc/cron-apt/action.d/5-upgrade';
++}
++
+ sub enable_startup {
+     my ($self) = @_;
+ 
+-    unless ($self->{INIT_SCRIPT}) {
+-	$self->{LOGGER}->error("No init script specified for this service");
+-	return -1;
++    my $action_file = '/etc/cron-apt/action.d/5-upgrade';
++    my $action_fd;
++    unless (open($action_fd, '>', $action_file)) {
++        $self->{LOGGER}->error("Could not opet $action_file: $!");
++        return -1;
+     }
+ 
+-    # turn off stderr + stdout
+-    open(my $stderr, ">&STDERR");
+-    open(my $stdout, ">&STDOUT");
+-    open(STDERR, ">", File::Spec->devnull());
+-    open(STDOUT, ">", File::Spec->devnull());
+-
+-    my $ret = system( "chkconfig --add  " . $self->{INIT_SCRIPT} );
+-    #need to run chkconfig on
+-    $ret = system( "chkconfig " . $self->{INIT_SCRIPT} . " on");
+-    
+-    # restore stderr + stdout
+-    open(STDERR, ">&", $stderr);
+-    open(STDOUT, ">&", $stdout);
++    print $action_fd "-q -q dist-upgrade\n";
+ 
+-    return $ret;
++    unless(close($action_fd)) {
++        $self->{LOGGER}->error("Could not close $action_file: $!");
++        return -1;
++    }
+ }
+ 
+ 1;
