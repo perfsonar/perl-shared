@@ -134,10 +134,7 @@ sub get_test_configuration {
         $test_id =~ s/test\.//g;
         $test->{test_id} = $test_id;
 
-        
         my $current_test = $test_id;
-        # This next line seems unnecessary. TODO: remove entirely (lookup_test)
-        #my ( $status, $res ) = $testing_conf->lookup_test( { test_id => $current_test } );
 
         foreach my $member (@{ $test->{members} }) {
             my $member_id = $member->{id};
@@ -145,63 +142,6 @@ sub get_test_configuration {
             $member->{member_id} = $member_id;
         }
 
-        # Skip the below section for now        
-        next;
-
-        # NOTE: This part seems unnecessary
-
-        if ( $status != 0 ) {
-            $self->{LOGGER}->info( "Failed to lookup test " . $current_test ) unless ( $status == 0 );
-        } else {
-
-            $self->{LOGGER}->info( "Succeeded looking up test " . $current_test );
-            my $test_id = $res->{id};
-            $test_id =~ s/test\.//g;
-            $res->{id_num} = $test_id;
-
-            # Check whether or not the test members can do ipv4 or ipv6 tests
-            foreach my $member (@{ $res->{members} }) {
-                next if ($member->{can_test_ipv4} or $member->{can_test_ipv6});
-
-
-                my $addr = $member->{address};
-
-                my ($ipv4, $ipv6) = (0, 0);
-
-                # Discover the hostname, and figure out if ipv4 or ipv6 testing should
-                # be done.
-                if ( is_ipv4( $addr ) ) {
-                    $ipv4 = 1;
-                }
-                elsif ( &Net::IP::ip_is_ipv6( $addr ) ) {
-                    $ipv6 = 1;
-                }
-                elsif ( is_hostname( $addr ) ) {
-                    my @host_addrs = resolve_address($addr);
-                    foreach my $host_addr (@host_addrs) {
-                        if ( &Net::IP::ip_is_ipv6( $host_addr ) ) {
-                            $ipv6 = 1;
-                        }
-                        elsif ( is_ipv4( $host_addr ) ) {
-                            $ipv4 = 1;
-                        }
-                    }
-
-                    if (scalar(@host_addrs) == 0) {
-                        $ipv6 = 1;
-                        $ipv4 = 1;
-                    }
-                }
-
-                $member->{can_test_ipv4} = $ipv4;
-                $member->{can_test_ipv6} = $ipv6;
-
-                # The template assumes that test_ipv4/test_ipv6 are either 1 or
-                # 0, not undef.
-                $member->{test_ipv4} = 0 unless $member->{test_ipv4};
-                $member->{test_ipv6} = 0 unless $member->{test_ipv6};
-            }
-        }
     }
 
     my $status_vars = $self->get_status($tests);
@@ -359,10 +299,15 @@ sub _add_test_configuration{
             foreach my $test (@{$tests}){
 
                 my $test_type =  $test->{'type'};
-                my $parameters =  $test->{'parameters'};
                 my $disabled = $test->{'disabled'};
                 my $description = $test->{'description'};
                 my $members = $test->{'members'};
+                my $parameters =  $test->{'parameters'};
+                $parameters->{'description'} = $description;
+                # TODO: change the way 'disabled' parameters are handled
+                # Currently, disable_test() is called on a test that already exists.
+                # We need to be able to set the disabled flag when creating the test.
+                #$parameters->{'disabled'} = $disabled;
                 
                 my $test_id;
                 if($test_type eq 'owamp'){
