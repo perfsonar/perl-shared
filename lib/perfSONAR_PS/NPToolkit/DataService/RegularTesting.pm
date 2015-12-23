@@ -304,10 +304,7 @@ sub _add_test_configuration{
                 my $members = $test->{'members'};
                 my $parameters =  $test->{'parameters'};
                 $parameters->{'description'} = $description;
-                # TODO: change the way 'disabled' parameters are handled
-                # Currently, disable_test() is called on a test that already exists.
-                # We need to be able to set the disabled flag when creating the test.
-                #$parameters->{'disabled'} = $disabled;
+                $parameters->{'disabled'} = $disabled;
                 
                 my $test_id;
                 if($test_type eq 'owamp'){
