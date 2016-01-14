@@ -12,6 +12,7 @@ use Sys::Hostname;
 use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
 
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered get_client_uuid );
+use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
@@ -32,32 +33,131 @@ use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file start_service re
 
 sub get_admin_information {
     my $self = shift;
-    my $administrative_info_conf = $self->{admin_info_conf};
+    # TODO: update this to ONLY use ls conf instead of admin info
+    my $ls_conf = $self->{ls_conf};
+    #my $administrative_info_conf = $self->{admin_info_conf};
+    #$administrative_info_conf = $ls_conf if defined $ls_conf;
+
     #my %conf = %{$self->{config}};
 
     my $info = {
         administrator => {
-            name => $administrative_info_conf->get_administrator_name(),
-            email => $administrative_info_conf->get_administrator_email(),
-            organization => $administrative_info_conf->get_organization_name()
+            name => $ls_conf->get_administrator_name(),
+            email => $ls_conf->get_administrator_email(),
+            organization => $ls_conf->get_organization_name()
         },
         location => {
-            city => $administrative_info_conf->get_city(),
-            state => $administrative_info_conf->get_state(),
-            country => $administrative_info_conf->get_country(),
-            zipcode => $administrative_info_conf->get_zipcode(),
-            latitude => $administrative_info_conf->get_latitude(),
-            longitude => $administrative_info_conf->get_longitude(),
+            city => $ls_conf->get_city(),
+            state => $ls_conf->get_state(),
+            country => $ls_conf->get_country(),
+            zipcode => $ls_conf->get_zipcode(),
+            latitude => $ls_conf->get_latitude(),
+            longitude => $ls_conf->get_longitude(),
         },
 
         #toolkit_name => $conf{toolkit_name}
     };
 
-    
-
-
     return $info;
     
+}
+
+sub get_metadata {
+    my $self = shift;
+    my $meta = {};
+    my $ls_conf = $self->{ls_conf};
+    if (!defined $ls_conf) {
+        return { 'error' => 'LS Registration Daemon config object not found' };
+    }
+
+    my $config = $ls_conf->load_config( { file => $ls_conf->{'CONFIG_FILE'} } );
+
+    $meta->{'config'} = $config;
+
+    my $info = $self->get_admin_information();
+    $meta = { %$meta, %$info };
+
+    my $communities = $config->{site_project};
+    if ( defined $communities ) {
+        my $comm = { 'communities' => $communities };
+        $meta = { %$meta, %$comm };
+    }
+
+    return $meta;
+
+
+}
+
+sub update_metadata {
+    my $self = shift;
+    my $caller = shift;
+    my $args = $caller->{'input_params'};
+    my $ls_conf = $self->{ls_conf};
+
+
+    my %config_args = ();
+    my @field_names = (
+        'role',
+        'access_policy',
+        'access_policy_notes',
+        'communities',
+        'organization_name',
+        'admin_name',
+        'admin_email',
+        'city',
+        'country',
+        'state',
+        'postal_code',
+        'latitude',
+        'longitude',
+    );
+    foreach my $field (@field_names) {
+        if ($args->{$field}->{is_set} == 1) {
+            $config_args{$field} = $args->{$field}->{value};
+            if ( $args->{$field}->{multiple} == 1 && 0 ) { # TODO: remove this
+                my @row = split(',', $config_args{$field});
+                $config_args{$field} = \@row;
+            }
+        }
+
+    }
+    my $role = $config_args{'role'};
+    my $access_policy = $config_args{'access_policy'};
+    my $access_policy_notes = $config_args{'access_policy_notes'};
+    my $communities = $config_args{'communities'};
+
+    my $organization_name = $config_args{organization_name}; #  if (exists $args{organization_name});
+    my $administrator_name = $config_args{admin_name}; # if (exists $args{administrator_name});
+    my $administrator_email = $config_args{admin_email}; # if (exists $args{administrator_email});
+    my $city = $config_args{city};
+    my $state = $config_args{state};
+    my $zipcode = $config_args{postal_code};
+    my $country = $config_args{country};
+    my $latitude = $config_args{latitude};
+    my $longitude = $config_args{longitude};
+    my $subscribe = $config_args{subscribe};
+
+    $ls_conf->set_organization_name( { organization_name => $organization_name } ) if defined $organization_name;
+    $ls_conf->set_administrator_name( { administrator_name => $administrator_name } ) if defined $administrator_name;
+    $ls_conf->set_administrator_email( { administrator_email => $administrator_email } ) if defined $administrator_email;
+    $ls_conf->set_city( { city => $city } ) if defined $city;
+    $ls_conf->set_state( { state => $state } ) if defined $state;
+    $ls_conf->set_country( { country => $country } ) if defined $country;
+    $ls_conf->set_zipcode( { zipcode => $zipcode } ) if defined $zipcode;
+    $ls_conf->set_latitude( { latitude => $latitude } ) if defined $latitude;
+    $ls_conf->set_longitude( { longitude => $longitude } ) if defined $longitude;
+
+    if($administrator_email && defined ($subscribe) && $subscribe == 1){
+        subscribe($administrator_email);
+    }
+
+    $ls_conf->set_role( { role => $role } ) if defined $role && @$role >= 0;
+    $ls_conf->set_access_policy( { access_policy => $access_policy } ) if defined $access_policy;
+    $ls_conf->set_access_policy_notes( { access_policy_notes => $access_policy_notes } ) if defined $access_policy_notes;
+    $ls_conf->set_projects( { projects => $communities } ) if defined $communities;
+
+    
+    return $self->save_ls_config();
 }
 
 sub get_calculated_lat_lon {
@@ -265,7 +365,6 @@ sub get_details {
             $logger->error("Unable to find host record in LS using hostname " . ( $hostname ? $hostname : "hostname" ));
         }
     }
-
 
     $status->{globally_registered} = $is_registered;
 
@@ -556,21 +655,6 @@ sub update_enabled_services {
     return \%resp;
 }
 
-#sub get_services_list {
-#    my $self = shift;
-#    my %service_list = ();
-#
-#    foreach my $service_name ("bwctl", "owamp", "ndt", "npad", "yum_cron") {
-#        my $service = get_service_object($service_name);
-#
-#        next unless $service;
-#
-#        $service_list{$service_name}->{enabled} = not $service->disabled;
-#    }
-#
-#    return \%service_list;
-#}
-#
 sub _get_port_from_url {
     my $self = shift;
     my $url = shift;
@@ -604,28 +688,6 @@ sub get_summary {
     return $results;
 
 }
-
-# sub get_communities {
-#     my $self = shift;
-
-#     my $communities = $self->{admin_info_conf}->get_keywords();
-
-#     return {communities => $communities};
-
-# }
-
-# sub get_all_communities {
-#     my $self = shift;
-
-#     my $keyword_client = perfSONAR_PS::Client::gLS::Keywords->new( { cache_directory => $self->{config}->{cache_directory} } );
-#     my ($status, $res) = $keyword_client->get_keywords();
-#     $self->{LOGGER}->debug("keyword status: $status");
-#     if ( $status == 0) {
-#         $self->{LOGGER}->debug("Got keywords: ".Dumper($res));
-#     }
-#     return $res;
-
-# }
 
 sub get_meshes {
     my $self = shift;
