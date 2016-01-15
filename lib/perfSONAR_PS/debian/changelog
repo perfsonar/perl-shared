@@ -1,8 +1,8 @@
-libperfsonar-perl (3.5.1~0.a1-1) UNRELEASED; urgency=low
+libperfsonar-perl (3.5.1~1.a1-1) UNRELEASED; urgency=low
 
   * Port to Jessie.
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Fri, 15 Jan 2016 20:56:16 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Fri, 15 Jan 2016 21:01:15 +0000
 
 libperfsonar-perl (3.5.0.1-1) perfsonar-wheezy-release; urgency=low
 
