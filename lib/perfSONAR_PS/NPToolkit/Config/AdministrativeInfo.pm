@@ -20,7 +20,7 @@ NDT since it uses these same settings for its configuration.
 
 use base 'perfSONAR_PS::NPToolkit::Config::Base';
 
-use fields 'SITE_INFO_FILE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL', 'ORGANIZATION_NAME', 'LOCATION', 'KEYWORDS', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE';
+use fields 'SITE_INFO_FILE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL', 'ORGANIZATION_NAME', 'LOCATION', 'KEYWORDS', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ROLE', 'ACCESS_POLICY', 'ACCESS_POLICY_NOTES';
 
 use Params::Validate qw(:all);
 use Storable qw(store retrieve freeze thaw dclone);

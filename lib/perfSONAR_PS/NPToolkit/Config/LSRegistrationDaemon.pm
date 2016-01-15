@@ -3,7 +3,7 @@ package perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
 use strict;
 use warnings;
 
-our $VERSION = 3.3;
+our $VERSION = 3.5.1;
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ use Template;
 
 use base 'perfSONAR_PS::NPToolkit::Config::Base';
 
-use fields 'CONFIG_FILE', 'ORGANIZATION_NAME', 'PROJECTS', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL';
+use fields 'CONFIG_FILE', 'ORGANIZATION_NAME', 'PROJECTS', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL', 'ROLE', 'ACCESS_POLICY', 'ACCESS_POLICY_NOTES';
 
 use Params::Validate qw(:all);
 use Storable qw(store retrieve freeze thaw dclone);
@@ -164,6 +164,39 @@ sub get_administrator_name {
     my $parameters = validate( @params, { } );
 
     return $self->{ADMINISTRATOR_NAME};
+}
+
+=head2 get_role()
+Returns the node role type to advertise in the gLS
+=cut
+
+sub get_role {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { } );
+
+    return $self->{ROLE};
+}
+
+=head2 get_access_policy()
+Returns the node's access policy to advertise in the gLS
+=cut
+
+sub get_access_policy {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { } );
+
+    return $self->{ACCESS_POLICY};
+}
+
+=head2 get_access_policy_notes()
+Returns the node's access policy notes field to advertise in the gLS
+=cut
+
+sub get_access_policy_notes {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { } );
+
+    return $self->{ACCESS_POLICY_NOTES};
 }
 
 =head2 set_organization_name({ organization_name => 1 })
@@ -310,6 +343,48 @@ sub set_administrator_email {
     return 0;
 }
 
+=head2 set_role({ role => 1 })
+Sets the node role the service to advertise in the LS
+=cut
+sub set_role {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { role => 1, } );
+
+    my $role = $parameters->{role};
+
+    $self->{ROLE} = $role;
+
+    return 0;
+}
+
+=head2 set_access_policy({ access_policy => 1 })
+Sets the node access policy to advertise in the LS
+=cut
+sub set_access_policy {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { access_policy => 1, } );
+
+    my $access_policy = $parameters->{access_policy};
+
+    $self->{ACCESS_POLICY} = $access_policy;
+
+    return 0;
+}
+
+=head2 set_access_policy_notes({ access_policy_notes => 1 })
+Sets the node access policy notes to advertise in the LS
+=cut
+sub set_access_policy_notes {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { access_policy_notes => 1, } );
+
+    my $access_policy_notes = $parameters->{access_policy_notes};
+
+    $self->{ACCESS_POLICY_NOTES} = $access_policy_notes;
+
+    return 0;
+}
+
 =head2 last_modified()
     Returns when the site information was last saved.
 =cut
@@ -367,6 +442,15 @@ sub save {
     delete($config->{site_project});
     $config->{site_project} = $self->{PROJECTS} if $self->{PROJECTS};
 
+    delete($config->{role});
+    $config->{role} = $self->{ROLE} if $self->{ROLE};
+
+    delete($config->{access_policy});
+    $config->{access_policy} = $self->{ACCESS_POLICY} if $self->{ACCESS_POLICY};
+
+    delete($config->{access_policy_notes});
+    $config->{access_policy_notes} = $self->{ACCESS_POLICY_NOTES} if $self->{ACCESS_POLICY_NOTES};
+
     my $content = SaveConfigString($config);
 
     my $res = save_file( { file => $self->{CONFIG_FILE}, content => $content } );
@@ -410,6 +494,9 @@ sub reset_state {
     if ($self->{PROJECTS} and ref($self->{PROJECTS}) ne "ARRAY") {
         $self->{PROJECTS} = [ $self->{PROJECTS} ];
     }
+    $self->{ROLE}                   = $config->{role};
+    $self->{ACCESS_POLICY}          = $config->{access_policy};
+    $self->{ACCESS_POLICY_NOTES}    = $config->{access_policy_notes};
 
     return 0;
 }
@@ -456,6 +543,9 @@ sub save_state {
         longitude                   => $self->{LONGITUDE},
         administrator_name          => $self->{ADMINISTRATOR_NAME},
         administrator_email         => $self->{ADMINISTRATOR_EMAIL},
+        role                        => $self->{ROLE},
+        access_policy               => $self->{ACCESS_POLICY},
+        access_policy_notes         => $self->{ACCESS_POLICY_NOTES},
     );
 
     my $str = freeze( \%state );
@@ -486,6 +576,9 @@ sub restore_state {
     $self->{LONGITUDE}                   = $state->{longitude};
     $self->{ADMINISTRATOR_NAME}          = $state->{administrator_name};
     $self->{ADMINISTRATOR_EMAIL}         = $state->{administrator_email};
+    $self->{ROLE}                        = $state->{role};
+    $self->{ACCESS_POLICY}               = $state->{access_policy};
+    $self->{ACCESS_POLICY_NOTES}         = $state->{access_policy_notes};
     
     return;
 }
