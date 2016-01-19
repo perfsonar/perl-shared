@@ -164,6 +164,7 @@ sub _set_headers {
         -type => $self->{output_type},
         -expires => $expires,
         -status => $status,
+        -charset=> 'utf-8',
         );
     print { $fh } $head;
 }
