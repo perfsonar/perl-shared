@@ -511,7 +511,7 @@ Reads the site.info file specified in the parameters and returns a hash containi
 sub read_administrative_info_file {
     my $parameters = validate( @_, { file => 1, } );
 
-    unless ( open( SITE_INFO_FILE, $parameters->{file} ) ) {
+    unless ( open( SITE_INFO_FILE, "<:encoding(utf-8)", $parameters->{file} ) ) {
         my %info     = ();
         my %keywords = ();
         $info{keywords} = \%keywords;
