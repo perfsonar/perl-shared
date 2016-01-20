@@ -154,7 +154,7 @@ sub writeFile {
         die("Access denied");
     }
 
-    unless (open( FILE, ">", $filename )) {
+    unless (open( FILE, ">:utf8", $filename )) {
         my $msg = "Couldn't write $filename: $@";
         $self->{LOGGER}->error($msg);
         die($msg);
