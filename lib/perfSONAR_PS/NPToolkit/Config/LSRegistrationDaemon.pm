@@ -451,7 +451,7 @@ sub save {
     delete($config->{access_policy_notes});
     $config->{access_policy_notes} = $self->{ACCESS_POLICY_NOTES} if $self->{ACCESS_POLICY_NOTES};
 
-    my $content = SaveConfigString($config);
+    my $content = SaveConfigString( $config );
 
     my $res = save_file( { file => $self->{CONFIG_FILE}, content => $content } );
     if ( $res == -1 ) {
@@ -512,7 +512,7 @@ sub load_config {
 
     my %config;
     eval {
-        %config = ParseConfig(-ConfigFile => $file, AutoTrue => 1);
+        %config = ParseConfig(-ConfigFile => $file, -AutoTrue => 1, -UTF8 => 1);
     };
     if ($@) {
         return undef;
