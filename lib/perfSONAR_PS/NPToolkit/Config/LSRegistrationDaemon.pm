@@ -512,7 +512,7 @@ sub load_config {
 
     my %config;
     eval {
-        %config = ParseConfig(-ConfigFile => $file, AutoTrue => 1);
+        %config = ParseConfig(-ConfigFile => $file, AutoTrue => 1, -UTF8);
     };
     if ($@) {
         return undef;
