@@ -17,12 +17,15 @@ TBD
 
 =cut
 
+use RPC::XML;
 use RPC::XML::Client;
 use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger :nowarn);
 use Data::Dumper;
 
 use fields 'CLIENT', 'LOGGER';
+
+$RPC::XML::ENCODING = 'utf-8';
 
 sub new {
     my ( $class ) = @_;
