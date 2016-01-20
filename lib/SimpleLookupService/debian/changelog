@@ -1,9 +1,9 @@
-libperfsonar-sls-perl (3.5.1~1.a1-1) UNRELEASED; urgency=low
+libperfsonar-sls-perl (3.5.1~2.a1-1) UNRELEASED; urgency=low
 
   * Port to Jessie.
   * To be filled in ...
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sun, 17 Jan 2016 15:38:23 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Wed, 20 Jan 2016 17:40:39 +0000
 
 libperfsonar-sls-perl (3.5.0-1) perfsonar-wheezy-release; urgency=low
 
