@@ -434,10 +434,10 @@ sub save {
     $config->{zip_code} = $self->{ZIP_CODE} if $self->{ZIP_CODE};
 
     delete($config->{latitude});
-    $config->{latitude} = $self->{LATITUDE} if $self->{LATITUDE};
+    $config->{latitude} = $self->{LATITUDE} if defined $self->{LATITUDE};
 
     delete($config->{longitude});
-    $config->{longitude} = $self->{LONGITUDE} if $self->{LONGITUDE};
+    $config->{longitude} = $self->{LONGITUDE} if defined $self->{LONGITUDE};
 
     delete($config->{site_project});
     $config->{site_project} = $self->{PROJECTS} if $self->{PROJECTS};
