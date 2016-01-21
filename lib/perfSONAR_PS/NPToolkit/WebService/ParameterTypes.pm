@@ -30,7 +30,7 @@ $parameter_types->{'positive_integer'}->{'error_text'} = 'only accepts positive 
 $parameter_types->{'float'}->{'pattern'} = '^(\-?\d+.\d+)$';
 $parameter_types->{'float'}->{'error_text'} = 'only accepts decimal numbers';
 
-$parameter_types->{'number'}->{'pattern'} = '^(\-?\d+(.\d+)?)$';
+$parameter_types->{'number'}->{'pattern'} = '^(\-?\d+([.,]\d+)?)$';
 $parameter_types->{'number'}->{'error_text'} = 'only accepts numbers';
 
 # for now, accept any input for text (not just ascii)
