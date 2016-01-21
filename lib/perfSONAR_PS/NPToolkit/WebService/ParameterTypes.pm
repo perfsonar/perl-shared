@@ -27,9 +27,6 @@ $parameter_types->{'integer'}->{'error_text'} = 'only accepts positive or negati
 $parameter_types->{'positive_integer'}->{'pattern'} = '^([1-9]+)$';
 $parameter_types->{'positive_integer'}->{'error_text'} = 'only accepts positive integers (1-9)';
 
-$parameter_types->{'float'}->{'pattern'} = '^(\-?\d+.\d+)$';
-$parameter_types->{'float'}->{'error_text'} = 'only accepts decimal numbers';
-
 $parameter_types->{'number'}->{'pattern'} = '^(\-?\d+([.,]\d+)?)$';
 $parameter_types->{'number'}->{'error_text'} = 'only accepts numbers';
 
