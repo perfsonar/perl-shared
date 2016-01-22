@@ -161,7 +161,7 @@ sub add_metadata {
     $self->add_metadata_parameters(metadata=> $metadata, test=>$test, target => $target, test_parameters => $test_parameters, results => $results);
     
     #write to MA
-    my $response = $self->send_post(url => $self->database, json => $metadata);
+    my $response = $self->send_http_request(url => $self->database, json => $metadata);
     if(!$response->is_success){
         my $errmsg = $self->build_err_msg(http_response => $response);
         return ($response->code , $errmsg,"");
@@ -203,7 +203,7 @@ sub add_data {
     
     #send to MA
     if(scalar(@{$data}) > 0){
-        my $response = $self->send_post(url => $write_url, json => {'data' => $data});
+        my $response = $self->send_http_request(url => $write_url, json => {'data' => $data}, put => 1);
         if($response->code() == 409){
             #if try to post duplicate datapoint, warn and move on
             $logger->warn("Error posting data to MA: " . $response->content);
@@ -235,12 +235,11 @@ sub build_err_msg {
     return $errmsg;
 }
 
-sub send_post {
+sub send_http_request {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {url => 1, json => 1});
+    my $parameters = validate( @args, {url => 1, json => 1, put => 0});
     my $url = $parameters->{url};
     my $json = $parameters->{json};
-    my $auth_string = ($self->username && $self->password) ? $self->username . ":" . $self->password : "";
     my $client = LWP::UserAgent->new();
     $client->timeout($self->timeout);
     $client->env_proxy();
@@ -251,11 +250,22 @@ sub send_post {
     $logger->debug("Writing to esmond at " . $self->database);
     $logger->debug("Esmond request: " . to_json($json));
     my $response = {};
-    if($auth_string){
+    if($parameters->{put} && $self->password){
+        #API Key authentication
+        $response = $client->put($url, 
+            'Content-Type' => 'application/json',
+            'Authorization' => "Token " . $self->password,
+            'Content' => to_json($json));
+    }elsif($self->password){
         #API Key authentication
         $response = $client->post($url, 
             'Content-Type' => 'application/json',
-            'Authorization' => "ApiKey $auth_string",
+            'Authorization' => "Token " . $self->password,
+            'Content' => to_json($json));
+    }elsif($parameters->{put}){
+        #IP authentication
+        $response = $client->put($url, 
+            'Content-Type' => 'application/json',
             'Content' => to_json($json));
     }else{
         #IP authentication
