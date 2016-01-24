@@ -210,8 +210,8 @@ sub time_range{
 sub headers {
     my $self = shift;
     my $headers = {};
-    if($self->auth_username && $self->auth_apikey){
-        $headers->{'Authorization'} = 'ApiKey ' . $self->auth_username . ":" . $self->auth_apikey;
+    if($self->auth_apikey){
+        $headers->{'Authorization'} = 'Token ' . $self->auth_apikey;
     }
     
     return $headers;
