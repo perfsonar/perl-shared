@@ -41,7 +41,7 @@ sub post_data {
     my ($self) = shift;
     
     my $json_payload = to_json($self->data);
-    my $content = $self->_post($json_payload);
+    my $content = $self->_put($json_payload);
     if($self->error){
         return -1;
     }
