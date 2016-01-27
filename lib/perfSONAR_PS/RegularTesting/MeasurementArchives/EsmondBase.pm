@@ -252,10 +252,12 @@ sub send_http_request {
     my $response = {};
     if($parameters->{put} && $self->password){
         #API Key authentication
-        $response = $client->put($url, 
+        my $req = HTTP::Request->new(PUT => "$url", HTTP::Headers->new(
             'Content-Type' => 'application/json',
             'Authorization' => "Token " . $self->password,
-            'Content' => to_json($json));
+        ));
+        $req->content(to_json($json));
+        $response = $client->request($req);
     }elsif($self->password){
         #API Key authentication
         $response = $client->post($url, 
@@ -269,9 +271,11 @@ sub send_http_request {
             'Content' => to_json($json));
     }else{
         #IP authentication
-        $response = $client->post($url, 
+        my $req = HTTP::Request->new(PUT => "$url", HTTP::Headers->new(
             'Content-Type' => 'application/json',
-            'Content' => to_json($json));
+        ));
+        $req->content(to_json($json));
+        $response = $client->request($req);
     }
     $logger->debug("Esmond response: " . $response->content);
     

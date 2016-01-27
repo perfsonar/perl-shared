@@ -34,6 +34,7 @@ has 'send_only'       => (is => 'rw', isa => 'Bool');
 has 'receive_only'    => (is => 'rw', isa => 'Bool');
 has 'latest_time'     => (is => 'rw', isa => 'Int');
 has 'local_firewall'  => (is => 'rw', isa => 'Bool');
+has 'control_address' => (is => 'rw', isa => 'Str');
 
 has '_individual_tests' => (is => 'rw', isa => 'ArrayRef[HashRef]');
 has '_runner'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Utils::CmdRunner');
@@ -280,6 +281,7 @@ sub build_cmd {
     push @cmd, ( '-s', $source ) if $source;
     push @cmd, ( '-c', $destination ) if $destination;
     push @cmd, ( '-T', $test_parameters->tool ) if $test_parameters->tool;
+    push @cmd, ( '-B', $test_parameters->control_address ) if $test_parameters->control_address;
     push @cmd, '-4' if $force_ipv4;
     push @cmd, '-6' if $force_ipv6;
 
