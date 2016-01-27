@@ -55,10 +55,12 @@ override 'build_cmd' => sub {
     # Add the parameters from the parent class
     push @cmd, super();
 
-    push @cmd, '-u' if $test_parameters->use_udp;
+    if($test_parameters->use_udp){
+        push @cmd, '-u';
+        push @cmd, ( '-b', $test_parameters->udp_bandwidth ) if $test_parameters->udp_bandwidth;
+    }
     push @cmd, ( '-P', $test_parameters->streams ) if $test_parameters->streams;
     push @cmd, ( '-t', $test_parameters->duration ) if $test_parameters->duration;
-    push @cmd, ( '-b', $test_parameters->udp_bandwidth ) if $test_parameters->udp_bandwidth;
     push @cmd, ( '-O', $test_parameters->omit_interval ) if $test_parameters->omit_interval;
     push @cmd, ( '-l', $test_parameters->buffer_length ) if $test_parameters->buffer_length;
     push @cmd, ( '-w', $test_parameters->window_size ) if $test_parameters->window_size;
