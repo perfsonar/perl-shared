@@ -39,6 +39,7 @@ sub send_http_request{
     $ua->ssl_opts(SSL_ca_file => $parameters->{ca_certificate_file}) if($parameters->{ca_certificate_file});
     $ua->ssl_opts(SSL_ca_path => $parameters->{ca_certificate_path}) if($parameters->{ca_certificate_path});
     push @{ $ua->requests_redirectable }, 'POST';
+    push @{ $ua->requests_redirectable }, 'PUT';
     
     # Create a request
     my $req = HTTP::Request->new($parameters{connection_type} => $url);

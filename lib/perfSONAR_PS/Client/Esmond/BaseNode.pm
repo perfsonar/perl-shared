@@ -38,6 +38,29 @@ sub _post {
     return $response->content;
 }
 
+sub _put {
+    my ($self, $data) = @_;
+    
+    my $response = send_http_request(
+        connection_type => 'PUT', 
+        url => $self->_post_url(),
+        timeout => $self->filters->timeout,
+        ca_certificate_file => $self->filters->ca_certificate_file,
+        ca_certificate_path => $self->filters->ca_certificate_path,
+        verify_hostname => $self->filters->verify_hostname,
+        headers => $self->filters->headers(),
+        data => $data
+    );
+    
+    if(!$response->is_success){
+        my $msg = build_err_msg(http_response => $response);
+        $self->_set_error($msg);
+        return;
+    }
+
+    return $response->content;
+}
+
 __PACKAGE__->meta->make_immutable;
 
 1;
