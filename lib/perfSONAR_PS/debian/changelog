@@ -1,10 +1,10 @@
-libperfsonar-perl (3.5.1~5.a1-1) UNRELEASED; urgency=low
+libperfsonar-perl (3.5.1~6.a1-1) UNRELEASED; urgency=low
 
   * Port to Jessie.
   * UTF-8 support.
   * To be filled in ...
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sun, 24 Jan 2016 20:35:07 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Wed, 27 Jan 2016 21:48:57 +0000
 
 libperfsonar-perl (3.5.0.1-1) perfsonar-wheezy-release; urgency=low
 
