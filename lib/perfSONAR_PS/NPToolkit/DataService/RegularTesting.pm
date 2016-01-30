@@ -305,13 +305,13 @@ sub _add_test_configuration{
                 my $parameters =  $test->{'parameters'};
                 $parameters->{'description'} = $description;
                 $parameters->{'disabled'} = $disabled;
-                
+
                 my $test_id;
                 if($test_type eq 'owamp'){
 
                     $test_id = $regular_testing_conf->add_test_owamp($parameters);
 
-                }elsif($test_type eq 'bwctl'){
+                }elsif($test_type eq 'bwctl/throughput'){
 
                     $test_id = $regular_testing_conf->add_test_bwctl_throughput($parameters);
 

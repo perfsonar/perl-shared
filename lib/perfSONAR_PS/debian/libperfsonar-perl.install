@@ -3,5 +3,4 @@ NPToolkit       /usr/share/perl5/perfSONAR_PS/
 RegularTesting  /usr/share/perl5/perfSONAR_PS/
 Utils           /usr/share/perl5/perfSONAR_PS/
 Web             /usr/share/perl5/perfSONAR_PS/
-XML             /usr/share/perl5/perfSONAR_PS/
 *.pm            /usr/share/perl5/perfSONAR_PS/

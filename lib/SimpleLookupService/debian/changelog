@@ -1,9 +1,9 @@
-libperfsonar-sls-perl (3.5.1~6.a1-1~bpo70+1) UNRELEASED; urgency=low
+libperfsonar-sls-perl (3.5.1~7.a1-1~bpo70+1) UNRELEASED; urgency=low
 
   * Backport to wheezy
   * To be filled in...
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Wed, 27 Jan 2016 21:50:56 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sat, 30 Jan 2016 13:28:22 +0000
 
 libperfsonar-sls-perl (3.5.0-1) perfsonar-wheezy-release; urgency=low
 
