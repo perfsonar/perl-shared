@@ -102,7 +102,7 @@
  
 --- a/NPToolkit/Services/Base.pm
 +++ b/NPToolkit/Services/Base.pm
-@@ -233,7 +233,7 @@
+@@ -232,7 +232,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
  
