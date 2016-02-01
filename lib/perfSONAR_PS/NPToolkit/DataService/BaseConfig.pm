@@ -1,6 +1,6 @@
 package perfSONAR_PS::NPToolkit::DataService::BaseConfig;
 
-use fields qw(LOGGER config_file admin_info_conf config authenticated regular_testing_conf load_regular_testing ls_conf);
+use fields qw(LOGGER config_file admin_info_conf config authenticated regular_testing_conf load_regular_testing load_ls_registration ls_conf test_config_defaults_file);
 
 use strict;
 use warnings;
@@ -34,6 +34,7 @@ sub new {
         {
             config_file => 1,
             regular_testing_config_file => 0, 
+            test_config_defaults_file => 0, 
             load_regular_testing => 0, 
             load_ls_registration => 0,
         }
@@ -51,16 +52,21 @@ sub new {
     my $regular_testing_config_file = $parameters->{regular_testing_config_file};
     $config->{regular_testing_config_file} = $regular_testing_config_file;
 
+    my $test_config_defaults_file = $parameters->{test_config_defaults_file};
+    #warn Dumper 'parameters: ' . Dumper $parameters;
+    $config->{test_config_defaults_file} = $test_config_defaults_file;
+
     if ( $load_regular_testing ) {
         my $testing_conf = perfSONAR_PS::NPToolkit::Config::RegularTesting->new();
-        my ( $status, $res ) = $testing_conf->init( { regular_testing_config_file => $regular_testing_config_file } );
+        my ( $status, $res ) = $testing_conf->init( { regular_testing_config_file => $regular_testing_config_file, test_config_defaults_file => $test_config_defaults_file } );
         if ( $status != 0 ) {
             return { error => "Problem reading testing configuration: $res" };
         }
         $self->{regular_testing_conf} = $testing_conf;
     }
 
-    my $load_ls_registration = $parameters->{load_ls_registration} || 1; # TODO: revisit this
+    my $load_ls_registration = 0;
+    $load_ls_registration = 1 if ( defined $parameters->{load_ls_registration} && $parameters->{load_ls_registration} == 1);
     if ($load_ls_registration) {
         my $ls_conf = perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon->new();
         my ( $status, $res ) = $ls_conf->init();
