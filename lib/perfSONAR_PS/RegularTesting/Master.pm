@@ -3,7 +3,7 @@ package perfSONAR_PS::RegularTesting::Master;
 use strict;
 use warnings;
 
-our $VERSION = 3.4;
+our $VERSION = 3.5.1;
 
 use Log::Log4perl qw(get_logger);
 use Params::Validate qw(:all);
