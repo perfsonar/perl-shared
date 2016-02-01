@@ -205,6 +205,7 @@ Requires:		perl(Statistics::Descriptive)
 Requires:		perl(Symbol)
 Requires:		perl(Time::HiRes)
 Requires:		perl(URI::Split)
+Requires:               libperfsonar-esmond-perl
 
 %description regulartesting-perl
 Shared libaries for perfSONAR regular testing
