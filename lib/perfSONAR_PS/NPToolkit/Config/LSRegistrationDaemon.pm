@@ -32,7 +32,7 @@ use Config::General qw(ParseConfig SaveConfigString);
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service );
 
 my %defaults = (
-    config_file  => "/opt/perfsonar_ps/ls_registration_daemon/etc/ls_registration_daemon.conf",
+    config_file  => "/etc/perfsonar/lsregistrationdaemon.conf",
 );
 
 =head2 init({ config_file => 1, service_name => 1 })

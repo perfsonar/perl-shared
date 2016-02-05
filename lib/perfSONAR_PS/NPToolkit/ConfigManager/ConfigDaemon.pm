@@ -28,7 +28,7 @@ use fields 'DAEMON', 'LOGGER', 'ACCESS_CONTROL', 'FIREWALL_SCRIPT';
 $RPC::XML::ENCODING = 'utf-8';
 
 my %defaults = (
-    firewall_script => "/opt/perfsonar_ps/toolkit/scripts/configure_firewall"
+    firewall_script => "/usr/lib/perfsonar/scripts/configure_firewall"
 );
 
 sub new {

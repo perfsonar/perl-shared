@@ -324,7 +324,7 @@ sub get_details {
 
     $status->{toolkit_name}=$conf{toolkit_name};
     
-    $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/ls_registration_daemon/client_uuid');
+    $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/lsregistrationdaemon/client_uuid');
 
     my $logger = $self->{LOGGER};
 
@@ -693,7 +693,7 @@ sub get_meshes {
     my $self = shift;
     my @mesh_urls = ();
     eval {
-        my $mesh_config_conf = "/opt/perfsonar_ps/mesh_config/etc/agent_configuration.conf";
+        my $mesh_config_conf = "/etc/perfsonar/meshconfig-agent.conf";
 
         die unless ( -f $mesh_config_conf );
 
