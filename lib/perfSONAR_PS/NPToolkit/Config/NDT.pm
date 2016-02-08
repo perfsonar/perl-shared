@@ -35,7 +35,7 @@ use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service 
 # These are the defaults for the current NPToolkit
 my %defaults = (
     tcpbw100_html_file     => "/usr/ndt/tcpbw100.html",
-    tcpbw100_html_template => "/opt/perfsonar_ps/toolkit/templates/config/tcpbw100_html.tmpl",
+    tcpbw100_html_template => "/etc/perfsonar/toolkit/templates/tcpbw100_html.tmpl",
 );
 
 =head2 init({ tcpbw100_html_template => 0, tcpbw100_html_file => 0 })

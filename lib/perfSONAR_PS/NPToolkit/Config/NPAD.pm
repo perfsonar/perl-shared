@@ -35,7 +35,7 @@ use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service 
 # These are the defaults for the current NPToolkit
 my %defaults = (
     diag_form_html_file     => "/var/lib/npad/diag_form.html",
-    diag_form_html_template => "/opt/perfsonar_ps/toolkit/templates/config/diag_form_html.tmpl",
+    diag_form_html_template => "/etc/perfsonar/toolkit/templates/diag_form_html.tmpl",
 );
 
 =head2 init({ diag_form_html_file => 0, diag_form_html_template => 0 })
