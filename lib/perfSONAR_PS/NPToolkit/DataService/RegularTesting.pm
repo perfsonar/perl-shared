@@ -73,7 +73,6 @@ sub add_test_configuration {
 
     my $response = $self->_add_test_configuration($data);
     return $response;
-    
 
 }
 
@@ -153,16 +152,19 @@ sub get_test_configuration {
 
     my $status_vars = $self->get_status($tests);
 
+    my $test_defaults = $self->get_default_test_parameters();
+
     return {
         test_configuration => $tests,
         status => $status_vars,
+        test_defaults => $test_defaults,
     };
 }
 
 sub get_status {
     my ( $self, $tests ) = @_;
     my $testing_conf = $self->{regular_testing_conf};
-    
+
     # Calculates whether or not they have a "good" configuration
 
     my ($status, $res);
