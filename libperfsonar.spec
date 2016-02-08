@@ -48,6 +48,15 @@ Requires:		perl(Sys::Statistics::Linux)
 Requires:		perl(Time::HiRes)
 Requires:		perl(URI::Split)
 Requires:		perl(XML::LibXML)
+Obsoletes:      perl-perfSONAR_PS-Toolkit
+Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
+Obsoletes:      perl-perfSONAR_PS-serviceTest
+Obsoletes:      perl-perfSONAR_PS-MeshConfig-Shared
+Obsoletes:      perl-perfSONAR-graphs
+Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
+Obsoletes:      perl-perfSONAR_PS-RegularTesting
+Obsoletes:      perl-perfSONAR_PS-Nagios
+Obsoletes:      perl-perfSONAR_PS-LSCacheDaemon
 
 %description perl
 Libraries common to many of the perfSONAR perl components
@@ -69,6 +78,12 @@ Requires:		perl(Scalar::Util)
 Requires:		perl(Time::HiRes)
 Requires:		perl(URI)
 Requires:		perl(YAML::Syck)
+Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
+Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
+Obsoletes:      perl-perfSONAR_PS-serviceTest
+Obsoletes:      perl-perfSONAR_PS-Toolkit
+Obsoletes:      perl-perfSONAR_PS-Nagios
+Obsoletes:      perl-perfSONAR-graphs
 
 %description sls-perl
 Client libraries for perfSONAR's Simple Lookup Service (sLS)
@@ -84,6 +99,12 @@ Requires:		perl(Mouse)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
 Requires:		perl(URI::Split)
+Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
+Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
+Obsoletes:      perl-perfSONAR_PS-serviceTest
+Obsoletes:      perl-perfSONAR_PS-Toolkit
+Obsoletes:      perl-perfSONAR_PS-Nagios
+Obsoletes:      perl-perfSONAR-graphs
 
 %description esmond-perl
 perfSONAR Meaurement Archive perl clients for esmond
@@ -159,6 +180,12 @@ Requires:		perl(XML::LibXML)
 Requires:		libperfsonar-perl
 Requires:		libperfsonar-sls-perl
 Requires:		libperfsonar-regulartesting-perl
+Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
+Obsoletes:      perl-perfSONAR_PS-serviceTest
+Obsoletes:      perl-perfSONAR_PS-Toolkit
+Obsoletes:      perl-perfSONAR-graphs
+Obsoletes:      perl-perfSONAR_PS-MeshConfig-Shared
+Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
 
 %description toolkit-perl
 Shared libraries for perfSONAR Toolkit distributions
@@ -206,6 +233,11 @@ Requires:		perl(Symbol)
 Requires:		perl(Time::HiRes)
 Requires:		perl(URI::Split)
 Requires:       libperfsonar-esmond-perl
+Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
+Obsoletes:      perl-perfSONAR_PS-Toolkit
+Obsoletes:      perl-perfSONAR_PS-MeshConfig-Agent
+Obsoletes:      perl-perfSONAR_PS-RegularTesting
+
 
 %description regulartesting-perl
 Shared libaries for perfSONAR regular testing
