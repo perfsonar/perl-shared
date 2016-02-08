@@ -258,6 +258,7 @@ rm -rf %{buildroot}
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/perfSONAR_PS/NPToolkit/*
 %{install_base}/lib/perfSONAR_PS/Web/Sidebar.pm
+%{install_base}/lib/perfSONAR_PS/Client/gLS/Keywords.pm
 
 %files regulartesting-perl
 %defattr(0644,perfsonar,perfsonar,0755)
