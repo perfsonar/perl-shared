@@ -48,6 +48,7 @@ Requires:		perl(Sys::Statistics::Linux)
 Requires:		perl(Time::HiRes)
 Requires:		perl(URI::Split)
 Requires:		perl(XML::LibXML)
+Requires:		perfsonar-common
 Obsoletes:      perl-perfSONAR_PS-Toolkit
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
 Obsoletes:      perl-perfSONAR_PS-serviceTest
@@ -78,6 +79,7 @@ Requires:		perl(Scalar::Util)
 Requires:		perl(Time::HiRes)
 Requires:		perl(URI)
 Requires:		perl(YAML::Syck)
+Requires:		perfsonar-common
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
 Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
 Obsoletes:      perl-perfSONAR_PS-serviceTest
@@ -99,6 +101,7 @@ Requires:		perl(Mouse)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
 Requires:		perl(URI::Split)
+Requires:		perfsonar-common
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
 Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
 Obsoletes:      perl-perfSONAR_PS-serviceTest
@@ -177,6 +180,7 @@ Requires:		perl(Time::HiRes)
 Requires:		perl(URI)
 Requires:		perl(URI::Split)
 Requires:		perl(XML::LibXML)
+Requires:		perfsonar-common
 Requires:		libperfsonar-perl
 Requires:		libperfsonar-sls-perl
 Requires:		libperfsonar-regulartesting-perl
@@ -232,6 +236,7 @@ Requires:		perl(Statistics::Descriptive)
 Requires:		perl(Symbol)
 Requires:		perl(Time::HiRes)
 Requires:		perl(URI::Split)
+Requires:		perfsonar-common
 Requires:       libperfsonar-esmond-perl
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
 Obsoletes:      perl-perfSONAR_PS-Toolkit
