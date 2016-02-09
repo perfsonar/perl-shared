@@ -11,7 +11,7 @@ use SimpleLookupService::Client::SimpleLS;
 use perfSONAR_PS::Client::LS::PSRecords::PSService;
 use perfSONAR_PS::Client::LS::PSRecords::PSInterface;
 use SimpleLookupService::Client::Bootstrap;
-use SimpleLookupService::Client::Query;
+use SimpleLookupService::Client::QueryMultiple;
 use SimpleLookupService::QueryObjects::Network::HostQueryObject;
 use perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject;
 use perfSONAR_PS::Client::LS::PSQueryObjects::PSServiceQueryObject;
@@ -80,50 +80,61 @@ sub get_hosts_in_community {
     my $self = shift;
     my $caller = shift;
     my $args = $caller->{'input_params'};
-    my $community = $args->{'community'};
+    my $community = $args->{'community'}->{'value'};
 
     my $test_type = $args->{'test_type'}->{'value'};
 
+    warn "community: "  . $community;
     warn "test_type: "  . $test_type;
 
-    my $hostname = "ps-east.es.net"; # TODO: replace this so it queries all the ls servers
-    my $port = 8090;
+    my $hostname = "ps-west.es.net";
+    my $port = 80;
+
     my $server = SimpleLookupService::Client::SimpleLS->new();
     $server->init( { host => $hostname, port => $port } );
     $server->connect();
 
-    my $query_object = perfSONAR_PS::Client::LS::PSQueryObjects::PSServiceQueryObject->new();
-    $query_object->init();
-    $query_object->addField({'key'=>'group-communities', 'value'=>'perfSONAR-PS'} );
+
+    my $query_host_object = perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject->new();
+    $query_host_object->init();
+    $query_host_object->addField({'key'=>'group-communities', 'value'=>$community} );
+    # this filter doesn't work.
+    #if ( $test_type ) {
+    #   $query_host_object->setServiceType( $test_type );
+    #}
+
+    my $query_service_object = perfSONAR_PS::Client::LS::PSQueryObjects::PSServiceQueryObject->new();
+    $query_service_object->init();
+    $query_service_object->addField({'key'=>'group-communities', 'value'=>$community} );
     if ( $test_type ) {
-       $query_object->setServiceType( $test_type );
+       $query_service_object->setServiceType( $test_type );
     }
-    my $query = new SimpleLookupService::Client::Query;
-    $query->init( { server => $server } );
-    my ($resCode, $res) = $query->query( $query_object );
+
+    my $query = new SimpleLookupService::Client::QueryMultiple;
+    $query->init( { bootstrap_server => $server } );
+    $query->addQuery( $query_service_object );
+    $query->addQuery( $query_host_object );
+    my ($resCode, $res) = $query->query();
     warn "resCode: " . $resCode;
 
-    #$res = shift @$res;
 
     my $ret = [];
 
+    warn "res: " . Dumper $res;
+
     foreach my $data_row ( @$res ) {
-        my $locators = $data_row->getServiceLocators();
         my $site_name = $data_row->getSiteName();
-        my $service_name = $data_row->getServiceName();
         my $row = {};
         $row->{'site_name'} = $site_name;
-        $row->{'locators'} = $locators;
-        $row->{'service_name'} = $service_name;
-        $row->{'service_host'} = $data_row->getServiceHost();
-        $row->{'dns_domains'} = $data_row->getDNSDomains();
+        $row->{'host_name'} =  $data_row->getHostName();
+        #$row->{'communities'} = $data_row->getCommunities();
+        #$row->{'interfaces'} =  $data_row->getInterfaces();
 
         push @$ret, $row;
 
 
     }
 
-    warn "res: " . Dumper $res;
 
     return $ret;
 
