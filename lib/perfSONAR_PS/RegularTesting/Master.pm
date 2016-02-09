@@ -127,7 +127,7 @@ sub add_ma_queues {
 sub run {
     my ($self) = @_;
 
-    $0 = "perfSONAR_PS Regular Testing";
+    $0 = "perfSONAR Regular Testing";
 
     my @measurement_archives = @{ $self->config->measurement_archives };
     foreach my $test (@{ $self->config->tests }) {
