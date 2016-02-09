@@ -10,7 +10,8 @@ sub init {
 
     $conf{description}  = "perfSONAR Regular Testing" unless $conf{description};
     $conf{pid_files} = [ "/var/run/regulartesting.pid" ] unless $conf{pid_files};
-    $conf{process_names} = [ "regulartesting.pl" ] unless $conf{process_names};
+    #'ps -p' only prints first 15 characters, so use shortened process name
+    $conf{process_names} = [ "regulartesting" ] unless $conf{process_names};
     $conf{init_script} = "perfsonar-regulartesting" unless $conf{init_script};
     $conf{package_names} = [ "perfsonar-regulartesting" ] unless $conf{package_names};
 
