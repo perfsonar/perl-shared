@@ -3,6 +3,7 @@ Makefile
 lib/Net/NTP.pm
 lib/SimpleLookupService/Client/Bootstrap.pm
 lib/SimpleLookupService/Client/Query.pm
+lib/SimpleLookupService/Client/QueryMultiple.pm
 lib/SimpleLookupService/Client/RecordManager.pm
 lib/SimpleLookupService/Client/Registration.pm
 lib/SimpleLookupService/Client/SimpleLS.pm
