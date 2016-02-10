@@ -143,12 +143,19 @@ sub get_hosts_in_community {
 
 sub get_all_communities {
     my $self = shift;
+    my $caller = shift;
 
     my $keyword_client = perfSONAR_PS::Client::gLS::Keywords->new( { cache_directory => $self->{config}->{cache_directory} } );
     my ($status, $res) = $keyword_client->get_keywords();
     $self->{LOGGER}->debug("keyword status: $status");
     if ( $status == 0) {
         $self->{LOGGER}->debug("Got keywords: ".Dumper($res));
+    } else {
+        my $error_msg = "Error retrieving global keywords";
+        $self->{LOGGER}->debug('Got no keywords: ' . Dumper $res );
+        #return { "error" => $error_msg };
+        $caller->{error_message} = $error_msg;
+        return;
     }
     return $res;
 
@@ -165,28 +172,24 @@ sub update_host_communities {
 
     my $data = from_json($json_text);
 
-       
     my %result=();
-    
 
      if($data){
-        
-
          my $community_list =  $data->{'communities'};
          my %community_result;
         if($community_list){
              my $success = $self->{admin_info_conf}->delete_all_keywords(); 
              #if delete is successful then update, else return error without saving to config file.
              if($success==0){
-                 foreach my $community (@{$community_list}){           
-                     my $success = $self->{admin_info_conf}->add_keyword({keyword=>$community}); 
+                 foreach my $community (@{$community_list}){
+                     my $success = $self->{admin_info_conf}->add_keyword({keyword=>$community});
                      $community_result{$community} =$success ;
-                 }    
+                 }
              }else{
                  $result{'delete_all_keywords'} = -1;
                  return \%result;
              }
-            
+
          }
 
          $result{'community'} = \%community_result;

@@ -23,9 +23,9 @@ sub new {
         $self->{cgi} = CGI->new();
     }
     if (!defined $self->{fh}) {
-        $self->{fh} = \*STDOUT; 
+        $self->{fh} = \*STDOUT;
     }
-    
+
     #--- check for alternate output handle
     if (!defined $self->{'output_handle'}) {
         $self->{'output_handle'} = \*STDOUT;
@@ -64,7 +64,7 @@ sub add_method {
     my $name = $method->{name};
     if (!exists($self->{methods}->{$name})) {
         $method->set_router($self);
-        $self->{methods}->{ $name } = $method;                
+        $self->{methods}->{ $name } = $method;
         return 1;
     } else {
         return 0;
@@ -120,7 +120,7 @@ sub handle_request {
             } else {
                 $self->_output_error($method->{error_message}, $method->{error_code});
             }
-        
+
         } else {
                 $self->_output_error("Specified webservice method does not exist", "400 Bad Request");
         }
@@ -129,11 +129,11 @@ sub handle_request {
         if ($method) {
             my $results = $method->handle_request($cgi, $fh);
             $self->_output_results($results);
-        } else {    
+        } else {
             $self->_output_error("No method name specified and no default found.", 501);
         }
     }
-    
+
 }
 
 sub _output_results {

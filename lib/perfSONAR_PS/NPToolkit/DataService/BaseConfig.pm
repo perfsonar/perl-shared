@@ -1,6 +1,6 @@
 package perfSONAR_PS::NPToolkit::DataService::BaseConfig;
 
-use fields qw(LOGGER config_file admin_info_conf config authenticated regular_testing_conf load_regular_testing load_ls_registration ls_conf test_config_defaults_file);
+use fields qw(LOGGER config_file admin_info_conf config authenticated regular_testing_conf load_regular_testing load_ls_registration ls_conf test_config_defaults_file error_code error_message);
 
 use strict;
 use warnings;
