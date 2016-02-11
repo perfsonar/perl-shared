@@ -33,36 +33,26 @@ use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file start_service re
 
 sub get_admin_information {
     my $self = shift;
-    # TODO: update this to ONLY use ls conf instead of admin info
     my $ls_conf = $self->{ls_conf};
-    #my $administrative_info_conf = $self->{admin_info_conf};
-    #$administrative_info_conf = $ls_conf if defined $ls_conf;
 
-    #my %conf = %{$self->{config}};
-    my $info = {};
-    
-    if($ls_conf){
-        $info = {
-            administrator => {
-                name => $ls_conf->get_administrator_name(),
-                email => $ls_conf->get_administrator_email(),
-                organization => $ls_conf->get_organization_name()
-            },
-            location => {
-                city => $ls_conf->get_city(),
-                state => $ls_conf->get_state(),
-                country => $ls_conf->get_country(),
-                zipcode => $ls_conf->get_zipcode(),
-                latitude => $ls_conf->get_latitude(),
-                longitude => $ls_conf->get_longitude(),
-            },
+    my $info = {
+        administrator => {
+            name => $ls_conf->get_administrator_name(),
+            email => $ls_conf->get_administrator_email(),
+            organization => $ls_conf->get_organization_name()
+        },
+        location => {
+            city => $ls_conf->get_city(),
+            state => $ls_conf->get_state(),
+            country => $ls_conf->get_country(),
+            zipcode => $ls_conf->get_zipcode(),
+            latitude => $ls_conf->get_latitude(),
+            longitude => $ls_conf->get_longitude(),
+        },
+    };
 
-            #toolkit_name => $conf{toolkit_name}
-        };
-    }
-    
     return $info;
-    
+
 }
 
 sub get_metadata {
@@ -87,7 +77,6 @@ sub get_metadata {
     }
 
     return $meta;
-
 
 }
 
@@ -159,7 +148,7 @@ sub update_metadata {
     $ls_conf->set_access_policy_notes( { access_policy_notes => $access_policy_notes } ) if defined $access_policy_notes;
     $ls_conf->set_projects( { projects => $communities } ) if defined $communities;
 
-    
+
     return $self->save_ls_config();
 }
 
@@ -201,7 +190,7 @@ sub update_information {
     if ($res) {
     return {
         %$res,
-    
+
     };
 
     } else {
@@ -225,29 +214,14 @@ sub set_config_information  {
     my $longitude = $args{longitude};
     my $subscribe = $args{subscribe};
 
-    my $administrative_info_conf = $self->{admin_info_conf};
-
-    $administrative_info_conf->set_organization_name( { organization_name => $organization_name } ) if defined $organization_name;
-    $administrative_info_conf->set_administrator_name( { administrator_name => $administrator_name } ) if defined $administrator_name;
-    $administrative_info_conf->set_administrator_email( { administrator_email => $administrator_email } ) if defined $administrator_email;
-    $administrative_info_conf->set_city( { city => $city } ) if defined $city;
-    $administrative_info_conf->set_state( { state => $state } ) if defined $state;
-    $administrative_info_conf->set_country( { country => $country } ) if defined $country;
-    $administrative_info_conf->set_zipcode( { zipcode => $zipcode } ) if defined $zipcode;
-    $administrative_info_conf->set_latitude( { latitude => $latitude } ) if defined $latitude;
-    $administrative_info_conf->set_longitude( { longitude => $longitude } ) if defined $longitude;
-
     if($administrator_email && defined ($subscribe) && $subscribe == 1){
         subscribe($administrator_email);
     }
     #$is_modified = 1;
 
-    #my $state = $administrative_info_conf->save_state();
-
-    return $self->save_state();
+    return $self->save_config();
 
 }
-
 
 
 sub get_details {
@@ -260,7 +234,7 @@ sub get_details {
     my %conf = %{$self->{config}};
 
     $self->{authenticated} = $caller->{authenticated};
- 
+
     my $status = {};
 
     my $version_conf = perfSONAR_PS::NPToolkit::Config::Version->new();
@@ -278,7 +252,6 @@ sub get_details {
         $iface->{iface} = $interface;
         $iface->{mtu} = get_interface_mtu({interface_name=>$interface});
         $iface->{speed} = get_interface_speed({interface_name=>$interface});
-        
         $iface->{mac} = get_interface_mac({interface_name=>$interface});
         push @interfaceDetails, $iface;
     }
