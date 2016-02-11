@@ -1,4 +1,4 @@
-libperfsonar-perl (3.5.1~7.a1-1) UNRELEASED; urgency=low
+libperfsonar-perl (3.5.1~8.a1-1) UNRELEASED; urgency=low
 
   * Port to Jessie.
   * UTF-8 support.
