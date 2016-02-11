@@ -1,0 +1,9 @@
+lib/perfSONAR_PS/Common.pm /usr/share/perl5/perfSONAR_PS/
+lib/perfSONAR_PS/Utils/DNS.pm /usr/share/perl5/perfSONAR_PS/Utils/
+lib/perfSONAR_PS/Utils/Daemon.pm /usr/share/perl5/perfSONAR_PS/Utils/
+lib/perfSONAR_PS/Utils/GeoLookup.pm /usr/share/perl5/perfSONAR_PS/Utils/
+lib/perfSONAR_PS/Utils/HTTPS.pm /usr/share/perl5/perfSONAR_PS/Utils/
+lib/perfSONAR_PS/Utils/Host.pm /usr/share/perl5/perfSONAR_PS/Utils/
+lib/perfSONAR_PS/Utils/NTP.pm /usr/share/perl5/perfSONAR_PS/Utils/
+lib/perfSONAR_PS/Utils/NetLogger.pm /usr/share/perl5/perfSONAR_PS/Utils/
+lib/perfSONAR_PS/Utils/ParameterValidation.pm /usr/share/perl5/perfSONAR_PS/Utils/

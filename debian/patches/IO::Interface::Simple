@@ -1,5 +1,5 @@
---- a/Utils/Host.pm
-+++ b/Utils/Host.pm
+--- a/lib/perfSONAR_PS/Utils/Host.pm
++++ b/lib/perfSONAR_PS/Utils/Host.pm
 @@ -23,7 +23,7 @@
  use Params::Validate qw(:all);
  use Log::Log4perl qw(get_logger);
