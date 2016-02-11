@@ -42,6 +42,11 @@ use JSON qw(from_json);
 sub new {
 
     my ( $class, @params ) = @_;
+    my $parameters = validate( @params, { test_config_defaults_file => 0,
+            load_regular_testing => 0,
+            load_ls_registration => 0,
+            config_file => 0,
+        } );
 
     my $self = fields::new( $class );
 
@@ -49,7 +54,9 @@ sub new {
 
     my $regular_testing_conf = perfSONAR_PS::NPToolkit::Config::RegularTesting->new();
     $regular_testing_conf->init();
+    $self->{test_config_defaults_file} = $parameters->{test_config_defaults_file};
     $self->{regular_testing_conf} = $regular_testing_conf;
+    #warn "params: " . Dumper @params;
 
     return $self;
 
@@ -66,7 +73,6 @@ sub add_test_configuration {
 
     my $response = $self->_add_test_configuration($data);
     return $response;
-    
 
 }
 
@@ -146,16 +152,19 @@ sub get_test_configuration {
 
     my $status_vars = $self->get_status($tests);
 
+    my $test_defaults = $self->get_default_test_parameters();
+
     return {
         test_configuration => $tests,
         status => $status_vars,
+        test_defaults => $test_defaults,
     };
 }
 
 sub get_status {
     my ( $self, $tests ) = @_;
     my $testing_conf = $self->{regular_testing_conf};
-    
+
     # Calculates whether or not they have a "good" configuration
 
     my ($status, $res);
@@ -283,7 +292,7 @@ sub get_status {
 sub _add_test_configuration{
 
     my $self = shift;
-    my $data = shift;   
+    my $data = shift;
 
     my @result=[];
     my $ret_val=-1;
@@ -331,12 +340,10 @@ sub _add_test_configuration{
 
                     }
                 push @result, $test;
-                    
                 }
 
-            }  
-        } 
-        
+            }
+        }
     }
 
     my $response = ();
@@ -352,9 +359,18 @@ sub _add_test_configuration{
         $response->{"tests_added"} = \@result;
     }
 
-    
     return $response;
 
+}
+
+sub get_default_test_parameters {
+    my $self = shift;
+    my $config_file = $self->{test_config_defaults_file}; # $basedir . '/etc/test_config_defaults.conf';
+    #warn "config file: $config_file";
+    #warn "self: " . Dumper $self;
+    my $conf_obj = Config::General->new( -ConfigFile => $config_file );
+    my %conf = $conf_obj->getall;
+    return \%conf;
 }
 
 

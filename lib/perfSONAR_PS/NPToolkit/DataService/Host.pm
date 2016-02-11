@@ -39,25 +39,28 @@ sub get_admin_information {
     #$administrative_info_conf = $ls_conf if defined $ls_conf;
 
     #my %conf = %{$self->{config}};
+    my $info = {};
+    
+    if($ls_conf){
+        $info = {
+            administrator => {
+                name => $ls_conf->get_administrator_name(),
+                email => $ls_conf->get_administrator_email(),
+                organization => $ls_conf->get_organization_name()
+            },
+            location => {
+                city => $ls_conf->get_city(),
+                state => $ls_conf->get_state(),
+                country => $ls_conf->get_country(),
+                zipcode => $ls_conf->get_zipcode(),
+                latitude => $ls_conf->get_latitude(),
+                longitude => $ls_conf->get_longitude(),
+            },
 
-    my $info = {
-        administrator => {
-            name => $ls_conf->get_administrator_name(),
-            email => $ls_conf->get_administrator_email(),
-            organization => $ls_conf->get_organization_name()
-        },
-        location => {
-            city => $ls_conf->get_city(),
-            state => $ls_conf->get_state(),
-            country => $ls_conf->get_country(),
-            zipcode => $ls_conf->get_zipcode(),
-            latitude => $ls_conf->get_latitude(),
-            longitude => $ls_conf->get_longitude(),
-        },
-
-        #toolkit_name => $conf{toolkit_name}
-    };
-
+            #toolkit_name => $conf{toolkit_name}
+        };
+    }
+    
     return $info;
     
 }
@@ -324,7 +327,7 @@ sub get_details {
 
     $status->{toolkit_name}=$conf{toolkit_name};
     
-    $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/ls_registration_daemon/client_uuid');
+    $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/lsregistrationdaemon/client_uuid');
 
     my $logger = $self->{LOGGER};
 
@@ -693,7 +696,7 @@ sub get_meshes {
     my $self = shift;
     my @mesh_urls = ();
     eval {
-        my $mesh_config_conf = "/opt/perfsonar_ps/mesh_config/etc/agent_configuration.conf";
+        my $mesh_config_conf = "/etc/perfsonar/meshconfig-agent.conf";
 
         die unless ( -f $mesh_config_conf );
 

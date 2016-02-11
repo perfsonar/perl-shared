@@ -12,8 +12,8 @@ sub init {
 
     $conf{description}  = "OWAMP" unless $conf{description};
     $conf{process_names} = [ "owampd" ] unless $conf{process_names};
-    $conf{pid_files} = [ "/var/run/owampd.pid" ] unless $conf{pid_files};
-    $conf{init_script} = "owampd" unless $conf{init_script};
+    $conf{pid_files} = [ "/var/run/owamp-server.pid" ] unless $conf{pid_files};
+    $conf{init_script} = "owamp-server" unless $conf{init_script};
     $conf{can_disable} = 1;
     $conf{package_names} = [ "owamp-client", "owamp-server" ] unless $conf{package_names};
 

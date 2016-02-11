@@ -3,7 +3,7 @@ package perfSONAR_PS::RegularTesting::Utils::ConfigFile;
 use strict;
 use warnings;
 
-our $VERSION = 3.1;
+our $VERSION = 3.5.1;
 
 =head1 NAME
 

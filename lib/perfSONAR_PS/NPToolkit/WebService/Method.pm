@@ -15,7 +15,7 @@ sub new {
     my %valid_parameter_list = (
         'expires'           => 1,
         'output_type'       => 1,
-        'output_formatter'  => 1,        
+        'output_formatter'  => 1,
         'name'              => 1,
         'callback'          => 1,
         'description'       => 1,
@@ -77,10 +77,10 @@ sub new {
 
 sub handle_request {
     my ($self, $cgi, $fh) = @_;
-    
-    if( is_authenticated($cgi) ){      
+
+    if( is_authenticated($cgi) ){
         $self->{authenticated} = 1;
-    } 
+    }
     if ( $self->{'auth_required'} == 1 && !$self->{authenticated} ) { 
         $self->_return_error(401, "Unauthorized");
         return;
@@ -239,7 +239,7 @@ sub _parse_input_parameters {
             $self->_return_error(400, "Input parameter ${param_name} is shorter than the minimum required length of $min_length");
             return;
         }
-        
+
         if ( defined ($max_length) && length($value) > $max_length) {
             $self->_return_error(400, "Input parameter ${param_name} is longer than the maximum allowed length of $max_length");
             return;
@@ -259,7 +259,7 @@ sub _parse_input_parameters {
             $self->_return_error(400, "Input parameter ${param_name} $error_text");
 
             return;
-            
+
         }
 
         $self->{'input_params'}{$param_name}{'value'} = $value;
@@ -276,12 +276,15 @@ sub _parse_input_parameters {
 
 sub _return_results {
     my ($self, $results) = @_;
-    return $results;    
+    return $results;
 }
 
 sub _return_error {
     my ($self, $error_code, $error_message) = @_;
     $self->{error_code} = $error_code || 500;
+    if (not defined $error_message && defined $self->{'error_message'}) {
+        $error_message = $self->{'error_message'};
+    }
     $self->{error_message} = $error_message if (defined $error_message);
 
     return;

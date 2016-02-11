@@ -35,8 +35,8 @@ use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service 
 # These are the defaults for the current NPToolkit
 my %defaults = (
     ntp_conf          => "/etc/ntp.conf",
-    known_servers     => "/opt/perfsonar_ps/toolkit/etc/ntp_known_servers",
-    ntp_conf_template => "/opt/perfsonar_ps/toolkit/templates/config/ntp_conf.tmpl",
+    known_servers     => "/etc/perfsonar/toolkit/ntp_known_servers",
+    ntp_conf_template => "/etc/perfsonar/toolkit/templates/ntp_conf.tmpl",
     step_tickers_file => "/etc/ntp/step-tickers",
 );
 

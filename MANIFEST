@@ -3,6 +3,7 @@ Makefile
 lib/Net/NTP.pm
 lib/SimpleLookupService/Client/Bootstrap.pm
 lib/SimpleLookupService/Client/Query.pm
+lib/SimpleLookupService/Client/QueryMultiple.pm
 lib/SimpleLookupService/Client/RecordManager.pm
 lib/SimpleLookupService/Client/Registration.pm
 lib/SimpleLookupService/Client/SimpleLS.pm
@@ -33,6 +34,7 @@ lib/perfSONAR_PS/Client/Esmond/Metadata.pm
 lib/perfSONAR_PS/Client/Esmond/Paginator.pm
 lib/perfSONAR_PS/Client/Esmond/Summary.pm
 lib/perfSONAR_PS/Client/Esmond/Utils.pm
+lib/perfSONAR_PS/Client/gLS/Keywords.pm
 lib/perfSONAR_PS/Client/LS/PSClient/PSQuery.pm
 lib/perfSONAR_PS/Client/LS/PSKeywords/PSKeyNames.pm
 lib/perfSONAR_PS/Client/LS/PSKeywords/PSKeyValues.pm

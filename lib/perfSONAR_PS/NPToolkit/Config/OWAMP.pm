@@ -28,9 +28,9 @@ use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service 
 
 # These are the defaults for the current NPToolkit
 my %defaults = (
-    owampd_limits => "/etc/owampd/owampd.limits",
-    owampd_pfs    => "/etc/owampd/owampd.pfs",
-    owampd_conf   => "/etc/owampd/owampd.conf",
+    owampd_limits => "/etc/owamp-server/owamp-server.limits",
+    owampd_pfs    => "/etc/owamp-server/owamp-server.pfs",
+    owampd_conf   => "/etc/owamp-server/owamp-server.conf",
 );
 
 =head2 init({ owampd_limits => 0, owampd_pfs => 0, owampd_conf => 0 })

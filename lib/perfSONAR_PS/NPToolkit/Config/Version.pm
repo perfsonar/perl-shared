@@ -11,8 +11,7 @@ perfSONAR_PS::NPToolkit::Config::Version
 
 =head1 DESCRIPTION
 
-Module for retrieving the current Toolkit version. Currently, the toolkit
-version is stored in /opt/perfsonar_ps/toolkit/etc/toolkit.version.
+Module for retrieving the current Toolkit version.
 
 =cut
 

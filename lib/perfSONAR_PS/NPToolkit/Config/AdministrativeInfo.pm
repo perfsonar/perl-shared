@@ -31,7 +31,7 @@ use perfSONAR_PS::NPToolkit::Config::NDT;
 use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
 
 # These are the defaults for the current NPToolkit
-my %defaults = ( administrative_info_file => "/opt/perfsonar_ps/toolkit/etc/administrative_info", );
+my %defaults = ( administrative_info_file => "/etc/perfsonar/toolkit/administrative_info", );
 
 =head2 init({ administrative_info_file => 0 })
 
