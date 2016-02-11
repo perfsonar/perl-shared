@@ -28,7 +28,7 @@ sub new {
     # regular_testing_config_file is optional, even if load_regular_testing is specified
     # load_regular_testing is optional
         # if 1, load regular testing config
-        # if 0 or not specified, do not load the regular testing config        
+        # if 0 or not specified, do not load the regular testing config
     my $parameters = validate(
         @params,
         {
@@ -43,9 +43,9 @@ sub new {
     $self->{config_file} = $parameters->{config_file};
     my $config = Config::General->new( -ConfigFile => $self->{config_file} );
     $self->{config} = { $config->getall() };
-    my $administrative_info_conf = perfSONAR_PS::NPToolkit::Config::AdministrativeInfo->new();
-    $administrative_info_conf->init( { administrative_info_file => $self->{config}->{administrative_info_file} } );
-    $self->{admin_info_conf} = $administrative_info_conf;
+    #my $administrative_info_conf = perfSONAR_PS::NPToolkit::Config::AdministrativeInfo->new();
+    #$administrative_info_conf->init( { administrative_info_file => $self->{config}->{administrative_info_file} } );
+    #$self->{admin_info_conf} = $administrative_info_conf;
 
     my $load_regular_testing = $parameters->{load_regular_testing} || 0;
     $self->{load_regular_testing} = $load_regular_testing;
@@ -53,7 +53,6 @@ sub new {
     $config->{regular_testing_config_file} = $regular_testing_config_file;
 
     my $test_config_defaults_file = $parameters->{test_config_defaults_file};
-    #warn Dumper 'parameters: ' . Dumper $parameters;
     $config->{test_config_defaults_file} = $test_config_defaults_file;
 
     if ( $load_regular_testing ) {
@@ -78,18 +77,6 @@ sub new {
     }
 
     return $self;
-}
-
-
-sub save_state {
-    my $self = shift;
-    my $administrative_info_conf = $self->{admin_info_conf};
-    # TODO: Clean this up
-    my $state = $administrative_info_conf->save_state();
-    #$session->param( "administrative_info_conf", $state );
-    #$session->param( "is_modified", $is_modified );
-    #$session->param( "initial_state_time", $initial_state_time );
-    return $self->save_config();
 }
 
 sub save_config {
