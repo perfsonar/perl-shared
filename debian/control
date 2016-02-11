@@ -1,0 +1,68 @@
+Source: libperfsonar-perl
+Section: perl
+Priority: extra
+Maintainer: Antoine Delvaux <antoine.delvaux@dante.net>
+Build-Depends: debhelper (>= 9.0.0), perl
+Standards-Version: 3.9.3
+Homepage: http://www.perfsonar.net
+Vcs-Git: https://github.com/perfsonar/perl-shared.git
+Vcs-Browser: https://github.com/perfsonar/perl-shared/tree/debian/wheezy
+
+Package: libperfsonar-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}, perl, liblog-log4perl-perl,
+ libxml-libxml-perl, libnet-cidr-perl, libnet-ip-perl, libio-interface-perl,
+ libdata-validate-ip-perl, libnet-dns-perl, libnetaddr-ip-perl,
+ libregexp-common-perl, libmouse-perl, libdbi-perl, libconfig-general-perl,
+ ethtool,
+ libipc-dirqueue-perl, libossp-uuid-perl, libdata-validate-domain-perl,
+ libdatetime-perl, libdatetime-format-iso8601-perl, libhash-merge-perl,
+ libhttp-message-perl, libio-socket-ssl-perl, libipc-run-perl, libjson-perl,
+ libwww-perl, libmoose-perl, libnet-ip-perl,
+ libnet-traceroute-perl, libparams-validate-perl, libstatistics-descriptive-perl,
+ liburi-perl, librpc-xml-perl, libnet-ntp-perl, libtemplate-perl, libdpkg-perl,
+ libsys-statistics-linux-perl
+Description: perfSONAR common perl libraries
+ The perfSONAR perl library provides all common perl modules for all
+ perfSONAR related services.
+
+Package: libperfsonar-esmond-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}, libjson-perl, libwww-perl,
+ libmouse-perl, libparams-validate-perl, liburi-perl
+Description: perfSONAR perl libraries for esmond
+ Client libraries for perfSONAR's Meaurement Archive esmond
+
+Package: libperfsonar-sls-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}, libossp-uuid-perl,
+ libdatetime-format-iso8601-perl, libjson-perl, liblog-log4perl-perl,
+ libwww-perl, libparams-validate-perl, liburi-perl, libyaml-syck-perl
+Description: perfSONAR perl libraries for Simple Lookup Service
+ Client libraries for perfSONAR's Simple Lookup Service (sLS)
+
+Package: libperfsonar-regulartesting-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
+ libstatistics-descriptive-perl, liburi-perl, libconfig-general-perl,
+ libossp-uuid-perl, libdata-validate-ip-perl, libdata-validate-domain-perl,
+ libdatetime-perl, libdatetime-format-iso8601-perl, libdbi-perl,
+ libhash-merge-perl, libwww-perl, libio-socket-ssl-perl, libjson-perl,
+ liblog-log4perl-perl, libmoose-perl, libnet-traceroute-perl, libnet-ip-perl,
+ libparams-validate-perl
+Description: perfSONAR perl libraries for regular testing
+ Client libraries for perfSONAR's regular testing service
+
+Package: libperfsonar-toolkit-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl
+Description: perfSONAR perl libraries for Toolkit
+ Client libraries for perfSONAR's Toolkit distributions
+
+Package: perfsonar-common
+Architecture: all
+Depends: ${misc:Depends}, adduser
+Description: perfSONAR common metapackage
+ The perfSONAR common metapackage creates a perfsonar user for all
+ perfSONAR services. All executables perfSONAR packages should
+ depend on it.

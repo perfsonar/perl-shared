@@ -1,5 +1,5 @@
---- a/RegularTesting/MeasurementArchives/perfSONARBUOYBase.pm
-+++ b/RegularTesting/MeasurementArchives/perfSONARBUOYBase.pm
+--- a/lib/perfSONAR_PS/RegularTesting/MeasurementArchives/perfSONARBUOYBase.pm
++++ b/lib/perfSONAR_PS/RegularTesting/MeasurementArchives/perfSONARBUOYBase.pm
 @@ -8,7 +8,6 @@
  use Log::Log4perl qw(get_logger);
  use Params::Validate qw(:all);
@@ -8,8 +8,8 @@
  use Digest::MD5;
  
  use DBI;
---- a/RegularTesting/Utils.pm
-+++ b/RegularTesting/Utils.pm
+--- a/lib/perfSONAR_PS/RegularTesting/Utils.pm
++++ b/lib/perfSONAR_PS/RegularTesting/Utils.pm
 @@ -26,7 +26,7 @@
  use Data::Validate::IP qw(is_ipv4 is_ipv6);
  use Net::IP;
