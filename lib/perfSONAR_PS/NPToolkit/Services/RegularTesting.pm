@@ -8,11 +8,12 @@ use base 'perfSONAR_PS::NPToolkit::Services::Base';
 sub init {
     my ( $self, %conf ) = @_;
 
-    $conf{description}  = "perfSONAR-PS Regular Testing" unless $conf{description};
-    $conf{pid_files} = [ "/var/run/regular_testing.pid" ] unless $conf{pid_files};
-    $conf{process_names} = [ "daemon" ] unless $conf{process_names};
-    $conf{init_script} = "regular_testing" unless $conf{init_script};
-    $conf{package_names} = [ "perl-perfSONAR_PS-RegularTesting" ] unless $conf{package_names};
+    $conf{description}  = "perfSONAR Regular Testing" unless $conf{description};
+    $conf{pid_files} = [ "/var/run/regulartesting.pid" ] unless $conf{pid_files};
+    #'ps -p' only prints first 15 characters, so use shortened process name
+    $conf{process_names} = [ "regulartesting" ] unless $conf{process_names};
+    $conf{init_script} = "perfsonar-regulartesting" unless $conf{init_script};
+    $conf{package_names} = [ "perfsonar-regulartesting" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );
     $self->{REGULAR_RESTART} = 1;
@@ -32,12 +33,12 @@ sub kill {
 	}
     
 	#No matter what, clean-up stray children
-	system('pkill -9 -f regular_testing/');
+	system('pkill -9 -f regulartesting/');
 	
 	#clean-up any data older than 5 minutes
-	system('find /var/lib/perfsonar/regular_testing -type f -mmin +5 -exec rm {} \;');
+	system('find /var/lib/perfsonar/regulartesting -type f -mmin +5 -exec rm {} \;');
 	#delete empty directories
-	system('find /var/lib/perfsonar/regular_testing/ -type d -empty -delete'); 
+	system('find /var/lib/perfsonar/regulartesting/ -type d -empty -delete'); 
     
 	return (0, "");
 }
