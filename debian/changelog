@@ -1,4 +1,4 @@
-libperfsonar-perl (3.5.1~8.a1-1~bpo70+1) UNRELEASED; urgency=low
+libperfsonar-perl (3.5.1~9.rc1-1~bpo70+1) UNRELEASED; urgency=low
 
   * Backport to Wheezy.
   * UTF-8 support.
