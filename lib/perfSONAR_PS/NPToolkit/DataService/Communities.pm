@@ -398,7 +398,7 @@ sub get_all_communities {
     my $keyword_client = perfSONAR_PS::Client::gLS::Keywords->new( { cache_directory => $self->{config}->{cache_directory} } );
     my ($status, $res) = $keyword_client->get_keywords();
     $self->{LOGGER}->debug("keyword status: $status");
-    if ($status == 0) {
+    if ( $status == 0) {
         $self->{LOGGER}->debug("Got keywords: ".Dumper($res));
     } else {
         my $error_msg = "Error retrieving global keywords";
@@ -407,8 +407,8 @@ sub get_all_communities {
         $caller->{error_message} = $error_msg;
         return;
     }
+    return $res;
 
-    return {};
 }
 
 sub update_host_communities {
