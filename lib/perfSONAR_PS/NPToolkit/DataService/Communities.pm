@@ -88,184 +88,8 @@ sub get_hosts_in_community {
 
     my $test_type = $args->{'test_type'}->{'value'};
 
-    warn "community: "  . $community;
-    warn "test_type: "  . $test_type;
+    my $ret = $self->lookup_servers( $test_type, $community );
 
-    my $hostname = "ps-west.es.net";
-    my $port = 80;
-
-    my $server = SimpleLookupService::Client::SimpleLS->new();
-    $server->init( { host => $hostname, port => $port } );
-    $server->connect();
-
-
-    #my $query_host_object = perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject->new();
-    #$query_host_object->init();
-    #$query_host_object->addField({'key'=>'group-communities', 'value'=>$community} );
-    # this filter doesn't work.
-    #if ( $test_type ) {
-    #   $query_host_object->setServiceType( $test_type );
-    #}
-
-    # The information we need is split between the Service and Host types. 
-    # Host won't let us filter by service type, so we'll try to extract all
-    # the host information from the service-locator
-
-    my $ls_start = Time::HiRes::time();
-
-    my $query_service_object = perfSONAR_PS::Client::LS::PSQueryObjects::PSServiceQueryObject->new();
-    $query_service_object->init();
-    $query_service_object->addField({'key'=>'group-communities', 'value'=>$community} );
-    if ( $test_type ) {
-       $query_service_object->setServiceType( $test_type );
-    }
-
-    my $query = new SimpleLookupService::Client::QueryMultiple;
-    $query->init( { bootstrap_server => $server } );
-    $query->addQuery( $query_service_object );
-    #$query->addQuery( $query_host_object );
-    my ($resCode, $res) = $query->query();
-    warn "resCode: " . $resCode;
-    my $ls_end = Time::HiRes::time();
-    my $ls_time = $ls_end - $ls_start;
-    my $dns_cache = {}; # TODO: use an object-wide cache
-
-    my $ret = [];
-
-    warn "res: " . Dumper $res;
-
-    my @all_addresses = ();
-
-    # Extract all the addresses
-    foreach my $data_row ( @$res ) {
-        my $locators =  $data_row->getServiceLocators();
-
-        foreach my $full_addr ( @$locators ) {
-            my $addr;
-
-            if ( $full_addr =~ /^(tcp|https?):\/\/\[([^\]]*)\]/ ) {
-                $addr = $2;
-            }
-            elsif ( $full_addr =~ /^(tcp|https?):\/\/([^\/:]*)/ ) {
-                $addr = $2;
-            }
-            else {
-                $addr = $full_addr;
-            }
-
-            push @all_addresses, $addr;
-        }
-
-        #$self->lookup_addresses(\@addresses, $dns_cache);
-
-
-
-        #push @$ret, $row;
-
-
-    }
-
-    # Look up all the addresses, in one batch
-    my $dns_start = Time::HiRes::time();
-    $self->lookup_addresses(\@all_addresses, $dns_cache);
-    my $dns_end = Time::HiRes::time();
-    my $dns_time = $dns_end - $dns_start;
-    warn "DNS CACHE: " . Dumper $dns_cache;
-
-    my $host_details_time = 0;
-
-    # Build the result
-    foreach my $data_row ( @$res ) {
-        my $site_name = $data_row->getSiteName();
-        my $locators =  $data_row->getServiceLocators();
-        my $row = {};
-        $row->{'hosts'} = [];
-        $row->{'site_name'} = $site_name;
-        $row->{'service_locators'} =  $locators;
-        #$row->{'addresses'} = \@addresses;
-
-        #$row->{'service_name'} =  $data_row->getServiceName();
-        #$row->{'host_name'} =  $data_row->getHostName();
-        #$row->{'communities'} = $data_row->getCommunities();
-        #$row->{'interfaces'} =  $data_row->getInterfaces();
-
-        my @addrs = ();
-        my @dns_names = ();
-        foreach my $contact ( @$locators ) {
-            my ( $addr, $port );
-
-            # if ( $full_addr =~ /^(tcp|https?):\/\/\[([^\]]*)\]/ ) {
-            #     $addr = $2;
-            # }
-            # elsif ( $full_addr =~ /^(tcp|https?):\/\/([^\/:]*)/ ) {
-            #     $addr = $2;
-            # }
-            # else {
-            #     $addr = $full_addr;
-            # }
-            # The addresses here are tcp://ip:port or tcp://[ip]:[port] or similar
-            if ( $contact =~ /^(tcp|https?):\/\/\[(.*)\]:(\d+)/ ) {
-                $addr = $2;
-                $port = $3;
-            }
-            elsif ( $contact =~ /^(tcp|https?):\/\/\[([^\]]*)\]/ ) {
-                $addr = $2;
-            }
-            elsif ( $contact =~ /^(tcp|https?):\/\/(.*):(\d+)/ ) {
-                $addr = $2;
-                $port = $3;
-            }
-            elsif ( $contact =~ /^(tcp|https?):\/\/([^\/]*)/ ) {
-                $addr = $2;
-            }
-            else {
-                $addr = $contact;
-            }
-
-            my $cached_dns_info = $dns_cache->{$addr};
-            my ($dns_name, $ip);
-
-            $self->{LOGGER}->info("Address: ".$addr);
-
-            my $description = $data_row->getServiceName()->[0];
-            my $details_start = Time::HiRes::time();
-            my $host = get_host_details( $addr, $port, $description );
-            my $details_end = Time::HiRes::time();
-            my $details_delta = $details_end - $details_start;
-            warn "details delta: " . $details_delta;
-            $host_details_time += $details_delta;
-            warn "host: " . Dumper $host;
-
-            if (is_ipv4($addr) or &Net::IP::ip_is_ipv6( $addr ) ) {
-                if ( $cached_dns_info ) {
-                    foreach my $dns_name (@$cached_dns_info) {
-                        #push @dns_names, $dns_name;
-                    }
-                    $dns_name = $cached_dns_info->[0];
-                    push @dns_names, $dns_name;
-                }
-
-                $ip = $addr;
-            } else {
-                push @dns_names, $addr;
-                $dns_name = $addr;
-                if ( $cached_dns_info ) {
-                    $ip = join ', ', @{ $cached_dns_info };
-                    $host->{'ip'} = $ip;
-                }
-            }
-            $host->{'dns_names'} = \@dns_names;
-            push @{ $row->{'hosts'} }, $host;
-        }
-        #$row->{'dns_names'} = \@dns_names;
-        push @$ret, $row;
-
-    }
-
-    warn "host details time: $host_details_time";
-    $dns_time = $dns_end - $dns_start;
-    warn "dns time: $dns_time";
-    warn "ls time: $ls_time";
 
     return $ret;
 
@@ -350,15 +174,192 @@ sub get_host_details {
     my $status_msg = "Host(s) Added To Test";
 }
 
+# Looks up servers from the local LS cache
+sub lookup_servers {
+    my ( $self, $test_type, $keyword ) = @_;
+    my $error_msg;
+    my $dns_cache = {};
+
+    my ($status, $res) = $self->lookup_servers_cache($test_type, $keyword);
+
+    if ($status != 0) {
+        $self->{'error_message'} = $res;
+        warn "error_message: " . $res;
+        #return display_body();
+        return;
+    }
+
+    my @addresses = ();
+
+    foreach my $service (@{ $res->{hosts} }) {
+        foreach my $full_addr (@{ $service->{addresses} }) {
+            my $addr;
+
+            if ( $full_addr =~ /^(tcp|https?):\/\/\[[^\]]*\]/ ) {
+                $addr = $2;
+            }
+            elsif ( $full_addr =~ /^(tcp|https?):\/\/([^\/:]*)/ ) {
+                $addr = $2;
+            }
+            else {
+                $addr = $full_addr;
+            }
+
+            push @addresses, $addr;
+        }
+    }
+
+    $self->lookup_addresses(\@addresses, $dns_cache);
+
+    my @hosts = ();
+
+    foreach my $service (@{ $res->{hosts} }) {
+        my @addrs = ();
+        my @dns_names = ();
+        foreach my $contact (@{ $service->{addresses} }) {
+
+            my ( $addr, $port );
+            warn "contact: $contact";
+            if ( $test_type eq "pinger" ) {
+                $addr = $contact;
+            }
+            else {
+                # The addresses here are tcp://ip:port or tcp://[ip]:[port] or similar
+                if ( $contact =~ /^tcp:\/\/\[(.*)\]:(\d+)$/ ) {
+                    $addr = $1;
+                    $port = $2;
+                }
+                elsif ( $contact =~ /^tcp:\/\/\[(.*)\]$/ ) {
+                    $addr = $1;
+                }
+                elsif ( $contact =~ /^tcp:\/\/(.*):(\d+)$/ ) {
+                    $addr = $1;
+                    $port = $2;
+                }
+                elsif ( $contact =~ /^tcp:\/\/(.*)$/ ) {
+                    $addr = $1;
+                }
+                else {
+                    $addr = $contact;
+                }
+            }
+
+            my $cached_dns_info = $dns_cache->{$addr};
+            my ($dns_name, $ip);
+
+            $self->{'LOGGER'}->info("Address: ".$addr);
+
+            if (is_ipv4($addr) or &Net::IP::ip_is_ipv6( $addr ) ) {
+                if ( $cached_dns_info ) {
+                    foreach my $dns_name (@$cached_dns_info) {
+                        push @dns_names, $dns_name;
+                    }
+                    $dns_name = $cached_dns_info->[0];
+                }
+
+                $ip = $addr;
+            } else {
+                push @dns_names, $addr;
+                $dns_name = $addr;
+                if ( $cached_dns_info ) {
+                    $ip = join ', ', @{ $cached_dns_info };
+                }
+            }
+
+            # XXX improve this
+
+            next if $addr =~ m/^10\./;
+            next if $addr =~ m/^192\.168\./;
+            next if $addr =~ m/^172\.16/;
+
+            push @addrs, { address => $addr, dns_name => $dns_name, ip => $ip, port => $port };
+        }
+
+        my %service_info = ();
+        $service_info{"name"} = $service->{name};
+        $service_info{"description"} = $service->{description};
+        $service_info{"dns_names"}   = \@dns_names;
+        $service_info{"addresses"}   = \@addrs;
+
+        push @hosts, \%service_info;
+    }
+
+    my %lookup_info = ();
+    $lookup_info{hosts}   = \@hosts;
+    $lookup_info{keyword} = $keyword;
+    $lookup_info{check_time} = $res->{check_time};
+
+    #$lookup_info->{$test_id} = \%lookup_info;
+
+    my $ret = {};
+    $ret->{'hosts'} = \@hosts;
+    $ret->{'lookup_info'} = \%lookup_info;
+    return $ret;
+
+}
+
+sub lookup_servers_cache {
+    my ( $self, $service_type, $keyword ) = @_;
+
+    my $error_msg;
+
+    my $service_cache_file;
+    if ( $service_type eq "pinger" ) {
+        $service_cache_file = "list.ping";
+    }
+    elsif ( $service_type eq "bwctl/throughput" ) {
+        $service_cache_file = "list.bwctl";
+    }
+    elsif ( $service_type eq "owamp" ) {
+        $service_cache_file = "list.owamp";
+    }
+    elsif ( $service_type eq "traceroute" ) {
+        $service_cache_file = "list.traceroute";
+    }
+    else {
+        $error_msg = "Unknown server type specified";
+        return (-1, $error_msg);
+    }
+
+    my $project_keyword = "project:" . $keyword;
+
+    my @hosts = ();
+
+    warn "cache_directory: " . $self->{'config'}->{'cache_directory'};
+    warn "cache_file: " . $self->{'config'}->{'cache_directory'}."/".$service_cache_file;
+    open(SERVICE_FILE, "<", $self->{'config'}->{'cache_directory'}."/".$service_cache_file);
+    while(<SERVICE_FILE>) {
+        chomp;
+
+        my ($url, $name, $type, $description, $keyword_list) = split(/\|/, $_);
+
+        my @keywords = split ',', $keyword_list;
+        my $kw_found = 0;
+        foreach my $kw(@keywords){
+            if($kw eq $project_keyword){
+                $kw_found = 1;
+                last;
+            }
+        }
+        next unless($kw_found);
+
+        push @hosts, { addresses => [ $url ], name => $name, description => $description };
+    }
+    close(SERVICE_FILE);
+
+    my ( $mtime ) = ( stat( $self->{'config'}->{'cache_directory'}."/".$service_cache_file ) )[9];
+
+    return (0, { hosts => \@hosts, check_time => $mtime });
+}
+
+
 sub lookup_addresses {
-    my $self = shift;
-    my $addresses = shift;
-    my $dns_cache = shift;
+    my ( $self, $addresses, $dns_cache ) = @_;
 
     my %addresses_to_lookup = ();
     my %hostnames_to_lookup = ();
 
-    foreach my $addr (@$addresses) {
+    foreach my $addr (@{ $addresses }) {
             $addr = $1 if ($addr =~ /^\[(.*)\]$/);
 
             next if ($dns_cache->{$addr});

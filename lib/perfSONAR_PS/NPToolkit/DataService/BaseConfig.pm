@@ -43,9 +43,6 @@ sub new {
     $self->{config_file} = $parameters->{config_file};
     my $config = Config::General->new( -ConfigFile => $self->{config_file} );
     $self->{config} = { $config->getall() };
-    #my $administrative_info_conf = perfSONAR_PS::NPToolkit::Config::AdministrativeInfo->new();
-    #$administrative_info_conf->init( { administrative_info_file => $self->{config}->{administrative_info_file} } );
-    #$self->{admin_info_conf} = $administrative_info_conf;
 
     my $load_regular_testing = $parameters->{load_regular_testing} || 0;
     $self->{load_regular_testing} = $load_regular_testing;
@@ -92,7 +89,7 @@ sub save_config {
             error_msg => $error_msg,
             success => 0,
         };
-    } else {       
+    } else {
         #$status_msg = "Configuration Saved And Services Restarted";
         $status_msg = "Configuration saved";
         #$is_modified = 0;
