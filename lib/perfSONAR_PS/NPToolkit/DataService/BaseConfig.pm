@@ -108,20 +108,20 @@ sub save_ls_config {
     my $ls_conf = $self->{ls_conf};
     my $error_msg;
     my $status_msg;
-    my ($status, $res) = $ls_conf->save( { restart_services => 0 } );
+    my ($status, $res) = $ls_conf->save( { restart_services => 1 } );
 
     if ($status != 0) {
         $error_msg = "Problem saving LS configuration: $res";
-        return { 
+        return {
             error_msg => $error_msg,
             success => 0,
         };
-    } else {       
+    } else {
         #$status_msg = "Configuration Saved And Services Restarted";
         $status_msg = "LS Configuration saved";
         #$is_modified = 0;
         #$initial_state_time = $administrative_info_conf->last_modified();
-        return { 
+        return {
             status_msg => $status_msg,
             success => 1,
         };
