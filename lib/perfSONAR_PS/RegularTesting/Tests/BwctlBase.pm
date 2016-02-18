@@ -281,7 +281,17 @@ sub build_cmd {
     push @cmd, ( '-s', $source ) if $source;
     push @cmd, ( '-c', $destination ) if $destination;
     push @cmd, ( '-T', $test_parameters->tool ) if $test_parameters->tool;
-    push @cmd, ( '-B', $test_parameters->control_address ) if $test_parameters->control_address;
+    
+    # Always set -B to ensure that control packets are not 
+    # unintentionally redirected by host routing tables
+    if($test_parameters->control_address){
+        push @cmd, ( '-B', $test_parameters->control_address ) ;
+    }elsif($parameters->{local_destination}){
+        push @cmd, ( '-B', $destination ) if($destination);
+    }elsif($source){
+        push @cmd, ( '-B', $source ) ;
+    }
+    
     push @cmd, '-4' if $force_ipv4;
     push @cmd, '-6' if $force_ipv6;
 
