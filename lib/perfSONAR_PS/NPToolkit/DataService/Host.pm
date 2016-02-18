@@ -156,7 +156,7 @@ sub get_calculated_lat_lon {
     my $self = shift;
     my $caller = shift;
 
-    my $external_addresses = discover_primary_address({ disable_ipv4_reverse_lookup => 1, disable_ipv6_reverse_lookup => 1 });    
+    my $external_addresses = discover_primary_address({ disable_ipv4_reverse_lookup => 1, disable_ipv6_reverse_lookup => 1 });
     my $res = geoIPLookup($external_addresses->{primary_address});
     my $result = {};
 
@@ -267,7 +267,7 @@ sub get_details {
             disable_ipv6_reverse_lookup => $conf{disable_ipv6_reverse_lookup},
         });
 
-    
+
     my $external_address;
     my $external_address_iface;
     my $external_address_mtu;
@@ -299,7 +299,7 @@ sub get_details {
     }
 
     $status->{toolkit_name}=$conf{toolkit_name};
-    
+
     $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/lsregistrationdaemon/client_uuid');
 
     my $logger = $self->{LOGGER};
@@ -362,7 +362,7 @@ sub get_details {
 
     # get OS info
     my $os_info = get_operating_system_info();
-    
+
     $status->{distribution} = $os_info->{distribution_name} . " " . $os_info->{distribution_version};
 
     # get CPU info
@@ -380,7 +380,7 @@ sub get_details {
         }else{
             $status->{auto_updates} = 0;
         }
-        
+
     }
 
 
@@ -393,7 +393,7 @@ sub get_details {
 }
 
 sub get_ntp_information{
-    
+
     my $self = shift;
     my $response = get_ntp_info();
     my $ntp = get_service_object("ntp");

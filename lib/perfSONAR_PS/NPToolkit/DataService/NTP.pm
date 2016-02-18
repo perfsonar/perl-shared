@@ -1,5 +1,5 @@
 package perfSONAR_PS::NPToolkit::DataService::NTP;
-use fields qw( LOGGER config config_file ntp ntp_conf failed_connect );
+use fields qw( LOGGER config config_file ntp ntp_conf failed_connect error_message );
 use strict;
 use warnings;
 
@@ -46,7 +46,7 @@ sub new {
 }
 
 sub get_ntp_information {
-    
+
     my $self = shift;
     my $response = get_ntp_info();
     return $response;
@@ -61,9 +61,7 @@ sub get_ntp_configuration {
     my %config = ();
 
     my $selected_servers = $ntp_conf->get_selected_servers( { as_hash => 1 } );
-    #my $selected_servers = $self->get_selected_servers();
     my $known_servers = $ntp_conf->get_servers();
-    #my $known_servers = $self->get_known_servers();
 
     $config{'selected_servers'} = $selected_servers;
     $config{'known_servers'} = $known_servers;
@@ -93,25 +91,25 @@ sub update_ntp_configuration {
             foreach my $enabled_server (keys %{$enabled_servers}){
                 my $success;
                 if($available_servers->{$enabled_server}){
-                    $success = $ntp_conf->update_server( 
-                        { 
-                            address => $enabled_server, 
+                    $success = $ntp_conf->update_server(
+                        {
+                            address => $enabled_server,
                             description => $enabled_servers->{$enabled_server},
-                            selected => 1 
+                            selected => 1
                         }
-                    );    
+                    );
                 }else{
-                    
+
                     $success = $ntp_conf->add_server(
                         {
                             address     => $enabled_server,
                             description => $enabled_servers->{$enabled_server},
                             selected    => 1,
                         }
-                    );      
+                    );
                 }
-                
-                $enable_result{$enabled_server} = $success;  
+
+                $enable_result{$enabled_server} = $success;
             }
         }
 
@@ -119,15 +117,15 @@ sub update_ntp_configuration {
         my $disabled_servers = $data->{'data'}->{'disabled_servers'};
         my %disable_result;
         if($disabled_servers){
-            foreach my $disabled_server (keys %{$disabled_servers}){ 
-                my $success = $ntp_conf->update_server( 
-                    { 
-                        address => $disabled_server, 
+            foreach my $disabled_server (keys %{$disabled_servers}){
+                my $success = $ntp_conf->update_server(
+                    {
+                        address => $disabled_server,
                         description => $disabled_servers->{$disabled_server},
                         selected => 0 
-                    } 
+                    }
 
-                    );    
+                    );
                 $disable_result{$disabled_server} = $success;
             }
         }
@@ -135,8 +133,8 @@ sub update_ntp_configuration {
         my $deleted_servers =  $data->{'data'}->{'deleted_servers'};
         my %deleted_result;
         if($deleted_servers){
-            foreach my $del_server (@{$deleted_servers}){           
-                my $success = $ntp_conf->delete_server( { address => $del_server } );  
+            foreach my $del_server (@{$deleted_servers}){
+                my $success = $ntp_conf->delete_server( { address => $del_server } );
                 $deleted_result{$del_server} =$success ;
             }
         }
@@ -148,7 +146,12 @@ sub update_ntp_configuration {
         $result{'save_config'} = $self->save_config();
     }
 
-    return \%result;
+    if ( defined $result{'save_config'} ) {
+        return \%result;
+    } else {
+        $caller->{'error_message'} = $self->{'error_message'} if defined $self->{'error_message'};
+        return;
+    }
 
 }
 
@@ -237,13 +240,7 @@ sub select_closest {
     }
     $failed_connect = \%new_failed_connect;
 
-    #$is_modified = 1;
-
-    #save_state();
-
     $status_msg = "Selected Closest";
-    #return display_body();
-    #return $self->save_config();
     return { selected => $res1,
              message  => 'Selected closest servers',
              failed_connect => $res2,   
@@ -291,7 +288,6 @@ sub add_server {
     my $caller = shift;
     my $params = $caller->{'input_params'};
 
-    #my ( $self, $address, $description, $selected ) = @_;
     my $address = $params->{'address'}->{'value'};
     my $description = $params->{'description'}->{'value'};
     my $ntp_conf = $self->{ntp_conf};
@@ -308,15 +304,11 @@ sub add_server {
             selected    => 1,
         }
     );
-    #$is_modified = 1;
-
-    #save_state();
 
     $self->{LOGGER}->info( "Server $address added" );
 
     my $status_msg = "Server $address added";
 
-    #return { "message" => $status_msg };
     return $self->save_config();
 }
 
@@ -330,14 +322,8 @@ sub delete_server {
 
     $self->{'ntp_conf'}->delete_server( { address => $address } );
 
-    #$is_modified = 1;
-
-    #save_state();
-
     my $status_msg = "Server $address deleted";
-    #return { message => $status_msg };
     return $self->save_config();
-    #return display_body();
 }
 
 sub enable_server {
@@ -378,28 +364,20 @@ sub _set_server_state {
         $ntp_conf->update_server( { address => $address, selected => 0 } );
     }
 
-    #$is_modified = 1;
-
-    #save_state();
-
-    #return display_body();
     return $self->save_config();
 }
 
 sub save_config {
     my $self = shift;
+
     my ($status, $res) = $self->{'ntp_conf'}->save( { restart_services => 1 } );
     if ($status != 0) {
-        return { error_msg => "Problem saving configuration: $res" };
+        $self->{'error_message'} =  "Problem saving configuration: $res";
+        return;
     } else {
         return { message => "Configuration Saved And Services Restarted" };
-        #$is_modified = 0;
-        #$initial_state_time = $ntp_conf->last_modified();
     }
- 
-    #save_state();
-    #
-    #return display_body();
+
 }
 
 
