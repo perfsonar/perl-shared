@@ -1,4 +1,4 @@
-libperfsonar-perl (3.5.1~9.rc1-2) UNRELEASED; urgency=low
+libperfsonar-perl (3.5.1~10.rc1-1) perfsonar-jessie-staging; urgency=low
 
   * Port to Jessie.
   * UTF-8 support.
@@ -7,7 +7,7 @@ libperfsonar-perl (3.5.1~9.rc1-2) UNRELEASED; urgency=low
     libperfsonar-esmond-perl, libperfsonar-sls-perl, libperfsonar-regulartesting-perl, 
     and libperfsonar-toolkit-perl
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sun, 14 Feb 2016 21:27:24 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sat, 20 Feb 2016 11:49:36 +0000
 
 libperfsonar-perl (3.5.0.1-1) perfsonar-wheezy-release; urgency=low
 
