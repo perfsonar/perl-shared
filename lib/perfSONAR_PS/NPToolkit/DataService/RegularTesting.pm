@@ -348,7 +348,7 @@ sub _add_test_configuration{
 
     my $response = ();
     if(@result){
-        my ($ret_val, $ret_message) = $regular_testing_conf->save();
+        my ($ret_val, $ret_message) = $regular_testing_conf->save( { restart_services => 1 } );
         $response->{"tests_added"} = \@result;
         $response->{"Return code"}= $ret_val;
         $response->{"Error message"}= $ret_message;
