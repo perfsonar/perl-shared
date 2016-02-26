@@ -89,6 +89,7 @@ sub get_hosts_in_community {
     my $test_type = $args->{'test_type'}->{'value'};
 
     my $ret = $self->lookup_servers( $test_type, $community );
+    
     if ( defined $self->{'error_message'} ) {
         $caller->{'error_message'} = $self->{'error_message'};
         return;
@@ -214,13 +215,23 @@ sub lookup_servers {
 
     my @hosts = ();
 
+    my @hosts_simple = ();
+
     foreach my $service (@{ $res->{hosts} }) {
         my @addrs = ();
         my @dns_names = ();
+        my $ipv4 = 0;
+        my $ipv6 = 0;
+        my $host_address;
+        my $host_ip;
+        my $host_dns_name;
+        my %host_row = ();
+        my $port;
+
         foreach my $contact (@{ $service->{addresses} }) {
 
-            my ( $addr, $port );
-            warn "contact: $contact";
+            my $addr;
+            #warn "contact: $contact";
             if ( $test_type eq "pinger" ) {
                 $addr = $contact;
             }
@@ -244,6 +255,7 @@ sub lookup_servers {
                     $addr = $contact;
                 }
             }
+            warn "port: " . Dumper $port;
 
             my $cached_dns_info = $dns_cache->{$addr};
             my ($dns_name, $ip);
@@ -273,6 +285,28 @@ sub lookup_servers {
             next if $addr =~ m/^192\.168\./;
             next if $addr =~ m/^172\.16/;
 
+            if ( defined $ip ) {
+                my @ips = split(', ', $ip);
+                if ( @ips ) {
+                    foreach my $ipaddr (@ips) {
+                        if (is_ipv4($ipaddr) ) {
+                            $ipv4 = 1;
+                        } elsif ( &Net::IP::ip_is_ipv6( $ipaddr ) ) {
+                            $ipv6 = 1;
+                        }
+
+                    }
+                } 
+
+            } else {  # No ips found
+                $ipv4 = 0;
+                $ipv6 = 0;
+            }
+
+            $host_address = $addr;
+            $host_ip = $ip;
+            $host_dns_name = $dns_name;
+
             push @addrs, { address => $addr, dns_name => $dns_name, ip => $ip, port => $port };
         }
 
@@ -282,18 +316,32 @@ sub lookup_servers {
         $service_info{"dns_names"}   = \@dns_names;
         $service_info{"addresses"}   = \@addrs;
 
+        $host_row{"name"} = $service->{name};
+        $host_row{"description"} = $service->{description};
+        $host_row{"ipv4"} = $ipv4;
+        $host_row{"ipv6"} = $ipv6;
+        $host_row{"address"} = $host_address;
+        $host_row{"ip"} = $host_ip;
+        $host_row{"dns_name"} = $host_dns_name;
+        $host_row{"port"} = $port;
+
+        push @hosts_simple, \%host_row;
+
+        # This "service_info" more complex format was used by the old toolkit
+        # probably not needed but leaving it here in case we do need it
         push @hosts, \%service_info;
     }
 
     my %lookup_info = ();
-    $lookup_info{hosts}   = \@hosts;
+    #$lookup_info{hosts}   = \@hosts_simple;
     $lookup_info{keyword} = $keyword;
     $lookup_info{check_time} = $res->{check_time};
 
     #$lookup_info->{$test_id} = \%lookup_info;
 
     my $ret = {};
-    $ret->{'hosts'} = \@hosts;
+    $ret->{'hosts'} = \@hosts_simple;
+    #$ret->{'hosts_old'} = \@hosts;
     $ret->{'lookup_info'} = \%lookup_info;
     return $ret;
 
@@ -361,6 +409,7 @@ sub lookup_addresses {
     my %hostnames_to_lookup = ();
 
     foreach my $addr (@{ $addresses }) {
+            next if not defined $addr;
             $addr = $1 if ($addr =~ /^\[(.*)\]$/);
 
             next if ($dns_cache->{$addr});
