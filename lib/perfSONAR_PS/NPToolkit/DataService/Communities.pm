@@ -89,11 +89,12 @@ sub get_hosts_in_community {
     my $test_type = $args->{'test_type'}->{'value'};
 
     my $ret = $self->lookup_servers( $test_type, $community );
-
+    if ( defined $self->{'error_message'} ) {
+        $caller->{'error_message'} = $self->{'error_message'};
+        return;
+    }
 
     return $ret;
-
-
 }
 
 sub get_host_details {
