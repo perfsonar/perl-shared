@@ -28,6 +28,7 @@ Description: perfSONAR common perl libraries
 
 Package: libperfsonar-esmond-perl
 Architecture: all
+Breaks: libperfsonar-perl (<< 3.5.1~10.rc1-1)
 Depends: ${misc:Depends}, ${perl:Depends}, libjson-perl, libwww-perl,
  libmouse-perl, libparams-validate-perl, liburi-perl
 Description: perfSONAR perl libraries for esmond
@@ -43,6 +44,7 @@ Description: perfSONAR perl libraries for Simple Lookup Service
 
 Package: libperfsonar-regulartesting-perl
 Architecture: all
+Breaks: libperfsonar-perl (<< 3.5.1~10.rc1-1)
 Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
  libstatistics-descriptive-perl, liburi-perl, libconfig-general-perl,
  libossp-uuid-perl, libdata-validate-ip-perl, libdata-validate-domain-perl,
@@ -55,6 +57,7 @@ Description: perfSONAR perl libraries for regular testing
 
 Package: libperfsonar-toolkit-perl
 Architecture: all
+Breaks: libperfsonar-perl (<< 3.5.1~10.rc1-1)
 Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl
 Description: perfSONAR perl libraries for Toolkit
  Client libraries for perfSONAR's Toolkit distributions
