@@ -1,10 +1,10 @@
-libperfsonar-perl (3.5.1~10.rc1-1~bpo70+1) perfsonar-wheezy-staging; urgency=low
+libperfsonar-perl (3.5.1~10.rc1-2~bpo70+1) perfsonar-wheezy-staging; urgency=low
 
-  * Backport to Wheezy
+  * Backport to Wheezy.
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sat, 20 Feb 2016 11:52:56 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sat, 27 Feb 2016 19:26:48 +0000
 
-libperfsonar-perl (3.5.1~10.rc1-1) perfsonar-jessie-staging; urgency=low
+libperfsonar-perl (3.5.1~10.rc1-2) perfsonar-jessie-staging; urgency=low
 
   * Port to Jessie.
   * UTF-8 support.
@@ -13,7 +13,7 @@ libperfsonar-perl (3.5.1~10.rc1-1) perfsonar-jessie-staging; urgency=low
     libperfsonar-esmond-perl, libperfsonar-sls-perl, libperfsonar-regulartesting-perl, 
     and libperfsonar-toolkit-perl
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sat, 20 Feb 2016 11:49:36 +0000
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sat, 27 Feb 2016 19:24:23 +0000
 
 libperfsonar-perl (3.5.0.1-1) perfsonar-wheezy-release; urgency=low
 
