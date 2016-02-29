@@ -302,9 +302,13 @@ sub lookup_servers {
                 $ipv6 = 0;
             }
 
-            $host_address = $addr;
             $host_ip = $ip;
             $host_dns_name = $dns_name;
+            if ( $dns_name ) {
+                $host_address = $dns_name;
+            } else {
+                $host_address = $ip;
+            }
 
             push @addrs, { address => $addr, dns_name => $dns_name, ip => $ip, port => $port };
         }
