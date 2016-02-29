@@ -255,7 +255,6 @@ sub lookup_servers {
                     $addr = $contact;
                 }
             }
-            warn "port: " . Dumper $port;
 
             my $cached_dns_info = $dns_cache->{$addr};
             my ($dns_name, $ip);
@@ -309,6 +308,9 @@ sub lookup_servers {
 
             push @addrs, { address => $addr, dns_name => $dns_name, ip => $ip, port => $port };
         }
+        # This happens if the above loop doesn't finish, i.e. it was a
+        # private ip address
+        next if !$host_address; 
 
         my %service_info = ();
         $service_info{"name"} = $service->{name};
@@ -374,8 +376,6 @@ sub lookup_servers_cache {
 
     my @hosts = ();
 
-    warn "cache_directory: " . $self->{'config'}->{'cache_directory'};
-    warn "cache_file: " . $self->{'config'}->{'cache_directory'}."/".$service_cache_file;
     open(SERVICE_FILE, "<", $self->{'config'}->{'cache_directory'}."/".$service_cache_file);
     while(<SERVICE_FILE>) {
         chomp;
