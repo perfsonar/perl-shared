@@ -163,4 +163,7 @@ lib/perfSONAR_PS/Utils/LookupService.pm
 lib/perfSONAR_PS/Utils/NTP.pm
 lib/perfSONAR_PS/Utils/NetLogger.pm
 lib/perfSONAR_PS/Utils/ParameterValidation.pm
+lib/perfSONAR_PS/Utils/Config/BWCTL.pm
+lib/perfSONAR_PS/Utils/Config/NTP.pm
+lib/perfSONAR_PS/Utils/Config/OWAMP.pm
 lib/perfSONAR_PS/Web/Sidebar.pm
