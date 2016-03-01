@@ -649,8 +649,9 @@ sub get_summary {
     my $start_time = gettimeofday();
     my $end_time;
 
-    my $comm_obj = perfSONAR_PS::NPToolkit::DataService::Communities->new( {config_file => $self->{config_file} } );
-    
+
+    my $comm_obj = perfSONAR_PS::NPToolkit::DataService::Communities->new( {config_file => $self->{config_file}, load_ls_registration => 1 } );
+
     my $administrative_info = $self->get_admin_information();
     my $status = $self->get_details();
     my $services = $self->get_services();

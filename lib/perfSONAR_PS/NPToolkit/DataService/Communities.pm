@@ -32,7 +32,9 @@ sub get_host_communities {
 
     my $self = shift;
 
-    my $communities = $self->{admin_info_conf}->get_keywords();
+    my $ls_conf = $self->{ls_conf};
+    my $config = $ls_conf->load_config( { file => $ls_conf->{'CONFIG_FILE'} } );
+    my $communities = $config->{site_project};
 
     return {communities => $communities};
 
