@@ -1,7 +1,7 @@
 %define install_base /usr/lib/perfsonar/
 %define config_base  /etc/perfsonar
 
-%define relnum   0.3.rc1 
+%define relnum   1 
 
 Name:			libperfsonar
 Version:		3.5.1
