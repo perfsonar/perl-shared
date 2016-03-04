@@ -147,7 +147,8 @@ sub _output_results {
 sub _output_error {
     my ($self, $error, $status) = @_;
     my $fh = $self->{fh};
-    $status = "$status $error";
+    $status = "$status";
+    $status .= " $error" if defined $error;
     $self->{status} = $status;
     $self->_set_headers();
     my $formatter = $self->{formatter};

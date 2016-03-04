@@ -2,3 +2,6 @@
 .DS_Store
 # Ignore quilt cache file
 .pc/
+.*.swn
+.*.swo
+.*.swp

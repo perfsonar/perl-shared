@@ -282,7 +282,7 @@ sub _return_results {
 sub _return_error {
     my ($self, $error_code, $error_message) = @_;
     $self->{error_code} = $error_code || 500;
-    if (not defined $error_message && defined $self->{'error_message'}) {
+    if ( ( not defined $error_message ) && defined $self->{'error_message'}) {
         $error_message = $self->{'error_message'};
     }
     $self->{error_message} = $error_message if (defined $error_message);
