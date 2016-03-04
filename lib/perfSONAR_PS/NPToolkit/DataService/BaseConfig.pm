@@ -34,6 +34,7 @@ sub new {
         {
             config_file => 1,
             regular_testing_config_file => 0, 
+            ls_config_file => 0, 
             test_config_defaults_file => 0, 
             load_regular_testing => 0, 
             load_ls_registration => 0,
@@ -61,11 +62,13 @@ sub new {
         $self->{regular_testing_conf} = $testing_conf;
     }
 
+    my $ls_config_file = $parameters->{ls_config_file};
     my $load_ls_registration = 0;
     $load_ls_registration = 1 if ( defined $parameters->{load_ls_registration} && $parameters->{load_ls_registration} == 1);
     if ($load_ls_registration) {
         my $ls_conf = perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon->new();
-        my ( $status, $res ) = $ls_conf->init();
+        my ( $status, $res ) = $ls_conf->init( { config_file => $ls_config_file  } );
+
         if ( $status != 0 ) {
             return { error => "Problem reading LS registration daemon configuration: $res" };
         }

@@ -86,7 +86,6 @@ sub update_metadata {
     my $args = $caller->{'input_params'};
     my $ls_conf = $self->{ls_conf};
 
-
     my %config_args = ();
     my @field_names = (
         'role',
@@ -103,6 +102,7 @@ sub update_metadata {
         'latitude',
         'longitude',
     );
+
     foreach my $field (@field_names) {
         if ($args->{$field}->{is_set} == 1) {
             $config_args{$field} = $args->{$field}->{value};
@@ -113,6 +113,7 @@ sub update_metadata {
         }
 
     }
+
     my $role = $config_args{'role'};
     my $access_policy = $config_args{'access_policy'};
     my $access_policy_notes = $config_args{'access_policy_notes'};
@@ -648,8 +649,9 @@ sub get_summary {
     my $start_time = gettimeofday();
     my $end_time;
 
-    my $comm_obj = perfSONAR_PS::NPToolkit::DataService::Communities->new( {config_file => $self->{config_file} } );
-    
+
+    my $comm_obj = perfSONAR_PS::NPToolkit::DataService::Communities->new( {config_file => $self->{config_file}, load_ls_registration => 1 } );
+
     my $administrative_info = $self->get_admin_information();
     my $status = $self->get_details();
     my $services = $self->get_services();
