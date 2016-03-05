@@ -1,3 +1,9 @@
+libperfsonar-perl (3.5.1.1-1) perfsonar-jessie-release; urgency=low
+
+  * Correcting libperfsonar-regulartesting-perl IP authentication.
+
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sat, 05 Mar 2016 10:01:02 +0100
+
 libperfsonar-perl (3.5.1-1) perfsonar-jessie-release; urgency=low
 
   * Port to Jessie.
