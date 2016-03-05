@@ -266,16 +266,16 @@ sub send_http_request {
             'Content' => to_json($json));
     }elsif($parameters->{put}){
         #IP authentication
-        $response = $client->put($url, 
-            'Content-Type' => 'application/json',
-            'Content' => to_json($json));
-    }else{
-        #IP authentication
         my $req = HTTP::Request->new(PUT => "$url", HTTP::Headers->new(
             'Content-Type' => 'application/json',
         ));
         $req->content(to_json($json));
         $response = $client->request($req);
+    }else{
+        #IP authentication
+         $response = $client->post($url, 
+            'Content-Type' => 'application/json',
+            'Content' => to_json($json));
     }
     $logger->debug("Esmond response: " . $response->content);
     
