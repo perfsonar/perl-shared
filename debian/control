@@ -36,6 +36,7 @@ Description: perfSONAR perl libraries for esmond
 
 Package: libperfsonar-sls-perl
 Architecture: all
+Breaks: libperfsonar-perl (<< 3.5.1~10.rc1-1~bpo70+1)
 Depends: ${misc:Depends}, ${perl:Depends}, libossp-uuid-perl,
  libdatetime-format-iso8601-perl, libjson-perl, liblog-log4perl-perl,
  libwww-perl, libparams-validate-perl, liburi-perl, libyaml-syck-perl
