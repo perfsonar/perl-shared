@@ -1,3 +1,9 @@
+libperfsonar-perl (3.5.1.1-2) perfsonar-jessie-release; urgency=low
+
+  * Add Breaks: libperfsonar-perl for clean upgrade.
+
+ -- Valentin Vidic <Valentin.Vidic@CARNet.hr>  Mon, 14 Mar 2016 16:29:55 +0100
+
 libperfsonar-perl (3.5.1.1-1) perfsonar-jessie-release; urgency=low
 
   * Correcting libperfsonar-regulartesting-perl IP authentication.
