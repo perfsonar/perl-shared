@@ -1,3 +1,9 @@
+libperfsonar-perl (3.5.1.1-1~bpo70+2) perfsonar-wheezy-release; urgency=low
+
+  * Add Breaks: libperfsonar-perl for clean upgrade.
+
+ -- Valentin Vidic <Valentin.Vidic@CARNet.hr>  Mon, 14 Mar 2016 16:25:43 +0100
+
 libperfsonar-perl (3.5.1.1-1~bpo70+1) perfsonar-wheezy-release; urgency=low
 
   * Backport to Wheezy.
