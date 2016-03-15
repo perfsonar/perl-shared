@@ -253,12 +253,15 @@ sub lookup_test {
 
     return ( -1, "Invalid test specified" ) unless ( $test );
 
+    #warn "test " . Dumper $test;
+
     my %test_info = ();
     $test_info{id}          = $test_id;
     $test_info{type}        = $test->{type};
     $test_info{description} = $test->{description};
     $test_info{disabled}    = $test->{disabled};
     $test_info{parameters}  = $test->{parameters};
+    $test_info{added_by_mesh} = $test->{added_by_mesh};
 
     my @members = ();
     foreach my $member_id ( keys %{ $test->{members} } ) {
@@ -302,6 +305,7 @@ sub add_test_owamp {
     );
 
     $self->{LOGGER}->debug( "Adding owamp test" );
+    #return ( -1, "Test was added by the mesh configuration agent. It can't be added.") if ($parameters->{added_by_mesh});
 
     my $test_id;
     do {
@@ -423,6 +427,8 @@ sub add_test_bwctl_throughput {
     );
 
     $self->{LOGGER}->debug( "Add bwctl: " . Dumper( $parameters ) );
+
+    #return ( -1, "Test was added by the mesh configuration agent. It can't be added.") if ($parameters->{added_by_mesh});
 
     my $test_id;
     do {
@@ -560,6 +566,8 @@ sub add_test_pinger {
 
     my $test_id;
 
+    #return ( -1, "Test was added by the mesh configuration agent. It can't be added.") if ($parameters->{added_by_mesh});
+
     # Find an empty domain
     do {
         $test_id = "test." . genuid();
@@ -670,6 +678,7 @@ sub add_test_traceroute {
     );
 
     $self->{LOGGER}->debug( "Add: " . Dumper( $parameters ) );
+    #return ( -1, "Test was added by the mesh configuration agent. It can't be added.") if ($parameters->{added_by_mesh});
 
     my $test_id;
     do {
@@ -1167,7 +1176,7 @@ sub parse_regular_testing_config {
         elsif ($test->parameters->type eq "bwctl") {
             my $protocol = ($test->parameters->use_udp?"udp":"tcp");
             my $window_size = $test->parameters->window_size;
-            $window_size /= 1048576 if ($window_size > 1048576);
+            $window_size /= 1048576 if ( defined ( $window_size ) && $window_size > 1048576);
 
             ($status, $res) = $self->add_test_bwctl_throughput({
                                           description => $test->description,
