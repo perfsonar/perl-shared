@@ -253,8 +253,6 @@ sub lookup_test {
 
     return ( -1, "Invalid test specified" ) unless ( $test );
 
-    #warn "test " . Dumper $test;
-
     my %test_info = ();
     $test_info{id}          = $test_id;
     $test_info{type}        = $test->{type};
@@ -305,7 +303,6 @@ sub add_test_owamp {
     );
 
     $self->{LOGGER}->debug( "Adding owamp test" );
-    #return ( -1, "Test was added by the mesh configuration agent. It can't be added.") if ($parameters->{added_by_mesh});
 
     my $test_id;
     do {
@@ -427,8 +424,6 @@ sub add_test_bwctl_throughput {
     );
 
     $self->{LOGGER}->debug( "Add bwctl: " . Dumper( $parameters ) );
-
-    #return ( -1, "Test was added by the mesh configuration agent. It can't be added.") if ($parameters->{added_by_mesh});
 
     my $test_id;
     do {
@@ -566,8 +561,6 @@ sub add_test_pinger {
 
     my $test_id;
 
-    #return ( -1, "Test was added by the mesh configuration agent. It can't be added.") if ($parameters->{added_by_mesh});
-
     # Find an empty domain
     do {
         $test_id = "test." . genuid();
@@ -678,7 +671,6 @@ sub add_test_traceroute {
     );
 
     $self->{LOGGER}->debug( "Add: " . Dumper( $parameters ) );
-    #return ( -1, "Test was added by the mesh configuration agent. It can't be added.") if ($parameters->{added_by_mesh});
 
     my $test_id;
     do {
