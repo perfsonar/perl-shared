@@ -259,6 +259,7 @@ sub lookup_test {
     $test_info{description} = $test->{description};
     $test_info{disabled}    = $test->{disabled};
     $test_info{parameters}  = $test->{parameters};
+    $test_info{added_by_mesh} = $test->{added_by_mesh};
 
     my @members = ();
     foreach my $member_id ( keys %{ $test->{members} } ) {
@@ -1167,7 +1168,7 @@ sub parse_regular_testing_config {
         elsif ($test->parameters->type eq "bwctl") {
             my $protocol = ($test->parameters->use_udp?"udp":"tcp");
             my $window_size = $test->parameters->window_size;
-            $window_size /= 1048576 if ($window_size > 1048576);
+            $window_size /= 1048576 if ( defined ( $window_size ) && $window_size > 1048576);
 
             ($status, $res) = $self->add_test_bwctl_throughput({
                                           description => $test->description,
