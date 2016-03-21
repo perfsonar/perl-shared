@@ -26,7 +26,9 @@ use Log::Log4perl qw(get_logger);
 use Net::Interface qw/mac_bin2hex/;
 use Net::CIDR;
 use Net::IP;
-use Data::Validate::IP qw(is_ipv4);
+use Data::Validate::IP qw(is_ipv4 is_ipv6);
+use Data::Validate::Domain qw(is_hostname);
+use Data::Dumper;
 
 use Sys::Statistics::Linux;
 
@@ -53,6 +55,8 @@ our @EXPORT_OK = qw(
     get_health_info
 
     is_auto_updates_on
+
+    is_ip_or_hostname
 );
 
 =head2 get_ips()
@@ -156,7 +160,7 @@ sub get_interface_addresses_by_type {
     foreach my $address (@addresses){
         if (is_ipv4($address)){
             push @ipv4_addresses, $address
-        }elsif (Net::IP::ip_is_ipv6($address)){
+        }elsif (Net::IP::ip_is_ipv6($address)){ # TODO: double check this. should it be is_ipv6 instead?
             push @ipv6_addresses, $address
         }
     }
@@ -612,9 +616,28 @@ sub is_auto_updates_on{
     }
 }
 
+sub is_ip_or_hostname {
+    my $parameters = validate( @_, { address => 1, } );
+    my @addresses = $parameters->{address};
+    return 0 if (not @addresses ) || @addresses == 0;
+    my $result = 0;
+    foreach my $address (@addresses) {
+        if ( is_ipv4($address) ) {
+            $result = 1;
+        } elsif ( is_ipv6($address) ) {
+            $result = 1;
+        } elsif ( is_hostname($address) ) {
+            $result = 1;
+        } else {
+            return 0;
+        }
+    }
+    return $result;
+}
+
 sub _call_sysctl {
     my ($var_name) = @_;
-    
+
     my $result = `sysctl $var_name`;
     if($?){
         return;
