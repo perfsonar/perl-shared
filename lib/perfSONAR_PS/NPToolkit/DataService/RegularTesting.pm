@@ -312,8 +312,10 @@ sub _add_test_configuration{
                 my $description = $test->{'description'};
                 my $members = $test->{'members'};
                 my $parameters =  $test->{'parameters'};
+                my $added_by_mesh = $test->{'added_by_mesh'};
                 $parameters->{'description'} = $description;
                 $parameters->{'disabled'} = $disabled;
+                $parameters->{'added_by_mesh'} = $added_by_mesh;
 
                 my $test_id;
                 if($test_type eq 'owamp'){
