@@ -1,20 +1,21 @@
-libperfsonar-perl (3.5.1.1-3~bpo70+1) perfsonar-wheezy-release; urgency=low
-
-  * Update dependencies for libperfsonar-toolkit-perl
-
- -- Valentin Vidic <Valentin.Vidic@CARNet.hr>  Wed, 16 Mar 2016 10:26:06 +0100
-
-libperfsonar-perl (3.5.1.1-2~bpo70+1) perfsonar-wheezy-release; urgency=low
-
-  * Add Breaks: libperfsonar-perl for clean upgrade.
-
- -- Valentin Vidic <Valentin.Vidic@CARNet.hr>  Mon, 14 Mar 2016 16:25:43 +0100
-
-libperfsonar-perl (3.5.1.1-1~bpo70+1) perfsonar-wheezy-release; urgency=low
+libperfsonar-perl (3.5.1.2-1~bpo70+1) perfsonar-wheezy-release; urgency=low
 
   * Backport to Wheezy.
 
- -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sat, 05 Mar 2016 10:02:51 +0100
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Tue, 22 Mar 2016 12:27:35 +0000
+
+libperfsonar-perl (3.5.1.2-1) perfsonar-jessie-release; urgency=low
+
+  * New upstream version
+  * Update dependencies for libperfsonar-toolkit-perl
+
+ -- Valentin Vidic <Valentin.Vidic@CARNet.hr>  Tue, 22 Mar 2016 12:23:18 +0000
+
+libperfsonar-perl (3.5.1.1-2) perfsonar-jessie-release; urgency=low
+
+  * Add Breaks: libperfsonar-perl for clean upgrade.
+
+ -- Valentin Vidic <Valentin.Vidic@CARNet.hr>  Mon, 14 Mar 2016 16:29:55 +0100
 
 libperfsonar-perl (3.5.1.1-1) perfsonar-jessie-release; urgency=low
 
