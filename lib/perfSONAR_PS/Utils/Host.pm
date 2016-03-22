@@ -617,8 +617,13 @@ sub is_auto_updates_on{
 }
 
 sub is_ip_or_hostname {
-    my $parameters = validate( @_, { address => 1, } );
-    my @addresses = $parameters->{address};
+    my $parameters = validate( @_, { 
+            address => 1,
+            required => 0,
+        } );
+    my @addresses = @{ $parameters->{address} };
+    my $required = 1;
+    $required = $parameters->{required} if defined $parameters->{required};
     return 0 if (not @addresses ) || @addresses == 0;
     my $result = 0;
     foreach my $address (@addresses) {
@@ -627,6 +632,8 @@ sub is_ip_or_hostname {
         } elsif ( is_ipv6($address) ) {
             $result = 1;
         } elsif ( is_hostname($address) ) {
+            $result = 1;
+        } elsif ( $address eq '' && !$required ) {
             $result = 1;
         } else {
             return 0;
