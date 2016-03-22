@@ -29,6 +29,7 @@ use Net::IP;
 use Data::Validate::IP qw(is_ipv4 is_ipv6);
 use Data::Validate::Domain qw(is_hostname);
 use Data::Dumper;
+use URI;
 
 use Sys::Statistics::Linux;
 
@@ -57,6 +58,7 @@ our @EXPORT_OK = qw(
     is_auto_updates_on
 
     is_ip_or_hostname
+    is_web_url
 );
 
 =head2 get_ips()
@@ -621,7 +623,12 @@ sub is_ip_or_hostname {
             address => 1,
             required => 0,
         } );
-    my @addresses = @{ $parameters->{address} };
+    my @addresses;
+    if (  ref( $parameters->{address} ) eq 'ARRAY') {
+        @addresses = @{ $parameters->{address} };
+    } else {
+        @addresses = ( $parameters->{address} );
+    }
     my $required = 1;
     $required = $parameters->{required} if defined $parameters->{required};
     return 0 if (not @addresses ) || @addresses == 0;
@@ -640,6 +647,32 @@ sub is_ip_or_hostname {
         }
     }
     return $result;
+}
+
+sub is_web_url {
+    my $parameters = validate( @_, { 
+            address => 1,
+            required => 0,
+        } );
+    my @addresses;
+    if (  ref( $parameters->{address} ) eq 'ARRAY') {
+        @addresses = @{ $parameters->{address} };
+    } else {
+        @addresses = ( $parameters->{address} );
+    }
+    my $required = 1;
+    warn "addresses: " . Dumper @addresses;
+    $required = $parameters->{required} if defined $parameters->{required};
+    return 0 if (not @addresses ) || @addresses == 0;
+    foreach my $address (@addresses) {
+        my $uri = URI->new($address);
+        my $scheme = $uri->scheme;
+        return 0 if $uri eq '' && $required;
+        if ( !defined ($scheme) || ( $scheme ne "http" && $scheme ne "https" ) ) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 sub _call_sysctl {
