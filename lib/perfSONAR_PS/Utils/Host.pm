@@ -661,7 +661,6 @@ sub is_web_url {
         @addresses = ( $parameters->{address} );
     }
     my $required = 1;
-    warn "addresses: " . Dumper @addresses;
     $required = $parameters->{required} if defined $parameters->{required};
     return 0 if (not @addresses ) || @addresses == 0;
     foreach my $address (@addresses) {
