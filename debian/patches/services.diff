@@ -80,7 +80,7 @@
          #installed
 --- a/lib/perfSONAR_PS/Utils/Host.pm
 +++ b/lib/perfSONAR_PS/Utils/Host.pm
-@@ -444,7 +444,7 @@
+@@ -450,7 +450,7 @@
  sub get_ntp_info {
      my $ntp;
  
@@ -89,7 +89,7 @@
  
      my @ntp_response = split /\n/, $ntp_result;
      
-@@ -595,16 +595,11 @@
+@@ -601,16 +601,11 @@
  }
  
  sub is_auto_updates_on{
@@ -108,10 +108,10 @@
          return 0;
      }
  }
-@@ -612,7 +607,7 @@
+@@ -674,7 +669,7 @@
  sub _call_sysctl {
      my ($var_name) = @_;
-     
+ 
 -    my $result = `sysctl $var_name`;
 +    my $result = `/sbin/sysctl $var_name`;
      if($?){
