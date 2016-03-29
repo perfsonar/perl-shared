@@ -63,14 +63,19 @@ sub get_metadata {
         return { 'error' => 'LS Registration Daemon config object not found' };
     }
 
-    my $config = $ls_conf->load_config( { file => $ls_conf->{'CONFIG_FILE'} } );
+    my $config_full = $ls_conf->load_config( { file => $ls_conf->{'CONFIG_FILE'} } );
+    my $config = {};
+    $config->{'role'} = $config_full->{'role'};
+    $config->{'access_policy'} = $config_full->{'access_policy'};
+    $config->{'access_policy_notes'} = $config_full->{'access_policy_notes'};
 
     $meta->{'config'} = $config;
+
 
     my $info = $self->get_admin_information();
     $meta = { %$meta, %$info };
 
-    my $communities = $config->{site_project};
+    my $communities = $config_full->{site_project};
     if ( defined $communities ) {
         my $comm = { 'communities' => $communities };
         $meta = { %$meta, %$comm };
@@ -405,6 +410,8 @@ sub get_ntp_information{
 
 sub get_services {
     my $self = shift;
+    my $caller = shift;
+    my $params = $caller->{'input_params'};
 
     my @bwctl_test_ports = ();
     my $bwctld_cfg = perfSONAR_PS::NPToolkit::Config::BWCTL->new();
@@ -594,7 +601,7 @@ sub update_enabled_services {
 
     my $logger = $self->{LOGGER};
 
-    $self->{LOGGER}->error("CONFIG: ".Dumper($params));
+    $self->{LOGGER}->debug("CONFIG: ".Dumper($params));
 
     # be optimistic
     $success = 1;
