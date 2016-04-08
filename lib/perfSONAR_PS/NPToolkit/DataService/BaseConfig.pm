@@ -112,9 +112,8 @@ sub save_ls_config {
     my $error_msg;
     my $status_msg;
     my ($status, $res) = $ls_conf->save( { restart_services => 1 } );
-
     if ($status != 0) {
-        $error_msg = "Problem saving LS configuration: $res";
+        $error_msg = "Problem saving LS configuration; error: " . Dumper $res;
         return {
             error_msg => $error_msg,
             success => 0,

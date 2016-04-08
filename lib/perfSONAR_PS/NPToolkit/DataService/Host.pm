@@ -109,14 +109,9 @@ sub update_metadata {
     );
 
     foreach my $field (@field_names) {
-        if ($args->{$field}->{is_set} == 1) {
+        if ( defined ( $args->{$field} ) && $args->{$field}->{is_set} == 1) {
             $config_args{$field} = $args->{$field}->{value};
-            if ( $args->{$field}->{multiple} == 1 && 0 ) { # TODO: remove this
-                my @row = split(',', $config_args{$field});
-                $config_args{$field} = \@row;
-            }
         }
-
     }
 
     my $role = $config_args{'role'};
