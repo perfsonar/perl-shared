@@ -98,7 +98,6 @@ sub geoIPLookup {
 
     if ($ip) {
         my $record;
-$ip = "2001:18e8:3:10:8000::1";
         if ( is_ipv4($ip) ) {
             my $geoip_city_file =  '/usr/share/GeoIP/GeoIPCity.dat';
             my $geoip_city = Geo::IP->open( $geoip_city_file, GEOIP_MEMORY_CACHE);
