@@ -169,62 +169,6 @@ sub get_calculated_lat_lon {
 
 }
 
-sub update_information {
-    my $self = shift;
-    my $caller = shift;
-    my $args = $caller->{'input_params'};
-
-    $self->{authenticated} = $caller->{authenticated};
-    my %config_args = ();
-    my @field_names = (
-        'organization_name', 'admin_name', 'admin_email', 'city', 'state',
-        'postal_code', 'country', 'latitude', 'longitude', 'subscribe'
-
-    );
-    foreach my $field (@field_names) {
-        if ($args->{$field}->{is_set} == 1) {
-            $config_args{$field} = $args->{$field}->{value};
-        }
-
-    }
-    my $res = $self->set_config_information(%config_args);
-    if ($res) {
-    return {
-        %$res,
-
-    };
-
-    } else {
-        return {
-            "error" => "Error updating administrative information",
-        }
-    }
-}
-
-sub set_config_information  {
-    my ( $self, %args) = @_; # $organization_name, $host_location, $city, $state, $country, $zipcode, $administrator_name, $administrator_email, $latitude, $longitude, $subscribe ) = @_;
-
-    my $organization_name = $args{organization_name}; #  if (exists $args{organization_name});
-    my $administrator_name = $args{admin_name}; # if (exists $args{administrator_name});
-    my $administrator_email = $args{admin_email}; # if (exists $args{administrator_email});
-    my $city = $args{city};
-    my $state = $args{state};
-    my $zipcode = $args{postal_code};
-    my $country = $args{country};
-    my $latitude = $args{latitude};
-    my $longitude = $args{longitude};
-    my $subscribe = $args{subscribe};
-
-    if($administrator_email && defined ($subscribe) && $subscribe == 1){
-        subscribe($administrator_email);
-    }
-    #$is_modified = 1;
-
-    return $self->save_config();
-
-}
-
-
 sub get_details {
     my $self = shift;
     # get addresses, mtu, ntp status, globally registered, toolkit version, toolkit rpm version
