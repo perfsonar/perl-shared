@@ -99,10 +99,10 @@ sub geoIPLookup {
     if ($ip) {
         my $record;
         if ( is_ipv4($ip) ) {
-            my $geoip_city_file =  '/usr/share/GeoIP/GeoIPCity.dat';
-            my $geoip_city = Geo::IP->open( $geoip_city_file, GEOIP_MEMORY_CACHE);
+            my $city_file =  '/usr/share/GeoIP/GeoIPCity.dat';
+            my $city_db = Geo::IP->open( $city_file, GEOIP_MEMORY_CACHE);
 
-            $record = $geoip_city->record_by_addr( $ip );
+            $record = $city_db->record_by_addr( $ip );
             if ( $record ) {
                 $result->{'city'} = $record->city            if ($record->city);
                 $result->{'state'} = $record->region_name    if ($record->region_name);
@@ -116,30 +116,22 @@ sub geoIPLookup {
             }
         }
         elsif ( is_ipv6($ip) ) {
-            # (requires perl-Geo-IP 1.45-1.e16)
-            # !? The database seems to have only country info and the lat and long are for the center of it !?
-            my $geoip_city_ipv6_file =  '/usr/share/GeoIP/GeoIPCityv6.dat';
-            my $geoip_city_ipv6 = Geo::IP->open( $geoip_city_ipv6_file, GEOIP_MEMORY_CACHE);
+            # The City database seems to have only country info and the lat and long are for the center of it !?
+            # so just use the Country db for ipv6
+            my $country_ipv6_file =  '/usr/share/GeoIP/GeoIPv6.dat';
+            my $country_ipv6_db = Geo::IP->open( $country_ipv6_file, GEOIP_MEMORY_CACHE);
 
-            $record = $geoip_city_ipv6->record_by_addr_v6( $ip );
-            if ( $record ) {
-                $result->{'city'} = $record->city            if ($record->city);
-                $result->{'state'} = $record->region_name    if ($record->region_name);
-                $result->{'state_abbr'} = $record->region    if ($record->region);  
-                $result->{'country'} = $record->country_code if ($record->country_code);
-                $result->{'country_full'} = $record->country_name if ($record->country_name);
-                $result->{'code'} = $record->postal_code     if ($record->postal_code);                
-                $result->{'time_zone'} = $record->time_zone  if ($record->time_zone);
-                #$result->{'latitude'} = $record->latitude    if ($record->latitude);
-                #$result->{'longitude'} = $record->longitude  if ($record->longitude);
-            }
+            $record = $country_ipv6_db->country_code_by_addr_v6( $ip );
+            $result->{'country'} = $record if ($record);
+            $record = $country_ipv6_db->country_name_by_addr_v6( $ip );
+            $result->{'country_full'} = $record if ($record);
         }
         else {
             warn "IP '".$ip."' was not detected as ipv4 or ipv6.";
         }
     
-        #warn "IP: ".$ip; ###
-        #warn "geoIPLookup result " . Dumper $result;  ###
+        ##warn "IP: ".$ip; ###
+        ##warn "geoIPLookup result " . Dumper $result;  ###
 
     }
     return $result;
