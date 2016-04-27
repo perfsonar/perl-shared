@@ -52,7 +52,8 @@ our @EXPORT_OK = qw(
     get_operating_system_info
     get_processor_info
     get_tcp_configuration
-
+    get_dmi_info
+    
     get_health_info
 
     is_auto_updates_on
@@ -565,6 +566,35 @@ sub get_processor_info {
     }
      
     return \%cpuinfo;
+}
+
+sub get_dmi_info {
+    my %dmiinfo = ();
+    my @dmi_vars = ('sys_vendor', 'product_name');
+    my @vm_prod_patterns = ("^VMWare", "^VirtualBox", , "^KVM");
+    
+    foreach my $dmi_var(@dmi_vars){
+        #dmidecode requires root, so access files instead
+        my @dmidecode = `cat /sys/devices/virtual/dmi/id/$dmi_var`;
+        unless($?){
+            #should just be one line
+            foreach my $line(@dmidecode){
+                chomp $line ;
+                $dmiinfo{$dmi_var} = $line;
+                last;
+            }
+        }
+    }
+    
+    #figure out if this is a VM
+    $dmiinfo{'is_virtual_machine'} = 0; #0 means unknown
+    if( exists $dmiinfo{'product_name'} ){
+        foreach my $vm_prod_pattern(@vm_prod_patterns){
+            $dmiinfo{'is_virtual_machine'} = 1 if($dmiinfo{'product_name'} =~ /$vm_prod_pattern/);
+        }
+    }
+    
+    return \%dmiinfo;
 }
 
 sub get_health_info{
