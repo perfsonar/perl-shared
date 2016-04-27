@@ -64,7 +64,7 @@ our @EXPORT_OK = qw(
 =head2 get_ips()
 
 A function that returns the non-loopback IP addresses from a host. The current
-implementation parses the output of the /sbin/ifconfig command to look for the
+implementation parses the output of the /sbin/ip command to look for the
 IP addresses.
 
 =cut
@@ -75,35 +75,34 @@ sub get_ips {
 
     my %ret_interfaces = ();
 
-    my $IFCONFIG;
-    open( $IFCONFIG, "-|", "/sbin/ifconfig" ) or return;
-    my $is_loop = 0;
+    my $is_loopback = 0;
     my $curr_interface;
-    while ( <$IFCONFIG> ) {
-        if ( /^(\S+)\s*Link encap:([^ ]+)/ ) {
+    open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
+    while ( <$IP_ADDR> ) {
+        if ( /^\d+: ([^ ]+): ([^ ]+)/ ) {
             $curr_interface = $1;
-            if ( lc( $2 ) eq "local" ) {
-                $is_loop = 1;
+            if ( $2 =~ /\bLOOPBACK\b/ ) {
+                $is_loopback = 1;
             }
             else {
-                $is_loop = 0;
+                $is_loopback = 0;
             }
         }
 
-        next if $is_loop;
+        next if $is_loopback;
 
         unless ($ret_interfaces{$curr_interface}) {
             $ret_interfaces{$curr_interface} = [];
         }
 
-        if ( /inet addr:(\d+\.\d+\.\d+\.\d+)/ ) {
+        if ( /inet (\d+\.\d+\.\d+\.\d+)/ ) {
             push @{ $ret_interfaces{$curr_interface} }, $1;
         }
-        elsif ( /inet6 addr: (\d*:[^\/ ]*)(\/\d+)? +Scope:Global/ ) {
+        elsif ( m|inet6 ([[:xdigit:]:]+)/\d+ scope global| ) {
             push @{ $ret_interfaces{$curr_interface} }, $1;
         }
     }
-    close( $IFCONFIG );
+    close( $IP_ADDR );
 
     if ($by_interface) {
         return \%ret_interfaces;
@@ -120,16 +119,15 @@ sub get_ips {
 sub get_ethernet_interfaces {
     my @ret_interfaces = ();
 
-    my $IFCONFIG;
-    open( $IFCONFIG, "-|", "/sbin/ifconfig -a" ) or return;
-    while ( <$IFCONFIG> ) {
-        if ( /^(\S*).*Link encap:([^ ]+)/ ) {
-            if ( lc( $2 ) ne "local" ) {
+    open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
+    while ( <$IP_ADDR> ) {
+        if ( /^\d+: ([^ ]+): ([^ ]+)/ ) {
+            if ( $2 !~ /\bLOOPBACK\b/ ) {
                 push @ret_interfaces, $1;
             }
         }
     }
-    close( $IFCONFIG );
+    close( $IP_ADDR );
 
     return @ret_interfaces;
 }
