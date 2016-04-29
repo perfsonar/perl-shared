@@ -5,7 +5,7 @@
 
 Name:			libperfsonar
 Version:		3.5.1.3
-Release:		%{relnum}
+Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Shared Libraries
 License:		Distributable, see LICENSE
 Group:			Development/Libraries
