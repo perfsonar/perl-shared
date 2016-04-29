@@ -70,6 +70,8 @@ use constant {
     LS_KEY_HOST_NET_TCP_INTERFACES => "host-net-interfaces",
     
     LS_KEY_HOST_VM => "host-vm",
+    LS_KEY_HOST_MANUFACTURER => "host-manufacturer",
+    LS_KEY_HOST_PRODUCT_NAME => "host-productname",
     
     LS_KEY_HOST_ADMINISTRATORS => "host-administrators"
 };
