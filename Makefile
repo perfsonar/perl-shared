@@ -1,7 +1,7 @@
 PACKAGE=libperfsonar
 ROOTPATH=/usr/lib/perfsonar
 CONFIGPATH=/etc/perfsonar
-VERSION=3.5.1.4
+VERSION=3.5.1.5
 RELEASE=1
 
 default:
