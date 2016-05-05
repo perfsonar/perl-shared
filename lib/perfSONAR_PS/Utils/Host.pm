@@ -571,7 +571,7 @@ sub get_processor_info {
 sub get_dmi_info {
     my %dmiinfo = ();
     my @dmi_vars = ('sys_vendor', 'product_name');
-    my @vm_prod_patterns = ("^VMWare", "^VirtualBox", , "^KVM");
+    my @vm_prod_patterns = ("^VMware", "^VirtualBox", , "^KVM");
     
     foreach my $dmi_var(@dmi_vars){
         #dmidecode requires root, so access files instead
