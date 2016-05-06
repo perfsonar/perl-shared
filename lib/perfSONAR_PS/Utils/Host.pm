@@ -53,7 +53,8 @@ our @EXPORT_OK = qw(
     get_processor_info
     get_tcp_configuration
     get_dmi_info
-    
+    totalmem
+
     get_health_info
 
     is_auto_updates_on
@@ -595,6 +596,20 @@ sub get_dmi_info {
     }
     
     return \%dmiinfo;
+
+sub totalmem {
+    my $totalmem = 0;
+
+    open(my $meminfo, "<", "/proc/meminfo");
+    while (my $line = <$meminfo>) {
+        if ($line =~ m/^MemTotal:\s+(\d+) kB/) {
+            $totalmem = $1 * 1024;
+            last;
+        }
+    }
+    close($meminfo);
+
+    return $totalmem;
 }
 
 sub get_health_info{
