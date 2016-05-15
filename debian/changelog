@@ -1,3 +1,9 @@
+libperfsonar-perl (3.5.1.6w-1~bpo70+1) UNRELEASED; urgency=low
+
+  * TO BE FILLED IN...
+
+ -- Antoine Delvaux <adelvaux@man.poznan.pl>  Sun, 15 May 2016 16:57:05 +0000
+
 libperfsonar-perl (3.5.1.5-1~bpo70+1) perfsonar-wheezy-release; urgency=low
 
   * Backport to Wheezy.
