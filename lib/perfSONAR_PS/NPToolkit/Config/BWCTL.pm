@@ -29,9 +29,9 @@ use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service 
 
 # These are the defaults for the current NPToolkit
 my %defaults = (
-    bwctld_limits => "/etc/bwctld/bwctld.limits",
-    bwctld_keys   => "/etc/bwctld/bwctld.keys",
-    bwctld_conf   => "/etc/bwctld/bwctld.conf",
+    bwctld_limits => "/etc/bwctld/bwctl-server.limits",
+    bwctld_keys   => "/etc/bwctld/bwctl-server.keys",
+    bwctld_conf   => "/etc/bwctld/bwctl-server.conf",
 );
 
 =head2 init({ bwctld_limits => 0, bwctld_keys => 0, bwctld_conf => 0 })
