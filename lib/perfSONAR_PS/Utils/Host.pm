@@ -540,7 +540,7 @@ sub get_processor_info {
     );
     my %cpuinfo = ();
     
-    my @lscpu = `lscpu`;
+    my @lscpu = `lscpu 2>/dev/null`;
     unless($?){
         foreach my $line(@lscpu){
             chomp $line ;
@@ -571,7 +571,7 @@ sub get_processor_info {
 sub get_dmi_info {
     my %dmiinfo = ();
     my @dmi_vars = ('sys_vendor', 'product_name');
-    my @vm_prod_patterns = ("^VMware", "^VirtualBox", , "^KVM", "^Virtual Machine$");
+    my @vm_prod_patterns = ("^VMware", "^VirtualBox", , "^KVM", "^Virtual Machine");
     
     foreach my $dmi_var(@dmi_vars){
         #dmidecode requires root, so access files instead
