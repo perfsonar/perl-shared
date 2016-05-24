@@ -571,11 +571,12 @@ sub get_processor_info {
 sub get_dmi_info {
     my %dmiinfo = ();
     my @dmi_vars = ('sys_vendor', 'product_name');
-    my @vm_prod_patterns = ("^VMware", "^VirtualBox", , "^KVM");
+    my @vm_prod_patterns = ("^VMware", "^VirtualBox", , "^KVM", "^Virtual Machine$");
     
     foreach my $dmi_var(@dmi_vars){
         #dmidecode requires root, so access files instead
-        my @dmidecode = `cat /sys/devices/virtual/dmi/id/$dmi_var`;
+        my $dmi_path = "/sys/devices/virtual/dmi/id/$dmi_var";
+        my @dmidecode = `cat $dmi_path` if -f $dmi_path;
         unless($?){
             #should just be one line
             foreach my $line(@dmidecode){
@@ -591,6 +592,16 @@ sub get_dmi_info {
     if( exists $dmiinfo{'product_name'} ){
         foreach my $vm_prod_pattern(@vm_prod_patterns){
             $dmiinfo{'is_virtual_machine'} = 1 if($dmiinfo{'product_name'} =~ /$vm_prod_pattern/);
+        }
+    } else {
+        # Check if we're on a Xen guest
+        my $dmesg_path = "/var/log/dmesg";
+        my $xenboot = system('grep -q "Booting paravirtualized kernel on Xen" ' . $dmesg_path) if -f $dmesg_path;
+        if ($xenboot eq 0) {
+            # We're on a Xen guest
+            $dmiinfo{'is_virtual_machine'} = 1;
+            $dmiinfo{'product_name'} = "Xen";
+            $dmiinfo{'sys_vendor'} = "Xen Project";
         }
     }
     
