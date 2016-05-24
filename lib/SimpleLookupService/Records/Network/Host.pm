@@ -34,7 +34,7 @@ sub init {
     									 tcpMaxBufferSend =>0, tcpAutoMaxBufferSend =>0, 
     									 tcpMaxBufferRecv =>0, tcpAutoMaxBufferRecv =>0, 
     									 tcpMaxBacklog =>0, tcpMaxAchievable =>0,
-    									 vm=> 0, administrators=>0, domains =>0,
+    									 vm=> 0, manufacturer=> 0,, productName=> 0, administrators=>0, domains =>0,
     									 siteName => 0 , city => 0, region => 0,
     									 country => 0, zipCode => 0, latitude =>0, longitude => 0 } );
     
@@ -186,6 +186,22 @@ sub init {
     	}
     }
     
+    if(defined $parameters{manufacturer}){
+    	my $ret = $self->setManufacturer($parameters{manufacturer});
+    	if($ret <0){
+    		cluck "Error initializing Host record";
+    		return $ret;
+    	}
+    }
+    	
+    if(defined $parameters{productName}){
+    	my $ret = $self->setProductName($parameters{productName});
+    	if($ret <0){
+    		cluck "Error initializing Host record";
+    		return $ret;
+    	}
+    }
+
     if(defined $parameters{domains}){
     	my $ret = $self->setDNSDomains($parameters{domains});
     	if($ret <0){
@@ -455,6 +471,28 @@ sub getVm {
 sub setVm {
     my ( $self, $value ) = @_;
     $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_VM), value=>$value  );
+    
+}
+
+sub getManufacturer {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_MANUFACTURER)};
+}
+
+sub setManufacturer {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_MANUFACTURER), value=>$value  );
+    
+}
+
+sub getProductName {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_PRODUCT_NAME)};
+}
+
+sub setProductName {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_PRODUCT_NAME), value=>$value  );
     
 }
 

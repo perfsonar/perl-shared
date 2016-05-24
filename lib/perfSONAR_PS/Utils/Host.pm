@@ -52,7 +52,8 @@ our @EXPORT_OK = qw(
     get_operating_system_info
     get_processor_info
     get_tcp_configuration
-
+    get_dmi_info
+    
     get_health_info
 
     is_auto_updates_on
@@ -64,7 +65,7 @@ our @EXPORT_OK = qw(
 =head2 get_ips()
 
 A function that returns the non-loopback IP addresses from a host. The current
-implementation parses the output of the /sbin/ifconfig command to look for the
+implementation parses the output of the /sbin/ip command to look for the
 IP addresses.
 
 =cut
@@ -75,35 +76,34 @@ sub get_ips {
 
     my %ret_interfaces = ();
 
-    my $IFCONFIG;
-    open( $IFCONFIG, "-|", "/sbin/ifconfig" ) or return;
-    my $is_loop = 0;
+    my $is_loopback = 0;
     my $curr_interface;
-    while ( <$IFCONFIG> ) {
-        if ( /^(\S+)\s*Link encap:([^ ]+)/ ) {
+    open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
+    while ( <$IP_ADDR> ) {
+        if ( /^\d+: ([^ ]+): ([^ ]+)/ ) {
             $curr_interface = $1;
-            if ( lc( $2 ) eq "local" ) {
-                $is_loop = 1;
+            if ( $2 =~ /\bLOOPBACK\b/ ) {
+                $is_loopback = 1;
             }
             else {
-                $is_loop = 0;
+                $is_loopback = 0;
             }
         }
 
-        next if $is_loop;
+        next if $is_loopback;
 
         unless ($ret_interfaces{$curr_interface}) {
             $ret_interfaces{$curr_interface} = [];
         }
 
-        if ( /inet addr:(\d+\.\d+\.\d+\.\d+)/ ) {
+        if ( /inet (\d+\.\d+\.\d+\.\d+)/ ) {
             push @{ $ret_interfaces{$curr_interface} }, $1;
         }
-        elsif ( /inet6 addr: (\d*:[^\/ ]*)(\/\d+)? +Scope:Global/ ) {
+        elsif ( m|inet6 ([[:xdigit:]:]+)/\d+ scope global| ) {
             push @{ $ret_interfaces{$curr_interface} }, $1;
         }
     }
-    close( $IFCONFIG );
+    close( $IP_ADDR );
 
     if ($by_interface) {
         return \%ret_interfaces;
@@ -120,16 +120,15 @@ sub get_ips {
 sub get_ethernet_interfaces {
     my @ret_interfaces = ();
 
-    my $IFCONFIG;
-    open( $IFCONFIG, "-|", "/sbin/ifconfig -a" ) or return;
-    while ( <$IFCONFIG> ) {
-        if ( /^(\S*).*Link encap:([^ ]+)/ ) {
-            if ( lc( $2 ) ne "local" ) {
+    open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
+    while ( <$IP_ADDR> ) {
+        if ( /^\d+: ([^ ]+): ([^ ]+)/ ) {
+            if ( $2 !~ /\bLOOPBACK\b/ ) {
                 push @ret_interfaces, $1;
             }
         }
     }
-    close( $IFCONFIG );
+    close( $IP_ADDR );
 
     return @ret_interfaces;
 }
@@ -541,7 +540,7 @@ sub get_processor_info {
     );
     my %cpuinfo = ();
     
-    my @lscpu = `lscpu`;
+    my @lscpu = `lscpu 2>/dev/null`;
     unless($?){
         foreach my $line(@lscpu){
             chomp $line ;
@@ -567,6 +566,46 @@ sub get_processor_info {
     }
      
     return \%cpuinfo;
+}
+
+sub get_dmi_info {
+    my %dmiinfo = ();
+    my @dmi_vars = ('sys_vendor', 'product_name');
+    my @vm_prod_patterns = ("^VMware", "^VirtualBox", , "^KVM", "^Virtual Machine");
+    
+    foreach my $dmi_var(@dmi_vars){
+        #dmidecode requires root, so access files instead
+        my $dmi_path = "/sys/devices/virtual/dmi/id/$dmi_var";
+        my @dmidecode = `cat $dmi_path` if -f $dmi_path;
+        unless($?){
+            #should just be one line
+            foreach my $line(@dmidecode){
+                chomp $line ;
+                $dmiinfo{$dmi_var} = $line;
+                last;
+            }
+        }
+    }
+    
+    #figure out if this is a VM
+    $dmiinfo{'is_virtual_machine'} = 0; #0 means unknown
+    if( exists $dmiinfo{'product_name'} ){
+        foreach my $vm_prod_pattern(@vm_prod_patterns){
+            $dmiinfo{'is_virtual_machine'} = 1 if($dmiinfo{'product_name'} =~ /$vm_prod_pattern/);
+        }
+    } else {
+        # Check if we're on a Xen guest
+        my $dmesg_path = "/var/log/dmesg";
+        my $xenboot = system('grep -q "Booting paravirtualized kernel on Xen" ' . $dmesg_path) if -f $dmesg_path;
+        if ($xenboot eq 0) {
+            # We're on a Xen guest
+            $dmiinfo{'is_virtual_machine'} = 1;
+            $dmiinfo{'product_name'} = "Xen";
+            $dmiinfo{'sys_vendor'} = "Xen Project";
+        }
+    }
+    
+    return \%dmiinfo;
 }
 
 sub get_health_info{
