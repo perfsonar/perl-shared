@@ -99,7 +99,7 @@ sub check_running {
             chomp( $p_id ) if ( defined $p_id );
             if ( $p_id ) {
 		my $running = 0;
-		open( PSVIEW, "-|", "ps -p " . $p_id );
+		open( PSVIEW, "-|", "ps ww -p " . $p_id );
 		while ( <PSVIEW> ) {
 		    if (/$self->{PROCESS_NAMES}[$i]/) {
 			$running = 1;
