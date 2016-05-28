@@ -1,6 +1,8 @@
---- a/lib/perfSONAR_PS/Utils/Host.pm
-+++ b/lib/perfSONAR_PS/Utils/Host.pm
-@@ -23,7 +23,7 @@
+Index: perl-shared/lib/perfSONAR_PS/Utils/Host.pm
+===================================================================
+--- perl-shared.orig/lib/perfSONAR_PS/Utils/Host.pm
++++ perl-shared/lib/perfSONAR_PS/Utils/Host.pm
+@@ -23,7 +23,7 @@ use base 'Exporter';
  use Params::Validate qw(:all);
  use Log::Log4perl qw(get_logger);
  
@@ -9,7 +11,7 @@
  use Net::CIDR;
  use Net::IP;
  use Data::Validate::IP qw(is_ipv4 is_ipv6);
-@@ -184,14 +184,14 @@
+@@ -186,14 +186,14 @@ sub get_interface_speed {
      # you're root.
      my $speed_file = "/sys/class/net/".$interface_name."/speed";
      if (-f $speed_file) {
@@ -26,7 +28,7 @@
          while ( <$ETHTOOL> ) {
              if ( /^\s*Speed:\s+(\d+)\s*(\w)/ ) {
                  $speed = $1;
-@@ -208,6 +208,11 @@
+@@ -210,6 +210,11 @@ sub get_interface_speed {
          }
          close( $ETHTOOL );
      }
@@ -38,7 +40,7 @@
   
      return $speed;
  }
-@@ -215,9 +220,9 @@
+@@ -217,9 +222,9 @@ sub get_interface_speed {
  sub get_interface_mtu {
  	my $parameters = validate( @_, { interface_name => 1, } );
      my $interface_name = $parameters->{interface_name};
@@ -50,7 +52,7 @@
            return $if->mtu;
          }
      }
-@@ -226,20 +231,12 @@
+@@ -228,20 +233,12 @@ sub get_interface_mtu {
  sub get_interface_mac {
  	my $parameters = validate( @_, { interface_name => 1, } );
      my $interface_name = $parameters->{interface_name};
