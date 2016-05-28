@@ -122,9 +122,11 @@ sub get_ethernet_interfaces {
 
     open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
     while ( <$IP_ADDR> ) {
-        if ( /^\d+: ([^ ]+): ([^ ]+)/ ) {
-            if ( $2 !~ /\bLOOPBACK\b/ ) {
-                push @ret_interfaces, $1;
+        if ( /^\d+: ([^ ]+): (.+)$/ ) {
+            my $ifname = $1;
+            my $ifdetails = $2;
+            if ( $ifdetails !~ /\bLOOPBACK\b/ && $ifdetails =~ /\bstate UP\b/) {
+                push @ret_interfaces, $ifname;
             }
         }
     }
@@ -256,7 +258,7 @@ sub discover_primary_address {
     my $disable_ipv4_reverse_lookup = $parameters->{disable_ipv4_reverse_lookup};
     my $disable_ipv6_reverse_lookup = $parameters->{disable_ipv6_reverse_lookup};
 
-    my $ips_by_iface;
+    my $ips_by_iface = {};
 
     if ( $interface ) {
         my @ips = get_interface_addresses( { interface => $interface } );
@@ -264,10 +266,8 @@ sub discover_primary_address {
             $ips_by_iface = { $interface => \@ips };   
         }
         
-    }
-    if(!$interface or !$ips_by_iface) {
-        # If they've not told us which interface to use or if the chosen interface does not seem to have been configured,
-        # it's time to guess.
+    } else {
+        # If they've not told us which interface to use it's time to guess.
         $ips_by_iface = get_ips({ by_interface => 1 });
     }
 
@@ -294,7 +294,7 @@ sub discover_primary_address {
     my $reverse_dns_mapping = reverse_dns_multi({ addresses => \@all_ips, timeout => 10 }); # don't wait more than 10 seconds.
 
     # Try to find an address with an ipv4 address with that resolves to something
-    unless ( $disable_ipv4_reverse_lookup or ( $chosen_address and $ipv4_address )) {
+    unless ( $disable_ipv4_reverse_lookup) {
         foreach my $iface ( keys %$ips_by_iface ) {
             foreach my $ip ( @{ $ips_by_iface->{$iface } } ) {
                 my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16' );
@@ -540,7 +540,7 @@ sub get_processor_info {
     );
     my %cpuinfo = ();
     
-    my @lscpu = `lscpu`;
+    my @lscpu = `lscpu 2>/dev/null`;
     unless($?){
         foreach my $line(@lscpu){
             chomp $line ;
@@ -571,11 +571,12 @@ sub get_processor_info {
 sub get_dmi_info {
     my %dmiinfo = ();
     my @dmi_vars = ('sys_vendor', 'product_name');
-    my @vm_prod_patterns = ("^VMware", "^VirtualBox", , "^KVM");
+    my @vm_prod_patterns = ("^VMware", "^VirtualBox", , "^KVM", '^Virtual Machine$');
     
     foreach my $dmi_var(@dmi_vars){
         #dmidecode requires root, so access files instead
-        my @dmidecode = `cat /sys/devices/virtual/dmi/id/$dmi_var`;
+        my $dmi_path = "/sys/devices/virtual/dmi/id/$dmi_var";
+        my @dmidecode = `cat $dmi_path` if -f $dmi_path;
         unless($?){
             #should just be one line
             foreach my $line(@dmidecode){
@@ -591,6 +592,16 @@ sub get_dmi_info {
     if( exists $dmiinfo{'product_name'} ){
         foreach my $vm_prod_pattern(@vm_prod_patterns){
             $dmiinfo{'is_virtual_machine'} = 1 if($dmiinfo{'product_name'} =~ /$vm_prod_pattern/);
+        }
+    } else {
+        # Check if we're on a Xen guest
+        my $dmesg_path = "/var/log/dmesg";
+        my $xenboot = system('grep -q "Booting paravirtualized kernel on Xen" ' . $dmesg_path) if -f $dmesg_path;
+        if ($xenboot eq 0) {
+            # We're on a Xen guest
+            $dmiinfo{'is_virtual_machine'} = 1;
+            $dmiinfo{'product_name'} = "Xen";
+            $dmiinfo{'sys_vendor'} = "Xen Project";
         }
     }
     
