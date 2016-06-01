@@ -80,9 +80,9 @@ sub get_ips {
     my $curr_interface;
     open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
     while ( <$IP_ADDR> ) {
-        if ( /^\d+: ([^ ]+): ([^ ]+)/ ) {
+        if ( /^\d+: ([^ ]+?)(@[^ ]+)?: ([^ ]+)/ ) {
             $curr_interface = $1;
-            if ( $2 =~ /\bLOOPBACK\b/ ) {
+            if ( $3 =~ /\bLOOPBACK\b/ ) {
                 $is_loopback = 1;
             }
             else {
@@ -122,9 +122,9 @@ sub get_ethernet_interfaces {
 
     open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
     while ( <$IP_ADDR> ) {
-        if ( /^\d+: ([^ ]+): (.+)$/ ) {
+        if ( /^\d+: ([^ ]+?)(@[^ ]+)?: (.+)$/ ) {
             my $ifname = $1;
-            my $ifdetails = $2;
+            my $ifdetails = $3;
             if ( $ifdetails !~ /\bLOOPBACK\b/ && $ifdetails =~ /\bstate UP\b/) {
                 push @ret_interfaces, $ifname;
             }
