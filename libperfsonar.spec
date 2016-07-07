@@ -4,7 +4,7 @@
 %define relnum   1 
 
 Name:			libperfsonar
-Version:		3.5.1.6
+Version:		3.5.1.7
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Shared Libraries
 License:		Distributable, see LICENSE
@@ -32,6 +32,7 @@ Requires:		perl(HTTP::Response)
 Requires:		perl(IO::File)
 Requires:		perl(IO::Select)
 Requires:		perl(IO::Socket::SSL)
+Requires:               perl(IO::Socket::INET6)
 Requires:		perl(JSON::XS)
 Requires:		perl(Log::Log4perl)
 Requires:		perl(Net::CIDR)
@@ -140,6 +141,7 @@ Requires:		perl(HTTP::Response)
 Requires:		perl(IO::File)
 Requires:		perl(IO::Select)
 Requires:		perl(IO::Socket::SSL)
+Requires:               perl(IO::Socket::INET6)
 Requires:		perl(IPC::Open3)
 Requires:		perl(IPC::Run)
 Requires:		perl(JSON)
@@ -215,6 +217,7 @@ Requires:		perl(HTTP::Response)
 Requires:		perl(Hash::Merge)
 Requires:		perl(IO::Select)
 Requires:		perl(IO::Socket::SSL)
+Requires:               perl(IO::Socket::INET6)
 Requires:		perl(IPC::DirQueue)
 Requires:		perl(IPC::Open3)
 Requires:		perl(IPC::Run)
