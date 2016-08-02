@@ -44,6 +44,7 @@ our @EXPORT_OK = qw(
     get_interface_addresses_by_type
     get_interface_speed
     get_interface_mtu
+    get_interface_counters
     get_interface_mac
     discover_primary_address
 
@@ -225,6 +226,17 @@ sub get_interface_mtu {
     }
 }
 
+sub get_interface_counters {
+	my $parameters = validate( @_, { interface_name => 1, } );
+    my $interface_name = $parameters->{interface_name};
+    my $lxs = Sys::Statistics::Linux->new(
+        netstats => 1
+    );
+    my $stats = $lxs->get();
+    my $results = $stats->{'netinfo'}{$interface_name};
+    return $results;
+}
+
 sub get_interface_mac {
 	my $parameters = validate( @_, { interface_name => 1, } );
     my $interface_name = $parameters->{interface_name};
@@ -282,6 +294,7 @@ sub discover_primary_address {
     my $ipv6_interface;
     my $interface_speed;
     my $interface_mtu;
+    my $interface_counters;
     my $interface_mac;
     
     my @all_ips = ();
@@ -405,10 +418,11 @@ sub discover_primary_address {
         }
     }
 
-    #get the interface speed
+    #get the interface speed, etc
     if($chosen_interface){
         $interface_speed = get_interface_speed({interface_name => $chosen_interface});
         $interface_mtu = get_interface_mtu({interface_name => $chosen_interface});
+        $interface_counters = get_interface_counters({interface_name => $chosen_interface});
         $interface_mac = get_interface_mac({interface_name => $chosen_interface});
     }
 
@@ -445,6 +459,7 @@ sub discover_primary_address {
         primary_ipv4_iface => $ipv4_interface,
         primary_iface_speed => $interface_speed,
         primary_iface_mtu => $interface_mtu,
+        primary_iface_counters => $interface_counters,
         primary_iface_mac => $interface_mac,
     };
 }
@@ -618,10 +633,10 @@ sub get_health_info{
     );
 
     sleep 1;
-    my $stat = $lxs->get;
+    my $stat = $lxs->get();
     
     my $result;
-    #the following helps to decouple the output from the underlyign package used
+    #the following helps to decouple the output from the underlying package used
     $result->{'cpustats'}=$stat->{'cpustats'};
     $result->{'memstats'}=$stat->{'memstats'};
     $result->{'diskusage'}=$stat->{'diskusage'};

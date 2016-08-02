@@ -9,7 +9,7 @@ use POSIX;
 use Sys::MemInfo qw(totalmem);
 use Sys::Hostname;
 
-use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
+use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_counters get_interface_mac);
 
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered get_client_uuid );
 use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
@@ -227,7 +227,7 @@ sub set_config_information  {
 
 sub get_details {
     my $self = shift;
-    # get addresses, mtu, ntp status, globally registered, toolkit version, toolkit rpm version
+    # get addresses, mtu, counters, ntp status, globally registered, toolkit version, toolkit rpm version
     # external address
     # total RAM
 
@@ -252,6 +252,7 @@ sub get_details {
         $iface = $address;
         $iface->{iface} = $interface;
         $iface->{mtu} = get_interface_mtu({interface_name=>$interface});
+        $iface->{counters} = get_interface_counters({interface_name=>$interface});
         $iface->{speed} = get_interface_speed({interface_name=>$interface});
         $iface->{mac} = get_interface_mac({interface_name=>$interface});
         push @interfaceDetails, $iface;
@@ -272,6 +273,7 @@ sub get_details {
     my $external_address;
     my $external_address_iface;
     my $external_address_mtu;
+    my $external_address_counters;
     my $external_address_speed;
     my $external_address_ipv4;
     my $external_address_ipv6;
@@ -282,6 +284,7 @@ sub get_details {
         $external_address = $external_addresses->{primary_address};
         $external_address_iface = $external_addresses->{primary_address_iface};
         $external_address_mtu = $external_addresses->{primary_iface_mtu};
+        $external_address_counters = $external_addresses->{primary_iface_counters};
         $external_address_speed = $external_addresses->{primary_iface_speed} if $external_addresses->{primary_iface_speed};
         $external_address_ipv4 = $external_addresses->{primary_ipv4};
         $external_address_ipv6 = $external_addresses->{primary_ipv6};
@@ -296,6 +299,7 @@ sub get_details {
         $status->{external_address}->{iface} = $external_address_iface if $external_address_iface;
         $status->{external_address}->{speed} = $external_address_speed if $external_address_speed;
         $status->{external_address}->{mtu} = $external_address_mtu if $external_address_mtu;
+        $status->{external_address}->{counters} = $external_address_counters if $external_address_counters;
 
     }
 
