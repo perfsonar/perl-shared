@@ -42,6 +42,7 @@ our @EXPORT_OK = qw(
     get_ethernet_interfaces
     get_interface_addresses
     get_interface_addresses_by_type
+    get_interface_hostnames
     get_interface_speed
     get_interface_mtu
     get_interface_counters
@@ -175,6 +176,22 @@ sub get_interface_addresses_by_type {
 
     return $result;
 
+}
+
+sub get_interface_hostnames {
+    # For an array (array ref) of IP addresses,
+    # return a hash (hash ref) with keys that are IP's and values that are arrays of hostnames
+	my $parameters = validate( @_, { interface_addresses => 1 } );
+    my $addresses = $parameters->{interface_addresses};
+
+    my $resolved_hostnames = reverse_dns_multi({ addresses => $addresses, timeout => 5 });
+
+    if ($resolved_hostnames) {
+        return $resolved_hostnames;
+    }
+    else {
+        return {};
+    }
 }
 
 sub get_interface_speed {

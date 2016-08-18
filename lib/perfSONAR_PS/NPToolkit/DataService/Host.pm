@@ -9,7 +9,7 @@ use POSIX;
 use Sys::MemInfo qw(totalmem);
 use Sys::Hostname;
 
-use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_counters get_interface_mac);
+use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_counters get_interface_hostnames get_interface_mac);
 
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered get_client_uuid );
 use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
@@ -244,19 +244,27 @@ sub get_details {
     $status->{toolkit_version} = $version_conf->get_version();
 
     my @interfaces = get_ethernet_interfaces();
+
     my @interfaceDetails;
     foreach my $interface (@interfaces){
         my $iface;
-
-        my $address = get_interface_addresses_by_type({interface=>$interface});
-        $iface = $address;
-        $iface->{iface} = $interface;
+        my $addresses = get_interface_addresses_by_type({interface=>$interface});
+        $iface = $addresses;    # sets $iface->{ipv4_address} and $iface->{ipv6_address}
+        # get_interface_hostnames() returns a hash (hash-ref) with keys=ip's, values = arrays of hostnames
+        my $ipv4_addresses = $addresses->{ipv4_address};  # array-ref
+        my $ipv6_addresses = $addresses->{ipv6_address};
+        my $ipv4_hostnames = get_interface_hostnames({interface_addresses=>$ipv4_addresses}); 
+        my $ipv6_hostnames = get_interface_hostnames({interface_addresses=>$ipv6_addresses}); 
+        $iface->{hostnames} = {%$ipv4_hostnames, %$ipv6_hostnames};
         $iface->{mtu} = get_interface_mtu({interface_name=>$interface});
         $iface->{counters} = get_interface_counters({interface_name=>$interface});
         $iface->{speed} = get_interface_speed({interface_name=>$interface});
         $iface->{mac} = get_interface_mac({interface_name=>$interface});
+        $iface->{iface} = $interface;
+
         push @interfaceDetails, $iface;
     }
+
     $status->{interfaces} = \@interfaceDetails;
 
 
