@@ -2,7 +2,7 @@ package perfSONAR_PS::Client::Esmond::BaseNode;
 
 use Mouse;
 use perfSONAR_PS::Client::Esmond::ApiFilters;
-use perfSONAR_PS::Client::Esmond::Utils qw(send_http_request build_err_msg);
+use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg);
 
 has 'data' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'url' => (is => 'rw', isa => 'Str|Undef');
