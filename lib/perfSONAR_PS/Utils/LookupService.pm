@@ -30,7 +30,7 @@ use SimpleLookupService::Client::Query;
 use URI;
 use Data::UUID;
 
-our @EXPORT_OK = qw( discover_lookup_services discover_primary_lookup_service is_host_registered get_client_uuid set_client_uuid);
+our @EXPORT_OK = qw( discover_lookup_services discover_primary_lookup_service lookup_service_is_active is_host_registered get_client_uuid set_client_uuid);
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -53,6 +53,22 @@ sub discover_primary_lookup_service {
     }
 
     return $primary_ls;
+}
+
+sub lookup_service_is_active {
+    my $parameters = validate( @_, { ls_url => 1, locator_urls => 0 } );
+    my $ls_url = $parameters->{ls_url};
+    my $locator_urls = $parameters->{locator_urls};
+
+    my $lookup_services = discover_lookup_services(locator_urls => $locator_urls);
+
+    foreach my $ls_info (@$lookup_services) {
+        if ($ls_info->{locator} eq $ls_url) {
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 sub discover_lookup_services {
@@ -134,7 +150,12 @@ sub is_host_registered{
     
     my $query = new perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject();
     $query->init();
-    $query->setHostName($address);
+    my $client_uuid = get_client_uuid();
+    if($client_uuid){
+        $query->setRecordClientUUID($client_uuid);
+    }else{
+        $query->setHostName($address);
+    }
     my $client = new SimpleLookupService::Client::Query();
     $client->init(server => $server, query => $query);
     my ($status, $host) = $client->query();
@@ -151,9 +172,9 @@ sub is_host_registered{
 
 sub get_client_uuid {
     my ( @params ) = @_;
-    my $parameters = validate( @params, {file => 1} );
+    my $parameters = validate( @params, {file => 0} );
     my $uuid_file = $parameters->{file};
-    
+    $uuid_file = '/var/lib/perfsonar/lsregistrationdaemon/client_uuid' unless($uuid_file);
     my $uuid;
 
     if ( open( FIN, "<", $uuid_file ) ) {

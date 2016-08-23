@@ -116,7 +116,7 @@ sub getRecordType {
 sub setRecordType {
     my ( $self, $value ) = @_;
     
-    #aaray can be > 1
+    #array can be > 1
     unless(ref($value) eq 'ARRAY'){
     	$value = [$value];
     }
@@ -139,6 +139,23 @@ sub setRecordUri {
 		$value  = [$value];
 	}
     $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_URI)} = $value;
+    return 0;
+}
+
+sub getRecordClientUUID {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_CLIENT_UUID)};
+}
+
+sub setRecordClientUUID {
+    my ( $self, $value ) = @_;
+    
+    #array can be > 1
+    unless(ref($value) eq 'ARRAY'){
+    	$value = [$value];
+    }
+    	   
+    $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_CLIENT_UUID)} = $value;
     return 0;
 }
 
