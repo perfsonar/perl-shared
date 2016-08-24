@@ -2,7 +2,7 @@ package perfSONAR_PS::Client::Esmond::BaseDataNode;
 
 use Mouse;
 use perfSONAR_PS::Client::Esmond::DataPayload;
-use perfSONAR_PS::Client::Esmond::Utils qw(send_http_request build_err_msg);
+use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg);
 use JSON qw(from_json);
 use URI::Split qw(uri_split uri_join);
 

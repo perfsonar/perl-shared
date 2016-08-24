@@ -15,7 +15,7 @@ use Params::Validate qw(:all);
 use  perfSONAR_PS::Client::Esmond::ApiFilters;
 use  perfSONAR_PS::Client::Esmond::DataConnect;
 use  perfSONAR_PS::Client::Esmond::Metadata;
-use perfSONAR_PS::Client::Esmond::Utils qw(send_http_request build_err_msg);
+use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg);
 use JSON qw(from_json);
 
 our $VERSION = 3.4;

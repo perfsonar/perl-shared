@@ -33,7 +33,16 @@ lib/perfSONAR_PS/Client/Esmond/EventTypeBulkPost.pm
 lib/perfSONAR_PS/Client/Esmond/Metadata.pm
 lib/perfSONAR_PS/Client/Esmond/Paginator.pm
 lib/perfSONAR_PS/Client/Esmond/Summary.pm
-lib/perfSONAR_PS/Client/Esmond/Utils.pm
+lib/perfSONAR_PS/Client/PScheduler/ApiConnect.pm
+lib/perfSONAR_PS/Client/PScheduler/ApiFilters.pm
+lib/perfSONAR_PS/Client/PScheduler/Archive.pm
+lib/perfSONAR_PS/Client/PScheduler/BaseNode.pm
+lib/perfSONAR_PS/Client/PScheduler/Maintainer.pm
+lib/perfSONAR_PS/Client/PScheduler/Run.pm
+lib/perfSONAR_PS/Client/PScheduler/Task.pm
+lib/perfSONAR_PS/Client/PScheduler/Test.pm
+lib/perfSONAR_PS/Client/PScheduler/Tool.pm
+lib/perfSONAR_PS/Client/Utils.pm
 lib/perfSONAR_PS/Client/gLS/Keywords.pm
 lib/perfSONAR_PS/Client/LS/PSClient/PSQuery.pm
 lib/perfSONAR_PS/Client/LS/PSKeywords/PSKeyNames.pm
