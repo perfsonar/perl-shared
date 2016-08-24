@@ -104,3 +104,25 @@ sub setBWCTLTools {
     my $ret = $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_BWCTL_TOOLS), value=>$value  );  
 	return $ret;
 }
+
+sub getPSchedulerTools {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSCHEDULER_TOOLS)};
+}
+
+sub setPSchedulerTools {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSCHEDULER_TOOLS), value=>$value  );  
+	return $ret;
+}
+
+sub getPSchedulerTests {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSCHEDULER_TESTS)};
+}
+
+sub setPSchedulerTests {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSCHEDULER_TESTS), value=>$value  );  
+	return $ret;
+}
