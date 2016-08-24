@@ -103,6 +103,7 @@ Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
 Requires:		perl(URI::Split)
 Requires:		perfsonar-common
+Requires:		libperfsonar-perl
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
 Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
 Obsoletes:      perl-perfSONAR_PS-serviceTest
@@ -112,6 +113,24 @@ Obsoletes:      perl-perfSONAR-graphs
 
 %description esmond-perl
 perfSONAR Meaurement Archive perl clients for esmond
+
+%package pscheduler-perl
+Summary:        perfSONAR Meaurement Archive perl clients for esmond
+Group:          Applications/Communications
+Requires:		perl(Exporter)
+Requires:		perl(HTTP::Request)
+Requires:		perl(JSON)
+Requires:		perl(LWP::UserAgent)
+Requires:		perl(Mouse)
+Requires:		perl(POSIX)
+Requires:		perl(Params::Validate)
+Requires:		perl(URI::Split)
+Requires:		perfsonar-common
+Requires:		libperfsonar-perl
+
+%description pscheduler-perl
+pScheduler perl client libraries
+
 
 %package toolkit-perl
 Summary:        Shared libraries for perfSONAR Toolkit distributions
@@ -283,6 +302,7 @@ rm -rf %{buildroot}
 %{install_base}/lib/perfSONAR_PS/Utils/NTP.pm
 %{install_base}/lib/perfSONAR_PS/Utils/NetLogger.pm
 %{install_base}/lib/perfSONAR_PS/Utils/ParameterValidation.pm
+%{install_base}/lib/perfSONAR_PS/Client/Utils.pm
 
 %files sls-perl
 %defattr(0644,perfsonar,perfsonar,0755)
@@ -293,6 +313,10 @@ rm -rf %{buildroot}
 %files esmond-perl
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/perfSONAR_PS/Client/Esmond/*
+
+%files pscheduler-perl
+%defattr(0644,perfsonar,perfsonar,0755)
+%{install_base}/lib/perfSONAR_PS/Client/PScheduler/*
 
 %files toolkit-perl
 %defattr(0644,perfsonar,perfsonar,0755)
