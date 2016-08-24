@@ -4,7 +4,7 @@
 %define relnum   1 
 
 Name:			libperfsonar
-Version:		3.5.1.8
+Version:		3.5.1.9
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Shared Libraries
 License:		Distributable, see LICENSE

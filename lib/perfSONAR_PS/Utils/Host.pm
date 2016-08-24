@@ -548,7 +548,7 @@ sub get_processor_info {
             next if(@cols != 2);
         
             if($lscpu_parse_map{$cols[0]}){
-                $cpuinfo{$lscpu_parse_map{$cols[0]}} = $cols[1];
+                $cpuinfo{$lscpu_parse_map{_sanitize($cols[0])}} = _sanitize($cols[1]);
             }
         }
     }
@@ -560,7 +560,7 @@ sub get_processor_info {
             my @cols = split /\s*:\s*/, $line;
             next if(@cols != 2);
             if($cpuinfo_parse_map{$cols[0]}){
-                $cpuinfo{$cpuinfo_parse_map{$cols[0]}} = $cols[1];
+                $cpuinfo{_sanitize($cpuinfo_parse_map{$cols[0]})} = _sanitize($cols[1]);
             }
         }
     }
@@ -581,7 +581,7 @@ sub get_dmi_info {
             #should just be one line
             foreach my $line(@dmidecode){
                 chomp $line ;
-                $dmiinfo{$dmi_var} = $line;
+                $dmiinfo{_sanitize($dmi_var)} = _sanitize($line);
                 last;
             }
         }
@@ -747,6 +747,18 @@ sub _max_buffer_auto {
     }
     
     return $parts[2];
+}
+
+sub _sanitize {
+    my($str) = @_;
+    
+    #get rid of double spaces
+    $str =~ s/\s\s+/ /g;
+    
+    #get rid of non-ascii
+    $str =~ s/[^[:ascii:]]//g;
+    
+    return $str;
 }
 
 1;
