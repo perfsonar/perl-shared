@@ -1,8 +1,8 @@
-libperfsonar-perl (4.0~0.a1-1~bpo70+1) UNRELEASED; urgency=low
+libperfsonar-perl (4.0~0.a1+0-1~bpo70+1) UNRELEASED; urgency=low
 
   * TO BE FILLED IN...
 
- -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Thu, 07 Jul 2016 16:16:03 +0000
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Wed, 24 Aug 2016 19:18:51 +0000
 
 libperfsonar-perl (3.5.1.6-1) perfsonar-jessie-release; urgency=low
 
