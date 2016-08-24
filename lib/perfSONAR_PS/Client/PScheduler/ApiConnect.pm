@@ -17,6 +17,8 @@ use JSON qw(from_json to_json);
 
 use perfSONAR_PS::Client::PScheduler::ApiFilters;
 use perfSONAR_PS::Client::PScheduler::Task;
+use perfSONAR_PS::Client::PScheduler::Test;
+use perfSONAR_PS::Client::PScheduler::Tool;
 
 our $VERSION = 4.0;
 
