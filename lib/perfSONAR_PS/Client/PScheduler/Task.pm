@@ -416,6 +416,62 @@ sub get_run() {
     return new perfSONAR_PS::Client::PScheduler::Run(data => $run_response_json, url => $run_url, filters => $self->filters, uuid => $run_uuid);
 }
 
+sub get_lead() {
+    my ($self) = @_;
+    
+    #need a test type and test spec for this to work
+    unless ($self->test_type() && $self->test_spec()){
+        return;
+    }
+    
+    #build url
+    my $lead_url = $self->url;
+    chomp($lead_url);
+    $lead_url .= "/" if($self->url !~ /\/$/);
+    $lead_url .= "tests/" . $self->test_type()  . "/lead";
+    
+    #fetch lead
+    $self->data->{'test'}->{'spec'}->{'schema'} = 1 unless($self->data->{'test'}->{'spec'}->{'schema'}); 
+    my %get_params = ("spec" => to_json($self->test_spec()));
+    my $lead_response = send_http_request(
+        connection_type => 'GET', 
+        url => $lead_url, 
+        get_params => \%get_params,
+        timeout => $self->filters->timeout,
+        ca_certificate_file => $self->filters->ca_certificate_file,
+        ca_certificate_path => $self->filters->ca_certificate_path,
+        verify_hostname => $self->filters->verify_hostname,
+    );
+    if(!$lead_response->is_success){
+        my $msg = build_err_msg(http_response => $lead_response);
+        $self->_set_error($msg);
+        return;
+    }
+    my $lead_response_json = from_json($lead_response->content, {allow_nonref => 1});
+    if(!$lead_response_json){
+        $self->_set_error("No lead object returned from $lead_url");
+        return;
+    }
+    
+    return $lead_response_json;
+}
+
+sub get_lead_url() {
+    my ($self, $scheme, $port, $path) = @_;
+    
+    # Defaults
+    $scheme = 'https' unless($scheme);
+    $port = $port ? ":$port" : '';
+    $path = '/pscheduler' unless($path);
+    $path = "/$path" unless($path =~ /^\//);
+    
+    #Get address
+    my $address = $self->get_lead();
+    return unless($address);
+    
+    return "${scheme}://${address}${port}${path}";
+}
+
 __PACKAGE__->meta->make_immutable;
 
 1;
