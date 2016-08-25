@@ -29,19 +29,17 @@ Description: perfSONAR common perl libraries
 Package: libperfsonar-esmond-perl
 Architecture: all
 Breaks: libperfsonar-perl (<< 3.5.1~10.rc1-1~bpo70+1)
-Depends: ${misc:Depends}, ${perl:Depends}, libjson-perl, libwww-perl,
- libmouse-perl, libparams-validate-perl, liburi-perl
+Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
+ libjson-perl, libwww-perl, libmouse-perl, libparams-validate-perl, liburi-perl
 Description: perfSONAR perl libraries for esmond
  Client libraries for perfSONAR's Meaurement Archive esmond
 
-Package: libperfsonar-sls-perl
+Package: libperfsonar-pscheduler-perl
 Architecture: all
-Breaks: libperfsonar-perl (<< 3.5.1~10.rc1-1~bpo70+1)
-Depends: ${misc:Depends}, ${perl:Depends}, libossp-uuid-perl,
- libdatetime-format-iso8601-perl, libjson-perl, liblog-log4perl-perl,
- libwww-perl, libparams-validate-perl, liburi-perl, libyaml-syck-perl
-Description: perfSONAR perl libraries for Simple Lookup Service
- Client libraries for perfSONAR's Simple Lookup Service (sLS)
+Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
+ libjson-perl, libwww-perl, libmouse-perl, libparams-validate-perl, liburi-perl
+Description: perfSONAR perl libraries for pScheduler
+ Client libraries for perfSONAR's pScheduler service
 
 Package: libperfsonar-regulartesting-perl
 Architecture: all
@@ -55,6 +53,15 @@ Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
  libparams-validate-perl
 Description: perfSONAR perl libraries for regular testing
  Client libraries for perfSONAR's regular testing service
+
+Package: libperfsonar-sls-perl
+Architecture: all
+Breaks: libperfsonar-perl (<< 3.5.1~10.rc1-1~bpo70+1)
+Depends: ${misc:Depends}, ${perl:Depends}, libossp-uuid-perl,
+ libdatetime-format-iso8601-perl, libjson-perl, liblog-log4perl-perl,
+ libwww-perl, libparams-validate-perl, liburi-perl, libyaml-syck-perl
+Description: perfSONAR perl libraries for Simple Lookup Service
+ Client libraries for perfSONAR's Simple Lookup Service (sLS)
 
 Package: libperfsonar-toolkit-perl
 Architecture: all
