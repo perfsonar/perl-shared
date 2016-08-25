@@ -1,4 +1,4 @@
-libperfsonar-perl (4.0~0.a1+0-1~bpo70+1) UNRELEASED; urgency=low
+libperfsonar-perl (4.0~0.a1+0w-1~bpo70+1) UNRELEASED; urgency=low
 
   * New upstream version.
   * Creating libperfsonar-pscheduler-perl package.
