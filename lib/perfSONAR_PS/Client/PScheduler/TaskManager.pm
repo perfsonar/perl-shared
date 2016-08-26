@@ -67,8 +67,6 @@ sub init {
         my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters);
         my $existing_tasks = $psc_client->get_tasks();
         if($psc_client->error()){
-            $psc_lead->{'error'} = 1;
-            $psc_lead->{'error_msg'} = $psc_client->error();
             $psc_lead->{'error_time'} = time; 
             push @{$self->errors()}, "Problem getting existing tests from pScheduler lead $psc_url: ".$psc_client->error();
             next;
@@ -141,8 +139,8 @@ sub _delete_tasks {
                     # $task->delete_task();
                     # if($task->error()){
                     #     $self->leads_to_keep()->{$task->url()} = 1;
-                    #      $self->_update_lead($task->url(), {'error' => 1, error_msg => $task->error()});
-                    #     push @{$self->errors()}, "Problem adding test, continuing with rest of config: " . $task->error();
+                    #     $self->_update_lead($task->url(), {'error_time' => time});
+                    #     push @{$self->errors()}, "Problem deleting test, continuing with rest of config: " . $task->error();
                     # }                    
                 }
             }
@@ -161,7 +159,7 @@ sub _task_exists {
     }
     
     #if matching checksum, and tool is not defined on new task then we match
-    if(!$new_task->tool()){
+    if(!$new_task->requested_tools()){
         my $cmap = $existing->{$new_task->checksum()};
         foreach my $tool(keys %{$cmap}){
             my $tmap = $cmap->{$tool};
@@ -176,9 +174,10 @@ sub _task_exists {
     
     #we have a matching checksum and we have an explicit tool, find one that matches
     my $cmap = $existing->{$new_task->checksum()};
-    foreach my $tool(keys %{$cmap}){
-        if($tool eq $new_task->tool()){
-            my $tmap = $cmap->{$tool};
+    #search requested tools in order since that is preference order
+    foreach my $req_tool(@{$new_task->requested_tools()}){
+        if($cmap->{$req_tool}){
+            my $tmap = $cmap->{$req_tool};
             foreach my $uuid(keys %{$tmap}){
                 #mark as keep
                 $tmap->{$uuid}->{'keep'} = 1;
@@ -186,8 +185,7 @@ sub _task_exists {
                 return 1;
             }
         }
-    }
-    
+    }    
     #if we are here, no match
     return 0;
 }
@@ -206,7 +204,6 @@ sub _create_tasks {
             next;
         }
         $self->leads_to_keep()->{$new_task->url()} = 1;
-        #TODO: Remove
         $self->_print_task($new_task);
         $new_task->post_task();
         if($new_task->error){
