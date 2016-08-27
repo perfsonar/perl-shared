@@ -362,4 +362,51 @@ sub build_endpoint {
     return $endpoint;
 }
 
+override 'to_pscheduler' => sub {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, { 
+                                         url => 1,
+                                         test => 1,
+                                         task_manager => 1
+                                      });
+    my $url = $parameters->{url};
+    my $test = $parameters->{test};
+    my $task_manager = $parameters->{task_manager};
+    foreach my $individual_test ($self->get_individual_tests({ test => $test })) {
+        my $psc_task = $self->build_pscheduler_task({ 
+                                     url => $url,
+                                     source => $individual_test->{source},
+                                     destination => $individual_test->{destination},
+                                     local_destination => $individual_test->{local_destination},
+                                     force_ipv4 => $individual_test->{force_ipv4},
+                                     force_ipv6 => $individual_test->{force_ipv6},
+                                     test_parameters => $individual_test->{test_parameters},
+                                     test => $test
+                                  });
+        my $local_address;
+        if($individual_test->{local_destination}){
+            $local_address = $individual_test->{destination} if($individual_test->{destination});
+        }else{
+            $local_address = $individual_test->{source} if($individual_test->{source});
+        }
+        $task_manager->add_task(task => $psc_task, local_address => $local_address) if($psc_task);
+    }
+    
+};
+
+sub build_pscheduler_task {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {
+                                         url => 1,
+                                         source => 1,
+                                         destination => 1,
+                                         local_destination => 1,
+                                         force_ipv4 => 0,
+                                         force_ipv6 => 0,
+                                         test_parameters => 1,
+                                         test => 1,
+                                      });
+    die "Not implemented. Must be overridden by subclass.";
+}
+
 1;

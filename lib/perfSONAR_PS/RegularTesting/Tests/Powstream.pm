@@ -384,4 +384,51 @@ sub build_endpoint {
     return $endpoint;
 }
 
+override 'to_pscheduler' => sub {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, { 
+                                         url => 1,
+                                         test => 1,
+                                         task_manager => 1
+                                      });
+    my $psc_url = $parameters->{url};
+    my $test = $parameters->{test};
+    my $task_manager = $parameters->{task_manager};
+    foreach my $individual_test ($self->get_individual_tests({ test => $test })) {
+        my $source = $individual_test->{sender}?$test->local_address:$individual_test->{target}->address;
+        my $destination = $individual_test->{receiver}?$test->local_address:$individual_test->{target}->address;
+        my $force_ipv4        = $individual_test->{force_ipv4};
+        my $force_ipv6        = $individual_test->{force_ipv6};
+        my $test_parameters   = $individual_test->{test_parameters};
+        my $packets = $test_parameters->resolution / $test_parameters->inter_packet_time;
+        my $schedule          = $test->schedule();
+        
+        my $psc_task = new perfSONAR_PS::Client::PScheduler::Task(url => $psc_url);
+        $psc_task->reference_param('description', $test->description()) if $test->description();
+    
+        #Test parameters
+        my $psc_test_spec = {};
+        $psc_task->test_type('latencybg');
+        $psc_test_spec->{'source'} = $source;
+        $psc_test_spec->{'dest'} = $destination;
+        $psc_test_spec->{'flip'} = JSON::true if($individual_test->{receiver});
+        $psc_test_spec->{'packet-count'} = int($packets) if $packets;
+        $psc_test_spec->{'packet-interval'} = $test_parameters->inter_packet_time + 0.0 if $test_parameters->inter_packet_time;
+        $psc_test_spec->{'packet-padding'} = int($test_parameters->packet_length) if defined $test_parameters->packet_length;
+        if($test_parameters->receive_port_range()){
+            my ($lower, $upper) = split '-', $test_parameters->receive_port_range();
+            $psc_test_spec->{'data-ports'} = {
+                'lower' => $lower,
+                'upper' => $upper,
+            };
+        }
+        $psc_test_spec->{'ip-version'} = 4 if($force_ipv4);
+        $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
+        $psc_task->test_spec($psc_test_spec);
+        
+        $task_manager->add_task(task => $psc_task, local_address => $test->local_address) if($psc_task);
+    }
+    
+};
+
 1;

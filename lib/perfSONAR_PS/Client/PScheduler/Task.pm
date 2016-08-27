@@ -150,14 +150,14 @@ sub schedule_randslip{
     
     if(defined $val){
         $self->_init_field($self->data, 'schedule');
-        $self->data->{'schedule'}->{'randslip'} = $val;
+        $self->data->{'schedule'}->{'randslip'} = $val + 0.0;
     }
     
     unless($self->_has_field($self->data, "schedule")){
         return undef;
     }
     
-    return $self->data->{'schedule'}->{'randslip'};
+    return $self->data->{'schedule'}->{'randslip'} + 0.0;
 }
 
 sub schedule_slip{
