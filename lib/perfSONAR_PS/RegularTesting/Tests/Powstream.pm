@@ -389,10 +389,12 @@ override 'to_pscheduler' => sub {
     my $parameters = validate( @args, { 
                                          url => 1,
                                          test => 1,
+                                         archive_map => 1,
                                          task_manager => 1
                                       });
     my $psc_url = $parameters->{url};
     my $test = $parameters->{test};
+    my $archive_map = $parameters->{archive_map};
     my $task_manager = $parameters->{task_manager};
     foreach my $individual_test ($self->get_individual_tests({ test => $test })) {
         my $source = $individual_test->{sender}?$test->local_address:$individual_test->{target}->address;
@@ -425,6 +427,18 @@ override 'to_pscheduler' => sub {
         $psc_test_spec->{'ip-version'} = 4 if($force_ipv4);
         $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
         $psc_task->test_spec($psc_test_spec);
+        
+        #add archives
+        if($archive_map->{'esmond/latency'}){
+            foreach my $psc_ma(@{$archive_map->{'esmond/latency'}}){
+                $psc_task->add_archive($psc_ma);
+            }
+        }
+        if($test->measurement_archives()){
+            foreach my $ma(@{$test->measurement_archives()}){
+                $psc_task->add_archive($ma->to_pscheduler());
+            }
+        }
         
         $task_manager->add_task(task => $psc_task, local_address => $test->local_address) if($psc_task);
     }

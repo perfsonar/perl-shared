@@ -192,4 +192,8 @@ override 'build_pscheduler_task' => sub {
     
 };
 
+override 'pscheduler_archive_type' => sub {
+    return 'esmond/latency';
+};
+
 1;

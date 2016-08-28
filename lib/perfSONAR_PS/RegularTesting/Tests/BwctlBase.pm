@@ -367,10 +367,12 @@ override 'to_pscheduler' => sub {
     my $parameters = validate( @args, { 
                                          url => 1,
                                          test => 1,
+                                         archive_map => 1,
                                          task_manager => 1
                                       });
     my $url = $parameters->{url};
     my $test = $parameters->{test};
+    my $archive_map = $parameters->{archive_map};
     my $task_manager = $parameters->{task_manager};
     foreach my $individual_test ($self->get_individual_tests({ test => $test })) {
         my $psc_task = $self->build_pscheduler_task({ 
@@ -389,10 +391,24 @@ override 'to_pscheduler' => sub {
         }else{
             $local_address = $individual_test->{source} if($individual_test->{source});
         }
+        if($archive_map->{$self->pscheduler_archive_type()}){
+            foreach my $psc_ma(@{$archive_map->{$self->pscheduler_archive_type()}}){
+                $psc_task->add_archive($psc_ma);
+            }
+        }
+        if($test->measurement_archives()){
+            foreach my $ma(@{$test->measurement_archives()}){
+                $psc_task->add_archive($ma->to_pscheduler());
+            }
+        }
         $task_manager->add_task(task => $psc_task, local_address => $local_address) if($psc_task);
     }
     
 };
+
+sub pscheduler_archive_type {
+    die "'pscheduler_archive_type' is not implemented"
+}
 
 sub build_pscheduler_task {
     my ($self, @args) = @_;

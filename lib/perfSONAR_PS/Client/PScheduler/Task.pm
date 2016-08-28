@@ -212,7 +212,7 @@ sub archives{
         $self->data->{'archives'} = [];
         foreach my $v(@{$val}){
             push @{$self->data->{'archives'}}, {
-                'name' => $v->name(),
+                'archiver' => $v->name(),
                 'data' => $v->data(),
             };
         }
@@ -221,7 +221,7 @@ sub archives{
     my @archives = ();
     foreach my $archive(@{$self->data->{'archives'}}){
         push @archives, new perfSONAR_PS::Client::PScheduler::Archive(
-            'name' => $archive->{'name'},
+            'name' => $archive->{'archiver'},
             'data' => $archive->{'data'},
         );
     }
@@ -241,7 +241,7 @@ sub add_archive{
     }
     
     push @{$self->data->{'archives'}}, {
-            'name' =>  $val->name(),
+            'archiver' =>  $val->name(),
             'data' =>  $val->data()
         };
 }

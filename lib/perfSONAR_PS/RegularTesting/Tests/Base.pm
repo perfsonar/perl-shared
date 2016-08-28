@@ -46,6 +46,7 @@ sub to_pscheduler {
     my $parameters = validate( @args, { 
                                          url => 1,
                                          test => 1,
+                                         archive_map => 1,
                                          task_manager => 1
                                       });
     die "Not implemented. Must be overridden by subclass.";
