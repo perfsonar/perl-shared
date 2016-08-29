@@ -62,16 +62,7 @@ sub parse_target {
         $address = $target;
     }
 
-#    if ( is_ipv4( $address ) or 
-#         is_ipv6( $address ) or 
-#         is_hostname( $address ) ) {
-
-        return { address => $address, port => $port };
-#    }
-
-    print "IPv6: ".is_ipv6( $address )."\n";
-
-    return;
+    return { address => $address, port => $port };
 }
 
 =head2 owpdelay($start, $end)

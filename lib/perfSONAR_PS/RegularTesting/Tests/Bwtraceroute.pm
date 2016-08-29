@@ -146,6 +146,7 @@ override 'build_pscheduler_task' => sub {
                                          url => 1,
                                          source => 1,
                                          destination => 1,
+                                         destination_port => 0,
                                          local_destination => 1,
                                          force_ipv4 => 0,
                                          force_ipv6 => 0,
@@ -155,6 +156,7 @@ override 'build_pscheduler_task' => sub {
     my $psc_url           = $parameters->{url};
     my $source            = $parameters->{source};
     my $destination       = $parameters->{destination};
+    my $destination_port       = $parameters->{destination_port};
     my $local_destination = $parameters->{local_destination};
     my $force_ipv4        = $parameters->{force_ipv4};
     my $force_ipv6        = $parameters->{force_ipv6};
@@ -187,6 +189,7 @@ override 'build_pscheduler_task' => sub {
             $psc_task->add_requested_tool($tool);
         }
     }
+    $psc_test_spec->{'dest-port'} = int($destination_port) if($destination_port);
     $psc_test_spec->{'length'} = int($test_parameters->packet_length) if $test_parameters->packet_length;
     $psc_test_spec->{'first-ttl'} = int($test_parameters->packet_first_ttl) if $test_parameters->packet_first_ttl;
     $psc_test_spec->{'hops'} = int($test_parameters->packet_max_ttl) if $test_parameters->packet_max_ttl;

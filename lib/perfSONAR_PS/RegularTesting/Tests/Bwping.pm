@@ -147,6 +147,7 @@ override 'build_pscheduler_task' => sub {
                                          url => 1,
                                          source => 1,
                                          destination => 1,
+                                         destination_port => 0,
                                          local_destination => 1,
                                          force_ipv4 => 0,
                                          force_ipv6 => 0,

@@ -18,7 +18,7 @@ use Data::Validate::Domain qw(is_hostname);
 use Net::IP;
 
 use perfSONAR_PS::RegularTesting::Results::Endpoint;
-use perfSONAR_PS::RegularTesting::Utils qw(choose_endpoint_address);
+use perfSONAR_PS::RegularTesting::Utils qw(choose_endpoint_address parse_target);
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner;
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner::Cmd;
 use perfSONAR_PS::Utils::Host qw(get_interface_addresses_by_type);
@@ -386,14 +386,17 @@ override 'to_pscheduler' => sub {
     
     #build tests
     foreach my $individual_test ($self->get_individual_tests({ test => $test })) {
-    
+        my $parsed_target = parse_target(target=>$individual_test->{target}->address());
+        my $parsed_src = parse_target(target=>$individual_test->{source});
+        my $parsed_dst = parse_target(target=>$individual_test->{destination});
+        
         #determine local address which is only complicated if interface specified
         my ($local_address, $source, $destination);
         if($interface_ips){
             my ($choose_status, $choose_res) = choose_endpoint_address(
                                                         ifname => $test->local_interface,
                                                         interface_ips => $interface_ips, 
-                                                        target_address => $individual_test->{target}->address(),
+                                                        target_address => $parsed_target->{address},
                                                         force_ipv4 => $individual_test->{force_ipv6},
                                                         force_ipv6 => $individual_test->{force_ipv6},
                                                     );
@@ -407,13 +410,13 @@ override 'to_pscheduler' => sub {
         
         #now determine source and destination - again only complicated by interface names
         if($individual_test->{local_destination}){
-            $local_address = $individual_test->{destination} unless($local_address);
-            $source = $individual_test->{source};
+            $local_address = $parsed_dst->{address} unless($local_address);
+            $source = $parsed_src->{address};
             $destination = $local_address;
         }else{
-            $local_address = $individual_test->{source} unless($local_address);
+            $local_address = $parsed_src->{address} unless($local_address);
             $source = $local_address;
-            $destination = $individual_test->{destination};
+            $destination = $parsed_dst->{address};
         }
         
         # create pscheduler task
@@ -421,6 +424,7 @@ override 'to_pscheduler' => sub {
                                      url => $url,
                                      source => $source,
                                      destination => $destination,
+                                     destination_port => $parsed_dst->{port},
                                      local_destination => $individual_test->{local_destination},
                                      force_ipv4 => $individual_test->{force_ipv4},
                                      force_ipv6 => $individual_test->{force_ipv6},
@@ -460,6 +464,7 @@ sub build_pscheduler_task {
                                          url => 1,
                                          source => 1,
                                          destination => 1,
+                                         destination_port => 0,
                                          local_destination => 1,
                                          force_ipv4 => 0,
                                          force_ipv6 => 0,

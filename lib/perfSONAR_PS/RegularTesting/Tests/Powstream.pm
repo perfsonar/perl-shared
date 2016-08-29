@@ -20,7 +20,7 @@ use Net::IP;
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner;
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner::Cmd;
 
-use perfSONAR_PS::RegularTesting::Utils qw(owptime2datetime choose_endpoint_address);
+use perfSONAR_PS::RegularTesting::Utils qw(owptime2datetime choose_endpoint_address parse_target);
 use perfSONAR_PS::Utils::Host qw(get_interface_addresses_by_type);
 
 use perfSONAR_PS::RegularTesting::Parsers::Owamp qw(parse_owamp_summary_file);
@@ -415,12 +415,13 @@ override 'to_pscheduler' => sub {
         my $schedule          = $test->schedule();
         
         #determine local address which is only complicated if interface specified
-        my ($local_address, $source, $destination);
+        my $parsed_target = parse_target(target=>$individual_test->{target}->address());
+        my ($local_address, $local_port, $source, $destination, $destination_port);
         if($interface_ips){
             my ($choose_status, $choose_res) = choose_endpoint_address(
                                                         ifname => $test->local_interface,
                                                         interface_ips => $interface_ips, 
-                                                        target_address => $individual_test->{target}->address(),
+                                                        target_address => $parsed_target->{address},
                                                         force_ipv4 => $individual_test->{force_ipv6},
                                                         force_ipv6 => $individual_test->{force_ipv6},
                                                     );
@@ -433,13 +434,19 @@ override 'to_pscheduler' => sub {
         }
         
         #now determine source and destination - again only complicated by interface names
-        $local_address = $test->local_address unless($local_address);
+        unless($local_address){
+            my $parsed_local = parse_target(target=> $test->local_address);
+            $local_address = $parsed_local->{address};
+            $local_port = $parsed_local->{port};
+        }
         if($individual_test->{receiver}){
-            $source = $individual_test->{target}->address;
+            $source = $parsed_target->{address};
             $destination = $local_address;
+            $destination_port = $local_port;
         }else{
             $source = $local_address;
-            $destination = $individual_test->{target}->address;
+            $destination = $parsed_target->{address};
+            $destination_port = $parsed_target->{port};
         }
         
         #init task
@@ -451,6 +458,7 @@ override 'to_pscheduler' => sub {
         $psc_task->test_type('latencybg');
         $psc_test_spec->{'source'} = $source;
         $psc_test_spec->{'dest'} = $destination;
+        $psc_test_spec->{'ctrl-port'} = int($destination_port) if($destination_port);
         $psc_test_spec->{'flip'} = JSON::true if($individual_test->{receiver});
         $psc_test_spec->{'packet-count'} = int($packets) if $packets;
         $psc_test_spec->{'packet-interval'} = $test_parameters->inter_packet_time + 0.0 if $test_parameters->inter_packet_time;
