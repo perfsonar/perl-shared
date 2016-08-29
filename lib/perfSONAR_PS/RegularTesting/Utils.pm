@@ -160,7 +160,6 @@ sub choose_endpoint_address{
         unless(@{$interface_ips->{ipv4_address}}){
             return (-1, "No ipv4 address for interface " . $ifname . " but target $target_address is IPv4");
         }
-        print "Target is ipv4, using " . $interface_ips->{ipv4_address}->[0] . "\n";
         $local_address = $interface_ips->{ipv4_address}->[0]; #use first one in list
     }elsif(is_ipv6($target_address)){
         unless(@{$interface_ips->{ipv6_address}}){
@@ -168,25 +167,20 @@ sub choose_endpoint_address{
         }
         $local_address = $interface_ips->{ipv6_address}->[0]; #use first one in list
     }else{
-        print "Target is hostname\n";
         my @target_ips = resolve_address($target_address);
         my $ipv6;
         my $ipv4;
         foreach my $target_ip(@target_ips){
             if(is_ipv4($target_ip)){
                 $ipv4 = $target_ip;
-                print "Target ipv4 is $ipv4\n";
             }elsif(is_ipv6($target_ip)){
                 $ipv6 = $target_ip;
-                print "Target ipv6is $ipv6\n";
             }
         }
         if($ipv6 && @{$interface_ips->{ipv6_address}}){
             $local_address = $interface_ips->{ipv6_address}->[0];
-            print "Using v6 $local_address\n";
         }elsif($ipv4 && @{$interface_ips->{ipv4_address}}){
             $local_address = $interface_ips->{ipv4_address}->[0];
-            print "Using v4 $local_address\n";
         }else{
             return (-1, "Unable to find a matching pair of IPv4 or IPv6 addresses for interface " . $ifname . " and target address $target_address"); 
         }
