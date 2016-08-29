@@ -27,10 +27,11 @@ use Data::Validate::IP qw(is_ipv4 is_ipv6);
 use Net::IP;
 
 use Math::Int64 qw(uint64 uint64_to_number);
+use perfSONAR_PS::Utils::DNS qw(resolve_address);
 
 use DateTime;
 
-our @EXPORT_OK = qw( parse_target owpdelay owptime2datetime owptstampi2datetime datetime2owptime datetime2owptstampi );
+our @EXPORT_OK = qw( parse_target owpdelay owptime2datetime owptstampi2datetime datetime2owptime datetime2owptstampi choose_endpoint_address );
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -130,6 +131,68 @@ sub datetime2owptstampi{
     my $bigtime = uint64(datetime2owptime($datetime));
 
     return uint64_to_number($bigtime>>32);
+}
+
+=head2 choose_endpoint_address()
+
+=cut
+sub choose_endpoint_address{
+    my $parameters = validate( @_, { ifname => 1, interface_ips => 1, target_address => 1, force_ipv4 => 1,  force_ipv6 => 1});
+    my $ifname = $parameters->{ifname};
+    my $interface_ips = $parameters->{interface_ips};
+    my $target_address = $parameters->{target_address};
+    my $force_ipv4 = $parameters->{force_ipv4};
+    my $force_ipv6 = $parameters->{force_ipv6};
+    my $local_address;
+    
+    #if an interface was given, figure out which address to use
+    if($force_ipv4){
+        unless(@{$interface_ips->{ipv4_address}}){
+            return (-1, "No ipv4 address for interface " . $ifname . " but force_ipv4 enabled");
+        }
+        $local_address = $interface_ips->{ipv4_address}->[0]; #use first one in list
+    }elsif($force_ipv6){
+        unless(@{$interface_ips->{ipv6_address}}){
+            return (-1, "No ipv6 address for interface " . $ifname . " but force_ipv6 enabled");
+        }
+        $local_address = $interface_ips->{ipv6_address}->[0]; #use first one in list
+    }elsif(is_ipv4($target_address)){
+        unless(@{$interface_ips->{ipv4_address}}){
+            return (-1, "No ipv4 address for interface " . $ifname . " but target $target_address is IPv4");
+        }
+        print "Target is ipv4, using " . $interface_ips->{ipv4_address}->[0] . "\n";
+        $local_address = $interface_ips->{ipv4_address}->[0]; #use first one in list
+    }elsif(is_ipv6($target_address)){
+        unless(@{$interface_ips->{ipv6_address}}){
+            return (-1, "No ipv6 address for interface " . $ifname . " but target $target_address is IPv6");
+        }
+        $local_address = $interface_ips->{ipv6_address}->[0]; #use first one in list
+    }else{
+        print "Target is hostname\n";
+        my @target_ips = resolve_address($target_address);
+        my $ipv6;
+        my $ipv4;
+        foreach my $target_ip(@target_ips){
+            if(is_ipv4($target_ip)){
+                $ipv4 = $target_ip;
+                print "Target ipv4 is $ipv4\n";
+            }elsif(is_ipv6($target_ip)){
+                $ipv6 = $target_ip;
+                print "Target ipv6is $ipv6\n";
+            }
+        }
+        if($ipv6 && @{$interface_ips->{ipv6_address}}){
+            $local_address = $interface_ips->{ipv6_address}->[0];
+            print "Using v6 $local_address\n";
+        }elsif($ipv4 && @{$interface_ips->{ipv4_address}}){
+            $local_address = $interface_ips->{ipv4_address}->[0];
+            print "Using v4 $local_address\n";
+        }else{
+            return (-1, "Unable to find a matching pair of IPv4 or IPv6 addresses for interface " . $ifname . " and target address $target_address"); 
+        }
+    }
+    
+    return (0, $local_address);
 }
 
 1;

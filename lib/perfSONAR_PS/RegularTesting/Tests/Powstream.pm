@@ -20,7 +20,8 @@ use Net::IP;
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner;
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner::Cmd;
 
-use perfSONAR_PS::RegularTesting::Utils qw(owptime2datetime);
+use perfSONAR_PS::RegularTesting::Utils qw(owptime2datetime choose_endpoint_address);
+use perfSONAR_PS::Utils::Host qw(get_interface_addresses_by_type);
 
 use perfSONAR_PS::RegularTesting::Parsers::Owamp qw(parse_owamp_summary_file);
 use perfSONAR_PS::RegularTesting::Results::LatencyTest;
@@ -396,15 +397,52 @@ override 'to_pscheduler' => sub {
     my $test = $parameters->{test};
     my $archive_map = $parameters->{archive_map};
     my $task_manager = $parameters->{task_manager};
+    
+    #handle interface definitions, which pscheduler does not support
+    my $interface_ips;
+    if($test->local_interface && !$test->local_address){
+        $interface_ips = get_interface_addresses_by_type(interface => $test->local_interface);
+        unless(@{$interface_ips->{ipv4_address}} || @{$interface_ips->{ipv6_address}}){
+            die "Unable to determine addresses for interface " . $test->local_interface;
+        }
+    }
+    
     foreach my $individual_test ($self->get_individual_tests({ test => $test })) {
-        my $source = $individual_test->{sender}?$test->local_address:$individual_test->{target}->address;
-        my $destination = $individual_test->{receiver}?$test->local_address:$individual_test->{target}->address;
         my $force_ipv4        = $individual_test->{force_ipv4};
         my $force_ipv6        = $individual_test->{force_ipv6};
         my $test_parameters   = $individual_test->{test_parameters};
         my $packets = $test_parameters->resolution / $test_parameters->inter_packet_time;
         my $schedule          = $test->schedule();
         
+        #determine local address which is only complicated if interface specified
+        my ($local_address, $source, $destination);
+        if($interface_ips){
+            my ($choose_status, $choose_res) = choose_endpoint_address(
+                                                        ifname => $test->local_interface,
+                                                        interface_ips => $interface_ips, 
+                                                        target_address => $individual_test->{target}->address(),
+                                                        force_ipv4 => $individual_test->{force_ipv6},
+                                                        force_ipv6 => $individual_test->{force_ipv6},
+                                                    );
+            if($choose_status < 0){
+                $logger->error("Error determining local address, skipping test: " . $choose_res);
+                next;
+            }else{
+                $local_address = $choose_res;
+            }
+        }
+        
+        #now determine source and destination - again only complicated by interface names
+        $local_address = $test->local_address unless($local_address);
+        if($individual_test->{receiver}){
+            $source = $individual_test->{target}->address;
+            $destination = $local_address;
+        }else{
+            $source = $local_address;
+            $destination = $individual_test->{target}->address;
+        }
+        
+        #init task
         my $psc_task = new perfSONAR_PS::Client::PScheduler::Task(url => $psc_url);
         $psc_task->reference_param('description', $test->description()) if $test->description();
     
@@ -440,7 +478,7 @@ override 'to_pscheduler' => sub {
             }
         }
         
-        $task_manager->add_task(task => $psc_task, local_address => $test->local_address) if($psc_task);
+        $task_manager->add_task(task => $psc_task, local_address => $local_address) if($psc_task);
     }
     
 };

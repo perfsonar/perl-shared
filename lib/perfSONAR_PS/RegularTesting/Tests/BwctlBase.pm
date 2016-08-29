@@ -13,15 +13,15 @@ use File::Path qw(rmtree);
 
 use POSIX ":sys_wait_h";
 
-use Data::Validate::IP qw(is_ipv4);
+use Data::Validate::IP qw(is_ipv4 is_ipv6);
 use Data::Validate::Domain qw(is_hostname);
 use Net::IP;
 
 use perfSONAR_PS::RegularTesting::Results::Endpoint;
-
+use perfSONAR_PS::RegularTesting::Utils qw(choose_endpoint_address);
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner;
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner::Cmd;
-
+use perfSONAR_PS::Utils::Host qw(get_interface_addresses_by_type);
 use Moose;
 
 extends 'perfSONAR_PS::RegularTesting::Tests::Base';
@@ -374,23 +374,61 @@ override 'to_pscheduler' => sub {
     my $test = $parameters->{test};
     my $archive_map = $parameters->{archive_map};
     my $task_manager = $parameters->{task_manager};
+    
+    #handle interface definitions, which pscheduler does not support
+    my $interface_ips;
+    if($test->local_interface && !$test->local_address){
+        $interface_ips = get_interface_addresses_by_type(interface => $test->local_interface);
+        unless(@{$interface_ips->{ipv4_address}} || @{$interface_ips->{ipv6_address}}){
+            die "Unable to determine addresses for interface " . $test->local_interface;
+        }
+    }
+    
+    #build tests
     foreach my $individual_test ($self->get_individual_tests({ test => $test })) {
+    
+        #determine local address which is only complicated if interface specified
+        my ($local_address, $source, $destination);
+        if($interface_ips){
+            my ($choose_status, $choose_res) = choose_endpoint_address(
+                                                        ifname => $test->local_interface,
+                                                        interface_ips => $interface_ips, 
+                                                        target_address => $individual_test->{target}->address(),
+                                                        force_ipv4 => $individual_test->{force_ipv6},
+                                                        force_ipv6 => $individual_test->{force_ipv6},
+                                                    );
+            if($choose_status < 0){
+                $logger->error("Error determining local address, skipping test: " . $choose_res);
+                next;
+            }else{
+                $local_address = $choose_res;
+            }
+        }
+        
+        #now determine source and destination - again only complicated by interface names
+        if($individual_test->{local_destination}){
+            $local_address = $individual_test->{destination} unless($local_address);
+            $source = $individual_test->{source};
+            $destination = $local_address;
+        }else{
+            $local_address = $individual_test->{source} unless($local_address);
+            $source = $local_address;
+            $destination = $individual_test->{destination};
+        }
+        
+        # create pscheduler task
         my $psc_task = $self->build_pscheduler_task({ 
                                      url => $url,
-                                     source => $individual_test->{source},
-                                     destination => $individual_test->{destination},
+                                     source => $source,
+                                     destination => $destination,
                                      local_destination => $individual_test->{local_destination},
                                      force_ipv4 => $individual_test->{force_ipv4},
                                      force_ipv6 => $individual_test->{force_ipv6},
                                      test_parameters => $individual_test->{test_parameters},
                                      test => $test
                                   });
-        my $local_address;
-        if($individual_test->{local_destination}){
-            $local_address = $individual_test->{destination} if($individual_test->{destination});
-        }else{
-            $local_address = $individual_test->{source} if($individual_test->{source});
-        }
+        
+        # add archives
         if($archive_map->{$self->pscheduler_archive_type()}){
             foreach my $psc_ma(@{$archive_map->{$self->pscheduler_archive_type()}}){
                 $psc_task->add_archive($psc_ma);
@@ -401,10 +439,12 @@ override 'to_pscheduler' => sub {
                 $psc_task->add_archive($ma->to_pscheduler());
             }
         }
+        #optimization that pre-fetches interval
         my $interval;
         if ($test->schedule()->type eq "regular_intervals") {
             $interval = $test->schedule()->interval;
         }
+        #add task to manager
         $task_manager->add_task(task => $psc_task, local_address => $local_address, repeat_seconds => $interval) if($psc_task);
     }
     
