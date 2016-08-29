@@ -9,7 +9,7 @@ use POSIX;
 use Sys::MemInfo qw(totalmem);
 use Sys::Hostname;
 
-use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
+use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac get_dmi_info);
 
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered get_client_uuid );
 use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
@@ -228,8 +228,7 @@ sub set_config_information  {
 sub get_details {
     my $self = shift;
     # get addresses, mtu, ntp status, globally registered, toolkit version, toolkit rpm version
-    # external address
-    # total RAM
+    # external address, total RAM, interface details, etc
 
     my $caller = shift;
     my %conf = %{$self->{config}};
@@ -363,7 +362,6 @@ sub get_details {
 
     # get OS info
     my $os_info = get_operating_system_info();
-
     $status->{distribution} = $os_info->{distribution_name} . " " . $os_info->{distribution_version};
 
     # get CPU info
@@ -372,6 +370,11 @@ sub get_details {
     $status->{cpu_cores} = $cpu_info->{cores};
     $status->{cpu_speed} = $cpu_info->{speed};
 
+    # get more Host info
+    my $host_info = get_dmi_info();
+    $status->{is_vm} = $host_info->{is_virtual_machine};
+    $status->{product_name} = $host_info->{product_name};
+    $status->{sys_vendor} = $host_info->{sys_vendor};
 
     # add parameters that need authentication
     if($self->{authenticated}){
