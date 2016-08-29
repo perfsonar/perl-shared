@@ -401,7 +401,11 @@ override 'to_pscheduler' => sub {
                 $psc_task->add_archive($ma->to_pscheduler());
             }
         }
-        $task_manager->add_task(task => $psc_task, local_address => $local_address) if($psc_task);
+        my $interval;
+        if ($test->schedule()->type eq "regular_intervals") {
+            $interval = $test->schedule()->interval;
+        }
+        $task_manager->add_task(task => $psc_task, local_address => $local_address, repeat_seconds => $interval) if($psc_task);
     }
     
 };

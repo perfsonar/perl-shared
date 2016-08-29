@@ -17,6 +17,8 @@ use JSON qw(from_json to_json decode_json);
 use perfSONAR_PS::Client::PScheduler::ApiConnect;
 use perfSONAR_PS::Client::PScheduler::ApiFilters;
 use perfSONAR_PS::Client::PScheduler::Task;
+use DateTime::Format::ISO8601;
+use DateTime;
 
 use Data::Dumper;
 
@@ -26,6 +28,10 @@ has 'pscheduler_url'      => (is => 'rw', isa => 'Str');
 has 'task_file'           => (is => 'rw', isa => 'Str');
 has 'client_uuid_file'    => (is => 'rw', isa => 'Str');
 has 'user_agent'          => (is => 'rw', isa => 'Str');
+has 'new_task_min_ttl' => (is => 'rw', isa => 'Int');
+has 'new_task_min_repeats' => (is => 'rw', isa => 'Int');
+has 'old_task_deadline'   => (is => 'rw', isa => 'Int');
+has 'task_renewal_fudge_factor'  => (is => 'rw', isa => 'Num', default => 0.0);
 
 has 'new_tasks'           => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PScheduler::Task]', default => sub{ [] });
 has 'existing_task_map'   => (is => 'rw', isa => 'HashRef', default => sub{ {} });
@@ -33,6 +39,8 @@ has 'leads'               => (is => 'rw', isa => 'HashRef', default => sub{ {} }
 has 'errors'              => (is => 'rw', isa => 'ArrayRef', default => sub{ [] });
 has 'created_by'          => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'leads_to_keep'       => (is => 'rw', isa => 'HashRef', default => sub{ {} });
+has 'new_task_expiration_ts' => (is => 'rw', isa => 'Int');
+has 'new_task_expiration_iso' => (is => 'rw', isa => 'Str');
 
 sub init {
     my ($self, @args) = @_;
@@ -40,7 +48,11 @@ sub init {
                                             pscheduler_url => 1,
                                             task_file => 1,
                                             client_uuid_file => 1,
-                                            user_agent => 1
+                                            user_agent => 1,
+                                            new_task_min_ttl => 1,
+                                            new_task_min_repeats => 1,
+                                            old_task_deadline => 1,
+                                            task_renewal_fudge_factor => 0
                                         } );
     #init this object
     $self->errors([]);
@@ -49,6 +61,12 @@ sub init {
     $self->client_uuid_file($parameters->{'client_uuid_file'});
     $self->user_agent($parameters->{'user_agent'});
     $self->created_by($self->_created_by());
+    $self->new_task_min_ttl($parameters->{'new_task_min_ttl'});
+    $self->new_task_expiration_ts($parameters->{'old_task_deadline'} + $self->new_task_min_ttl());
+    $self->new_task_expiration_iso($self->_ts_to_iso($self->new_task_expiration_ts()));
+    $self->new_task_min_repeats($parameters->{'new_task_min_repeats'});
+    $self->old_task_deadline($parameters->{'old_task_deadline'});
+    $self->task_renewal_fudge_factor($parameters->{'task_renewal_fudge_factor'}) if($parameters->{'task_renewal_fudge_factor'});
     
     #get list of leads
     my $task_file_json = $self->_read_json_file($self->task_file());
@@ -86,14 +104,32 @@ sub init {
 
 sub add_task {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, {task => 1, local_address => 0 } );
+    my $parameters = validate( @args, {task => 1, local_address => 0, repeat_seconds => 0 } );
     my $new_task = $parameters->{task};
     my $local_address = $parameters->{local_address};
+    my $repeat_seconds = $parameters->{repeat_seconds};
     
+    #set end time to greater of min repeats and expiration time
+    my $min_repeat_time = 0;
+    if($repeat_seconds){
+        # a bit hacky, but trying to convert an ISO duration to seconds is both imprecise 
+        # and expensive so just use given value since these generally start out as 
+        # seconds anyways.
+        $min_repeat_time = $repeat_seconds * $self->new_task_min_repeats();
+    }
+    if($min_repeat_time > $self->new_task_min_ttl()){
+        my $min_repeat_ts = $self->old_task_deadline() + $min_repeat_time;
+        $new_task->schedule_until($self->_ts_to_iso($min_repeat_ts));
+    }else{
+        $new_task->schedule_until($self->new_task_expiration_iso());
+    }
     $new_task->reference_param('created-by', $self->created_by());
     $new_task->reference_param('created-by')->{'address'} = $local_address if($local_address);
-    if(!$self->_task_exists($new_task)){
+    
+    my($need_new_task, $new_task_start) = $self->_need_new_task($new_task);
+    if($need_new_task){
         #task does not exist, we need to create it
+        $new_task->schedule_start($self->_ts_to_iso($new_task_start));
         push @{$self->new_tasks()}, $new_task;
     }
 
@@ -116,6 +152,7 @@ sub _delete_tasks {
     print "DELETING TASKS\n";
     print "-----------------------------------\n";
     foreach my $checksum(keys %{$self->existing_task_map()}){
+        my $cached_lead;
         my $cmap = $self->existing_task_map()->{$checksum};
         foreach my $tool(keys %{$cmap}){
             my $tmap = $cmap->{$tool};
@@ -123,7 +160,12 @@ sub _delete_tasks {
                 #prep task
                 my $meta_task = $tmap->{$uuid};
                 my $task = $meta_task->{'task'};
-                $task->refresh_lead();
+                #optimization so don't lookup lead for same params
+                if($cached_lead){
+                    $task->url($cached_lead);
+                }else{
+                    $cached_lead = $task->refresh_lead();
+                }
                 if($task->error){
                     push @{$self->errors()}, "Problem determining which pscheduler to submit test to for deletion, skipping test: " . $task->error;
                     next;
@@ -148,46 +190,58 @@ sub _delete_tasks {
     }
 }
 
-sub _task_exists {
+sub _need_new_task {
     my ($self, $new_task) = @_;
     
     my $existing = $self->existing_task_map();
     
     #if no matching checksum, then does not exist
     if(!$existing->{$new_task->checksum()}){
-        return 0;
+        return (1, undef);
     }
     
     #if matching checksum, and tool is not defined on new task then we match
+    my $need_new_task = 1;
+    my $new_start_time;
     if(!$new_task->requested_tools()){
         my $cmap = $existing->{$new_task->checksum()};
         foreach my $tool(keys %{$cmap}){
-            my $tmap = $cmap->{$tool};
-            foreach my $uuid(keys %{$tmap}){
-                #mark as keep
-                 $tmap->{$uuid}->{'keep'} = 1;
-                #only mark the first one you see so we don't keep duplicate tests
-                return 1;
-            }
+            ($need_new_task, $new_start_time) = $self->_evaluate_task($cmap->{$tool}, $need_new_task, $new_start_time);
         }
+    }else{
+        #we have a matching checksum and we have an explicit tool, find one that matches
+        my $cmap = $existing->{$new_task->checksum()};
+        #search requested tools in order since that is preference order
+        foreach my $req_tool(@{$new_task->requested_tools()}){
+            if($cmap->{$req_tool}){
+                ($need_new_task, $new_start_time) = $self->_evaluate_task($cmap->{$req_tool}, $need_new_task, $new_start_time);
+            }
+        }    
     }
     
-    #we have a matching checksum and we have an explicit tool, find one that matches
-    my $cmap = $existing->{$new_task->checksum()};
-    #search requested tools in order since that is preference order
-    foreach my $req_tool(@{$new_task->requested_tools()}){
-        if($cmap->{$req_tool}){
-            my $tmap = $cmap->{$req_tool};
-            foreach my $uuid(keys %{$tmap}){
-                #mark as keep
-                $tmap->{$uuid}->{'keep'} = 1;
-                #only mark the first one you see so we don't keep duplicate tests
-                return 1;
+    return $need_new_task, $new_start_time;
+}
+
+sub _evaluate_task {
+    my ($self, $tmap, $need_new_task, $new_start_time) = @_;
+    
+    foreach my $uuid(keys %{$tmap}){
+        my $old_task = $tmap->{$uuid};
+        $old_task->{'keep'} = 1;
+        my $until_ts = $self->_iso_to_ts($old_task->{task}->schedule_until());
+        if($need_new_task){
+            if(!$until_ts || $until_ts > ($self->old_task_deadline() + ($self->new_task_min_ttl() * $self->task_renewal_fudge_factor())) )
+                #if old task has no end time or will not expire before deadline, no task needed
+                $need_new_task = 0 ;
+                #continue with loop since need to mark other tasks that might be older as keep
+            }elsif(!$new_start_time || $new_start_time < $until_ts){
+                #if new_start_time not initialized or found a task that lets us push out, then set
+                $new_start_time = $until_ts;
             }
-        }
-    }    
-    #if we are here, no match
-    return 0;
+        } 
+    }
+    
+    return ($need_new_task, $new_start_time);
 }
 
 sub _create_tasks {
@@ -347,6 +401,29 @@ sub _print_task {
     }
     print "\n";
 }
+
+sub _iso_to_ts {
+     my ($self, $iso_str) = @_;
+     
+     #ignore if iso_str undefined
+     return unless($iso_str);
+     
+     #parse 
+     my $dt = DateTime::Format::ISO8601->parse_datetime( $iso_str );
+     return $dt->epoch();
+     
+}
+
+sub _ts_to_iso {
+    my ($self, $ts) = @_;
+    
+    #ignore if iso_str undefined
+    return unless($ts);
+     
+    my $date = DateTime->from_epoch(epoch => $ts, time_zone => 'UTC');
+    return $date->ymd() . 'T' . $date->hms() . 'Z';
+}
+
 
 __PACKAGE__->meta->make_immutable;
 

@@ -507,6 +507,8 @@ sub refresh_lead() {
         #if lead exists, change url, otherwise keep the same
         $self->url($lead);
     }
+    
+    return $lead;
 }
 
 sub checksum() {
@@ -522,6 +524,9 @@ sub checksum() {
     #disable canonical since we don't care at the moment
     my $data_copy = from_json(to_json($self->data, {'canonical' => 0}));
     $data_copy->{'tool'} = ''; #clear out tool since set by server
+    $data_copy->{'schedule'}->{'start'} = ''; #clear out temporal values
+    $data_copy->{'schedule'}->{'until'} = ''; #clear out temporal values
+    
     #canonical should keep it consistent by sorting keys
     return md5_base64(to_json($data_copy, {'canonical' => 1}));
 }
