@@ -79,6 +79,9 @@ sub build_err_msg {
                 $errmsg .= ': ' . $response_json->{'error'};
             }
         };
+        if($@){
+            $errmsg .= ': ' . $response->content;
+        }
     }
     
     return $errmsg;

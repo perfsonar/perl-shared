@@ -5,6 +5,7 @@ use JSON qw(to_json from_json);
 use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg extract_url_uuid);
 use perfSONAR_PS::Client::PScheduler::Archive;
 use perfSONAR_PS::Client::PScheduler::Run;
+use Digest::MD5 qw(md5_base64);
 
 extends 'perfSONAR_PS::Client::PScheduler::BaseNode';
 
@@ -211,7 +212,7 @@ sub archives{
         $self->data->{'archives'} = [];
         foreach my $v(@{$val}){
             push @{$self->data->{'archives'}}, {
-                'name' => $v->name(),
+                'archiver' => $v->name(),
                 'data' => $v->data(),
             };
         }
@@ -220,7 +221,7 @@ sub archives{
     my @archives = ();
     foreach my $archive(@{$self->data->{'archives'}}){
         push @archives, new perfSONAR_PS::Client::PScheduler::Archive(
-            'name' => $archive->{'name'},
+            'name' => $archive->{'archiver'},
             'data' => $archive->{'data'},
         );
     }
@@ -240,9 +241,34 @@ sub add_archive{
     }
     
     push @{$self->data->{'archives'}}, {
-            'name' =>  $val->name(),
+            'archiver' =>  $val->name(),
             'data' =>  $val->data()
         };
+}
+
+sub requested_tools{
+    my ($self, $val) = @_;
+    
+    #when requesting its tools, after posting its just tool
+    if(defined $val){
+        $self->data->{'tools'} = $val;
+    }
+    
+   return $self->data->{'tools'};
+}
+
+sub add_requested_tool{
+    my ($self, $val) = @_;
+    
+    unless(defined $val){
+        return;
+    }
+    
+    unless($self->data->{'tools'}){
+        $self->data->{'tools'} = [];
+    }
+    
+    push @{$self->data->{'tools'}}, $val;
 }
 
 sub post_task {
@@ -447,9 +473,10 @@ sub get_lead() {
         $self->_set_error($msg);
         return;
     }
-    my $lead_response_json = from_json($lead_response->content, {allow_nonref => 1});
-    if(!$lead_response_json){
-        $self->_set_error("No lead object returned from $lead_url");
+    my $lead_response_json;
+    eval{$lead_response_json = from_json($lead_response->content, {allow_nonref => 1});};
+    if($@){
+        $self->_set_error("Error parsing lead object returned from $lead_url: $@");
         return;
     }
     
@@ -471,6 +498,39 @@ sub get_lead_url() {
     
     return "${scheme}://${address}${port}${path}";
 }
+
+sub refresh_lead() {
+    my ($self, $scheme, $port, $path) = @_;
+    
+    my $lead = $self->get_lead_url($scheme, $port, $path);
+    if($lead){
+        #if lead exists, change url, otherwise keep the same
+        $self->url($lead);
+    }
+    
+    return $lead;
+}
+
+sub checksum() {
+    #calculates checksum for comparing tasks, ignoring stuff like UUID and lead url
+    my ($self) = @_;
+    
+    #make sure these fields are consistent
+    $self->schema(1) unless($self->schema());
+    $self->data->{'test'}->{'spec'}->{'schema'} = 1 unless($self->data->{'test'}->{'spec'}->{'schema'}); 
+    $self->data->{'archives'} = []  unless($self->data->{'archives'});
+    $self->data->{'schedule'} = {}  unless($self->data->{'schedule'});
+    
+    #disable canonical since we don't care at the moment
+    my $data_copy = from_json(to_json($self->data, {'canonical' => 0}));
+    $data_copy->{'tool'} = ''; #clear out tool since set by server
+    $data_copy->{'schedule'}->{'start'} = ''; #clear out temporal values
+    $data_copy->{'schedule'}->{'until'} = ''; #clear out temporal values
+    
+    #canonical should keep it consistent by sorting keys
+    return md5_base64(to_json($data_copy, {'canonical' => 1}));
+}
+
 
 __PACKAGE__->meta->make_immutable;
 
