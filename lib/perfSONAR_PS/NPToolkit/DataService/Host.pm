@@ -9,7 +9,7 @@ use POSIX;
 use Sys::MemInfo qw(totalmem);
 use Sys::Hostname;
 
-use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_mac);
+use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_counters get_interface_hostnames get_interface_mac get_dmi_info);
 
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered get_client_uuid );
 use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
@@ -171,9 +171,8 @@ sub get_calculated_lat_lon {
 
 sub get_details {
     my $self = shift;
-    # get addresses, mtu, ntp status, globally registered, toolkit version, toolkit rpm version
-    # external address
-    # total RAM
+    # get addresses, mtu, counters, ntp status, globally registered, toolkit version, toolkit rpm version
+    # external address, total RAM, interface details, etc
 
     my $caller = shift;
     my %conf = %{$self->{config}};
@@ -188,18 +187,27 @@ sub get_details {
     $status->{toolkit_version} = $version_conf->get_version();
 
     my @interfaces = get_ethernet_interfaces();
+
     my @interfaceDetails;
     foreach my $interface (@interfaces){
         my $iface;
-
-        my $address = get_interface_addresses_by_type({interface=>$interface});
-        $iface = $address;
-        $iface->{iface} = $interface;
+        my $addresses = get_interface_addresses_by_type({interface=>$interface});
+        $iface = $addresses;    # sets $iface->{ipv4_address} and $iface->{ipv6_address}
+        # get_interface_hostnames() returns a hash (hash-ref) with keys=ip's, values = arrays of hostnames
+        my $ipv4_addresses = $addresses->{ipv4_address};  # array-ref
+        my $ipv6_addresses = $addresses->{ipv6_address};
+        my $ipv4_hostnames = get_interface_hostnames({interface_addresses=>$ipv4_addresses}); 
+        my $ipv6_hostnames = get_interface_hostnames({interface_addresses=>$ipv6_addresses}); 
+        $iface->{hostnames} = {%$ipv4_hostnames, %$ipv6_hostnames};
         $iface->{mtu} = get_interface_mtu({interface_name=>$interface});
+        $iface->{counters} = get_interface_counters({interface_name=>$interface});
         $iface->{speed} = get_interface_speed({interface_name=>$interface});
         $iface->{mac} = get_interface_mac({interface_name=>$interface});
+        $iface->{iface} = $interface;
+
         push @interfaceDetails, $iface;
     }
+
     $status->{interfaces} = \@interfaceDetails;
 
 
@@ -216,6 +224,7 @@ sub get_details {
     my $external_address;
     my $external_address_iface;
     my $external_address_mtu;
+    my $external_address_counters;
     my $external_address_speed;
     my $external_address_ipv4;
     my $external_address_ipv6;
@@ -226,6 +235,7 @@ sub get_details {
         $external_address = $external_addresses->{primary_address};
         $external_address_iface = $external_addresses->{primary_address_iface};
         $external_address_mtu = $external_addresses->{primary_iface_mtu};
+        $external_address_counters = $external_addresses->{primary_iface_counters};
         $external_address_speed = $external_addresses->{primary_iface_speed} if $external_addresses->{primary_iface_speed};
         $external_address_ipv4 = $external_addresses->{primary_ipv4};
         $external_address_ipv6 = $external_addresses->{primary_ipv6};
@@ -240,6 +250,7 @@ sub get_details {
         $status->{external_address}->{iface} = $external_address_iface if $external_address_iface;
         $status->{external_address}->{speed} = $external_address_speed if $external_address_speed;
         $status->{external_address}->{mtu} = $external_address_mtu if $external_address_mtu;
+        $status->{external_address}->{counters} = $external_address_counters if $external_address_counters;
 
     }
 
@@ -307,7 +318,6 @@ sub get_details {
 
     # get OS info
     my $os_info = get_operating_system_info();
-
     $status->{distribution} = $os_info->{distribution_name} . " " . $os_info->{distribution_version};
 
     # get CPU info
@@ -316,6 +326,11 @@ sub get_details {
     $status->{cpu_cores} = $cpu_info->{cores};
     $status->{cpu_speed} = $cpu_info->{speed};
 
+    # get more Host info
+    my $host_info = get_dmi_info();
+    $status->{is_vm} = $host_info->{is_virtual_machine};
+    $status->{product_name} = $host_info->{product_name};
+    $status->{sys_vendor} = $host_info->{sys_vendor};
 
     # add parameters that need authentication
     if($self->{authenticated}){

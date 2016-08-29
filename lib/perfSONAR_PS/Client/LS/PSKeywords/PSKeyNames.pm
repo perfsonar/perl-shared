@@ -56,4 +56,10 @@ use constant {
     LS_KEY_BWCTL_TOOLS => "bwctl-tools"
 };
 
+#pScheduler keys
+use constant {
+    LS_KEY_PSCHEDULER_TOOLS => "pscheduler-tools",
+    LS_KEY_PSCHEDULER_TESTS => "pscheduler-tests"
+};
+
 1;

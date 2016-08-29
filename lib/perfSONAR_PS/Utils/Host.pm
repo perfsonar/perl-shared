@@ -42,8 +42,10 @@ our @EXPORT_OK = qw(
     get_ethernet_interfaces
     get_interface_addresses
     get_interface_addresses_by_type
+    get_interface_hostnames
     get_interface_speed
     get_interface_mtu
+    get_interface_counters
     get_interface_mac
     discover_primary_address
 
@@ -80,9 +82,9 @@ sub get_ips {
     my $curr_interface;
     open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
     while ( <$IP_ADDR> ) {
-        if ( /^\d+: ([^ ]+): ([^ ]+)/ ) {
+        if ( /^\d+: ([^ ]+?)(@[^ ]+)?: ([^ ]+)/ ) {
             $curr_interface = $1;
-            if ( $2 =~ /\bLOOPBACK\b/ ) {
+            if ( $3 =~ /\bLOOPBACK\b/ ) {
                 $is_loopback = 1;
             }
             else {
@@ -122,9 +124,11 @@ sub get_ethernet_interfaces {
 
     open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
     while ( <$IP_ADDR> ) {
-        if ( /^\d+: ([^ ]+): ([^ ]+)/ ) {
-            if ( $2 !~ /\bLOOPBACK\b/ ) {
-                push @ret_interfaces, $1;
+        if ( /^\d+: ([^ ]+?)(@[^ ]+)?: (.+)$/ ) {
+            my $ifname = $1;
+            my $ifdetails = $3;
+            if ( $ifdetails !~ /\bLOOPBACK\b/ && $ifdetails =~ /\bstate UP\b/) {
+                push @ret_interfaces, $ifname;
             }
         }
     }
@@ -172,6 +176,22 @@ sub get_interface_addresses_by_type {
 
     return $result;
 
+}
+
+sub get_interface_hostnames {
+    # For an array (array ref) of IP addresses,
+    # return a hash (hash ref) with keys that are IP's and values that are arrays of hostnames
+	my $parameters = validate( @_, { interface_addresses => 1 } );
+    my $addresses = $parameters->{interface_addresses};
+
+    my $resolved_hostnames = reverse_dns_multi({ addresses => $addresses, timeout => 5 });
+
+    if ($resolved_hostnames) {
+        return $resolved_hostnames;
+    }
+    else {
+        return {};
+    }
 }
 
 sub get_interface_speed {
@@ -223,6 +243,17 @@ sub get_interface_mtu {
     }
 }
 
+sub get_interface_counters {
+	my $parameters = validate( @_, { interface_name => 1, } );
+    my $interface_name = $parameters->{interface_name};
+    my $lxs = Sys::Statistics::Linux->new(
+        netstats => 1
+    );
+    my $stats = $lxs->get();
+    my $results = $stats->{'netinfo'}{$interface_name};
+    return $results;
+}
+
 sub get_interface_mac {
 	my $parameters = validate( @_, { interface_name => 1, } );
     my $interface_name = $parameters->{interface_name};
@@ -256,7 +287,7 @@ sub discover_primary_address {
     my $disable_ipv4_reverse_lookup = $parameters->{disable_ipv4_reverse_lookup};
     my $disable_ipv6_reverse_lookup = $parameters->{disable_ipv6_reverse_lookup};
 
-    my $ips_by_iface;
+    my $ips_by_iface = {};
 
     if ( $interface ) {
         my @ips = get_interface_addresses( { interface => $interface } );
@@ -264,10 +295,8 @@ sub discover_primary_address {
             $ips_by_iface = { $interface => \@ips };   
         }
         
-    }
-    if(!$interface or !$ips_by_iface) {
-        # If they've not told us which interface to use or if the chosen interface does not seem to have been configured,
-        # it's time to guess.
+    } else {
+        # If they've not told us which interface to use it's time to guess.
         $ips_by_iface = get_ips({ by_interface => 1 });
     }
 
@@ -282,6 +311,7 @@ sub discover_primary_address {
     my $ipv6_interface;
     my $interface_speed;
     my $interface_mtu;
+    my $interface_counters;
     my $interface_mac;
     
     my @all_ips = ();
@@ -294,7 +324,7 @@ sub discover_primary_address {
     my $reverse_dns_mapping = reverse_dns_multi({ addresses => \@all_ips, timeout => 10 }); # don't wait more than 10 seconds.
 
     # Try to find an address with an ipv4 address with that resolves to something
-    unless ( $disable_ipv4_reverse_lookup or ( $chosen_address and $ipv4_address )) {
+    unless ( $disable_ipv4_reverse_lookup) {
         foreach my $iface ( keys %$ips_by_iface ) {
             foreach my $ip ( @{ $ips_by_iface->{$iface } } ) {
                 my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16' );
@@ -405,10 +435,11 @@ sub discover_primary_address {
         }
     }
 
-    #get the interface speed
+    #get the interface speed, etc
     if($chosen_interface){
         $interface_speed = get_interface_speed({interface_name => $chosen_interface});
         $interface_mtu = get_interface_mtu({interface_name => $chosen_interface});
+        $interface_counters = get_interface_counters({interface_name => $chosen_interface});
         $interface_mac = get_interface_mac({interface_name => $chosen_interface});
     }
 
@@ -445,6 +476,7 @@ sub discover_primary_address {
         primary_ipv4_iface => $ipv4_interface,
         primary_iface_speed => $interface_speed,
         primary_iface_mtu => $interface_mtu,
+        primary_iface_counters => $interface_counters,
         primary_iface_mac => $interface_mac,
     };
 }
@@ -548,7 +580,7 @@ sub get_processor_info {
             next if(@cols != 2);
         
             if($lscpu_parse_map{$cols[0]}){
-                $cpuinfo{$lscpu_parse_map{$cols[0]}} = $cols[1];
+                $cpuinfo{$lscpu_parse_map{_sanitize($cols[0])}} = _sanitize($cols[1]);
             }
         }
     }
@@ -560,7 +592,7 @@ sub get_processor_info {
             my @cols = split /\s*:\s*/, $line;
             next if(@cols != 2);
             if($cpuinfo_parse_map{$cols[0]}){
-                $cpuinfo{$cpuinfo_parse_map{$cols[0]}} = $cols[1];
+                $cpuinfo{_sanitize($cpuinfo_parse_map{$cols[0]})} = _sanitize($cols[1]);
             }
         }
     }
@@ -571,7 +603,7 @@ sub get_processor_info {
 sub get_dmi_info {
     my %dmiinfo = ();
     my @dmi_vars = ('sys_vendor', 'product_name');
-    my @vm_prod_patterns = ("^VMware", "^VirtualBox", , "^KVM", "^Virtual Machine");
+    my @vm_prod_patterns = ("^VMware", "^VirtualBox", , "^KVM", '^Virtual Machine$');
     
     foreach my $dmi_var(@dmi_vars){
         #dmidecode requires root, so access files instead
@@ -581,7 +613,7 @@ sub get_dmi_info {
             #should just be one line
             foreach my $line(@dmidecode){
                 chomp $line ;
-                $dmiinfo{$dmi_var} = $line;
+                $dmiinfo{_sanitize($dmi_var)} = _sanitize($line);
                 last;
             }
         }
@@ -618,10 +650,10 @@ sub get_health_info{
     );
 
     sleep 1;
-    my $stat = $lxs->get;
+    my $stat = $lxs->get();
     
     my $result;
-    #the following helps to decouple the output from the underlyign package used
+    #the following helps to decouple the output from the underlying package used
     $result->{'cpustats'}=$stat->{'cpustats'};
     $result->{'memstats'}=$stat->{'memstats'};
     $result->{'diskusage'}=$stat->{'diskusage'};
@@ -747,6 +779,18 @@ sub _max_buffer_auto {
     }
     
     return $parts[2];
+}
+
+sub _sanitize {
+    my($str) = @_;
+    
+    #get rid of double spaces
+    $str =~ s/\s\s+/ /g;
+    
+    #get rid of non-ascii
+    $str =~ s/[^[:ascii:]]//g;
+    
+    return $str;
 }
 
 1;

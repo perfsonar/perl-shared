@@ -87,6 +87,18 @@ sub setProcessorCore {
     return $ret;
 }
 
+sub getCpuId {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_HARDWARE_CPUID)};
+}
+
+sub setCpuId {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_HARDWARE_CPUID), value=>$value  );
+    return $ret;
+}
+
+
 sub getOSName {
     my $self = shift;
     return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_NAME)};
@@ -196,6 +208,40 @@ sub setTcpMaxBacklog {
     my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_MAXBACKLOG), value=>$value  );
     return $ret;
 }
+
+sub getVm {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_VM)};
+}
+
+sub setVm {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_VM), value=>$value  );
+    return $ret;
+}
+
+sub getManufacturer {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_MANUFACTURER)};
+}
+
+sub setManufacturer {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_MANUFACTURER), value=>$value  );
+    return $ret;
+}
+
+sub getProductName {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_PRODUCT_NAME)};
+}
+
+sub setProductName {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_PRODUCT_NAME), value=>$value  );
+    return $ret;
+}
+
 sub getHostAdministrators{
     my $self = shift;
     return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_ADMINISTRATORS)};

@@ -4,7 +4,7 @@
 %define relnum   1 
 
 Name:			libperfsonar
-Version:		3.5.1.5
+Version:		3.5.1.9
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Shared Libraries
 License:		Distributable, see LICENSE
@@ -32,6 +32,7 @@ Requires:		perl(HTTP::Response)
 Requires:		perl(IO::File)
 Requires:		perl(IO::Select)
 Requires:		perl(IO::Socket::SSL)
+Requires:               perl(IO::Socket::INET6)
 Requires:		perl(JSON::XS)
 Requires:		perl(Log::Log4perl)
 Requires:		perl(Net::CIDR)
@@ -102,6 +103,7 @@ Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
 Requires:		perl(URI::Split)
 Requires:		perfsonar-common
+Requires:		libperfsonar-perl
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
 Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
 Obsoletes:      perl-perfSONAR_PS-serviceTest
@@ -111,6 +113,24 @@ Obsoletes:      perl-perfSONAR-graphs
 
 %description esmond-perl
 perfSONAR Meaurement Archive perl clients for esmond
+
+%package pscheduler-perl
+Summary:        perfSONAR Meaurement Archive perl clients for esmond
+Group:          Applications/Communications
+Requires:		perl(Exporter)
+Requires:		perl(HTTP::Request)
+Requires:		perl(JSON)
+Requires:		perl(LWP::UserAgent)
+Requires:		perl(Mouse)
+Requires:		perl(POSIX)
+Requires:		perl(Params::Validate)
+Requires:		perl(URI::Split)
+Requires:		perfsonar-common
+Requires:		libperfsonar-perl
+
+%description pscheduler-perl
+pScheduler perl client libraries
+
 
 %package toolkit-perl
 Summary:        Shared libraries for perfSONAR Toolkit distributions
@@ -140,6 +160,7 @@ Requires:		perl(HTTP::Response)
 Requires:		perl(IO::File)
 Requires:		perl(IO::Select)
 Requires:		perl(IO::Socket::SSL)
+Requires:               perl(IO::Socket::INET6)
 Requires:		perl(IPC::Open3)
 Requires:		perl(IPC::Run)
 Requires:		perl(JSON)
@@ -215,6 +236,7 @@ Requires:		perl(HTTP::Response)
 Requires:		perl(Hash::Merge)
 Requires:		perl(IO::Select)
 Requires:		perl(IO::Socket::SSL)
+Requires:               perl(IO::Socket::INET6)
 Requires:		perl(IPC::DirQueue)
 Requires:		perl(IPC::Open3)
 Requires:		perl(IPC::Run)
@@ -280,6 +302,7 @@ rm -rf %{buildroot}
 %{install_base}/lib/perfSONAR_PS/Utils/NTP.pm
 %{install_base}/lib/perfSONAR_PS/Utils/NetLogger.pm
 %{install_base}/lib/perfSONAR_PS/Utils/ParameterValidation.pm
+%{install_base}/lib/perfSONAR_PS/Client/Utils.pm
 
 %files sls-perl
 %defattr(0644,perfsonar,perfsonar,0755)
@@ -290,6 +313,10 @@ rm -rf %{buildroot}
 %files esmond-perl
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/perfSONAR_PS/Client/Esmond/*
+
+%files pscheduler-perl
+%defattr(0644,perfsonar,perfsonar,0755)
+%{install_base}/lib/perfSONAR_PS/Client/PScheduler/*
 
 %files toolkit-perl
 %defattr(0644,perfsonar,perfsonar,0755)

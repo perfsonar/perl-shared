@@ -829,7 +829,7 @@ sub consultArchive {
 
     my $doc;
     eval {
-        my $parser = XML::LibXML->new();
+        my $parser = XML::LibXML->new(ext_ent_handler => sub { return ""; });
         $doc = $parser->parse_string( $response );
     };
     if ( $EVAL_ERROR ) {
