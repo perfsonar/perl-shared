@@ -230,7 +230,7 @@ sub _evaluate_task {
         $old_task->{'keep'} = 1;
         my $until_ts = $self->_iso_to_ts($old_task->{task}->schedule_until());
         if($need_new_task){
-            if(!$until_ts || $until_ts > ($self->old_task_deadline() + ($self->new_task_min_ttl() * $self->task_renewal_fudge_factor())) )
+            if(!$until_ts || $until_ts > ($self->old_task_deadline() + ($self->new_task_min_ttl() * $self->task_renewal_fudge_factor())) ){
                 #if old task has no end time or will not expire before deadline, no task needed
                 $need_new_task = 0 ;
                 #continue with loop since need to mark other tasks that might be older as keep
