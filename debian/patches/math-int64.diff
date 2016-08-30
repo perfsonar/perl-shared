@@ -16,10 +16,10 @@
  
 -use Math::Int64 qw(uint64 uint64_to_number);
 +use Math::BigInt;
+ use perfSONAR_PS::Utils::DNS qw(resolve_address);
  
  use DateTime;
- 
-@@ -88,8 +88,10 @@
+@@ -80,8 +80,10 @@
  sub owptime2datetime {
      my ($owptime) = @_;
  
@@ -32,7 +32,7 @@
      $tstamp -= JAN_1970;
      return DateTime->from_epoch(epoch => $tstamp);
  }
-@@ -113,12 +115,12 @@
+@@ -105,12 +107,12 @@
  sub datetime2owptime {
      my ($datetime) = @_;
  
@@ -50,7 +50,7 @@
  }
  
  =head2 datetime2owptstampi($datetime)
-@@ -127,9 +129,10 @@
+@@ -119,9 +121,10 @@
  sub datetime2owptstampi{
      my ($datetime) = @_;
  
@@ -62,4 +62,4 @@
 +    return $bigtime->numify();
  }
  
- 1;
+ =head2 choose_endpoint_address()
