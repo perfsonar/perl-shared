@@ -477,12 +477,12 @@ override 'to_pscheduler' => sub {
         #add archives
         if($archive_map->{'esmond/latency'}){
             foreach my $psc_ma(@{$archive_map->{'esmond/latency'}}){
-                $psc_task->add_archive($psc_ma);
+                $psc_task->add_archive($psc_ma->to_pscheduler(local_address => $local_address));
             }
         }
         if($test->measurement_archives()){
             foreach my $ma(@{$test->measurement_archives()}){
-                $psc_task->add_archive($ma->to_pscheduler());
+                $psc_task->add_archive($ma->to_pscheduler(local_address => $local_address));
             }
         }
         

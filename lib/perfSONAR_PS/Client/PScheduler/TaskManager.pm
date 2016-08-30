@@ -80,7 +80,8 @@ sub init {
         my $psc_lead = $self->leads()->{$psc_url};
         my $existing_task_map = {};
         my $psc_filters = new perfSONAR_PS::Client::PScheduler::ApiFilters();
-        #todo: need status filter?
+        #TODO: filter on enabled field (not yet supported in pscheduler
+        #$psc_filters->detail_enabled(1);
         $psc_filters->reference_param("created-by", $self->created_by());
         my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters);
         my $existing_tasks = $psc_client->get_tasks();
@@ -91,6 +92,7 @@ sub init {
         }
         #Add to existing task map
         foreach my $existing_task(@{$existing_tasks}){
+            next unless($existing_task->detail_enabled()); #skip disabled tests
             #make an array since could have more than one test with same checksum
             $self->existing_task_map()->{$existing_task->checksum()} = {} unless($self->existing_task_map()->{$existing_task->checksum()});
             $self->existing_task_map()->{$existing_task->checksum()}->{$existing_task->tool()} = {} unless($self->existing_task_map()->{$existing_task->checksum()}->{$existing_task->tool()});
@@ -177,13 +179,12 @@ sub _delete_tasks {
                     $self->leads_to_keep()->{$task->url()} = 1;
                 }else{
                     $self->_print_task($task);
-                    # TODO:uncomment
-                    # $task->delete_task();
-                    # if($task->error()){
-                    #     $self->leads_to_keep()->{$task->url()} = 1;
-                    #     $self->_update_lead($task->url(), {'error_time' => time});
-                    #     push @{$self->errors()}, "Problem deleting test, continuing with rest of config: " . $task->error();
-                    # }                    
+                    $task->delete_task();
+                    if($task->error()){
+                        $self->leads_to_keep()->{$task->url()} = 1;
+                        $self->_update_lead($task->url(), {'error_time' => time});
+                        push @{$self->errors()}, "Problem deleting test, continuing with rest of config: " . $task->error();
+                    }                    
                 }
             }
         }
@@ -230,7 +231,7 @@ sub _evaluate_task {
         $old_task->{'keep'} = 1;
         my $until_ts = $self->_iso_to_ts($old_task->{task}->schedule_until());
         if($need_new_task){
-            if(!$until_ts || $until_ts > ($self->old_task_deadline() + ($self->new_task_min_ttl() * $self->task_renewal_fudge_factor())) ){
+            if(!$until_ts || $until_ts > ($self->old_task_deadline() + ($self->new_task_min_ttl() * $self->task_renewal_fudge_factor()))){
                 #if old task has no end time or will not expire before deadline, no task needed
                 $need_new_task = 0 ;
                 #continue with loop since need to mark other tasks that might be older as keep
@@ -372,8 +373,11 @@ sub _print_task {
     
     print "Test Type: " . $task->test_type() . "\n";
     print "Tool: " . ($task->tool() ? $task->tool() : 'n/a') . "\n";
+    print "Requested Tools: " . ($task->requested_tools() ? join " ", @{$task->requested_tools()} : 'n/a') . "\n";
     print "Source: " . $task->test_spec_param("source") . "\n";
     print "Destination: " . ($task->test_spec_param("dest") ?  $task->test_spec_param("dest") : $task->test_spec_param("destination")). "\n";
+    print "Enabled: " . (defined $task->detail_enabled() ? $task->detail_enabled() : "n/a"). "\n";
+    print "Added: " . (defined $task->detail_added() ? $task->detail_added() : "n/a"). "\n";
     print "Lead URL: " . $task->url() . "\n";
     print "Checksum: " . $task->checksum() . "\n";
     print "Created By:\n";

@@ -159,13 +159,13 @@ sub get_calculated_lat_lon {
 
     my $external_addresses = discover_primary_address({ disable_ipv4_reverse_lookup => 1, disable_ipv6_reverse_lookup => 1 });
     my $res = geoIPLookup($external_addresses->{primary_address});
-    my $result = {};
+    if (!$res) {
+        return {
+            "error" => "Error Invalid IP address detected for localhost",
+        }
+    }
 
-    if($res->{longitude} && $res->{latitude} ){
-        $result->{longitude} = $res->{longitude};
-        $result->{latitude} = $res->{latitude};
-    } 
-    return $result;
+    return $res;
 
 }
 
