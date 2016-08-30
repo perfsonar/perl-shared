@@ -1,8 +1,6 @@
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
-@@ -9,8 +9,8 @@ sub init {
+--- a/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
++++ b/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
+@@ -9,8 +9,8 @@
      my ( $self, %conf ) = @_;
  
      $conf{description}  = "MySQL Daemon" unless $conf{description};
@@ -13,11 +11,9 @@ Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
      $conf{pid_files} = [ "/var/run/mysqld/mysqld.pid" ] unless $conf{pid_files};
      $conf{regular_restart} = 1;
      $conf{package_names} = [ "mysql-server" ] unless $conf{package_names};
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
-@@ -11,10 +11,10 @@ sub init {
+--- a/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
++++ b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
+@@ -11,10 +11,10 @@
      my ( $self, %conf ) = @_;
  
      $conf{description}  = "Apache HTTP Server" unless $conf{description};
@@ -32,11 +28,9 @@ Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
  
      $self->SUPER::init( %conf );
  
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
-@@ -12,7 +12,7 @@ sub init {
+--- a/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
++++ b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
+@@ -12,7 +12,7 @@
      $conf{init_script} = "cassandra" unless $conf{init_script};
      $conf{process_names} = "java" unless $conf{process_names};
      $conf{pid_files} = "/var/run/cassandra/cassandra.pid" unless $conf{pid_files};
@@ -45,11 +39,9 @@ Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
  
      $self->SUPER::init( %conf );
  
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
-@@ -241,7 +241,7 @@ sub run_init {
+--- a/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
++++ b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
+@@ -274,7 +274,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
  
@@ -58,11 +50,9 @@ Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
  
      $self->{LOGGER}->debug($shell_cmd);
  
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NPAD.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/NPAD.pm
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NPAD.pm
-@@ -24,9 +24,9 @@ sub init {
+--- a/lib/perfSONAR_PS/NPToolkit/Services/NPAD.pm
++++ b/lib/perfSONAR_PS/NPToolkit/Services/NPAD.pm
+@@ -24,9 +24,9 @@
  
  sub is_installed{
      my ($self) = @_;
@@ -74,11 +64,9 @@ Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NPAD.pm
  
      if(index($response, $substr) == -1){
          #installed
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NDT.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/NDT.pm
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NDT.pm
-@@ -53,9 +53,9 @@ sub kill {
+--- a/lib/perfSONAR_PS/NPToolkit/Services/NDT.pm
++++ b/lib/perfSONAR_PS/NPToolkit/Services/NDT.pm
+@@ -53,9 +53,9 @@
  
  sub is_installed{
      my ($self) = @_;
@@ -90,11 +78,9 @@ Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NDT.pm
  
      if(index($response, $substr) == -1){
          #installed
-Index: perl-shared/lib/perfSONAR_PS/Utils/Host.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/Utils/Host.pm
-+++ perl-shared/lib/perfSONAR_PS/Utils/Host.pm
-@@ -449,7 +449,7 @@ sub discover_primary_address {
+--- a/lib/perfSONAR_PS/Utils/Host.pm
++++ b/lib/perfSONAR_PS/Utils/Host.pm
+@@ -481,7 +481,7 @@
  sub get_ntp_info {
      my $ntp;
  
@@ -103,7 +89,7 @@ Index: perl-shared/lib/perfSONAR_PS/Utils/Host.pm
  
      my @ntp_response = split /\n/, $ntp_result;
      
-@@ -640,16 +640,11 @@ sub get_tcp_configuration {
+@@ -672,16 +672,11 @@
  }
  
  sub is_auto_updates_on{
@@ -122,7 +108,7 @@ Index: perl-shared/lib/perfSONAR_PS/Utils/Host.pm
          return 0;
      }
  }
-@@ -713,7 +708,7 @@ sub is_web_url {
+@@ -745,7 +740,7 @@
  sub _call_sysctl {
      my ($var_name) = @_;
  
@@ -131,11 +117,9 @@ Index: perl-shared/lib/perfSONAR_PS/Utils/Host.pm
      if($?){
          return;
      }
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
-@@ -8,40 +8,36 @@ use base 'perfSONAR_PS::NPToolkit::Servi
+--- a/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
++++ b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
+@@ -8,40 +8,36 @@
  sub init {
      my ( $self, %conf ) = @_;
  
