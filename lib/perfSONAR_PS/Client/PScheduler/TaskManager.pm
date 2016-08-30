@@ -37,10 +37,13 @@ has 'new_tasks'           => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client:
 has 'existing_task_map'   => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'leads'               => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'errors'              => (is => 'rw', isa => 'ArrayRef', default => sub{ [] });
+has 'deleted_tasks'       => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PScheduler::Task]', default => sub{ [] });
+has 'added_tasks'         => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PScheduler::Task]', default => sub{ [] });
 has 'created_by'          => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'leads_to_keep'       => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'new_task_expiration_ts' => (is => 'rw', isa => 'Int');
 has 'new_task_expiration_iso' => (is => 'rw', isa => 'Str');
+has 'debug'               => (is => 'rw', isa => 'Bool');
 
 sub init {
     my ($self, @args) = @_;
@@ -52,7 +55,8 @@ sub init {
                                             new_task_min_ttl => 1,
                                             new_task_min_runs => 1,
                                             old_task_deadline => 1,
-                                            task_renewal_fudge_factor => 0
+                                            task_renewal_fudge_factor => 0,
+                                            debug => 0
                                         } );
     #init this object
     $self->errors([]);
@@ -67,6 +71,7 @@ sub init {
     $self->new_task_min_runs($parameters->{'new_task_min_runs'});
     $self->old_task_deadline($parameters->{'old_task_deadline'});
     $self->task_renewal_fudge_factor($parameters->{'task_renewal_fudge_factor'}) if($parameters->{'task_renewal_fudge_factor'});
+    $self->debug($parameters->{'debug'}) if($parameters->{'debug'});
     
     #get list of leads
     my $tracker_file_json = $self->_read_json_file($self->tracker_file());
@@ -150,9 +155,15 @@ sub commit {
 
 sub _delete_tasks {
     my ($self) = @_;
-    print "-----------------------------------\n";
-    print "DELETING TASKS\n";
-    print "-----------------------------------\n";
+    
+    #clear out previous deleted tasks
+    $self->deleted_tasks([]);
+    
+    if($self->debug()){
+        print "-----------------------------------\n";
+        print "DELETING TASKS\n";
+        print "-----------------------------------\n";
+    }
     foreach my $checksum(keys %{$self->existing_task_map()}){
         my $cached_lead;
         my $cmap = $self->existing_task_map()->{$checksum};
@@ -178,13 +189,15 @@ sub _delete_tasks {
                     #make sure we keep the lead around
                     $self->leads_to_keep()->{$task->url()} = 1;
                 }else{
-                    $self->_print_task($task);
+                    $self->_print_task($task) if($self->debug());
                     $task->delete_task();
                     if($task->error()){
                         $self->leads_to_keep()->{$task->url()} = 1;
                         $self->_update_lead($task->url(), {'error_time' => time});
                         push @{$self->errors()}, "Problem deleting test, continuing with rest of config: " . $task->error();
-                    }                    
+                    }else{
+                        push @{$self->deleted_tasks()}, $task;
+                    }                  
                 }
             }
         }
@@ -248,9 +261,14 @@ sub _evaluate_task {
 sub _create_tasks {
     my ($self) = @_;
     
-    print "+++++++++++++++++++++++++++++++++++\n";
-    print "ADDING TASKS\n";
-    print "+++++++++++++++++++++++++++++++++++\n";
+    # clear out previous added tasks
+    $self->added_tasks([]); 
+    
+    if($self->debug()){
+        print "+++++++++++++++++++++++++++++++++++\n";
+        print "ADDING TASKS\n";
+        print "+++++++++++++++++++++++++++++++++++\n";
+    }
     foreach my $new_task(@{$self->new_tasks()}){
         #determine lead - do here as optimization so we only do it for tests that need to be added
         $new_task->refresh_lead();
@@ -259,12 +277,14 @@ sub _create_tasks {
             next;
         }
         $self->leads_to_keep()->{$new_task->url()} = 1;
-        $self->_print_task($new_task);
+        $self->_print_task($new_task) if($self->debug());
         $new_task->post_task();
         if($new_task->error){
             push @{$self->errors()}, "Problem adding test, continuing with rest of config: " . $new_task->error;
-        }
-        $self->_update_lead($new_task->url(), { 'success_time' => time });
+        }else{
+            push @{$self->added_tasks()}, $new_task;
+            $self->_update_lead($new_task->url(), { 'success_time' => time });
+        } 
     }
 
 }
