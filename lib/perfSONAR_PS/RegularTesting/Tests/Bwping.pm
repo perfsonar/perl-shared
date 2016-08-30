@@ -15,6 +15,8 @@ use perfSONAR_PS::RegularTesting::Results::LatencyTestDatum;
 
 use perfSONAR_PS::RegularTesting::Parsers::Bwctl qw(parse_bwctl_output);
 
+use perfSONAR_PS::Client::PScheduler::Task;
+
 use Moose;
 
 extends 'perfSONAR_PS::RegularTesting::Tests::BwctlBase';
@@ -137,6 +139,70 @@ override 'build_results' => sub {
     $logger->debug("Results: ".Dumper($results->unparse));
 
     return $results;
+};
+
+override 'build_pscheduler_task' => sub {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {
+                                         url => 1,
+                                         source => 1,
+                                         destination => 1,
+                                         destination_port => 0,
+                                         local_destination => 1,
+                                         force_ipv4 => 0,
+                                         force_ipv6 => 0,
+                                         test_parameters => 1,
+                                         test => 1,
+                                      });
+    my $psc_url           = $parameters->{url};
+    my $source            = $parameters->{source};
+    my $destination       = $parameters->{destination};
+    my $local_destination = $parameters->{local_destination};
+    my $force_ipv4        = $parameters->{force_ipv4};
+    my $force_ipv6        = $parameters->{force_ipv6};
+    my $test_parameters   = $parameters->{test_parameters};
+    my $test              = $parameters->{test};
+    my $schedule          = $test->schedule();
+    
+    my $psc_task = new perfSONAR_PS::Client::PScheduler::Task(url => $psc_url);
+    $psc_task->reference_param('description', $test->description()) if $test->description();
+    
+    #Test parameters
+    my $psc_test_spec = {};
+    #TODO: Support the options below
+    #"flowlabel":         { "$ref": "#/pScheduler/CardinalZero" },
+    #"hostnames":         { "$ref": "#/pScheduler/Boolean" },
+    #"suppress-loopback": { "$ref": "#/pScheduler/Boolean" },
+    #"tos":               { "$ref": "#/pScheduler/Cardinal" },
+    #"deadline":          { "$ref": "#/pScheduler/Duration" },
+    #"timeout":           { "$ref": "#/pScheduler/Duration" },
+    #tool?
+    $psc_task->test_type('rtt');
+    $psc_test_spec->{'source'} = $source;
+    $psc_test_spec->{'dest'} = $destination;
+    $psc_test_spec->{'count'} = int($test_parameters->packet_count) if $test_parameters->packet_count;
+    $psc_test_spec->{'length'} = int($test_parameters->packet_length) if $test_parameters->packet_length;
+    $psc_test_spec->{'ttl'} = int($test_parameters->packet_ttl) if $test_parameters->packet_ttl;
+    $psc_test_spec->{'interval'} = "PT" . $test_parameters->inter_packet_time  . "S" if $test_parameters->inter_packet_time;
+    $psc_test_spec->{'ip-version'} = 4 if($force_ipv4 );
+    $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
+    $psc_task->test_spec($psc_test_spec);
+    
+    #TODO: Support for more scheduling params
+    if ($schedule->type eq "regular_intervals") {
+        $psc_task->schedule_repeat('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
+        $psc_task->schedule_randslip($schedule->random_start_percentage) if(defined $schedule->random_start_percentage);
+    }else{
+        $logger->warning("Schedule type " . $schedule->type . " not currently supported. Skipping test.");
+        return;
+    }
+    
+    return $psc_task;    
+    
+};
+
+override 'pscheduler_archive_type' => sub {
+    return 'esmond/latency';
 };
 
 1;

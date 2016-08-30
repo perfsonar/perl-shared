@@ -9,6 +9,7 @@ use IPC::Run qw( start pump );
 use Log::Log4perl qw(get_logger);
 use Params::Validate qw(:all);
 use File::Temp qw(tempdir);
+use JSON;
 
 use perfSONAR_PS::RegularTesting::Parsers::Bwctl qw(parse_bwctl_output fill_iperf_data fill_iperf3_data);
 
@@ -140,6 +141,86 @@ override 'build_results' => sub {
     $logger->debug("Build Results: ".Dumper($results->unparse));
 
     return $results;
+};
+
+override 'build_pscheduler_task' => sub {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, {
+                                         url => 1,
+                                         source => 1,
+                                         destination => 1,
+                                         destination_port => 0,
+                                         local_destination => 1,
+                                         force_ipv4 => 0,
+                                         force_ipv6 => 0,
+                                         test_parameters => 1,
+                                         test => 1,
+                                      });
+    my $psc_url           = $parameters->{url};
+    my $source            = $parameters->{source};
+    my $destination       = $parameters->{destination};
+    my $local_destination = $parameters->{local_destination};
+    my $force_ipv4        = $parameters->{force_ipv4};
+    my $force_ipv6        = $parameters->{force_ipv6};
+    my $test_parameters   = $parameters->{test_parameters};
+    my $test              = $parameters->{test};
+    my $schedule          = $test->schedule();
+    
+    my $psc_task = new perfSONAR_PS::Client::PScheduler::Task(url => $psc_url);
+    $psc_task->reference_param('description', $test->description()) if $test->description();
+    
+    #Test parameters
+    my $psc_test_spec = {};
+    #TODO: Support the options below
+    #"interval":    { "$ref": "#/pScheduler/Duration" },    
+    #"mss":         { "$ref": "#/pScheduler/Cardinal" },
+    #"local-address": { "$ref": "#/pScheduler/Host" },
+    #"dscp":          { "$ref": "#/pScheduler/Cardinal" },
+    #"dynamic-window-size":    { "$ref": "#/pScheduler/Cardinal" },
+    #"no-delay":    { "$ref": "#/pScheduler/Boolean" },
+    #"congestion":    { "$ref": "#/pScheduler/String" },
+    #"zero-copy":    { "$ref": "#/pScheduler/Boolean" },
+    #"flow-label":    { "$ref": "#/pScheduler/String" },
+    #"cpu-affinity":    { "$ref": "#/pScheduler/String" }
+    $psc_task->test_type('throughput');
+    $psc_test_spec->{'source'} = $source;
+    $psc_test_spec->{'destination'} = $destination;
+    if($test->parameters->tool){
+        my @tools = split ',', $test->parameters->tool;
+        foreach my $tool(@tools){
+            $tool = 'iperf2' if($tool eq 'iperf');
+            $psc_task->add_requested_tool($tool);
+        }
+    }
+    if($test_parameters->use_udp){
+        $psc_test_spec->{'udp'} = JSON::true;
+        $psc_test_spec->{'bandwidth'} = int($test_parameters->udp_bandwidth) if $test_parameters->udp_bandwidth;
+    }       
+    $psc_test_spec->{'duration'} = "PT" . $test_parameters->duration . "S" if $test_parameters->duration;
+    $psc_test_spec->{'omit'} = int($test_parameters->omit_interval) if $test_parameters->omit_interval;
+    $psc_test_spec->{'buffer-length'} = int($test_parameters->buffer_length)  if $test_parameters->buffer_length;
+    $psc_test_spec->{'tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
+    $psc_test_spec->{'parallel'} = int($test_parameters->streams) if $test_parameters->streams;
+    $psc_test_spec->{'window-size'} = int($test_parameters->window_size) if $test_parameters->window_size;
+    $psc_test_spec->{'force-ipv4'} = JSON::true if($force_ipv4);
+    $psc_test_spec->{'force-ipv6'} = JSON::true if($force_ipv6);
+    $psc_task->test_spec($psc_test_spec);
+    #TODO: Support for more scheduling params
+    if ($schedule->type eq "regular_intervals") {
+        $psc_task->schedule_repeat('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
+        $psc_task->schedule_randslip($schedule->random_start_percentage) if(defined $schedule->random_start_percentage);
+    }else{
+        $logger->warning("Schedule type " . $schedule->type . " not currently supported. Skipping test.");
+        return;
+    }
+    
+    return $psc_task;    
+    
+};
+
+
+override 'pscheduler_archive_type' => sub {
+    return 'esmond/throughput';
 };
 
 1;

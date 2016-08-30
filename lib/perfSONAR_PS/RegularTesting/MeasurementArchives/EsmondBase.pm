@@ -13,6 +13,7 @@ use Data::Validate::IP qw(is_ipv4);
 use JSON qw(from_json to_json);
 use LWP;
 use perfSONAR_PS::Utils::DNS qw(discover_source_address);
+use perfSONAR_PS::Client::PScheduler::Archive;
 use URI::Split qw(uri_split uri_join);
 
 use Moose;
@@ -377,6 +378,33 @@ sub measurement_agent {
 
     return $agent;
 }
+
+override 'to_pscheduler' => sub {
+    my ($self) = @_;
+    
+    my $psc_archive = new perfSONAR_PS::Client::PScheduler::Archive();
+    $psc_archive->name('esmond');
+    $psc_archive->data_param('url', $self->database());
+    $psc_archive->data_param('auth-token', $self->password()) if($self->password());
+    my @psc_summaries = ();
+    foreach my $summary(@{$self->summary()}){
+        push @psc_summaries, {
+                                "event-type" => $summary->event_type(),
+                                "summary-type" => $summary->summary_type(),
+                                "summary-window" => int($summary->summary_window()),
+                             };
+    }
+    $psc_archive->data_param('summaries', \@psc_summaries) if(@psc_summaries);
+    
+    #TODO: Make this configurable
+    $psc_archive->data_param('retry-policy', [
+        {'attempts'=> 5, 'wait'=> "PT60S"},   
+        {'attempts'=> 3, 'wait'=> "PT5M"},   
+        {'attempts'=> 24, 'wait'=> "PT60M"},
+    ]);
+    
+    return $psc_archive;
+};
 
 package perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondSummary;
 
