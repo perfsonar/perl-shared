@@ -16,6 +16,18 @@ sub _post_url {
     return $self->url;
 }
 
+sub _delete_url {
+    my $self = shift;
+    unless($self->uuid()){
+        die("Can't delete task without setting uuid");
+    }
+    my $delete_url = $self->_post_url();
+    $delete_url .= "/" unless($delete_url =~ /\/$/);
+    $delete_url .= $self->uuid();
+    #return the api URL by default. override to build new URL
+    return $delete_url;
+}
+
 sub _post {
     my ($self, $data) = @_;
     
@@ -67,7 +79,7 @@ sub _delete {
     
     my $response = send_http_request(
         connection_type => 'DELETE', 
-        url => $self->_post_url(),
+        url => $self->_delete_url(),
         timeout => $self->filters->timeout,
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,

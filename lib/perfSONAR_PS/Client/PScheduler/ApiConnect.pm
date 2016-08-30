@@ -96,6 +96,7 @@ sub get_task() {
     my $task_response = send_http_request(
         connection_type => 'GET', 
         url => $task_url, 
+        get_params => { 'detail' => 1 },
         timeout => $self->filters->timeout,
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,

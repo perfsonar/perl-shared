@@ -205,6 +205,166 @@ sub schedule_until{
     return $self->data->{'schedule'}->{'until'};
 }
 
+sub detail{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->data->{'schedule'} = $val;
+    }
+    
+    return $self->data->{'schedule'};
+}
+
+sub detail_enabled{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'enabled'} = $val ? JSON::true : JSON::false;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'enabled'};
+}
+
+sub detail_start{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'start'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'start'};
+}
+
+sub detail_runs{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'runs'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'runs'};
+}
+
+sub detail_added{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'added'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'added'};
+}
+
+sub detail_slip{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'slip'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'slip'};
+}
+
+sub detail_duration{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'duration'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'duration'};
+}
+
+sub detail_participants{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'participants'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'participants'};
+}
+
+sub detail_exclusive{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'exclusive'} = $val ? JSON::true : JSON::false;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'exclusive'};
+}
+
+sub detail_multiresult{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'multi-result'} = $val ? JSON::true : JSON::false;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'multi-result'};
+}
+
+sub detail_anytime{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'anytime'} = $val ? JSON::true : JSON::false;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'anytime'};
+}
+
 sub archives{
     my ($self, $val) = @_;
     
@@ -526,6 +686,7 @@ sub checksum() {
     $data_copy->{'tool'} = ''; #clear out tool since set by server
     $data_copy->{'schedule'}->{'start'} = ''; #clear out temporal values
     $data_copy->{'schedule'}->{'until'} = ''; #clear out temporal values
+    $data_copy->{'detail'} = {}; #clear out detail
     
     #canonical should keep it consistent by sorting keys
     return md5_base64(to_json($data_copy, {'canonical' => 1}));

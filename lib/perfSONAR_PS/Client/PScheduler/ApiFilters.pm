@@ -1,6 +1,7 @@
 package perfSONAR_PS::Client::PScheduler::ApiFilters;
 
 use Mouse;
+use JSON;
 
 has 'task_filters' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'timeout' => (is => 'rw', isa => 'Int', default => sub { 60 });
@@ -182,6 +183,166 @@ sub schedule_start{
     }
     
     return $self->task_filters->{'schedule'}->{'start'};
+}
+
+sub detail{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->task_filters->{'schedule'} = $val;
+    }
+    
+    return $self->task_filters->{'schedule'};
+}
+
+sub detail_enabled{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_filter($self->task_filters, 'detail');
+        $self->task_filters->{'detail'}->{'enabled'} = $val ? JSON::true : JSON::false;
+    }
+    
+    unless($self->_has_filter($self->task_filters, "detail")){
+        return undef;
+    }
+    
+    return $self->task_filters->{'detail'}->{'enabled'};
+}
+
+sub detail_start{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_filter($self->task_filters, 'detail');
+        $self->task_filters->{'detail'}->{'start'} = $val;
+    }
+    
+    unless($self->_has_filter($self->task_filters, "detail")){
+        return undef;
+    }
+    
+    return $self->task_filters->{'detail'}->{'start'};
+}
+
+sub detail_runs{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_filter($self->task_filters, 'detail');
+        $self->task_filters->{'detail'}->{'runs'} = $val;
+    }
+    
+    unless($self->_has_filter($self->task_filters, "detail")){
+        return undef;
+    }
+    
+    return $self->task_filters->{'detail'}->{'runs'};
+}
+
+sub detail_added{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_filter($self->task_filters, 'detail');
+        $self->task_filters->{'detail'}->{'added'} = $val;
+    }
+    
+    unless($self->_has_filter($self->task_filters, "detail")){
+        return undef;
+    }
+    
+    return $self->task_filters->{'detail'}->{'added'};
+}
+
+sub detail_slip{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_filter($self->task_filters, 'detail');
+        $self->task_filters->{'detail'}->{'slip'} = $val;
+    }
+    
+    unless($self->_has_filter($self->task_filters, "detail")){
+        return undef;
+    }
+    
+    return $self->task_filters->{'detail'}->{'slip'};
+}
+
+sub detail_duration{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_filter($self->task_filters, 'detail');
+        $self->task_filters->{'detail'}->{'duration'} = $val;
+    }
+    
+    unless($self->_has_filter($self->task_filters, "detail")){
+        return undef;
+    }
+    
+    return $self->task_filters->{'detail'}->{'duration'};
+}
+
+sub detail_participants{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_filter($self->task_filters, 'detail');
+        $self->task_filters->{'detail'}->{'participants'} = $val;
+    }
+    
+    unless($self->_has_filter($self->task_filters, "detail")){
+        return undef;
+    }
+    
+    return $self->task_filters->{'detail'}->{'participants'};
+}
+
+sub detail_exclusive{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_filter($self->task_filters, 'detail');
+        $self->task_filters->{'detail'}->{'exclusive'} = $val ? JSON::true : JSON::false;
+    }
+    
+    unless($self->_has_filter($self->task_filters, "detail")){
+        return undef;
+    }
+    
+    return $self->task_filters->{'detail'}->{'exclusive'};
+}
+
+sub detail_multiresult{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_filter($self->task_filters, 'detail');
+        $self->task_filters->{'detail'}->{'multi-result'} = $val ? JSON::true : JSON::false;
+    }
+    
+    unless($self->_has_filter($self->task_filters, "detail")){
+        return undef;
+    }
+    
+    return $self->task_filters->{'detail'}->{'multi-result'};
+}
+
+sub detail_anytime{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_filter($self->task_filters, 'detail');
+        $self->task_filters->{'detail'}->{'anytime'} = $val ? JSON::true : JSON::false;
+    }
+    
+    unless($self->_has_filter($self->task_filters, "detail")){
+        return undef;
+    }
+    
+    return $self->task_filters->{'detail'}->{'anytime'};
 }
 
 sub archives{
