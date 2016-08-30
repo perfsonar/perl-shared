@@ -380,12 +380,15 @@ sub measurement_agent {
 }
 
 override 'to_pscheduler' => sub {
-    my ($self) = @_;
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, { local_address => 0 });
+    my $local_address = $parameters->{local_address};
     
     my $psc_archive = new perfSONAR_PS::Client::PScheduler::Archive();
     $psc_archive->name('esmond');
     $psc_archive->data_param('url', $self->database());
     $psc_archive->data_param('_auth-token', $self->password()) if($self->password());
+    $psc_archive->data_param('measurement-agent', $local_address) if($local_address);
     my @psc_summaries = ();
     foreach my $summary(@{$self->summary()}){
         push @psc_summaries, {
