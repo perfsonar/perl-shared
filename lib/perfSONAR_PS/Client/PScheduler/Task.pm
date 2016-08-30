@@ -687,6 +687,14 @@ sub checksum() {
     $data_copy->{'schedule'}->{'start'} = ''; #clear out temporal values
     $data_copy->{'schedule'}->{'until'} = ''; #clear out temporal values
     $data_copy->{'detail'} = {}; #clear out detail
+    #clear our private fields that won't get displayed by remote tasks
+    foreach my $archive(@{$data_copy->{'archives'}}){
+        foreach my $datum(keys %{$archive->{'data'}}){
+            if($datum =~ /^_/){
+                $archive->{'data'}->{$datum} = '';
+            }
+        }
+    }
     
     #canonical should keep it consistent by sorting keys
     return md5_base64(to_json($data_copy, {'canonical' => 1}));
