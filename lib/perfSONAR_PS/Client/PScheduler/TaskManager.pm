@@ -25,11 +25,11 @@ use Data::Dumper;
 our $VERSION = 4.0;
 
 has 'pscheduler_url'      => (is => 'rw', isa => 'Str');
-has 'task_file'           => (is => 'rw', isa => 'Str');
+has 'tracker_file'        => (is => 'rw', isa => 'Str');
 has 'client_uuid_file'    => (is => 'rw', isa => 'Str');
 has 'user_agent'          => (is => 'rw', isa => 'Str');
 has 'new_task_min_ttl' => (is => 'rw', isa => 'Int');
-has 'new_task_min_repeats' => (is => 'rw', isa => 'Int');
+has 'new_task_min_runs' => (is => 'rw', isa => 'Int');
 has 'old_task_deadline'   => (is => 'rw', isa => 'Int');
 has 'task_renewal_fudge_factor'  => (is => 'rw', isa => 'Num', default => 0.0);
 
@@ -46,31 +46,31 @@ sub init {
     my ($self, @args) = @_;
     my $parameters = validate( @args, {
                                             pscheduler_url => 1,
-                                            task_file => 1,
+                                            tracker_file => 1,
                                             client_uuid_file => 1,
                                             user_agent => 1,
                                             new_task_min_ttl => 1,
-                                            new_task_min_repeats => 1,
+                                            new_task_min_runs => 1,
                                             old_task_deadline => 1,
                                             task_renewal_fudge_factor => 0
                                         } );
     #init this object
     $self->errors([]);
     $self->pscheduler_url($parameters->{'pscheduler_url'});
-    $self->task_file($parameters->{'task_file'});
+    $self->tracker_file($parameters->{'tracker_file'});
     $self->client_uuid_file($parameters->{'client_uuid_file'});
     $self->user_agent($parameters->{'user_agent'});
     $self->created_by($self->_created_by());
     $self->new_task_min_ttl($parameters->{'new_task_min_ttl'});
     $self->new_task_expiration_ts($parameters->{'old_task_deadline'} + $self->new_task_min_ttl());
     $self->new_task_expiration_iso($self->_ts_to_iso($self->new_task_expiration_ts()));
-    $self->new_task_min_repeats($parameters->{'new_task_min_repeats'});
+    $self->new_task_min_runs($parameters->{'new_task_min_runs'});
     $self->old_task_deadline($parameters->{'old_task_deadline'});
     $self->task_renewal_fudge_factor($parameters->{'task_renewal_fudge_factor'}) if($parameters->{'task_renewal_fudge_factor'});
     
     #get list of leads
-    my $task_file_json = $self->_read_json_file($self->task_file());
-    my $psc_leads = $task_file_json->{'leads'} ? $task_file_json->{'leads'} : {};
+    my $tracker_file_json = $self->_read_json_file($self->tracker_file());
+    my $psc_leads = $tracker_file_json->{'leads'} ? $tracker_file_json->{'leads'} : {};
     $self->leads($psc_leads);
     $self->_update_lead($self->pscheduler_url(), {}); #init local url
     
@@ -117,7 +117,7 @@ sub add_task {
         # a bit hacky, but trying to convert an ISO duration to seconds is both imprecise 
         # and expensive so just use given value since these generally start out as 
         # seconds anyways.
-        $min_repeat_time = $repeat_seconds * $self->new_task_min_repeats();
+        $min_repeat_time = $repeat_seconds * $self->new_task_min_runs();
     }
     if($min_repeat_time > $self->new_task_min_ttl()){
         my $min_repeat_ts = $self->old_task_deadline() + $min_repeat_time;
@@ -145,7 +145,7 @@ sub commit {
     $self->_delete_tasks();
     $self->_create_tasks();
     $self->_cleanup_leads();
-    $self->_write_task_file();
+    $self->_write_tracker_file();
 }
 
 sub _delete_tasks {
@@ -269,7 +269,7 @@ sub _create_tasks {
 
 }
 
-sub _write_task_file {
+sub _write_tracker_file {
     my ($self) = @_;
     
     eval{
@@ -277,7 +277,7 @@ sub _write_task_file {
             'leads' => $self->leads()
         };
         my $json = to_json($content, {"pretty" => 1});
-        open( FOUT, ">", $self->task_file() ) or die "unable to open " . $self->task_file() . ": $@";
+        open( FOUT, ">", $self->tracker_file() ) or die "unable to open " . $self->tracker_file() . ": $@";
         print FOUT "$json";
         close( FOUT );
     };
@@ -401,7 +401,10 @@ sub _print_task {
     print "Archivers:\n";
     foreach my $a(@{$task->archives()}){
         print "    name: " . $a->name() . "\n";
-        print "    url: " . $a->data()->{'url'} . "\n";
+        print "    data:\n";
+        foreach my $ad(keys %{$a->data()}){
+            print "        $ad: " . (defined $a->data()->{$ad} ? $a->data()->{$ad} : 'n/a') . "\n";
+        }
     }
     print "\n";
 }
