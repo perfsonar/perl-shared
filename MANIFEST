@@ -40,6 +40,7 @@ lib/perfSONAR_PS/Client/PScheduler/BaseNode.pm
 lib/perfSONAR_PS/Client/PScheduler/Maintainer.pm
 lib/perfSONAR_PS/Client/PScheduler/Run.pm
 lib/perfSONAR_PS/Client/PScheduler/Task.pm
+lib/perfSONAR_PS/Client/PScheduler/TaskManager.pm
 lib/perfSONAR_PS/Client/PScheduler/Test.pm
 lib/perfSONAR_PS/Client/PScheduler/Tool.pm
 lib/perfSONAR_PS/Client/Utils.pm
