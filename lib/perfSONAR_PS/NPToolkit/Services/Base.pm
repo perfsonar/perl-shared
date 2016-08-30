@@ -133,16 +133,37 @@ sub can_disable {
     return $self->{CAN_DISABLE};
 }
 
+sub run_systemctl {
+    my ($self, @param) = @_;
+
+    # turn off stderr + stdout
+    open(my $stderr, ">&STDERR");
+    open(my $stdout, ">&STDOUT");
+    open(STDERR, ">", File::Spec->devnull());
+    open(STDOUT, ">", File::Spec->devnull());
+
+    my $ret = system( "/usr/bin/systemctl", @param );
+
+    # restore stderr + stdout
+    open(STDERR, ">&", $stderr);
+    open(STDOUT, ">&", $stdout);
+
+    return $ret;
+}
+
 sub disabled {
     my ($self) = @_;
-
-    # Check if the service is "on" in this run level.
 
     unless ($self->{INIT_SCRIPT}) {
 	$self->{LOGGER}->error("No init script specified for this service");
 	return -1;
     }
 
+    # Use systemd if available
+    return $self->run_systemctl( 'is-enabled' => $self->{INIT_SCRIPT} )
+        if -x '/usr/bin/systemctl';
+
+    # Check if the service is "on" in this run level.
     my $curr_runlevel;
     my $runlevel_output = `/sbin/runlevel`;
     if ( $? == 0 ) {
@@ -179,6 +200,10 @@ sub enable_startup {
 	return -1;
     }
 
+    # Use systemd if available
+    return $self->run_systemctl( 'enable' => $self->{INIT_SCRIPT} )
+        if -x '/usr/bin/systemctl';
+
     # turn off stderr + stdout
     open(my $stderr, ">&STDERR");
     open(my $stdout, ">&STDOUT");
@@ -204,6 +229,10 @@ sub disable_startup {
 	return -1;
     }
 
+    # Use systemd if available
+    return $self->run_systemctl( 'disable' => $self->{INIT_SCRIPT} )
+        if -x '/usr/bin/systemctl';
+
     # turn off stderr + stdout
     open(my $stderr, ">&STDERR");
     open(my $stdout, ">&STDOUT");
@@ -226,6 +255,10 @@ sub run_init {
 	$self->{LOGGER}->error("No init script specified for this service");
 	return -1;
     }
+
+    # Use systemd if available
+    return $self->run_systemctl( $cmd => $self->{INIT_SCRIPT} )
+        if -x '/usr/bin/systemctl';
 
     # turn off stderr + stdout
     open(my $stderr, ">&STDERR");

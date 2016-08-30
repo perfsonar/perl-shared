@@ -20,7 +20,8 @@ use Net::IP;
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner;
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner::Cmd;
 
-use perfSONAR_PS::RegularTesting::Utils qw(owptime2datetime);
+use perfSONAR_PS::RegularTesting::Utils qw(owptime2datetime choose_endpoint_address parse_target);
+use perfSONAR_PS::Utils::Host qw(get_interface_addresses_by_type);
 
 use perfSONAR_PS::RegularTesting::Parsers::Owamp qw(parse_owamp_summary_file);
 use perfSONAR_PS::RegularTesting::Results::LatencyTest;
@@ -383,5 +384,111 @@ sub build_endpoint {
 
     return $endpoint;
 }
+
+override 'to_pscheduler' => sub {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, { 
+                                         url => 1,
+                                         test => 1,
+                                         archive_map => 1,
+                                         task_manager => 1
+                                      });
+    my $psc_url = $parameters->{url};
+    my $test = $parameters->{test};
+    my $archive_map = $parameters->{archive_map};
+    my $task_manager = $parameters->{task_manager};
+    
+    #handle interface definitions, which pscheduler does not support
+    my $interface_ips;
+    if($test->local_interface && !$test->local_address){
+        $interface_ips = get_interface_addresses_by_type(interface => $test->local_interface);
+        unless(@{$interface_ips->{ipv4_address}} || @{$interface_ips->{ipv6_address}}){
+            die "Unable to determine addresses for interface " . $test->local_interface;
+        }
+    }
+    
+    foreach my $individual_test ($self->get_individual_tests({ test => $test })) {
+        my $force_ipv4        = $individual_test->{force_ipv4};
+        my $force_ipv6        = $individual_test->{force_ipv6};
+        my $test_parameters   = $individual_test->{test_parameters};
+        my $packets = $test_parameters->resolution / $test_parameters->inter_packet_time;
+        my $schedule          = $test->schedule();
+        
+        #determine local address which is only complicated if interface specified
+        my $parsed_target = parse_target(target=>$individual_test->{target}->address());
+        my ($local_address, $local_port, $source, $destination, $destination_port);
+        if($interface_ips){
+            my ($choose_status, $choose_res) = choose_endpoint_address(
+                                                        ifname => $test->local_interface,
+                                                        interface_ips => $interface_ips, 
+                                                        target_address => $parsed_target->{address},
+                                                        force_ipv4 => $individual_test->{force_ipv6},
+                                                        force_ipv6 => $individual_test->{force_ipv6},
+                                                    );
+            if($choose_status < 0){
+                $logger->error("Error determining local address, skipping test: " . $choose_res);
+                next;
+            }else{
+                $local_address = $choose_res;
+            }
+        }
+        
+        #now determine source and destination - again only complicated by interface names
+        unless($local_address){
+            my $parsed_local = parse_target(target=> $test->local_address);
+            $local_address = $parsed_local->{address};
+            $local_port = $parsed_local->{port};
+        }
+        if($individual_test->{receiver}){
+            $source = $parsed_target->{address};
+            $destination = $local_address;
+            $destination_port = $local_port;
+        }else{
+            $source = $local_address;
+            $destination = $parsed_target->{address};
+            $destination_port = $parsed_target->{port};
+        }
+        
+        #init task
+        my $psc_task = new perfSONAR_PS::Client::PScheduler::Task(url => $psc_url);
+        $psc_task->reference_param('description', $test->description()) if $test->description();
+    
+        #Test parameters
+        my $psc_test_spec = {};
+        $psc_task->test_type('latencybg');
+        $psc_test_spec->{'source'} = $source;
+        $psc_test_spec->{'dest'} = $destination;
+        $psc_test_spec->{'ctrl-port'} = int($destination_port) if($destination_port);
+        $psc_test_spec->{'flip'} = JSON::true if($individual_test->{receiver});
+        $psc_test_spec->{'packet-count'} = int($packets) if $packets;
+        $psc_test_spec->{'packet-interval'} = $test_parameters->inter_packet_time + 0.0 if $test_parameters->inter_packet_time;
+        $psc_test_spec->{'packet-padding'} = int($test_parameters->packet_length) if defined $test_parameters->packet_length;
+        if($test_parameters->receive_port_range()){
+            my ($lower, $upper) = split '-', $test_parameters->receive_port_range();
+            $psc_test_spec->{'data-ports'} = {
+                'lower' => $lower,
+                'upper' => $upper,
+            };
+        }
+        $psc_test_spec->{'ip-version'} = 4 if($force_ipv4);
+        $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
+        $psc_task->test_spec($psc_test_spec);
+        
+        #add archives
+        if($archive_map->{'esmond/latency'}){
+            foreach my $psc_ma(@{$archive_map->{'esmond/latency'}}){
+                $psc_task->add_archive($psc_ma);
+            }
+        }
+        if($test->measurement_archives()){
+            foreach my $ma(@{$test->measurement_archives()}){
+                $psc_task->add_archive($ma->to_pscheduler());
+            }
+        }
+        
+        $task_manager->add_task(task => $psc_task, local_address => $local_address) if($psc_task);
+    }
+    
+};
 
 1;

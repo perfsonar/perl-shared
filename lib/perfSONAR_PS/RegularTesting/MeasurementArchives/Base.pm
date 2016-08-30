@@ -42,4 +42,8 @@ sub store_results {
     die("'run_once' needs to be overridden");
 }
 
+sub to_pscheduler {
+    die("'to_pscheduler' needs to be overridden");
+}
+
 1;

@@ -5,6 +5,7 @@ use JSON qw(to_json from_json);
 use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg extract_url_uuid);
 use perfSONAR_PS::Client::PScheduler::Archive;
 use perfSONAR_PS::Client::PScheduler::Run;
+use Digest::MD5 qw(md5_base64);
 
 extends 'perfSONAR_PS::Client::PScheduler::BaseNode';
 
@@ -204,6 +205,166 @@ sub schedule_until{
     return $self->data->{'schedule'}->{'until'};
 }
 
+sub detail{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->data->{'schedule'} = $val;
+    }
+    
+    return $self->data->{'schedule'};
+}
+
+sub detail_enabled{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'enabled'} = $val ? JSON::true : JSON::false;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'enabled'};
+}
+
+sub detail_start{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'start'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'start'};
+}
+
+sub detail_runs{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'runs'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'runs'};
+}
+
+sub detail_added{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'added'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'added'};
+}
+
+sub detail_slip{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'slip'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'slip'};
+}
+
+sub detail_duration{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'duration'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'duration'};
+}
+
+sub detail_participants{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'participants'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'participants'};
+}
+
+sub detail_exclusive{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'exclusive'} = $val ? JSON::true : JSON::false;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'exclusive'};
+}
+
+sub detail_multiresult{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'multi-result'} = $val ? JSON::true : JSON::false;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'multi-result'};
+}
+
+sub detail_anytime{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'anytime'} = $val ? JSON::true : JSON::false;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'anytime'};
+}
+
 sub archives{
     my ($self, $val) = @_;
     
@@ -211,7 +372,7 @@ sub archives{
         $self->data->{'archives'} = [];
         foreach my $v(@{$val}){
             push @{$self->data->{'archives'}}, {
-                'name' => $v->name(),
+                'archiver' => $v->name(),
                 'data' => $v->data(),
             };
         }
@@ -220,7 +381,7 @@ sub archives{
     my @archives = ();
     foreach my $archive(@{$self->data->{'archives'}}){
         push @archives, new perfSONAR_PS::Client::PScheduler::Archive(
-            'name' => $archive->{'name'},
+            'name' => $archive->{'archiver'},
             'data' => $archive->{'data'},
         );
     }
@@ -240,9 +401,34 @@ sub add_archive{
     }
     
     push @{$self->data->{'archives'}}, {
-            'name' =>  $val->name(),
+            'archiver' =>  $val->name(),
             'data' =>  $val->data()
         };
+}
+
+sub requested_tools{
+    my ($self, $val) = @_;
+    
+    #when requesting its tools, after posting its just tool
+    if(defined $val){
+        $self->data->{'tools'} = $val;
+    }
+    
+   return $self->data->{'tools'};
+}
+
+sub add_requested_tool{
+    my ($self, $val) = @_;
+    
+    unless(defined $val){
+        return;
+    }
+    
+    unless($self->data->{'tools'}){
+        $self->data->{'tools'} = [];
+    }
+    
+    push @{$self->data->{'tools'}}, $val;
 }
 
 sub post_task {
@@ -415,6 +601,97 @@ sub get_run() {
     
     return new perfSONAR_PS::Client::PScheduler::Run(data => $run_response_json, url => $run_url, filters => $self->filters, uuid => $run_uuid);
 }
+
+sub get_lead() {
+    my ($self) = @_;
+    
+    #need a test type and test spec for this to work
+    unless ($self->test_type() && $self->test_spec()){
+        return;
+    }
+    
+    #build url
+    my $lead_url = $self->url;
+    chomp($lead_url);
+    $lead_url .= "/" if($self->url !~ /\/$/);
+    $lead_url .= "tests/" . $self->test_type()  . "/lead";
+    
+    #fetch lead
+    $self->data->{'test'}->{'spec'}->{'schema'} = 1 unless($self->data->{'test'}->{'spec'}->{'schema'}); 
+    my %get_params = ("spec" => to_json($self->test_spec()));
+    my $lead_response = send_http_request(
+        connection_type => 'GET', 
+        url => $lead_url, 
+        get_params => \%get_params,
+        timeout => $self->filters->timeout,
+        ca_certificate_file => $self->filters->ca_certificate_file,
+        ca_certificate_path => $self->filters->ca_certificate_path,
+        verify_hostname => $self->filters->verify_hostname,
+    );
+    if(!$lead_response->is_success){
+        my $msg = build_err_msg(http_response => $lead_response);
+        $self->_set_error($msg);
+        return;
+    }
+    my $lead_response_json;
+    eval{$lead_response_json = from_json($lead_response->content, {allow_nonref => 1});};
+    if($@){
+        $self->_set_error("Error parsing lead object returned from $lead_url: $@");
+        return;
+    }
+    
+    return $lead_response_json;
+}
+
+sub get_lead_url() {
+    my ($self, $scheme, $port, $path) = @_;
+    
+    # Defaults
+    $scheme = 'https' unless($scheme);
+    $port = $port ? ":$port" : '';
+    $path = '/pscheduler' unless($path);
+    $path = "/$path" unless($path =~ /^\//);
+    
+    #Get address
+    my $address = $self->get_lead();
+    return unless($address);
+    
+    return "${scheme}://${address}${port}${path}";
+}
+
+sub refresh_lead() {
+    my ($self, $scheme, $port, $path) = @_;
+    
+    my $lead = $self->get_lead_url($scheme, $port, $path);
+    if($lead){
+        #if lead exists, change url, otherwise keep the same
+        $self->url($lead);
+    }
+    
+    return $lead;
+}
+
+sub checksum() {
+    #calculates checksum for comparing tasks, ignoring stuff like UUID and lead url
+    my ($self) = @_;
+    
+    #make sure these fields are consistent
+    $self->schema(1) unless($self->schema());
+    $self->data->{'test'}->{'spec'}->{'schema'} = 1 unless($self->data->{'test'}->{'spec'}->{'schema'}); 
+    $self->data->{'archives'} = []  unless($self->data->{'archives'});
+    $self->data->{'schedule'} = {}  unless($self->data->{'schedule'});
+    
+    #disable canonical since we don't care at the moment
+    my $data_copy = from_json(to_json($self->data, {'canonical' => 0}));
+    $data_copy->{'tool'} = ''; #clear out tool since set by server
+    $data_copy->{'schedule'}->{'start'} = ''; #clear out temporal values
+    $data_copy->{'schedule'}->{'until'} = ''; #clear out temporal values
+    $data_copy->{'detail'} = {}; #clear out detail
+    
+    #canonical should keep it consistent by sorting keys
+    return md5_base64(to_json($data_copy, {'canonical' => 1}));
+}
+
 
 __PACKAGE__->meta->make_immutable;
 

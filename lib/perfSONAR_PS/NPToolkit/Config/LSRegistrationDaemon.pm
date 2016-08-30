@@ -452,6 +452,7 @@ sub save {
     $config->{access_policy_notes} = $self->{ACCESS_POLICY_NOTES} if $self->{ACCESS_POLICY_NOTES};
 
     my $content = SaveConfigString( $config );
+    utf8::decode( $content );
 
     my $res = save_file( { file => $self->{CONFIG_FILE}, content => $content } );
     if ( $res == -1 ) {
