@@ -385,7 +385,7 @@ override 'to_pscheduler' => sub {
     my $psc_archive = new perfSONAR_PS::Client::PScheduler::Archive();
     $psc_archive->name('esmond');
     $psc_archive->data_param('url', $self->database());
-    $psc_archive->data_param('auth-token', $self->password()) if($self->password());
+    $psc_archive->data_param('_auth-token', $self->password()) if($self->password());
     my @psc_summaries = ();
     foreach my $summary(@{$self->summary()}){
         push @psc_summaries, {
