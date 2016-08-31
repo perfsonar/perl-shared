@@ -159,13 +159,13 @@ sub get_calculated_lat_lon {
 
     my $external_addresses = discover_primary_address({ disable_ipv4_reverse_lookup => 1, disable_ipv6_reverse_lookup => 1 });
     my $res = geoIPLookup($external_addresses->{primary_address});
-    if (!$res) {
-        return {
-            "error" => "Error Invalid IP address detected for localhost",
-        }
-    }
+    my $result = {};
 
-    return $res;
+    if($res->{longitude} && $res->{latitude} ){
+        $result->{longitude} = $res->{longitude};
+        $result->{latitude} = $res->{latitude};
+    } 
+    return $result;
 
 }
 
@@ -473,30 +473,9 @@ sub get_services {
             max_port => 65535,
         };
     }
-
-    my $owamp = get_service_object("owamp");
-    my $bwctl = get_service_object("bwctl");
-    my $npad = get_service_object("npad");
-    my $ndt = get_service_object("ndt");
-    my $regular_testing = get_service_object("regular_testing");
-
-    my @service_names = qw(owamp bwctl regular_testing esmond);
-
-    #print $npad->is_installed();
-
-    #if($npad->is_installed()){
-        push @service_names, "npad";
-        #}
-
-        #if($ndt->is_installed()){
-        push @service_names, "ndt";
-        #}
-
-
-    my %services = ();
-
     
-
+    my @service_names = qw(owamp bwctl meshconfig_agent pscheduler esmond ndt npad lsregistration);
+    my %services = ();
     foreach my $service_name ( @service_names ) {
         my $service = get_service_object($service_name);
 
@@ -530,9 +509,12 @@ sub get_services {
         }
 
         my $enabled = (not $service->disabled) || 0;
-
+        
+        my $display_name = $service_name;
+        $display_name =~ s/_/-/g;
+        
         my %service_info = ();
-        $service_info{"name"}          = $service_name;
+        $service_info{"name"}          = $display_name;
         $service_info{"enabled"}       = $enabled;
         $service_info{"is_running"}    = $is_running_output;
         $service_info{"is_installed"}  = $is_installed if (defined $is_installed);
@@ -552,7 +534,7 @@ sub get_services {
     }
 
 
-    my @services = values %services;
+    my @services = sort {$a->{name} cmp $b->{name}} values %services;
 
     return {'services', \@services};
 }

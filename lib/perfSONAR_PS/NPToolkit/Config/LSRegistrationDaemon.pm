@@ -460,7 +460,7 @@ sub save {
     }
 
     if ( $parameters->{restart_services} ) {
-        $res = restart_service({ name => "ls_registration_daemon" });
+        $res = restart_service({ name => "lsregistration" });
         if ($res == -1) {
              return -1;
         }

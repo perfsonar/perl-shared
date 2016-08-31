@@ -92,7 +92,8 @@ lib/perfSONAR_PS/NPToolkit/Services/NPAD.pm
 lib/perfSONAR_PS/NPToolkit/Services/NTP.pm
 lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
 lib/perfSONAR_PS/NPToolkit/Services/OWAMP.pm
-lib/perfSONAR_PS/NPToolkit/Services/RegularTesting.pm
+lib/perfSONAR_PS/NPToolkit/Services/MeshConfigAgent.pm
+lib/perfSONAR_PS/NPToolkit/Services/PScheduler.pm
 lib/perfSONAR_PS/NPToolkit/Services/ServicesMap.pm
 lib/perfSONAR_PS/NPToolkit/Services/SimpleLSBootstrap.pm
 lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
