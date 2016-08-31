@@ -183,7 +183,7 @@ override 'build_pscheduler_task' => sub {
     #"flow-label":    { "$ref": "#/pScheduler/String" },
     #"cpu-affinity":    { "$ref": "#/pScheduler/String" }
     $psc_task->test_type('throughput');
-    $psc_test_spec->{'source'} = $source;
+    $psc_test_spec->{'source'} = $source if($source);
     $psc_test_spec->{'destination'} = $destination;
     if($test->parameters->tool){
         my @tools = split ',', $test->parameters->tool;

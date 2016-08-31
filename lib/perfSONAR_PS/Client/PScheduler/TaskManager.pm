@@ -115,7 +115,7 @@ sub add_task {
     my $new_task = $parameters->{task};
     my $local_address = $parameters->{local_address};
     my $repeat_seconds = $parameters->{repeat_seconds};
-    
+
     #set end time to greater of min repeats and expiration time
     my $min_repeat_time = 0;
     if($repeat_seconds){
@@ -394,7 +394,7 @@ sub _print_task {
     print "Test Type: " . $task->test_type() . "\n";
     print "Tool: " . ($task->tool() ? $task->tool() : 'n/a') . "\n";
     print "Requested Tools: " . ($task->requested_tools() ? join " ", @{$task->requested_tools()} : 'n/a') . "\n";
-    print "Source: " . $task->test_spec_param("source") . "\n";
+    print "Source: " . ($task->test_spec_param("source") ? $task->test_spec_param("source") : 'n/a') . "\n";
     print "Destination: " . ($task->test_spec_param("dest") ?  $task->test_spec_param("dest") : $task->test_spec_param("destination")). "\n";
     print "Enabled: " . (defined $task->detail_enabled() ? $task->detail_enabled() : "n/a"). "\n";
     print "Added: " . (defined $task->detail_added() ? $task->detail_added() : "n/a"). "\n";

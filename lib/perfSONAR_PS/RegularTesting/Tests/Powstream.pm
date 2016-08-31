@@ -21,6 +21,7 @@ use perfSONAR_PS::RegularTesting::Utils::CmdRunner;
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner::Cmd;
 
 use perfSONAR_PS::RegularTesting::Utils qw(owptime2datetime choose_endpoint_address parse_target);
+use perfSONAR_PS::Utils::DNS qw(discover_source_address);
 use perfSONAR_PS::Utils::Host qw(get_interface_addresses_by_type);
 
 use perfSONAR_PS::RegularTesting::Parsers::Owamp qw(parse_owamp_summary_file);
@@ -440,6 +441,15 @@ override 'to_pscheduler' => sub {
             $local_port = $parsed_local->{port};
         }
         if($individual_test->{receiver}){
+            #if we are receiving, we have to know the local address
+            if(!$local_address){
+                #no interface or address given, try to get the routing tables to tell us
+                $local_address = discover_source_address(address => $parsed_target->{address});
+                if(!$local_address){
+                    $logger->error("Unable to determine local address for test where local side is destination from " . $parsed_target->{address} . ", skipping test.");
+                    next;
+                }
+            }
             $source = $parsed_target->{address};
             $destination = $local_address;
             $destination_port = $local_port;
@@ -456,7 +466,7 @@ override 'to_pscheduler' => sub {
         #Test parameters
         my $psc_test_spec = {};
         $psc_task->test_type('latencybg');
-        $psc_test_spec->{'source'} = $source;
+        $psc_test_spec->{'source'} = $source if($source);
         $psc_test_spec->{'dest'} = $destination;
         $psc_test_spec->{'ctrl-port'} = int($destination_port) if($destination_port);
         $psc_test_spec->{'flip'} = JSON::true if($individual_test->{receiver});
@@ -465,10 +475,12 @@ override 'to_pscheduler' => sub {
         $psc_test_spec->{'packet-padding'} = int($test_parameters->packet_length) if defined $test_parameters->packet_length;
         if($test_parameters->receive_port_range()){
             my ($lower, $upper) = split '-', $test_parameters->receive_port_range();
-            $psc_test_spec->{'data-ports'} = {
-                'lower' => $lower,
-                'upper' => $upper,
-            };
+            if($lower && $upper){
+                $psc_test_spec->{'data-ports'} = {
+                    'lower' => int($lower),
+                    'upper' => int($upper),
+                };
+            }
         }
         $psc_test_spec->{'ip-version'} = 4 if($force_ipv4);
         $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);

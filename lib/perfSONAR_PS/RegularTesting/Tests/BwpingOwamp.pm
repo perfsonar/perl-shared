@@ -170,7 +170,7 @@ override 'build_pscheduler_task' => sub {
     #Test parameters
     my $psc_test_spec = {};
     $psc_task->test_type('latency');
-    $psc_test_spec->{'source'} = $source;
+    $psc_test_spec->{'source'} = $source if($source);
     $psc_test_spec->{'dest'} = $destination;
     $psc_test_spec->{'ctrl-port'} = int($destination_port) if($destination_port);
     $psc_test_spec->{'packet-count'} = int($test_parameters->packet_count) if $test_parameters->packet_count;

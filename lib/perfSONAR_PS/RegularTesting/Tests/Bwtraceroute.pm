@@ -181,7 +181,7 @@ override 'build_pscheduler_task' => sub {
     #"tos":         { "$ref": "#/pScheduler/Cardinal" },
     #"wait":        { "$ref": "#/pScheduler/Duration" },
     $psc_task->test_type('trace');
-    $psc_test_spec->{'source'} = $source;
+    $psc_test_spec->{'source'} = $source if($source);
     $psc_test_spec->{'dest'} = $destination;
     if($test->parameters->tool){
         my @tools = split ',', $test->parameters->tool;
