@@ -428,6 +428,8 @@ override 'to_pscheduler' => sub {
             $destination = $local_address;
         }else{
             $local_address = $parsed_src->{address} unless($local_address);
+            #always set source so we don't end up with 127.0.0.1
+            $local_address = discover_source_address(address => $parsed_target->{address}) unless($local_address);
             $source = $local_address;
             $destination = $parsed_dst->{address};
         }
