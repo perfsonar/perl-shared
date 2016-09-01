@@ -153,6 +153,18 @@ sub commit {
     $self->_write_tracker_file();
 }
 
+sub check_assist_server {
+    my ($self) = @_;
+    
+    my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $self->pscheduler_url());
+    $psc_client->get_tests();
+    if($psc_client->error()){
+        return 0;
+    }
+    
+    return 1;
+}
+
 sub _delete_tasks {
     my ($self) = @_;
     
