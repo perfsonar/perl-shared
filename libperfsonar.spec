@@ -73,6 +73,9 @@ Requires:		perl(DateTime::Format::ISO8601)
 Requires:		perl(Exporter)
 Requires:		perl(JSON)
 Requires:		perl(LWP)
+%if 0%{?el7}
+Requires:		perl(LWP::Protocol::https)
+%endif
 Requires:		perl(Log::Log4perl)
 Requires:		perl(Net::Ping)
 Requires:		perl(Params::Validate)
@@ -98,6 +101,9 @@ Requires:		perl(Exporter)
 Requires:		perl(HTTP::Request)
 Requires:		perl(JSON)
 Requires:		perl(LWP::UserAgent)
+%if 0%{?el7}
+Requires:		perl(LWP::Protocol::https)
+%endif
 Requires:		perl(Mouse)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
@@ -121,6 +127,9 @@ Requires:		perl(Exporter)
 Requires:		perl(HTTP::Request)
 Requires:		perl(JSON)
 Requires:		perl(LWP::UserAgent)
+%if 0%{?el7}
+Requires:		perl(LWP::Protocol::https)
+%endif
 Requires:		perl(Mouse)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
