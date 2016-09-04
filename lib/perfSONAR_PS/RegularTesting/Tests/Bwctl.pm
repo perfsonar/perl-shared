@@ -188,8 +188,15 @@ override 'build_pscheduler_task' => sub {
     if($test->parameters->tool){
         my @tools = split ',', $test->parameters->tool;
         foreach my $tool(@tools){
-            $tool = 'iperf2' if($tool eq 'iperf');
-            $psc_task->add_requested_tool($tool);
+            if($tool eq 'iperf'){
+                $psc_task->add_requested_tool('bwctliperf2');
+                $psc_task->add_requested_tool('iperf2');
+            }elsif($tool eq 'iperf3'){
+                $psc_task->add_requested_tool('bwctliperf3');
+                $psc_task->add_requested_tool('iperf3');
+            }else{
+                $psc_task->add_requested_tool($tool);
+            }
         }
     }
     if($test_parameters->use_udp){
