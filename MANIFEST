@@ -40,6 +40,7 @@ lib/perfSONAR_PS/Client/PScheduler/BaseNode.pm
 lib/perfSONAR_PS/Client/PScheduler/Maintainer.pm
 lib/perfSONAR_PS/Client/PScheduler/Run.pm
 lib/perfSONAR_PS/Client/PScheduler/Task.pm
+lib/perfSONAR_PS/Client/PScheduler/TaskManager.pm
 lib/perfSONAR_PS/Client/PScheduler/Test.pm
 lib/perfSONAR_PS/Client/PScheduler/Tool.pm
 lib/perfSONAR_PS/Client/Utils.pm
@@ -91,7 +92,8 @@ lib/perfSONAR_PS/NPToolkit/Services/NPAD.pm
 lib/perfSONAR_PS/NPToolkit/Services/NTP.pm
 lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
 lib/perfSONAR_PS/NPToolkit/Services/OWAMP.pm
-lib/perfSONAR_PS/NPToolkit/Services/RegularTesting.pm
+lib/perfSONAR_PS/NPToolkit/Services/MeshConfigAgent.pm
+lib/perfSONAR_PS/NPToolkit/Services/PScheduler.pm
 lib/perfSONAR_PS/NPToolkit/Services/ServicesMap.pm
 lib/perfSONAR_PS/NPToolkit/Services/SimpleLSBootstrap.pm
 lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm

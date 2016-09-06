@@ -16,6 +16,11 @@ our $VERSION = 3.4;
  
 =cut
 
+use Geo::IP;
+use Data::Validate::IP;
+ use Socket;     #this doesn't help
+ use Socket6;
+use Net::IP; # doesn't help
 use base 'Exporter';
 use Data::Dumper;
 use JSON::XS;
@@ -31,7 +36,6 @@ our @EXPORT_OK = qw(
 my $REQUEST_TIMEOUT = 5;
 my $REQUEST_FORMAT = "json";
 my $GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/${REQUEST_FORMAT}";
-my $GEOIP_URL = "http://freegeoip.net/${REQUEST_FORMAT}/";
 
 my $ua = LWP::UserAgent->new;
 $ua->timeout($REQUEST_TIMEOUT);
@@ -39,7 +43,7 @@ $ua->env_proxy;
 
 =head2 geoLookup($location)
  
- Get location information from existing location information
+ Get location information from existing address information
  
 =cut
 
@@ -90,17 +94,45 @@ sub geoLookup {
 
 sub geoIPLookup {
     my ( $ip ) = @_;
-    
     my $result = ();
+
     if ($ip) {
-        my $request = "${GEOIP_URL}${ip}";
-        my $response = $ua->get($request);
-        if ($response->is_success) {
-            eval {
-                my $json = decode_json($response->decoded_content);
-                $result = parseGeoIPResult($json);
-            };
+        my $record;
+        if ( is_ipv4($ip) ) {
+            my $city_file =  '/usr/share/GeoIP/GeoIPCity.dat';
+            my $city_db = Geo::IP->open( $city_file, GEOIP_MEMORY_CACHE);
+
+            $record = $city_db->record_by_addr( $ip );
+            if ( $record ) {
+                $result->{'city'} = $record->city            if ($record->city);
+                $result->{'state'} = $record->region_name    if ($record->region_name);
+                $result->{'state_abbr'} = $record->region    if ($record->region);  
+                $result->{'country'} = $record->country_code if ($record->country_code);
+                $result->{'country_full'} = $record->country_name if ($record->country_name);
+                $result->{'code'} = $record->postal_code     if ($record->postal_code);                
+                $result->{'time_zone'} = $record->time_zone  if ($record->time_zone);
+                $result->{'latitude'} = $record->latitude    if ($record->latitude);
+                $result->{'longitude'} = $record->longitude  if ($record->longitude);
+            }
         }
+        elsif ( is_ipv6($ip) ) {
+            # The City database seems to have only country info and the lat and long are for the center of it !?
+            # so just use the Country db for ipv6
+            my $country_ipv6_file =  '/usr/share/GeoIP/GeoIPv6.dat';
+            my $country_ipv6_db = Geo::IP->open( $country_ipv6_file, GEOIP_MEMORY_CACHE);
+
+            $record = $country_ipv6_db->country_code_by_addr_v6( $ip );
+            $result->{'country'} = $record if ($record);
+            $record = $country_ipv6_db->country_name_by_addr_v6( $ip );
+            $result->{'country_full'} = $record if ($record);
+        }
+        else {
+            warn "IP '".$ip."' was not detected as ipv4 or ipv6.";
+        }
+    
+        ##warn "IP: ".$ip; ###
+        ##warn "geoIPLookup result " . Dumper $result;  ###
+
     }
     return $result;
 }
@@ -174,35 +206,6 @@ sub parseGeocodeResult {
     }
     $location->{"latitude"} = $result->{"geometry"}->{"location"}->{"lat"};
     $location->{"longitude"} = $result->{"geometry"}->{"location"}->{"lng"};
-    return $location;
-}
-
-=head2 parseGeocodeResult($result)
- 
- Parses a result from the freegeoip API
- 
-=cut
-
-sub parseGeoIPResult {
-    my ( $result ) = @_;
-    
-    my $location = ();
-    if ($result->{"city"}) {
-        $location->{"city"} = $result->{"city"};
-    }
-    if ($result->{"region_name"}) {
-        $location->{"state"} = $result->{"region_name"};
-    }
-    if ($result->{"country_code"}) {
-        $location->{"country"} = $result->{"country_code"};
-    }
-    if ($result->{"zipcode"}) {
-        $location->{"code"} = $result->{"zipcode"};
-    }
-    if (($result->{"latitude"}) && ($result->{"longitude"})) {
-        $location->{"latitude"} = $result->{"latitude"};
-        $location->{"longitude"} = $result->{"longitude"};
-    }
     return $location;
 }
 

@@ -181,12 +181,20 @@ override 'build_pscheduler_task' => sub {
     #"tos":         { "$ref": "#/pScheduler/Cardinal" },
     #"wait":        { "$ref": "#/pScheduler/Duration" },
     $psc_task->test_type('trace');
-    $psc_test_spec->{'source'} = $source;
+    $psc_test_spec->{'source'} = $source if($source);
     $psc_test_spec->{'dest'} = $destination;
     if($test->parameters->tool){
         my @tools = split ',', $test->parameters->tool;
         foreach my $tool(@tools){
-            $psc_task->add_requested_tool($tool);
+            if($tool eq 'traceroute'){
+                $psc_task->add_requested_tool('bwctltraceroute');
+                $psc_task->add_requested_tool('traceroute');
+            }elsif($tool eq 'tracepath'){
+                $psc_task->add_requested_tool('bwctltracepath');
+                $psc_task->add_requested_tool('tracepath');
+            }else{
+                $psc_task->add_requested_tool($tool);
+            }
         }
     }
     $psc_test_spec->{'dest-port'} = int($destination_port) if($destination_port);
