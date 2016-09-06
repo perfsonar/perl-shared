@@ -44,7 +44,9 @@ my $scale = 2**32;
 sub parse_target {
     my $parameters = validate( @_, { target => 1 });
     my $target = $parameters->{target};
-
+    
+    return { address => undef, port => undef } unless($target);
+    
     my ($address, $port);
 
     if ($target =~ /^\[(.*)\]:(\d+)$/) {

@@ -52,7 +52,7 @@ use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service 
 
 # These are the defaults for the current NPToolkit
 my %defaults = (
-    regular_testing_config_file => "/etc/perfsonar/regulartesting.conf",
+    regular_testing_config_file => "/etc/perfsonar/meshconfig-agent-tasks.conf",
     traceroute_test_parameters => {
         description => "perfSONAR Toolkit Default Traceroute Test",
         test_interval => 600,

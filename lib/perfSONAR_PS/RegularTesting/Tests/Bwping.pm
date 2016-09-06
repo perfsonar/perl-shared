@@ -178,7 +178,7 @@ override 'build_pscheduler_task' => sub {
     #"timeout":           { "$ref": "#/pScheduler/Duration" },
     #tool?
     $psc_task->test_type('rtt');
-    $psc_test_spec->{'source'} = $source;
+    $psc_test_spec->{'source'} = $source if($source);
     $psc_test_spec->{'dest'} = $destination;
     $psc_test_spec->{'count'} = int($test_parameters->packet_count) if $test_parameters->packet_count;
     $psc_test_spec->{'length'} = int($test_parameters->packet_length) if $test_parameters->packet_length;

@@ -15,12 +15,13 @@ use perfSONAR_PS::NPToolkit::Services::httpd;
 use perfSONAR_PS::NPToolkit::Services::LSCacheDaemon;
 use perfSONAR_PS::NPToolkit::Services::LSRegistrationDaemon;
 use perfSONAR_PS::NPToolkit::Services::MaDDash;
+use perfSONAR_PS::NPToolkit::Services::MeshConfigAgent;
+use perfSONAR_PS::NPToolkit::Services::PScheduler;
 use perfSONAR_PS::NPToolkit::Services::MySQL;
 use perfSONAR_PS::NPToolkit::Services::NDT;
 use perfSONAR_PS::NPToolkit::Services::NPAD;
 use perfSONAR_PS::NPToolkit::Services::NTP;
 use perfSONAR_PS::NPToolkit::Services::OWAMP;
-use perfSONAR_PS::NPToolkit::Services::RegularTesting;
 use perfSONAR_PS::NPToolkit::Services::YumCron;
 use perfSONAR_PS::NPToolkit::Services::iperf3;
 
@@ -33,14 +34,15 @@ my %name_to_service_map = (
     esmond => "perfSONAR_PS::NPToolkit::Services::esmond",
     httpd => "perfSONAR_PS::NPToolkit::Services::httpd",
     ls_cache_daemon => "perfSONAR_PS::NPToolkit::Services::LSCacheDaemon",
-    ls_registration_daemon => "perfSONAR_PS::NPToolkit::Services::LSRegistrationDaemon",
+    lsregistration => "perfSONAR_PS::NPToolkit::Services::LSRegistrationDaemon",
     maddash => "perfSONAR_PS::NPToolkit::Services::MaDDash",
     mysql => "perfSONAR_PS::NPToolkit::Services::MySQL",
     ndt => "perfSONAR_PS::NPToolkit::Services::NDT",
     npad => "perfSONAR_PS::NPToolkit::Services::NPAD",
     ntp => "perfSONAR_PS::NPToolkit::Services::NTP",
     owamp => "perfSONAR_PS::NPToolkit::Services::OWAMP",
-    regular_testing => "perfSONAR_PS::NPToolkit::Services::RegularTesting",
+    meshconfig_agent => "perfSONAR_PS::NPToolkit::Services::MeshConfigAgent",
+    pscheduler => "perfSONAR_PS::NPToolkit::Services::PScheduler",
     yum_cron => "perfSONAR_PS::NPToolkit::Services::YumCron",
     iperf3 => "perfSONAR_PS::NPToolkit::Services::iperf3",
 );

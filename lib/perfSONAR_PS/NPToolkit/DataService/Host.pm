@@ -6,7 +6,6 @@ use warnings;
 
 use POSIX;
 
-use Sys::MemInfo qw(totalmem);
 use Sys::Hostname;
 
 use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_counters get_interface_hostnames get_interface_mac get_dmi_info);
@@ -370,7 +369,7 @@ sub get_details {
 
     # round to nearest GB
     # but LS rounds to MB so may want to changes
-    $status->{host_memory} = int((&totalmem()/(1024*1024*1024) + .5));
+    $status->{host_memory} = floor(get_health_info()->{memstats}->{memtotal}/(1024*1024));
 
     # get OS info
     my $os_info = get_operating_system_info();
@@ -473,30 +472,9 @@ sub get_services {
             max_port => 65535,
         };
     }
-
-    my $owamp = get_service_object("owamp");
-    my $bwctl = get_service_object("bwctl");
-    my $npad = get_service_object("npad");
-    my $ndt = get_service_object("ndt");
-    my $regular_testing = get_service_object("regular_testing");
-
-    my @service_names = qw(owamp bwctl regular_testing esmond);
-
-    #print $npad->is_installed();
-
-    #if($npad->is_installed()){
-        push @service_names, "npad";
-        #}
-
-        #if($ndt->is_installed()){
-        push @service_names, "ndt";
-        #}
-
-
-    my %services = ();
-
     
-
+    my @service_names = qw(owamp bwctl meshconfig_agent pscheduler esmond ndt npad lsregistration);
+    my %services = ();
     foreach my $service_name ( @service_names ) {
         my $service = get_service_object($service_name);
 
@@ -530,9 +508,12 @@ sub get_services {
         }
 
         my $enabled = (not $service->disabled) || 0;
-
+        
+        my $display_name = $service_name;
+        $display_name =~ s/_/-/g;
+        
         my %service_info = ();
-        $service_info{"name"}          = $service_name;
+        $service_info{"name"}          = $display_name;
         $service_info{"enabled"}       = $enabled;
         $service_info{"is_running"}    = $is_running_output;
         $service_info{"is_installed"}  = $is_installed if (defined $is_installed);
@@ -552,7 +533,7 @@ sub get_services {
     }
 
 
-    my @services = values %services;
+    my @services = sort {$a->{name} cmp $b->{name}} values %services;
 
     return {'services', \@services};
 }

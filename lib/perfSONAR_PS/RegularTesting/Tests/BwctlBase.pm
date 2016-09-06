@@ -21,6 +21,7 @@ use perfSONAR_PS::RegularTesting::Results::Endpoint;
 use perfSONAR_PS::RegularTesting::Utils qw(choose_endpoint_address parse_target);
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner;
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner::Cmd;
+use perfSONAR_PS::Utils::DNS qw(discover_source_address);
 use perfSONAR_PS::Utils::Host qw(get_interface_addresses_by_type);
 use Moose;
 
@@ -387,12 +388,11 @@ override 'to_pscheduler' => sub {
     #build tests
     foreach my $individual_test ($self->get_individual_tests({ test => $test })) {
         my $parsed_target = parse_target(target=>$individual_test->{target}->address());
-        my $parsed_src = parse_target(target=>$individual_test->{source});
-        my $parsed_dst = parse_target(target=>$individual_test->{destination});
         
         #determine local address which is only complicated if interface specified
         my ($local_address, $source, $destination);
         if($interface_ips){
+            #interface was specified
             my ($choose_status, $choose_res) = choose_endpoint_address(
                                                         ifname => $test->local_interface,
                                                         interface_ips => $interface_ips, 
@@ -409,12 +409,27 @@ override 'to_pscheduler' => sub {
         }
         
         #now determine source and destination - again only complicated by interface names
+        my $parsed_src = parse_target(target=>$individual_test->{source});
+        my $parsed_dst = parse_target(target=>$individual_test->{destination});
         if($individual_test->{local_destination}){
-            $local_address = $parsed_dst->{address} unless($local_address);
+            #we always need to specify a dest, as otherwise remote won't know where to go
+            if(!$local_address && $parsed_dst->{address}){
+                #no interface given, but local address was explicitly given
+                $local_address = $parsed_dst->{address} unless($local_address);
+            }elsif(!$local_address){
+                #no interface or address given, try to get the routing tables to tell us
+                $local_address = discover_source_address(address => $parsed_target->{address});
+                if(!$local_address){
+                    $logger->error("Unable to determine local address for test where local side is destination from " . $parsed_target->{address} . ", skipping test.");
+                    next;
+                }
+            }
             $source = $parsed_src->{address};
             $destination = $local_address;
         }else{
             $local_address = $parsed_src->{address} unless($local_address);
+            #always set source so we don't end up with 127.0.0.1
+            $local_address = discover_source_address(address => $parsed_target->{address}) unless($local_address);
             $source = $local_address;
             $destination = $parsed_dst->{address};
         }
@@ -435,12 +450,12 @@ override 'to_pscheduler' => sub {
         # add archives
         if($archive_map->{$self->pscheduler_archive_type()}){
             foreach my $psc_ma(@{$archive_map->{$self->pscheduler_archive_type()}}){
-                $psc_task->add_archive($psc_ma);
+                $psc_task->add_archive($psc_ma->to_pscheduler(local_address => $local_address));
             }
         }
         if($test->measurement_archives()){
             foreach my $ma(@{$test->measurement_archives()}){
-                $psc_task->add_archive($ma->to_pscheduler());
+                $psc_task->add_archive($ma->to_pscheduler(local_address => $local_address));
             }
         }
         #optimization that pre-fetches interval
