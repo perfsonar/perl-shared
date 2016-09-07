@@ -185,7 +185,7 @@ override 'build_pscheduler_task' => sub {
     #TODO: Support for more scheduling params
     if ($schedule->type eq "regular_intervals") {
         $psc_task->schedule_repeat('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
-        $psc_task->schedule_randslip($schedule->random_start_percentage) if(defined $schedule->random_start_percentage);
+        $psc_task->schedule_randslip($schedule->random_start_percentage/100.0) if(defined $schedule->random_start_percentage);
     }else{
         $logger->warning("Schedule type " . $schedule->type . " not currently supported. Skipping test.");
         return;
