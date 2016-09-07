@@ -6,7 +6,6 @@ use warnings;
 
 use POSIX;
 
-use Sys::MemInfo qw(totalmem);
 use Sys::Hostname;
 
 use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_counters get_interface_hostnames get_interface_mac get_dmi_info);
@@ -370,7 +369,7 @@ sub get_details {
 
     # round to nearest GB
     # but LS rounds to MB so may want to changes
-    $status->{host_memory} = int((&totalmem()/(1024*1024*1024) + .5));
+    $status->{host_memory} = floor(get_health_info()->{memstats}->{memtotal}/(1024*1024));
 
     # get OS info
     my $os_info = get_operating_system_info();
