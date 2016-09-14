@@ -486,6 +486,8 @@ override 'to_pscheduler' => sub {
         }
         $psc_test_spec->{'ip-version'} = 4 if($force_ipv4);
         $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
+        #set durations so powstream does not run forever
+        $psc_test_spec->{'duration'} = 'PT' . $task_manager->new_task_min_ttl() . 'S';
         $psc_task->test_spec($psc_test_spec);
         
         #add archives
