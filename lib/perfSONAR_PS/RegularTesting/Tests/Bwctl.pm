@@ -184,7 +184,7 @@ override 'build_pscheduler_task' => sub {
     #"cpu-affinity":    { "$ref": "#/pScheduler/String" }
     $psc_task->test_type('throughput');
     $psc_test_spec->{'source'} = $source if($source);
-    $psc_test_spec->{'destination'} = $destination;
+    $psc_test_spec->{'dest'} = $destination;
     if($test->parameters->tool){
         my @tools = split ',', $test->parameters->tool;
         foreach my $tool(@tools){
@@ -209,8 +209,8 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
     $psc_test_spec->{'parallel'} = int($test_parameters->streams) if $test_parameters->streams;
     $psc_test_spec->{'window-size'} = int($test_parameters->window_size) if $test_parameters->window_size;
-    $psc_test_spec->{'force-ipv4'} = JSON::true if($force_ipv4);
-    $psc_test_spec->{'force-ipv6'} = JSON::true if($force_ipv6);
+    $psc_test_spec->{'ip-version'} = 4 if($force_ipv4);
+    $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
     $psc_task->test_spec($psc_test_spec);
     #TODO: Support for more scheduling params
     if ($schedule->type eq "regular_intervals") {
