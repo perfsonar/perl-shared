@@ -204,7 +204,7 @@ override 'build_pscheduler_task' => sub {
         $psc_test_spec->{'bandwidth'} = int($test_parameters->udp_bandwidth) if $test_parameters->udp_bandwidth;
     }       
     $psc_test_spec->{'duration'} = "PT" . $test_parameters->duration . "S" if $test_parameters->duration;
-    $psc_test_spec->{'omit'} = int($test_parameters->omit_interval) if $test_parameters->omit_interval;
+    $psc_test_spec->{'omit'} = "PT" . $test_parameters->omit_interval . "S" if $test_parameters->omit_interval;
     $psc_test_spec->{'buffer-length'} = int($test_parameters->buffer_length)  if $test_parameters->buffer_length;
     $psc_test_spec->{'tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
     $psc_test_spec->{'parallel'} = int($test_parameters->streams) if $test_parameters->streams;
