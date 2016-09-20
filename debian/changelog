@@ -1,10 +1,11 @@
-libperfsonar-perl (4.0~3.rc1-1) perfsonar-jessie-staging; urgency=low
+libperfsonar-perl (4.0~3.rc1-2) perfsonar-jessie-staging; urgency=low
 
   * New upstream version.
   * Creating libperfsonar-pscheduler-perl package.
   * Removing libsys-meminfo-perl dependency.
+  * Adding libgeo-ip-perl dependency.
 
- -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Sat, 17 Sep 2016 16:15:46 +0000
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 20 Sep 2016 21:47:32 +0000
 
 libperfsonar-perl (3.5.1.6-1) perfsonar-jessie-release; urgency=low
 

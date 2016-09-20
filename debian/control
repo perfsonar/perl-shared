@@ -3,7 +3,7 @@ Section: perl
 Priority: extra
 Maintainer: Valentin Vidic <Valentin.Vidic@CARNet.hr>
 Build-Depends: debhelper (>= 9.0.0), perl
-Standards-Version: 3.9.3
+Standards-Version: 3.9.6
 Homepage: http://www.perfsonar.net
 Vcs-Git: https://github.com/perfsonar/perl-shared.git
 Vcs-Browser: https://github.com/perfsonar/perl-shared/tree/debian/wheezy
@@ -21,7 +21,7 @@ Depends: ${misc:Depends}, ${perl:Depends}, perl, liblog-log4perl-perl,
  libwww-perl, libmoose-perl, libnet-ip-perl,
  libnet-traceroute-perl, libparams-validate-perl, libstatistics-descriptive-perl,
  liburi-perl, librpc-xml-perl, libnet-ntp-perl, libtemplate-perl, libdpkg-perl,
- libsys-statistics-linux-perl
+ libsys-statistics-linux-perl, libgeo-ip-perl
 Description: perfSONAR common perl libraries
  The perfSONAR perl library provides all common perl modules for all
  perfSONAR related services.
