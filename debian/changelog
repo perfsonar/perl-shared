@@ -1,8 +1,8 @@
-libperfsonar-perl (4.0~3.rc1-1) perfsonar-wheezy-staging; urgency=low
+libperfsonar-perl (4.0~3.rc1-1~bpo70+1) perfsonar-wheezy-staging; urgency=low
 
   * Backport to Wheezy.
 
- -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Sat, 17 Sep 2016 16:20:01 +0000
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 20 Sep 2016 19:49:49 +0000
 
 libperfsonar-perl (4.0~3.rc1-1) perfsonar-jessie-staging; urgency=low
 
