@@ -384,7 +384,7 @@ sub _read_json_file {
         local $/; #enable perl to read an entire file at once
         open( my $json_fh, '<', $json_file ) or die("Unable to open task file $json_file: $@");
         my $json_text   = <$json_fh>;
-        $json= decode_json( $json_text )
+        eval{ $json= decode_json( $json_text ) };
     }
         
     return $json;
