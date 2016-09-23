@@ -81,6 +81,7 @@ sub init {
     
     #build list of existing tasks
     foreach my $psc_url(keys %{$self->leads()}){
+        print "Getting task list from $psc_url\n" if($self->debug());
         #Query lead
         my $psc_lead = $self->leads()->{$psc_url};
         my $existing_task_map = {};
@@ -90,7 +91,12 @@ sub init {
         $psc_filters->reference_param("created-by", $self->created_by());
         my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters);
         my $existing_tasks = $psc_client->get_tasks();
-        if($psc_client->error()){
+        if($existing_tasks && @{$existing_tasks} > 0 && $psc_client->error()){
+            #there was an error getting an individual task
+             print "Error fetching an individual task, but was able to get list: " .  $psc_client->error() if($self->debug());
+        }elsif($psc_client->error()){
+            #there was an error getting the entire list
+            print "Error getting task list from $psc_url: " . $psc_client->error() . "\n" if($self->debug());
             $psc_lead->{'error_time'} = time; 
             push @{$self->errors()}, "Problem getting existing tests from pScheduler lead $psc_url: ".$psc_client->error();
             next;
@@ -98,6 +104,7 @@ sub init {
         #Add to existing task map
         foreach my $existing_task(@{$existing_tasks}){
             next unless($existing_task->detail_enabled()); #skip disabled tests
+            $self->_print_task($existing_task) if($self->debug());
             #make an array since could have more than one test with same checksum
             $self->existing_task_map()->{$existing_task->checksum()} = {} unless($self->existing_task_map()->{$existing_task->checksum()});
             $self->existing_task_map()->{$existing_task->checksum()}->{$existing_task->tool()} = {} unless($self->existing_task_map()->{$existing_task->checksum()}->{$existing_task->tool()});

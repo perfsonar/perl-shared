@@ -75,7 +75,7 @@ sub get_tasks() {
         my $task = $self->get_task($task_uuid);
         unless($task){
             #there was an error
-            return;
+            next;
         }
         push @tasks, $task;
     }
