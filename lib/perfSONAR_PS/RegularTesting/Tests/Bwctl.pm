@@ -27,6 +27,7 @@ has 'udp_bandwidth' => (is => 'rw', isa => 'Int');
 has 'buffer_length' => (is => 'rw', isa => 'Int');
 has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
 has 'window_size'   => (is => 'rw', isa => 'Int');
+has 'zero_copy' => (is => 'rw', isa => 'Bool', default => 0);
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -65,6 +66,7 @@ override 'build_cmd' => sub {
     push @cmd, ( '-O', $test_parameters->omit_interval ) if $test_parameters->omit_interval;
     push @cmd, ( '-l', $test_parameters->buffer_length ) if $test_parameters->buffer_length;
     push @cmd, ( '-w', $test_parameters->window_size ) if $test_parameters->window_size;
+    push @cmd, ( '-Z', $test_parameters->zero_copy ) if $test_parameters->zero_copy;
 
     # Set a default reporting interval
     push @cmd, ( '-i', '1' );
@@ -106,6 +108,7 @@ override 'build_results' => sub {
 
     $results->protocol($protocol);
     $results->streams($test_parameters->streams);
+    $results->zero_copy($test_parameters->zero_copy);
     $results->time_duration($test_parameters->duration);
     $results->bandwidth_limit($test_parameters->udp_bandwidth) if $test_parameters->udp_bandwidth;
     $results->buffer_length($test_parameters->buffer_length) if $test_parameters->buffer_length;
@@ -179,7 +182,7 @@ override 'build_pscheduler_task' => sub {
     #"dynamic-window-size":    { "$ref": "#/pScheduler/Cardinal" },
     #"no-delay":    { "$ref": "#/pScheduler/Boolean" },
     #"congestion":    { "$ref": "#/pScheduler/String" },
-    #"zero-copy":    { "$ref": "#/pScheduler/Boolean" },
+    #"zero-copy":    { "$ref": "#/pScheduler/Boolean" }, ### called it zero_copy in test parameters
     #"flow-label":    { "$ref": "#/pScheduler/String" },
     #"cpu-affinity":    { "$ref": "#/pScheduler/String" }
     $psc_task->test_type('throughput');
@@ -209,6 +212,7 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
     $psc_test_spec->{'parallel'} = int($test_parameters->streams) if $test_parameters->streams;
     $psc_test_spec->{'window-size'} = int($test_parameters->window_size) if $test_parameters->window_size;
+    $psc_test_spec->{'zero-copy'} = int($test_parameters->zero_copy) if $test_parameters->zero_copy;
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4);
     $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
     $psc_task->test_spec($psc_test_spec);
