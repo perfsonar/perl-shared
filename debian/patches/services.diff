@@ -23,7 +23,7 @@
 -    $conf{package_names} = [ "httpd" ] unless $conf{package_names};
 +    $conf{init_script} = "apache2" unless $conf{init_script};
 +    $conf{process_names} = "apache2" unless $conf{process_names};
-+    $conf{pid_files} = "/var/run/apache2.pid" unless $conf{pid_files};
++    $conf{pid_files} = "/run/apache2/apache2.pid" unless $conf{pid_files};
 +    $conf{package_names} = [ "apache2" ] unless $conf{package_names};
  
      $self->SUPER::init( %conf );
