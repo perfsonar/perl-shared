@@ -455,7 +455,7 @@ sub save {
 
     my ($status, $res) = save_file( { file => $self->{CONFIG_FILE}, content => $content } );
     if ($status == -1) {
-        return (-1, $res);
+        return -1;
     }
 
     if ($parameters->{restart_services}) {
