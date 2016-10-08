@@ -58,7 +58,7 @@ sub save_file {
 
     ($status, $res) = $client->saveFile({ filename => $file, content => $content });
     if ($status != 0) {
-        return -1;
+        return (-1, $res);
     }
 
     return 0;
