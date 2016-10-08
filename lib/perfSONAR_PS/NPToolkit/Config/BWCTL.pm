@@ -120,18 +120,18 @@ sub save {
 
     my $bwctld_conf_output = join( "\n", @{$res} );
 
-    $res = save_file( { file => $self->{BWCTLD_LIMITS_FILE}, content => $bwctld_limits_output } );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{BWCTLD_LIMITS_FILE}, content => $bwctld_limits_output } );
+    if ( $status == -1 ) {
         return (-1, "Problem saving limits file: ".$self->{BWCTLD_LIMITS_FILE});
     }
 
-    $res = save_file( { file => $self->{BWCTLD_KEYS_FILE}, content => $bwctld_keys_output } );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{BWCTLD_KEYS_FILE}, content => $bwctld_keys_output } );
+    if ( $status == -1 ) {
         return (-1, "Problem saving keys file");
     }
 
-    $res = save_file( { file => $self->{BWCTLD_CONF_FILE}, content => $bwctld_conf_output } );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{BWCTLD_CONF_FILE}, content => $bwctld_conf_output } );
+    if ( $status == -1 ) {
         return (-1, "Problem saving conf file");
     }
     

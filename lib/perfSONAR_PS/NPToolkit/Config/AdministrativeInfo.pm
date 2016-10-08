@@ -71,10 +71,10 @@ sub save {
 
     my $administrative_info_output = $self->generate_administrative_info_file();
 
-    my $res;
+    my ($status, $res);
 
-    $res = save_file( { file => $self->{SITE_INFO_FILE}, content => $administrative_info_output } );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{SITE_INFO_FILE}, content => $administrative_info_output } );
+    if ( $status == -1 ) {
         return (-1, "Problem saving administrative information");
     }
 

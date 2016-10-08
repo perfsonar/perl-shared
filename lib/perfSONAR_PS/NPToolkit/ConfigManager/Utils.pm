@@ -53,7 +53,7 @@ sub save_file {
     my $client = perfSONAR_PS::NPToolkit::ConfigManager::ConfigClient->new();
     ($status, $res) = $client->init({ url => $default_url });
     if ($status != 0) {
-        return -1;
+        return (-1, $res);
     }
 
     ($status, $res) = $client->saveFile({ filename => $file, content => $content });

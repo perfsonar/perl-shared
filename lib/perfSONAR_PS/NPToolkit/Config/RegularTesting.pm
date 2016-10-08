@@ -111,8 +111,8 @@ sub save {
 
     my $local_regular_testing_config_output = $res;
 
-    $res = save_file( { file => $self->{REGULAR_TESTING_CONFIG_FILE}, content => $local_regular_testing_config_output } );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{REGULAR_TESTING_CONFIG_FILE}, content => $local_regular_testing_config_output } );
+    if ( $status == -1 ) {
         return ( -1, "Couldn't save Regular Testing configuration" );
     }
 
