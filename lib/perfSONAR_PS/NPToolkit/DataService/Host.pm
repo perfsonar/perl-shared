@@ -367,9 +367,8 @@ sub get_details {
     my $ntp = get_service_object("ntp");
     $status->{ntp}->{synchronized} = $ntp->is_synced();
 
-    # round to nearest GB
-    # but LS rounds to MB so may want to changes
-    $status->{host_memory} = floor(get_health_info()->{memstats}->{memtotal}/(1024*1024));
+    # round to nearest GB (LS rounds to MB)
+    $status->{host_memory} = int(get_health_info()->{memstats}->{memtotal}/1024/1024 + .5);
 
     # get OS info
     my $os_info = get_operating_system_info();
