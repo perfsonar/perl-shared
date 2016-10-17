@@ -50,7 +50,7 @@ Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
  libdatetime-perl, libdatetime-format-iso8601-perl, libdbi-perl,
  libhash-merge-perl, libwww-perl, libio-socket-ssl-perl, libjson-perl,
  liblog-log4perl-perl, libmoose-perl, libnet-traceroute-perl, libnet-ip-perl,
- libparams-validate-perl
+ libparams-validate-perl, libperfsonar-pscheduler-perl
 Description: perfSONAR perl libraries for regular testing
  Client libraries for perfSONAR's regular testing service
 
