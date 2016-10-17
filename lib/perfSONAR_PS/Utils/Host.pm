@@ -603,15 +603,16 @@ sub get_processor_info {
 sub get_dmi_info {
     my %dmiinfo = ();
     my @dmi_vars = ('sys_vendor', 'product_name');
-    my @vm_prod_patterns = ("^VMware", "^VirtualBox", , "^KVM", '^Virtual Machine$');
+    my @vm_vendor_patterns = ("^QEMU");
+    my @vm_prod_patterns = ("^VMware", "^VirtualBox", , "^KVM", '^Virtual Machine$', "^OpenStack");
     
-    foreach my $dmi_var(@dmi_vars){
-        #dmidecode requires root, so access files instead
+    foreach my $dmi_var(@dmi_vars) {
+        # dmidecode requires root, so access files instead
         my $dmi_path = "/sys/devices/virtual/dmi/id/$dmi_var";
         my @dmidecode = `cat $dmi_path` if -f $dmi_path;
-        unless($?){
-            #should just be one line
-            foreach my $line(@dmidecode){
+        unless($?) {
+            # Should just be one line
+            foreach my $line(@dmidecode) {
                 chomp $line ;
                 $dmiinfo{_sanitize($dmi_var)} = _sanitize($line);
                 last;
@@ -619,13 +620,25 @@ sub get_dmi_info {
         }
     }
     
-    #figure out if this is a VM
-    $dmiinfo{'is_virtual_machine'} = 0; #0 means unknown
-    if( exists $dmiinfo{'product_name'} ){
-        foreach my $vm_prod_pattern(@vm_prod_patterns){
-            $dmiinfo{'is_virtual_machine'} = 1 if($dmiinfo{'product_name'} =~ /$vm_prod_pattern/);
+    # Figure out if this is a VM
+    $dmiinfo{'is_virtual_machine'} = 0; # 0 means unknown
+    if (exists $dmiinfo{'sys_vendor'}) {
+        foreach my $vm_vendor_pattern(@vm_vendor_patterns) {
+            if ($dmiinfo{'sys_vendor'} =~ /$vm_vendor_pattern/) {
+                $dmiinfo{'is_virtual_machine'} = 1;
+                last;
+            }
         }
-    } else {
+    }
+    if (!$dmiinfo{'is_virtual_machine'} and exists $dmiinfo{'product_name'}) {
+        foreach my $vm_prod_pattern(@vm_prod_patterns) {
+            if ($dmiinfo{'product_name'} =~ /$vm_prod_pattern/) {
+                $dmiinfo{'is_virtual_machine'} = 1;
+                last;
+            }
+        }
+    }
+    if (!$dmiinfo{'is_virtual_machine'}) {
         # Check if we're on a Xen guest
         my $dmesg_path = "/var/log/dmesg";
         my $xenboot = system('grep -q "Booting paravirtualized kernel on Xen" ' . $dmesg_path) if -f $dmesg_path;
