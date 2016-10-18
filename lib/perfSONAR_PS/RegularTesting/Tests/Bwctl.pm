@@ -28,7 +28,17 @@ has 'buffer_length' => (is => 'rw', isa => 'Int');
 has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
 has 'window_size'   => (is => 'rw', isa => 'Int');
 has 'zero_copy' => (is => 'rw', isa => 'Bool', default => 0);
+#new pscheduler parameters
+has 'tcp_bandwidth' => (is => 'rw', isa => 'Int');
+has 'mss' => (is => 'rw', isa => 'Int');
+has 'dscp' => (is => 'rw', isa => 'Int');
+has 'dynamic_window_size'   => (is => 'rw', isa => 'Int');
+has 'no_delay' => (is => 'rw', isa => 'Bool');
+has 'congestion' => (is => 'rw', isa => 'Str');
+has 'flow_label' => (is => 'rw', isa => 'Str');
+has 'cpu_affinity' => (is => 'rw', isa => 'Str');
 
+        
 my $logger = get_logger(__PACKAGE__);
 
 override 'type' => sub { "bwctl" };
@@ -205,7 +215,9 @@ override 'build_pscheduler_task' => sub {
     if($test_parameters->use_udp){
         $psc_test_spec->{'udp'} = JSON::true;
         $psc_test_spec->{'bandwidth'} = int($test_parameters->udp_bandwidth) if $test_parameters->udp_bandwidth;
-    }       
+    }else{
+        $psc_test_spec->{'bandwidth'} = int($test_parameters->tcp_bandwidth) if $test_parameters->tcp_bandwidth;
+    }      
     $psc_test_spec->{'duration'} = "PT" . $test_parameters->duration . "S" if $test_parameters->duration;
     $psc_test_spec->{'omit'} = "PT" . $test_parameters->omit_interval . "S" if $test_parameters->omit_interval;
     $psc_test_spec->{'buffer-length'} = int($test_parameters->buffer_length)  if $test_parameters->buffer_length;
@@ -213,6 +225,14 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'parallel'} = int($test_parameters->streams) if $test_parameters->streams;
     $psc_test_spec->{'window-size'} = int($test_parameters->window_size) if $test_parameters->window_size;
     $psc_test_spec->{'zero-copy'} = int($test_parameters->zero_copy) if $test_parameters->zero_copy;
+    $psc_test_spec->{'mss'} = int($test_parameters->mss) if $test_parameters->mss;
+    $psc_test_spec->{'dscp'} = int($test_parameters->dscp) if $test_parameters->dscp;
+    $psc_test_spec->{'dynamic-window-size'} = int($test_parameters->dynamic_window_size) if $test_parameters->dynamic_window_size;
+    $psc_test_spec->{'no-delay'} = JSON::true if($test_parameters->{no_delay});
+    $psc_test_spec->{'congestion'} = $test_parameters->congestion if $test_parameters->congestion;
+    $psc_test_spec->{'flow-label'} = $test_parameters->flow_label if $test_parameters->flow_label;
+    $psc_test_spec->{'cpu-affinity'} = $test_parameters->cpu_affinity if $test_parameters->cpu_affinity;
+
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4);
     $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
     $psc_task->test_spec($psc_test_spec);

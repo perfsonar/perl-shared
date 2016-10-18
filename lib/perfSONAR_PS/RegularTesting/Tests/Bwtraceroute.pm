@@ -24,7 +24,16 @@ has 'packet_length' => (is => 'rw', isa => 'Int');
 has 'packet_first_ttl' => (is => 'rw', isa => 'Int', );
 has 'packet_max_ttl' => (is => 'rw', isa => 'Int', );
 has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
-
+#new pscheduler fields
+has 'algorithm' => (is => 'rw', isa => 'Str');
+has 'as' => (is => 'rw', isa => 'Bool');
+has 'fragment' => (is => 'rw', isa => 'Bool');
+has 'hostnames' => (is => 'rw', isa => 'Bool');
+has 'probe_type' => (is => 'rw', isa => 'Str');
+has 'queries' => (is => 'rw', isa => 'Int');
+has 'sendwait' => (is => 'rw', isa => 'Int');
+has 'wait' => (is => 'rw', isa => 'Int');
+            
 my $logger = get_logger(__PACKAGE__);
 
 override 'type' => sub { "bwtraceroute" };
@@ -169,17 +178,6 @@ override 'build_pscheduler_task' => sub {
     
     #Test parameters
     my $psc_test_spec = {};
-    #TODO: Support the options below
-    #"algorithm":   { "$ref": "#/local/algorithm" },
-    #"as":          { "$ref": "#/pScheduler/Boolean" },
-    #"dest-port":   { "$ref": "#/pScheduler/IPPort" },
-    #"fragment":    { "$ref": "#/pScheduler/Boolean" },
-    #"hostnames":   { "$ref": "#/pScheduler/Boolean" },
-    #"probe-type":  { "$ref": "#/local/probe-type" },
-    #"queries":     { "$ref": "#/pScheduler/Cardinal" },
-    #"sendwait":    { "$ref": "#/pScheduler/Duration" },
-    #"tos":         { "$ref": "#/pScheduler/Cardinal" },
-    #"wait":        { "$ref": "#/pScheduler/Duration" },
     $psc_task->test_type('trace');
     $psc_test_spec->{'source'} = $source if($source);
     $psc_test_spec->{'dest'} = $destination;
@@ -201,6 +199,15 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'length'} = int($test_parameters->packet_length) if $test_parameters->packet_length;
     $psc_test_spec->{'first-ttl'} = int($test_parameters->packet_first_ttl) if $test_parameters->packet_first_ttl;
     $psc_test_spec->{'hops'} = int($test_parameters->packet_max_ttl) if $test_parameters->packet_max_ttl;
+    $psc_test_spec->{'algorithm'} = $test_parameters->algorithm if $test_parameters->algorithm;
+    $psc_test_spec->{'as'} = JSON::true if $test_parameters->as;
+    $psc_test_spec->{'fragment'} = JSON::true if $test_parameters->fragment;
+    $psc_test_spec->{'hostnames'} = JSON::true if $test_parameters->hostnames;
+    $psc_test_spec->{'probe-type'} = $test_parameters->probe_type if $test_parameters->probe_type;
+    $psc_test_spec->{'queries'} = int($test_parameters->queries) if $test_parameters->queries;
+    $psc_test_spec->{'tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
+    $psc_test_spec->{'sendwait'} = "PT" . $test_parameters->sendwait . "S" if $test_parameters->sendwait;
+    $psc_test_spec->{'wait'} = "PT" . $test_parameters->sendwait . "S" if $test_parameters->sendwait;
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4 );
     $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
     $psc_task->test_spec($psc_test_spec);

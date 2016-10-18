@@ -28,6 +28,12 @@ has 'packet_length' => (is => 'rw', isa => 'Int', default => 1000);
 has 'packet_ttl' => (is => 'rw', isa => 'Int', );
 has 'inter_packet_time' => (is => 'rw', isa => 'Num', default => 1.0);
 has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
+#new pscheduler fields
+has 'flowlabel' => (is => 'rw', isa => 'Int');
+has 'hostnames' => (is => 'rw', isa => 'Bool');
+has 'suppress_loopback' => (is => 'rw', isa => 'Bool');
+has 'deadline' => (is => 'rw', isa => 'Int');
+has 'timeout' => (is => 'rw', isa => 'Int');
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -184,6 +190,11 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'length'} = int($test_parameters->packet_length) if $test_parameters->packet_length;
     $psc_test_spec->{'ttl'} = int($test_parameters->packet_ttl) if $test_parameters->packet_ttl;
     $psc_test_spec->{'interval'} = "PT" . $test_parameters->inter_packet_time  . "S" if $test_parameters->inter_packet_time;
+    $psc_test_spec->{'deadline'} = "PT" . $test_parameters->deadline  . "S" if $test_parameters->deadline;
+    $psc_test_spec->{'timeout'} = "PT" . $test_parameters->timeout  . "S" if $test_parameters->timeout;
+    $psc_test_spec->{'flowlabel'} = int($test_parameters->flowlabel) if $test_parameters->flowlabel;
+    $psc_test_spec->{'hostnames'} = JSON::true if($test_parameters->{hostnames});
+    $psc_test_spec->{'suppress-loopback'} = JSON::true if($test_parameters->{suppress_loopback});
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4 );
     $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
     $psc_task->test_spec($psc_test_spec);
