@@ -363,12 +363,13 @@ sub get_details {
         $toolkit_rpm_version = $config_daemon->package_version;
     }
     $status->{toolkit_rpm_version} = $toolkit_rpm_version;
-
+    
+    # round to nearest GB (LS rounds to MB)
+    # Note: Make sure this is before NTP call because the NTP call breaks sleep
+    $status->{host_memory} = int(get_health_info()->{memstats}->{memtotal}/1024/1024 + .5);
+    
     my $ntp = get_service_object("ntp");
     $status->{ntp}->{synchronized} = $ntp->is_synced();
-
-    # round to nearest GB (LS rounds to MB)
-    $status->{host_memory} = int(get_health_info()->{memstats}->{memtotal}/1024/1024 + .5);
 
     # get OS info
     my $os_info = get_operating_system_info();
