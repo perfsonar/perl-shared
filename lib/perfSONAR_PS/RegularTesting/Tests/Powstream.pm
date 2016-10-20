@@ -44,7 +44,8 @@ has 'packet_length'     => (is => 'rw', isa => 'Int', default => 0);
 has 'inter_packet_time' => (is => 'rw', isa => 'Num', default => 0.1);
 has 'receive_port_range' => (is => 'rw', isa => 'Str');
 has 'log_level'          => (is => 'rw', isa => 'Str');
-
+has 'output_raw'        => (is => 'rw', isa => 'Bool');
+            
 has '_individual_tests' => (is => 'rw', isa => 'ArrayRef[HashRef]');
 has '_runner'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Utils::CmdRunner');
 
@@ -484,6 +485,7 @@ override 'to_pscheduler' => sub {
                 };
             }
         }
+        $psc_test_spec->{'output-raw'} = JSON::true if($test_parameters->{output_raw});
         $psc_test_spec->{'ip-version'} = 4 if($force_ipv4);
         $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
         #set durations so powstream does not run forever

@@ -103,13 +103,13 @@ sub save {
 
     my $owampd_pfs_output = join( "\n", @{$res} );
 
-    $res = save_file( { file => $self->{OWAMPD_LIMITS_FILE}, content => $owampd_limits_output } );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{OWAMPD_LIMITS_FILE}, content => $owampd_limits_output } );
+    if ( $status == -1 ) {
         return (-1, "Problem saving limits file");
     }
 
-    $res = save_file( { file => $self->{OWAMPD_PFS_FILE}, content => $owampd_pfs_output } );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{OWAMPD_PFS_FILE}, content => $owampd_pfs_output } );
+    if ( $status == -1 ) {
         return (-1, "Problem saving pfs file");
     }
 

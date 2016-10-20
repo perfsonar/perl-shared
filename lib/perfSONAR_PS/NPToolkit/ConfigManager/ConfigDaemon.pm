@@ -18,7 +18,7 @@ TBD
 use Net::Server;
 use RPC::XML::Server;
 use Params::Validate qw(:all);
-use Log::Log4perl qw(get_logger :nowarn);
+use Log::Log4perl qw(get_logger);
 use Data::Dumper;
 
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
@@ -49,6 +49,7 @@ TBD
 
 sub init {
     my ( $self, @params ) = @_;
+    $self->{LOGGER}->debug("Initializing ConfigDaemon");
     my $parameters = validate(
         @params,
         {
@@ -124,6 +125,7 @@ sub init {
         $self->{FIREWALL_SCRIPT} = $defaults{firewall_script};
     }
     
+    $self->{LOGGER}->info("ConfigDaemon initialization complete.");
 
     return (0, "");
 }

@@ -84,10 +84,10 @@ sub save {
 
     my $diag_form_html_output = $self->generate_diag_form_html_file();
 
-    my $res;
+    my ($status, $res);
 
-    $res = save_file( { file => $self->{DIAG_FORM_HTML_FILE}, content => $diag_form_html_output } );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{DIAG_FORM_HTML_FILE}, content => $diag_form_html_output } );
+    if ( $status == -1 ) {
         return -1;
     }
 
