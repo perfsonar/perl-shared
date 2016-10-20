@@ -89,7 +89,7 @@
  
      my @ntp_response = split /\n/, $ntp_result;
      
-@@ -672,16 +672,11 @@
+@@ -685,16 +685,11 @@
  }
  
  sub is_auto_updates_on{
@@ -108,7 +108,7 @@
          return 0;
      }
  }
-@@ -745,7 +740,7 @@
+@@ -758,7 +753,7 @@
  sub _call_sysctl {
      my ($var_name) = @_;
  
