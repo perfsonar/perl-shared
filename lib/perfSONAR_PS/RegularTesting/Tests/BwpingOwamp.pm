@@ -24,6 +24,7 @@ has 'tool' => (is => 'rw', isa => 'Str', default => 'owamp');
 has 'packet_count' => (is => 'rw', isa => 'Int', default => 100);
 has 'packet_length' => (is => 'rw', isa => 'Int', default => 1000);
 has 'inter_packet_time' => (is => 'rw', isa => 'Num', default => 0.1);
+has 'output_raw'        => (is => 'rw', isa => 'Bool');
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -180,6 +181,7 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
     $psc_test_spec->{'flip'} = JSON::true if($parameters->{local_destination});
     $psc_test_spec->{'single-participant-mode'} = JSON::true;
+    $psc_test_spec->{'output-raw'} = JSON::true if($test_parameters->{output_raw});
     $psc_task->test_spec($psc_test_spec);
     
     #TODO: Support for more scheduling params
