@@ -77,7 +77,6 @@ sub get_ips {
 
     my %ret_interfaces = ();
 
-    my $is_loopback = 0;
     my $curr_interface;
     my $ifdetails;
     open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
@@ -114,27 +113,41 @@ sub get_ips {
 sub get_ethernet_interfaces {
     # ** Actually gets ALL UP and UNKNOWN interfaces now, including ALL loopbacks! **
     my @ret_interfaces = ();
+    my @loopbacks = ();
 
+    my $curr_interface;
+    my $ifdetails;
     open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
     while ( my $line = <$IP_ADDR> ) {
-        my $ifname;
-        my $ifdetails;
         # detect primary interface line
         if ( $line =~ /^\d+: ([^ ]+?)(@[^ ]+)?: (.+)$/ ) {
-            $ifname = $1;
+            $curr_interface = $1;
             $ifdetails = $3;
             if ( $ifdetails =~ /\bstate (UP|UNKNOWN)/ ) {  
-                push @ret_interfaces, $ifname;
+                if ( $ifdetails =~ /LOOPBACK/ ) {
+                    push @loopbacks, $curr_interface; }
+                else {
+                    push @ret_interfaces, $curr_interface;
+                }
                 next;
             }
         }
-        # Detect any aliases of the last interface added 
+        # Detect and add any aliases of the last interface added  
+        # (This is applicable to ipv4. Assumes the intf name is at the end of the line as primary-name:alias-num.)
         # (/sbin/ip lists the primary and aliases under the primary interface on inet lines)
-        if ( $line =~ /^\s*inet.*\b($ret_interfaces[-1]:\w+)$/ ) {
-            push @ret_interfaces, $1;
+        if ( $line =~ /^\s*inet.*\b($curr_interface:\w+)$/ ) {
+            my $alias = $1;
+            if ( $ifdetails =~ /LOOPBACK/ ) {
+                push @loopbacks, $alias; }
+            else {
+                push @ret_interfaces, $alias;
+            }
         }
     }
     close( $IP_ADDR );
+
+    # add loopbacks to the end of the list
+    push @ret_interfaces, @loopbacks; 
 
     return @ret_interfaces;
 }
