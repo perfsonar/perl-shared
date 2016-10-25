@@ -204,14 +204,14 @@ sub get_interface_speed {
     # you're root.
     my $speed_file = "/sys/class/net/".$interface_name."/speed";
     if (-f $speed_file) {
-        my $raw_speed = `cat $speed_file`;
+        my $raw_speed = `cat $speed_file 2>/dev/null`;
         chomp($raw_speed);
         $speed = $raw_speed * 10**6 if $raw_speed;
     }
 
     unless ($speed) {
         my $ETHTOOL;
-        open( $ETHTOOL, "-|", "/sbin/ethtool $interface_name" ) or return;
+        open( $ETHTOOL, "-|", "/sbin/ethtool $interface_name 2>/dev/null" ) or return;
         while ( <$ETHTOOL> ) {
             if ( /^\s*Speed:\s+(\d+)\s*(\w)/ ) {
                 $speed = $1;
