@@ -3,7 +3,6 @@ package perfSONAR_PS::Utils::Host;
 use strict;
 use warnings;
 
-
 our $VERSION = 3.3;
 
 =head1 NAME
@@ -25,7 +24,7 @@ use Log::Log4perl qw(get_logger);
 
 use Net::Interface qw/mac_bin2hex/;
 use Net::CIDR;
-use Net::IP;
+use Net::IP;  # has ip_is_ipv4 and ip_is_ipv6
 use Data::Validate::IP qw(is_ipv4 is_ipv6);
 use Data::Validate::Domain qw(is_hostname);
 use Data::Dumper;
@@ -66,7 +65,7 @@ our @EXPORT_OK = qw(
 
 =head2 get_ips()
 
-A function that returns the non-loopback IP addresses from a host. The current
+A function that returns the IP addresses from a host. The current  
 implementation parses the output of the /sbin/ip command to look for the
 IP addresses.
 
@@ -80,28 +79,21 @@ sub get_ips {
 
     my $is_loopback = 0;
     my $curr_interface;
+    my $ifdetails;
     open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
-    while ( <$IP_ADDR> ) {
-        if ( /^\d+: ([^ ]+?)(@[^ ]+)?: ([^ ]+)/ ) {
+    while ( my $line = <$IP_ADDR> ) {
+        # detect primary interface line
+        if ( $line =~ /^\d+: ([^ ]+?)(@[^ ]+)?: (.+)$/ ) {
             $curr_interface = $1;
-            if ( $3 =~ /\bLOOPBACK\b/ ) {
-                $is_loopback = 1;
-            }
-            else {
-                $is_loopback = 0;
-            }
+            $ifdetails = $3;
         }
-
-        next if $is_loopback;
-
-        unless ($ret_interfaces{$curr_interface}) {
-            $ret_interfaces{$curr_interface} = [];
+        # parse inet and inet6 lines for addresses. 
+        # To get interface aliases, we must use the name at end of the line. 
+        # inet6 lines don't have an intf name at the end, so ipv6 addresses will always go with the non-alias name.
+        if ( $line =~ /inet (\d+\.\d+\.\d+\.\d+).+scope (global|host) (\S+)/ ) {
+            push @{ $ret_interfaces{$3} }, $1;
         }
-
-        if ( /inet (\d+\.\d+\.\d+\.\d+)/ ) {
-            push @{ $ret_interfaces{$curr_interface} }, $1;
-        }
-        elsif ( m|inet6 ([[:xdigit:]:]+)/\d+ scope global| ) {
+        elsif ( $line =~ /inet6 ([a-fA-F0-9:]+)\/\d+ scope (global|host)/ ) {
             push @{ $ret_interfaces{$curr_interface} }, $1;
         }
     }
@@ -112,7 +104,7 @@ sub get_ips {
     }
     else {
         my @ret_values = ();
-	foreach my $value (values %ret_interfaces) {
+	    foreach my $value (values %ret_interfaces) {
             push @ret_values, @$value;
         }
         return @ret_values;
@@ -120,16 +112,26 @@ sub get_ips {
 }
 
 sub get_ethernet_interfaces {
+    # ** Actually gets ALL UP and UNKNOWN interfaces now, including ALL loopbacks! **
     my @ret_interfaces = ();
 
     open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
-    while ( <$IP_ADDR> ) {
-        if ( /^\d+: ([^ ]+?)(@[^ ]+)?: (.+)$/ ) {
-            my $ifname = $1;
-            my $ifdetails = $3;
-            if ( $ifdetails !~ /\bLOOPBACK\b/ && $ifdetails =~ /\bstate UP\b/) {
+    while ( my $line = <$IP_ADDR> ) {
+        my $ifname;
+        my $ifdetails;
+        # detect primary interface line
+        if ( $line =~ /^\d+: ([^ ]+?)(@[^ ]+)?: (.+)$/ ) {
+            $ifname = $1;
+            $ifdetails = $3;
+            if ( $ifdetails =~ /\bstate (UP|UNKNOWN)/ ) {  
                 push @ret_interfaces, $ifname;
+                next;
             }
+        }
+        # Detect any aliases of the last interface added 
+        # (/sbin/ip lists the primary and aliases under the primary interface on inet lines)
+        if ( $line =~ /^\s*inet.*\b($ret_interfaces[-1]:\w+)$/ ) {
+            push @ret_interfaces, $1;
         }
     }
     close( $IP_ADDR );
@@ -163,9 +165,9 @@ sub get_interface_addresses_by_type {
     my @dns_names;
 
     foreach my $address (@addresses){
-        if (is_ipv4($address)){
+        if (is_ipv4($address)){     
             push @ipv4_addresses, $address
-        }elsif (Net::IP::ip_is_ipv6($address)){ # TODO: double check this. should it be is_ipv6 instead?
+        } elsif (Net::IP::ip_is_ipv6($address)){  # we use both is_ipv6 and ip_is_ipv6 (different packages)??
             push @ipv6_addresses, $address
         }
     }
