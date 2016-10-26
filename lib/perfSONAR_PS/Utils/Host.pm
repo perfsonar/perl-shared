@@ -228,6 +228,11 @@ sub get_interface_speed {
         }
         close( $ETHTOOL );
     }
+
+    unless ($speed) {
+        # That situation can happen inside VM
+        $speed = "unknown";
+    }
  
     return $speed;
 }
