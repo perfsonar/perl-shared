@@ -180,7 +180,6 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4 );
     $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
     $psc_test_spec->{'flip'} = JSON::true if($parameters->{local_destination});
-    $psc_test_spec->{'single-participant-mode'} = JSON::true;
     $psc_test_spec->{'output-raw'} = JSON::true if($test_parameters->{output_raw});
     $psc_task->test_spec($psc_test_spec);
     
