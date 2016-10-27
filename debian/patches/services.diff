@@ -13,7 +13,7 @@
      $conf{package_names} = [ "mysql-server" ] unless $conf{package_names};
 --- a/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
 +++ b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
-@@ -11,10 +11,17 @@
+@@ -11,10 +11,16 @@
      my ( $self, %conf ) = @_;
  
      $conf{description}  = "Apache HTTP Server" unless $conf{description};
@@ -26,10 +26,9 @@
 +    $conf{package_names} = [ "apache2" ] unless $conf{package_names};
 +
 +    unless ($conf{pid_files}) {
-+        if (-d "/run/apache2") {
-+            $conf{pid_files} = "/run/apache2/apache2.pid";
-+        } else {
-+            $conf{pid_files} = "/var/run/apache2.pid";
++        if (-f "/etc/apache2/envvars") {
++            my $pid_file = `bash -c '. /etc/apache2/envvars; echo \$APACHE_PID_FILE'`;
++            $conf{pid_files} = $pid_file if $pid_file;
 +        }
 +    }
  
