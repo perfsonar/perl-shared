@@ -75,7 +75,7 @@
 -    foreach my $line (split('\n', $chkconfig_output)) {
 -        $disabled = 0 if ($line =~ /$curr_runlevel:on/);
 +        my $service = basename($self->{INIT_SCRIPT});
-+        $disabled = 0 if grep /^S\d+$service$/ @links;
++        $disabled = 0 if grep { /^S\d+$service$/ } @links;
      }
  
      return $disabled;
