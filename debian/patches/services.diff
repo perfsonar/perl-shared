@@ -56,32 +56,30 @@
  
  sub new {
      my ( $package ) = @_;
-@@ -188,13 +189,21 @@
-     open(my $stderr, ">&STDERR");
-     open(STDERR, ">", File::Spec->devnull());
+@@ -184,17 +185,12 @@
  
+     my $disabled = 1;
+ 
+-    # turn off stderr
+-    open(my $stderr, ">&STDERR");
+-    open(STDERR, ">", File::Spec->devnull());
+-
 -    my $chkconfig_output = `/sbin/chkconfig --list $self->{INIT_SCRIPT}`;    
-+    my $insserv_output = `/sbin/insserv -s`;
- 
-     # restore stderr
-     open(STDERR, ">&", $stderr);
+-
+-    # restore stderr
+-    open(STDERR, ">&", $stderr);
++    if (opendir(RC, "/etc/rc$curr_runlevel.d")) {
++        my @links = readdir(RC);
++        closedir(RC);
  
 -    foreach my $line (split('\n', $chkconfig_output)) {
 -        $disabled = 0 if ($line =~ /$curr_runlevel:on/);
-+    my $service = basename($self->{INIT_SCRIPT});
-+    foreach my $line (split('\n', $insserv_output)) {
-+        my @status = split(':', $line);
-+
-+        if ($status[0] eq 'S' &&
-+            $status[3] eq $service &&
-+            $status[2] =~ m/$curr_runlevel/)
-+        {
-+            $disabled = 0;
-+        }
++        my $service = basename($self->{INIT_SCRIPT});
++        $disabled = 0 if grep /^S\d+$service$/ @links;
      }
  
      return $disabled;
-@@ -218,9 +227,9 @@
+@@ -218,9 +214,9 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
  
@@ -93,7 +91,7 @@
  
      # restore stderr + stdout
      open(STDERR, ">&", $stderr);
-@@ -247,7 +256,7 @@
+@@ -247,7 +243,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
  
@@ -102,7 +100,7 @@
  
      # restore stderr + stdout
      open(STDERR, ">&", $stderr);
-@@ -274,7 +283,7 @@
+@@ -274,7 +270,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
  
