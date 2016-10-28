@@ -241,6 +241,7 @@ sub get_details {
 
     $status->{toolkit_version} = $version_conf->get_version();
 
+    ## this function now gets all interfaces, not just ethernet
     my @interfaces = get_ethernet_interfaces();
 
     my @interfaceDetails;
@@ -248,10 +249,10 @@ sub get_details {
         my $iface;
         my $addresses = get_interface_addresses_by_type({interface=>$interface});
         $iface = $addresses;    # sets $iface->{ipv4_address} and $iface->{ipv6_address}
-        # get_interface_hostnames() returns a hash (hash-ref) with keys=ip's, values = arrays of hostnames
+        # function get_interface_hostnames() returns a hash (hash-ref) with keys=ip's, values = arrays of hostnames
         my $ipv4_addresses = $addresses->{ipv4_address};  # array-ref
-        my $ipv6_addresses = $addresses->{ipv6_address};
         my $ipv4_hostnames = get_interface_hostnames({interface_addresses=>$ipv4_addresses}); 
+        my $ipv6_addresses = $addresses->{ipv6_address};
         my $ipv6_hostnames = get_interface_hostnames({interface_addresses=>$ipv6_addresses}); 
         $iface->{hostnames} = {%$ipv4_hostnames, %$ipv6_hostnames};
         $iface->{mtu} = get_interface_mtu({interface_name=>$interface});
