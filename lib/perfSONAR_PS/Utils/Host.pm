@@ -3,7 +3,6 @@ package perfSONAR_PS::Utils::Host;
 use strict;
 use warnings;
 
-
 our $VERSION = 3.3;
 
 =head1 NAME
@@ -25,7 +24,7 @@ use Log::Log4perl qw(get_logger);
 
 use Net::Interface qw/mac_bin2hex/;
 use Net::CIDR;
-use Net::IP;
+use Net::IP;  # has ip_is_ipv4 and ip_is_ipv6
 use Data::Validate::IP qw(is_ipv4 is_ipv6);
 use Data::Validate::Domain qw(is_hostname);
 use Data::Dumper;
@@ -66,7 +65,7 @@ our @EXPORT_OK = qw(
 
 =head2 get_ips()
 
-A function that returns the non-loopback IP addresses from a host. The current
+A function that returns the IP addresses from a host. The current  
 implementation parses the output of the /sbin/ip command to look for the
 IP addresses.
 
@@ -78,30 +77,22 @@ sub get_ips {
 
     my %ret_interfaces = ();
 
-    my $is_loopback = 0;
     my $curr_interface;
+    my $ifdetails;
     open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
-    while ( <$IP_ADDR> ) {
-        if ( /^\d+: ([^ ]+?)(@[^ ]+)?: ([^ ]+)/ ) {
+    while ( my $line = <$IP_ADDR> ) {
+        # detect primary interface line
+        if ( $line =~ /^\d+: ([^ ]+?)(@[^ ]+)?: (.+)$/ ) {
             $curr_interface = $1;
-            if ( $3 =~ /\bLOOPBACK\b/ ) {
-                $is_loopback = 1;
-            }
-            else {
-                $is_loopback = 0;
-            }
+            $ifdetails = $3;
         }
-
-        next if $is_loopback;
-
-        unless ($ret_interfaces{$curr_interface}) {
-            $ret_interfaces{$curr_interface} = [];
+        # parse inet and inet6 lines for addresses. 
+        # To get interface aliases, we must use the name at end of the line. 
+        # inet6 lines don't have an intf name at the end, so ipv6 addresses will always go with the non-alias name.
+        if ( $line =~ /inet (\d+\.\d+\.\d+\.\d+).+scope (global|host) (\S+)/ ) {
+            push @{ $ret_interfaces{$3} }, $1;
         }
-
-        if ( /inet (\d+\.\d+\.\d+\.\d+)/ ) {
-            push @{ $ret_interfaces{$curr_interface} }, $1;
-        }
-        elsif ( m|inet6 ([[:xdigit:]:]+)/\d+ scope global| ) {
+        elsif ( $line =~ /inet6 ([a-fA-F0-9:]+)\/\d+ scope (global|host)/ ) {
             push @{ $ret_interfaces{$curr_interface} }, $1;
         }
     }
@@ -112,7 +103,7 @@ sub get_ips {
     }
     else {
         my @ret_values = ();
-	foreach my $value (values %ret_interfaces) {
+	    foreach my $value (values %ret_interfaces) {
             push @ret_values, @$value;
         }
         return @ret_values;
@@ -120,19 +111,43 @@ sub get_ips {
 }
 
 sub get_ethernet_interfaces {
+    # ** Actually gets ALL UP and UNKNOWN interfaces now, including ALL loopbacks! **
     my @ret_interfaces = ();
+    my @loopbacks = ();
 
+    my $curr_interface;
+    my $ifdetails;
     open( my $IP_ADDR, "-|", "/sbin/ip addr show" ) or return;
-    while ( <$IP_ADDR> ) {
-        if ( /^\d+: ([^ ]+?)(@[^ ]+)?: (.+)$/ ) {
-            my $ifname = $1;
-            my $ifdetails = $3;
-            if ( $ifdetails !~ /\bLOOPBACK\b/ && $ifdetails =~ /\bstate UP\b/) {
-                push @ret_interfaces, $ifname;
+    while ( my $line = <$IP_ADDR> ) {
+        # detect primary interface line
+        if ( $line =~ /^\d+: ([^ ]+?)(@[^ ]+)?: (.+)$/ ) {
+            $curr_interface = $1;
+            $ifdetails = $3;
+            if ( $ifdetails =~ /\bstate (UP|UNKNOWN)/ ) {  
+                if ( $ifdetails =~ /LOOPBACK/ ) {
+                    push @loopbacks, $curr_interface; }
+                else {
+                    push @ret_interfaces, $curr_interface;
+                }
+                next;
+            }
+        }
+        # Detect and add any aliases of the last interface added  
+        # (This is applicable to ipv4. Assumes the intf name is at the end of the line as primary-name:alias-num.)
+        # (/sbin/ip lists the primary and aliases under the primary interface on inet lines)
+        if ( $line =~ /^\s*inet.*\b($curr_interface:\w+)$/ ) {
+            my $alias = $1;
+            if ( $ifdetails =~ /LOOPBACK/ ) {
+                push @loopbacks, $alias; }
+            else {
+                push @ret_interfaces, $alias;
             }
         }
     }
     close( $IP_ADDR );
+
+    # add loopbacks to the end of the list
+    push @ret_interfaces, @loopbacks; 
 
     return @ret_interfaces;
 }
@@ -163,9 +178,9 @@ sub get_interface_addresses_by_type {
     my @dns_names;
 
     foreach my $address (@addresses){
-        if (is_ipv4($address)){
+        if (is_ipv4($address)){     
             push @ipv4_addresses, $address
-        }elsif (Net::IP::ip_is_ipv6($address)){ # TODO: double check this. should it be is_ipv6 instead?
+        } elsif (Net::IP::ip_is_ipv6($address)){  # we use both is_ipv6 and ip_is_ipv6 (different packages)??
             push @ipv6_addresses, $address
         }
     }
@@ -238,7 +253,7 @@ sub get_interface_speed {
 }
 
 sub get_interface_mtu {
-	my $parameters = validate( @_, { interface_name => 1, } );
+    my $parameters = validate( @_, { interface_name => 1, } );
     my $interface_name = $parameters->{interface_name};
     my @all_ifs = Net::Interface->interfaces();
     foreach my $if (@all_ifs){
@@ -249,7 +264,7 @@ sub get_interface_mtu {
 }
 
 sub get_interface_counters {
-	my $parameters = validate( @_, { interface_name => 1, } );
+    my $parameters = validate( @_, { interface_name => 1, } );
     my $interface_name = $parameters->{interface_name};
     my $lxs = Sys::Statistics::Linux->new(
         netstats => 1
@@ -260,7 +275,7 @@ sub get_interface_counters {
 }
 
 sub get_interface_mac {
-	my $parameters = validate( @_, { interface_name => 1, } );
+    my $parameters = validate( @_, { interface_name => 1, } );
     my $interface_name = $parameters->{interface_name};
     my @all_ifs = Net::Interface->interfaces();
 
@@ -294,7 +309,7 @@ sub discover_primary_address {
 
     my $ips_by_iface = {};
 
-    if ( $interface ) {
+    if ($interface) {
         my @ips = get_interface_addresses( { interface => $interface } );
         if(@ips){
             $ips_by_iface = { $interface => \@ips };   
@@ -320,7 +335,7 @@ sub discover_primary_address {
     my $interface_mac;
     
     my @all_ips = ();
-    foreach my $iface ( keys %$ips_by_iface ) {
+    foreach my $iface (keys %$ips_by_iface) {
         foreach my $ip (@{ $ips_by_iface->{$iface} }) {
             push @all_ips, $ip;
         }
@@ -329,27 +344,27 @@ sub discover_primary_address {
     my $reverse_dns_mapping = reverse_dns_multi({ addresses => \@all_ips, timeout => 10 }); # don't wait more than 10 seconds.
 
     # Try to find an address with an ipv4 address with that resolves to something
-    unless ( $disable_ipv4_reverse_lookup) {
-        foreach my $iface ( keys %$ips_by_iface ) {
-            foreach my $ip ( @{ $ips_by_iface->{$iface } } ) {
-                my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16' );
+    unless ($disable_ipv4_reverse_lookup) {
+        foreach my $iface (keys %$ips_by_iface) {
+            foreach my $ip (@{ $ips_by_iface->{$iface } }) {
+                my @private_list = ('10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16');
 
-                next unless (is_ipv4( $ip ));
-                $logger->debug("$ip is ipv4");
+                next unless (is_ipv4($ip));
+                $logger->debug("$ip is IPv4");
                 next unless (defined $reverse_dns_mapping->{$ip} and $reverse_dns_mapping->{$ip}->[0]);
                 $logger->debug("$ip has a DNS name: ". $reverse_dns_mapping->{$ip}->[0]);
-                next unless ($allow_rfc1918 or not Net::CIDR::cidrlookup( $ip, @private_list ));
+                next unless ($allow_rfc1918 or not Net::CIDR::cidrlookup($ip, @private_list));
                 $logger->debug("$ip isn't private or we're okay with private addresses");
 
                 my $dns_name = $reverse_dns_mapping->{$ip}->[0];
 
-                unless ( $chosen_address ) { 
+                unless ($chosen_address) { 
                     $chosen_dns_name = $dns_name;
                     $chosen_address = $ip;
                     $chosen_interface = $iface;
                 }
     
-                unless ( $ipv4_address ) {
+                unless ($ipv4_address) {
                     $ipv4_dns_name = $dns_name;
                     $ipv4_address   = $ip;
                     $ipv4_interface = $iface;
