@@ -34,7 +34,7 @@ sub init {
     									 tcpMaxBufferSend =>0, tcpAutoMaxBufferSend =>0, 
     									 tcpMaxBufferRecv =>0, tcpAutoMaxBufferRecv =>0, 
     									 tcpMaxBacklog =>0, tcpMaxAchievable =>0,
-    									 vm=> 0, manufacturer=> 0,, productName=> 0, administrators=>0, domains =>0,
+    									 vm=> 0, manufacturer=> 0, productName=> 0, administrators=>0, domains =>0,
     									 siteName => 0 , city => 0, region => 0,
     									 country => 0, zipCode => 0, latitude =>0, longitude => 0 } );
     
