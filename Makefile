@@ -2,7 +2,7 @@ PACKAGE=libperfsonar
 ROOTPATH=/usr/lib/perfsonar
 CONFIGPATH=/etc/perfsonar
 VERSION=4.0
-RELEASE=0.5.rc1
+RELEASE=0.6.rc2
 
 default:
 	@echo No need to build the package. Just run \"make install\"
