@@ -333,9 +333,9 @@ sub discover_primary_address {
     my $interface_mtu;
     my $interface_counters;
     my $interface_mac;
-    
     my @all_ips = ();
     foreach my $iface ( keys %$ips_by_iface ) {
+        next if $iface eq 'lo';
         foreach my $ip (@{ $ips_by_iface->{$iface} }) {
             push @all_ips, $ip;
         }
@@ -347,7 +347,7 @@ sub discover_primary_address {
     unless ( $disable_ipv4_reverse_lookup) {
         foreach my $iface ( keys %$ips_by_iface ) {
             foreach my $ip ( @{ $ips_by_iface->{$iface } } ) {
-                my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16' );
+                my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.0/8' );
 
                 next unless (is_ipv4( $ip ));
                 $logger->debug("$ip is ipv4");
@@ -408,7 +408,7 @@ sub discover_primary_address {
         foreach my $iface ( keys %$ips_by_iface ) {
             foreach my $ip ( @{ $ips_by_iface->{$iface } } ) {
 
-                my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16' );
+                my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.0/8' );
 
                 next unless (is_ipv4( $ip ));
                 $logger->debug("$ip is IPv4");
