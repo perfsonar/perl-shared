@@ -333,9 +333,9 @@ sub discover_primary_address {
     my $interface_mtu;
     my $interface_counters;
     my $interface_mac;
-    
     my @all_ips = ();
-    foreach my $iface (keys %$ips_by_iface) {
+    foreach my $iface ( keys %$ips_by_iface ) {
+        next if $iface eq 'lo';
         foreach my $ip (@{ $ips_by_iface->{$iface} }) {
             push @all_ips, $ip;
         }
@@ -344,10 +344,10 @@ sub discover_primary_address {
     my $reverse_dns_mapping = reverse_dns_multi({ addresses => \@all_ips, timeout => 10 }); # don't wait more than 10 seconds.
 
     # Try to find an address with an ipv4 address with that resolves to something
-    unless ($disable_ipv4_reverse_lookup) {
-        foreach my $iface (keys %$ips_by_iface) {
-            foreach my $ip (@{ $ips_by_iface->{$iface } }) {
-                my @private_list = ('10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16');
+    unless ( $disable_ipv4_reverse_lookup) {
+        foreach my $iface ( keys %$ips_by_iface ) {
+            foreach my $ip ( @{ $ips_by_iface->{$iface } } ) {
+                my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.0/8' );
 
                 next unless (is_ipv4($ip));
                 $logger->debug("$ip is IPv4");
@@ -383,10 +383,10 @@ sub discover_primary_address {
                 $logger->debug("$ip is IPv6");
                 next unless (defined $reverse_dns_mapping->{$ip} and $reverse_dns_mapping->{$ip}->[0]);
                 $logger->debug("$ip has a DNS name: ". $reverse_dns_mapping->{$ip}->[0]);
-    
+
                 my $dns_name = $reverse_dns_mapping->{$ip}->[0];
-    
-                unless ( $chosen_address ) { 
+
+                unless ( $chosen_address ) {
                     $chosen_dns_name = $dns_name;
                     $chosen_address = $ip;
                     $chosen_interface = $iface;
@@ -408,7 +408,7 @@ sub discover_primary_address {
         foreach my $iface ( keys %$ips_by_iface ) {
             foreach my $ip ( @{ $ips_by_iface->{$iface } } ) {
 
-                my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16' );
+                my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.0/8' );
 
                 next unless (is_ipv4( $ip ));
                 $logger->debug("$ip is IPv4");
@@ -422,7 +422,7 @@ sub discover_primary_address {
                 }
 
                 unless ( $ipv4_address ) {
-                    
+
                     $ipv4_dns_name = "";
                     $ipv4_address   = $ip;
                     $ipv4_interface = $iface;
