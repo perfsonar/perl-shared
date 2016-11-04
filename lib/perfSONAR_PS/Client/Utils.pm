@@ -1,6 +1,7 @@
 package perfSONAR_PS::Client::Utils;
 
 use base 'Exporter';
+use Net::INET6Glue::INET_is_INET6;
 use LWP::UserAgent;
 use HTTP::Request;
 use Params::Validate qw(:all);
