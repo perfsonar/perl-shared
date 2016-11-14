@@ -159,7 +159,7 @@
 -    my $result = `/etc/init.d/yum-cron status`;
 -
 -    if(index($result, $enabled) != -1){
-+    if(-e '/etc/cron-apt/action.d/5-upgrade'){
++    if(-e '/etc/apt/apt.conf.d/60unattended-upgrades-perfsonar'){
          return 1;
 -    }else{
 +    } else {
@@ -177,7 +177,7 @@
      }
 --- a/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
 +++ b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
-@@ -8,40 +8,36 @@
+@@ -8,40 +8,38 @@
  sub init {
      my ( $self, %conf ) = @_;
  
@@ -187,7 +187,7 @@
 -    $conf{pid_files} = "/var/lock/yum-cron.lock/pidfile" unless $conf{pid_files};
 -    $conf{package_names} = [ "yum-cron" ] unless $conf{package_names};
 +    $conf{description}  = "APT Automatic Updates" unless $conf{description};
-+    $conf{package_names} = [ "cron-apt" ] unless $conf{package_names};
++    $conf{package_names} = [ "unattended-upgrades" ] unless $conf{package_names};
  
      $self->SUPER::init( %conf );
  
@@ -197,7 +197,7 @@
 +sub disable_startup {
 +    my ($self) = @_;
 +
-+    unlink '/etc/cron-apt/action.d/5-upgrade';
++    unlink '/etc/apt/apt.conf.d/60unattended-upgrades-perfsonar';
 +}
 +
  sub enable_startup {
@@ -206,7 +206,7 @@
 -    unless ($self->{INIT_SCRIPT}) {
 -	$self->{LOGGER}->error("No init script specified for this service");
 -	return -1;
-+    my $action_file = '/etc/cron-apt/action.d/5-upgrade';
++    my $action_file = '/etc/apt/apt.conf.d/60unattended-upgrades-perfsonar';
 +    my $action_fd;
 +    unless (open($action_fd, '>', $action_file)) {
 +        $self->{LOGGER}->error("Could not opet $action_file: $!");
@@ -226,9 +226,12 @@
 -    # restore stderr + stdout
 -    open(STDERR, ">&", $stderr);
 -    open(STDOUT, ">&", $stdout);
-+    print $action_fd "-q -q dist-upgrade\n";
- 
+-
 -    return $ret;
++    print $action_fd "APT::Periodic::Update-Package-Lists \"1\";\n";
++    print $action_fd "APT::Periodic::Unattended-Upgrade \"1\";\n";
++    print $action_fd "Unattended-Upgrade::Origins-Pattern:: \"origin=perfSONAR\";\n";
++
 +    unless(close($action_fd)) {
 +        $self->{LOGGER}->error("Could not close $action_file: $!");
 +        return -1;
