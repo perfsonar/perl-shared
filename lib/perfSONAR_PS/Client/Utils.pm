@@ -34,18 +34,18 @@ sub send_http_request{
     }
     
     my $ua = LWP::UserAgent->new;
-    $ua->timeout($parameters->{timeout});
+    $ua->timeout($parameters{timeout});
     $ua->env_proxy();
-    unless($parameters->{ca_certificate_file} || $parameters->{ca_certificate_path}){
+    unless($parameters{ca_certificate_file} || $parameters{ca_certificate_path}){
         $ua->ssl_opts(SSL_verify_mode => 0x00);
     }
-    if(defined $parameters->{verify_hostname}){
-        $ua->ssl_opts(verify_hostname => $parameters->verify_hostname);
+    if(defined $parameters{verify_hostname}){
+        $ua->ssl_opts(verify_hostname => $parameters{verify_hostname});
     }else{
         $ua->ssl_opts(verify_hostname => 0);
     }
-    $ua->ssl_opts(SSL_ca_file => $parameters->{ca_certificate_file}) if($parameters->{ca_certificate_file});
-    $ua->ssl_opts(SSL_ca_path => $parameters->{ca_certificate_path}) if($parameters->{ca_certificate_path});
+    $ua->ssl_opts(SSL_ca_file => $parameters{ca_certificate_file}) if($parameters{ca_certificate_file});
+    $ua->ssl_opts(SSL_ca_path => $parameters{ca_certificate_path}) if($parameters{ca_certificate_path});
     push @{ $ua->requests_redirectable }, 'POST';
     push @{ $ua->requests_redirectable }, 'PUT';
     push @{ $ua->requests_redirectable }, 'DELETE';
