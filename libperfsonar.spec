@@ -105,6 +105,7 @@ Requires:		perl(LWP::UserAgent)
 Requires:		perl(LWP::Protocol::https)
 %endif
 Requires:		perl(Mouse)
+Requires:               perl(Net::INET6Glue)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
 Requires:		perl(URI::Split)
