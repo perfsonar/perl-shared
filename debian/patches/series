@@ -3,3 +3,4 @@ IO::Interface::Simple
 services.diff
 math-int64.diff
 ntp-config.diff
+owamp-stop.diff
