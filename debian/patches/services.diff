@@ -235,3 +235,14 @@
  }
  
  1;
+--- a/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
++++ b/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
+@@ -81,7 +81,7 @@
+     open(STDERR, ">", File::Spec->devnull());
+     open(STDOUT, ">", File::Spec->devnull());
+ 
+-    my $shell_cmd = "/sbin/service configure_nic_parameters start";
++    my $shell_cmd = "/usr/sbin/service configure_nic_parameters start";
+ 
+     $self->{LOGGER}->debug($shell_cmd);
+ 
