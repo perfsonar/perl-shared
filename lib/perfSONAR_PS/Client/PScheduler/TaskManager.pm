@@ -35,6 +35,7 @@ has 'task_renewal_fudge_factor'  => (is => 'rw', isa => 'Num', default => 0.0);
 
 has 'new_tasks'           => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PScheduler::Task]', default => sub{ [] });
 has 'existing_task_map'   => (is => 'rw', isa => 'HashRef', default => sub{ {} });
+has 'existing_archives' => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'leads'               => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'errors'              => (is => 'rw', isa => 'ArrayRef', default => sub{ [] });
 has 'deleted_tasks'       => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PScheduler::Task]', default => sub{ [] });
@@ -43,6 +44,7 @@ has 'created_by'          => (is => 'rw', isa => 'HashRef', default => sub{ {} }
 has 'leads_to_keep'       => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'new_task_expiration_ts' => (is => 'rw', isa => 'Int');
 has 'new_task_expiration_iso' => (is => 'rw', isa => 'Str');
+has 'new_archives'        => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'debug'               => (is => 'rw', isa => 'Bool');
 
 sub init {
@@ -78,6 +80,10 @@ sub init {
     my $psc_leads = $tracker_file_json->{'leads'} ? $tracker_file_json->{'leads'} : {};
     $self->leads($psc_leads);
     $self->_update_lead($self->pscheduler_url(), {}); #init local url
+    
+    #get list of existing MAs
+    my $tracked_archives = $tracker_file_json->{'archives'} ? $tracker_file_json->{'archives'} : {};
+    $self->existing_archives($tracked_archives);
     
     #build list of existing tasks
     foreach my $psc_url(keys %{$self->leads()}){
@@ -146,7 +152,6 @@ sub add_task {
         $new_task->schedule_start($self->_ts_to_iso($new_task_start));
         push @{$self->new_tasks()}, $new_task;
     }
-
 }
 
 sub commit {
@@ -229,8 +234,21 @@ sub _need_new_task {
     
     my $existing = $self->existing_task_map();
     
+    #if private ma params change, then need new task
+    #also update new_archives here so we don't have to re-calculate all the checksums
+    my $ma_changed = 0;
+    foreach my $archive(@{$new_task->archives()}){
+        my $opaque_new_checksum = $archive->checksum();
+        my $old_checksum = $self->existing_archives()->{$opaque_new_checksum};
+        my $new_checksum = $archive->checksum(include_private => 1);
+        $self->new_archives()->{$opaque_new_checksum} = $new_checksum;
+        if(!$old_checksum || $old_checksum ne $new_checksum){
+            $ma_changed = 1;
+        }
+    }
+    
     #if no matching checksum, then does not exist
-    if(!$existing->{$new_task->checksum()}){
+    if($ma_changed || !$existing->{$new_task->checksum()}){
         return (1, undef);
     }
     
@@ -314,7 +332,8 @@ sub _write_tracker_file {
     
     eval{
         my $content = {
-            'leads' => $self->leads()
+            'leads' => $self->leads(),
+            'archives' => $self->new_archives()
         };
         my $json = to_json($content, {"pretty" => 1});
         open( FOUT, ">", $self->tracker_file() ) or die "unable to open " . $self->tracker_file() . ": $@";

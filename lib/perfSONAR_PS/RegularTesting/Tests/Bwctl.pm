@@ -36,8 +36,8 @@ has 'dynamic_window_size'   => (is => 'rw', isa => 'Int');
 has 'no_delay' => (is => 'rw', isa => 'Bool');
 has 'congestion' => (is => 'rw', isa => 'Str');
 has 'flow_label' => (is => 'rw', isa => 'Str');
-has 'cpu_affinity' => (is => 'rw', isa => 'Str');
-
+has 'client_cpu_affinity' => (is => 'rw', isa => 'Int');
+has 'server_cpu_affinity' => (is => 'rw', isa => 'Int');
         
 my $logger = get_logger(__PACKAGE__);
 
@@ -184,17 +184,6 @@ override 'build_pscheduler_task' => sub {
     
     #Test parameters
     my $psc_test_spec = {};
-    #TODO: Support the options below
-    #"interval":    { "$ref": "#/pScheduler/Duration" },    
-    #"mss":         { "$ref": "#/pScheduler/Cardinal" },
-    #"local-address": { "$ref": "#/pScheduler/Host" },
-    #"dscp":          { "$ref": "#/pScheduler/Cardinal" },
-    #"dynamic-window-size":    { "$ref": "#/pScheduler/Cardinal" },
-    #"no-delay":    { "$ref": "#/pScheduler/Boolean" },
-    #"congestion":    { "$ref": "#/pScheduler/String" },
-    #"zero-copy":    { "$ref": "#/pScheduler/Boolean" }, ### called it zero_copy in test parameters
-    #"flow-label":    { "$ref": "#/pScheduler/String" },
-    #"cpu-affinity":    { "$ref": "#/pScheduler/String" }
     $psc_task->test_type('throughput');
     $psc_test_spec->{'source'} = $source if($source);
     $psc_test_spec->{'dest'} = $destination;
@@ -231,8 +220,9 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'no-delay'} = JSON::true if($test_parameters->{no_delay});
     $psc_test_spec->{'congestion'} = $test_parameters->congestion if $test_parameters->congestion;
     $psc_test_spec->{'flow-label'} = $test_parameters->flow_label if $test_parameters->flow_label;
-    $psc_test_spec->{'cpu-affinity'} = $test_parameters->cpu_affinity if $test_parameters->cpu_affinity;
-
+    $psc_test_spec->{'client-cpu-affinity'} = int($test_parameters->client_cpu_affinity) if $test_parameters->client_cpu_affinity;
+    $psc_test_spec->{'server-cpu-affinity'} = int($test_parameters->server_cpu_affinity) if $test_parameters->server_cpu_affinity;
+     
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4);
     $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
     $psc_task->test_spec($psc_test_spec);
