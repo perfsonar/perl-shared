@@ -30,10 +30,10 @@
  
 --- a/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
 +++ b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
-@@ -12,7 +12,7 @@
-     $conf{init_script} = "cassandra" unless $conf{init_script};
-     $conf{process_names} = "java" unless $conf{process_names};
-     $conf{pid_files} = "/var/run/cassandra/cassandra.pid" unless $conf{pid_files};
+@@ -15,7 +15,7 @@
+     #Cassandra does not properly create /var/run/cassandra directory on boot, only creates
+     #  on install which then gets removed on reboot. Removing this for now.
+     #$conf{pid_files} = "/var/run/cassandra/cassandra.pid" unless $conf{pid_files};
 -    $conf{package_names} = [ "cassandra20" ] unless $conf{package_names};
 +    $conf{package_names} = [ "cassandra" ] unless $conf{package_names};
  
