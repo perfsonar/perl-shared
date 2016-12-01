@@ -287,12 +287,20 @@ sub query_location {
 }
 
 sub discover_source_address {
-    my $parameters = validate( @_, { address => 1, local_address => 0 } );
+    my $parameters = validate( @_, { address => 1, local_address => 0, force_ipv4 => 0, force_ipv6 => 0 } );
     my $address = $parameters->{address};
     my $local_address = $parameters->{local_address};
-
+    my $force_ipv4 = $parameters->{force_ipv4};
+    my $force_ipv6 = $parameters->{force_ipv6};
+    
     # Create a UDP socket destined for the specified address
-    my $sock = IO::Socket::INET6->new(LocalAddr => $local_address, PeerAddr => $address, PeerPort => '80', Proto => 'udp');
+    my $sock;
+    unless($force_ipv4){
+        $sock = IO::Socket::INET6->new(LocalAddr => $local_address, PeerAddr => $address, PeerPort => '80', Proto => 'udp');
+    }
+    unless($sock || $force_ipv6){
+        $sock = IO::Socket::INET->new(LocalAddr => $local_address, PeerAddr => $address, PeerPort => '80', Proto => 'udp');
+    }
     return unless $sock;
 
     # Grab the local end of the newly-created socket 
