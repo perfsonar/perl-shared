@@ -20,7 +20,11 @@ set -e
 
 
 case "$1" in
-    remove)
+    purge)
+        # Removing perfSONAR owned directories
+        rm -rf /var/log/perfsonar
+        rm -rf /var/lib/perfsonar
+
         # Delete perfsonar user/group
         if which deluser > /dev/null 2>&1; then
             deluser  --quiet perfsonar > /dev/null || true
@@ -30,13 +34,7 @@ case "$1" in
         fi
     ;;
 
-    purge)
-        # Removing perfSONAR owned directories
-        rm -rf /var/log/perfsonar
-        rm -rf /var/lib/perfsonar
-    ;;
-
-    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
     ;;
 
     *)
