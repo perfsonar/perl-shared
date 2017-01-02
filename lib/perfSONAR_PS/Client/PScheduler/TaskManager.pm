@@ -42,8 +42,6 @@ has 'deleted_tasks'       => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client:
 has 'added_tasks'         => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PScheduler::Task]', default => sub{ [] });
 has 'created_by'          => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'leads_to_keep'       => (is => 'rw', isa => 'HashRef', default => sub{ {} });
-has 'new_task_expiration_ts' => (is => 'rw', isa => 'Int');
-has 'new_task_expiration_iso' => (is => 'rw', isa => 'Str');
 has 'new_archives'        => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'debug'               => (is => 'rw', isa => 'Bool');
 
@@ -68,8 +66,6 @@ sub init {
     $self->user_agent($parameters->{'user_agent'});
     $self->created_by($self->_created_by());
     $self->new_task_min_ttl($parameters->{'new_task_min_ttl'});
-    $self->new_task_expiration_ts($parameters->{'old_task_deadline'} + $self->new_task_min_ttl());
-    $self->new_task_expiration_iso($self->_ts_to_iso($self->new_task_expiration_ts()));
     $self->new_task_min_runs($parameters->{'new_task_min_runs'});
     $self->old_task_deadline($parameters->{'old_task_deadline'});
     $self->task_renewal_fudge_factor($parameters->{'task_renewal_fudge_factor'}) if($parameters->{'task_renewal_fudge_factor'});
@@ -128,28 +124,35 @@ sub add_task {
     my $new_task = $parameters->{task};
     my $local_address = $parameters->{local_address};
     my $repeat_seconds = $parameters->{repeat_seconds};
-
-    #set end time to greater of min repeats and expiration time
-    my $min_repeat_time = 0;
-    if($repeat_seconds){
-        # a bit hacky, but trying to convert an ISO duration to seconds is both imprecise 
-        # and expensive so just use given value since these generally start out as 
-        # seconds anyways.
-        $min_repeat_time = $repeat_seconds * $self->new_task_min_runs();
-    }
-    if($min_repeat_time > $self->new_task_min_ttl()){
-        my $min_repeat_ts = $self->old_task_deadline() + $min_repeat_time;
-        $new_task->schedule_until($self->_ts_to_iso($min_repeat_ts));
-    }else{
-        $new_task->schedule_until($self->new_task_expiration_iso());
-    }
+    
+    #set reference params
     $new_task->reference_param('created-by', $self->created_by());
     $new_task->reference_param('created-by')->{'address'} = $local_address if($local_address);
     
+    #determine if we need new task and create
     my($need_new_task, $new_task_start) = $self->_need_new_task($new_task);
     if($need_new_task){
         #task does not exist, we need to create it
         $new_task->schedule_start($self->_ts_to_iso($new_task_start));
+        #set end time to greater of min repeats and expiration time
+        my $min_repeat_time = 0;
+        if($repeat_seconds){
+            # a bit hacky, but trying to convert an ISO duration to seconds is both imprecise 
+            # and expensive so just use given value since these generally start out as 
+            # seconds anyways.
+            $min_repeat_time = $repeat_seconds * $self->new_task_min_runs();
+        }
+        #use new start time if exists, otherwise start with current time
+        my $new_until = $new_task_start ? $new_task_start: time;
+        if($min_repeat_time > $self->new_task_min_ttl()){
+            #if the minimum number of repeats is longer than the min ttl, use the greater value
+            $new_until += $min_repeat_time;
+        }else{
+            #just add the minimum ttl
+            $new_until += $self->new_task_min_ttl();
+        }
+        $new_task->schedule_until($self->_ts_to_iso($new_until));
+        
         push @{$self->new_tasks()}, $new_task;
     }
 }
@@ -276,6 +279,7 @@ sub _need_new_task {
 
 sub _evaluate_task {
     my ($self, $tmap, $need_new_task, $new_start_time) = @_;
+    my $current_time = time;
     
     foreach my $uuid(keys %{$tmap}){
         my $old_task = $tmap->{$uuid};
@@ -286,8 +290,8 @@ sub _evaluate_task {
                 #if old task has no end time or will not expire before deadline, no task needed
                 $need_new_task = 0 ;
                 #continue with loop since need to mark other tasks that might be older as keep
-            }elsif(!$new_start_time || $new_start_time < $until_ts){
-                #if new_start_time not initialized or found a task that lets us push out, then set
+            }elsif($until_ts > $current_time && (!$new_start_time || $new_start_time < $until_ts)){
+                #if until_ts is in the future or found a task that runs longer then one we already saw, set the start time
                 $new_start_time = $until_ts;
             }
         } 

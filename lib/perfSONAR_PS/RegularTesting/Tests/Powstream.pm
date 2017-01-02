@@ -424,8 +424,8 @@ override 'to_pscheduler' => sub {
                                                         ifname => $test->local_interface,
                                                         interface_ips => $interface_ips, 
                                                         target_address => $parsed_target->{address},
-                                                        force_ipv4 => $individual_test->{force_ipv6},
-                                                        force_ipv6 => $individual_test->{force_ipv6},
+                                                        force_ipv4 => $force_ipv4,
+                                                        force_ipv6 => $force_ipv6,
                                                     );
             if($choose_status < 0){
                 $logger->error("Error determining local address, skipping test: " . $choose_res);
@@ -445,11 +445,10 @@ override 'to_pscheduler' => sub {
             #if we are receiving, we have to know the local address
             if(!$local_address){
                 #no interface or address given, try to get the routing tables to tell us
-                $local_address = discover_source_address(address => $parsed_target->{address});
-                if(!$local_address){
-                    $logger->error("Unable to determine local address for test where local side is destination from " . $parsed_target->{address} . ", skipping test.");
-                    next;
-                }
+                $local_address = discover_source_address(address => $parsed_target->{address}, 
+                                                            force_ipv4 => $force_ipv4,
+                                                            force_ipv6 => $force_ipv6);
+                #its ok if no local address, powstream can handle it
             }
             $source = $parsed_target->{address};
             $destination = $local_address;
@@ -470,7 +469,7 @@ override 'to_pscheduler' => sub {
         my $psc_test_spec = {};
         $psc_task->test_type('latencybg');
         $psc_test_spec->{'source'} = $source if($source);
-        $psc_test_spec->{'dest'} = $destination;
+        $psc_test_spec->{'dest'} = $destination if($destination);
         $psc_test_spec->{'ctrl-port'} = int($destination_port) if($destination_port);
         $psc_test_spec->{'flip'} = JSON::true if($individual_test->{receiver});
         $psc_test_spec->{'packet-count'} = int($packets) if $packets;
