@@ -1,4 +1,4 @@
-libperfsonar-perl (4.0~8.rc2-1) perfsonar-jessie-staging; urgency=low
+libperfsonar-perl (4.0~9.rc2-1) perfsonar-jessie-staging; urgency=low
 
   * New upstream version.
   * Creating libperfsonar-pscheduler-perl package.
