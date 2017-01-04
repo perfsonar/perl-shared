@@ -105,6 +105,8 @@ lib/perfSONAR_PS/NPToolkit/WebService/Method.pm
 lib/perfSONAR_PS/NPToolkit/WebService/ParameterTypes.pm
 lib/perfSONAR_PS/NPToolkit/WebService/Router.pm
 lib/perfSONAR_PS/RegularTesting/Config.pm
+lib/perfSONAR_PS/RegularTesting/CreatedBy.pm
+lib/perfSONAR_PS/RegularTesting/Reference.pm
 lib/perfSONAR_PS/RegularTesting/DirQueue.pm
 lib/perfSONAR_PS/RegularTesting/EventQueue/Event.pm
 lib/perfSONAR_PS/RegularTesting/EventQueue/Queue.pm
