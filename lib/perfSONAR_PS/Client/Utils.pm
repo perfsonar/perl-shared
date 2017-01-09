@@ -6,6 +6,9 @@ use LWP::UserAgent;
 use HTTP::Request;
 use Params::Validate qw(:all);
 use JSON qw(from_json);
+use URI::URL;
+use Data::Validate::Domain qw(is_hostname);
+use Net::DNS;
 
 our @EXPORT_OK = qw( send_http_request build_err_msg extract_url_uuid );
 
@@ -62,6 +65,32 @@ sub send_http_request{
     
     # Pass request to the user agent and get a response back
     my $res = $ua->request($req);
+    #compensate for perl's lack of IPv4 fallback. If we get unreachable check if it is 
+    # dual-stacked. If it is then try the IPv4 address.
+    if($res->code == 500 && $res->status_line =~ /unreachable/){
+        my $url_obj = new URI::URL($url);
+        my $hostname = $url_obj->host;
+        #check we are working with a hostname
+        if(is_hostname($hostname)){
+            my $resolver = Net::DNS::Resolver->new;
+            #check it has a AAAA record
+            if($resolver->query($hostname, "AAAA")){
+                #lookup A record
+                my $dns_reply = $resolver->query($hostname, "A");
+                if($dns_reply){
+                    #try each A record returned until we get one that works
+                    foreach my $dns_rec($dns_reply->answer){
+                        if($dns_rec->type eq 'A'){
+                            $url_obj->host($dns_rec->address);
+                            $req->uri($url_obj);
+                            $res = $ua->request($req);
+                            last if($res && $res->is_success);
+                        }
+                    }
+                }
+            }
+        }
+    }
     
     # Return response
     return $res;
