@@ -456,12 +456,12 @@ override 'to_pscheduler' => sub {
         # add archives
         if($archive_map->{$self->pscheduler_archive_type()}){
             foreach my $psc_ma(@{$archive_map->{$self->pscheduler_archive_type()}}){
-                $psc_task->add_archive($psc_ma->to_pscheduler(local_address => $local_address, default_retry_policy => $self->default_retry_policy(interval => $interval) ));
+                $psc_task->add_archive($psc_ma->to_pscheduler(local_address => $local_address, default_retry_policy => $self->default_retry_policy(interval => $interval), remote_lead => $individual_test->{local_destination} ));
             }
         }
         if($test->measurement_archives()){
             foreach my $ma(@{$test->measurement_archives()}){
-                $psc_task->add_archive($ma->to_pscheduler(local_address => $local_address, default_retry_policy => $self->default_retry_policy(interval => $interval) ));
+                $psc_task->add_archive($ma->to_pscheduler(local_address => $local_address, default_retry_policy => $self->default_retry_policy(interval => $interval), remote_lead => $individual_test->{local_destination} ));
             }
         }
         
