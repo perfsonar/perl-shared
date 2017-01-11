@@ -496,14 +496,26 @@ override 'to_pscheduler' => sub {
         $psc_task->test_spec($psc_test_spec);
         
         #add archives
+        my $interval = ($packets ? int($packets) : 600);
+        $interval *= ($test_parameters->inter_packet_time ? $test_parameters->inter_packet_time + 0.0 : .1);
         if($archive_map->{'esmond/latency'}){
             foreach my $psc_ma(@{$archive_map->{'esmond/latency'}}){
-                $psc_task->add_archive($psc_ma->to_pscheduler(local_address => $local_address));
+                $psc_task->add_archive(
+                                        $psc_ma->to_pscheduler(
+                                                                local_address => $local_address, 
+                                                                default_retry_policy => $self->default_retry_policy(interval => $interval) 
+                                                              )
+                                      );
             }
         }
         if($test->measurement_archives()){
             foreach my $ma(@{$test->measurement_archives()}){
-                $psc_task->add_archive($ma->to_pscheduler(local_address => $local_address));
+                $psc_task->add_archive(
+                                        $ma->to_pscheduler(
+                                                            local_address => $local_address,
+                                                            default_retry_policy => $self->default_retry_policy(interval => $interval) 
+                                                          )
+                                      );
             }
         }
         

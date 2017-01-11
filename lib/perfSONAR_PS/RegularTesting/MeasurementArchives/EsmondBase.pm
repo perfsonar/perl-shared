@@ -26,6 +26,7 @@ has 'username' => (is => 'rw', isa => 'Str|Undef');
 has 'password' => (is => 'rw', isa => 'Str|Undef');
 has 'database' => (is => 'rw', isa => 'Str');
 has 'summary' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondSummary]', default => sub { [] });
+has 'retry_policy' => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondRetryPolicy');
 has 'disable_default_summaries' => (is => 'rw', isa => 'Bool', default => sub { 0 });
 has 'timeout' => (is => 'rw', isa => 'Int', default => sub { 60 });
 has 'ca_certificate_file' => (is => 'rw', isa => 'Str|Undef');
@@ -381,8 +382,9 @@ sub measurement_agent {
 
 override 'to_pscheduler' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, { local_address => 0 });
+    my $parameters = validate( @args, { local_address => 0, default_retry_policy => 0 });
     my $local_address = $parameters->{local_address};
+    my $default_retry_policy = $parameters->{default_retry_policy};
     
     my $psc_archive = new perfSONAR_PS::Client::PScheduler::Archive();
     $psc_archive->name('esmond');
@@ -399,12 +401,18 @@ override 'to_pscheduler' => sub {
     }
     $psc_archive->data_param('summaries', \@psc_summaries) if(@psc_summaries);
     
-    #TODO: Make this configurable
-    $psc_archive->data_param('retry-policy', [
-        {'attempts'=> 5, 'wait'=> "PT60S"},   
-        {'attempts'=> 3, 'wait'=> "PT5M"},   
-        {'attempts'=> 24, 'wait'=> "PT60M"},
-    ]);
+    #add retry policy if configured, otherwise punt to specific test types so they can base on interval
+    if(defined $self->retry_policy()){
+        $psc_archive->ttl("PT" . $self->retry_policy()->ttl() . "S") if $self->retry_policy()->ttl();
+        my @tmp_retries = ();
+        foreach my $retry(@{$self->retry_policy()->retry()}){
+            push @tmp_retries, {'attempts'=> int($retry->attempts()), 'wait'=> "PT" . $retry->wait() . "S"},
+        }
+        $psc_archive->data_param('retry-policy', \@tmp_retries);
+    }elsif($default_retry_policy){
+        $psc_archive->ttl($default_retry_policy->{'ttl'}) if $default_retry_policy->{'ttl'};
+        $psc_archive->data_param('retry-policy', $default_retry_policy->{'retry'});
+    }
     
     return $psc_archive;
 };
@@ -419,6 +427,26 @@ extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
 has 'summary_type'     => (is => 'rw', isa => 'Str');
 has 'event_type' => (is => 'rw', isa => 'Str');
 has 'summary_window' => (is => 'rw', isa => 'Int');
+
+package perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondRetryPolicy;
+
+use Moose;
+use Class::MOP::Class;
+
+extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
+
+has 'ttl'     => (is => 'rw', isa => 'Int', default => sub { 0 });
+has 'retry' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondRetry]', default => sub { [] });
+
+package perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondRetry;
+
+use Moose;
+use Class::MOP::Class;
+
+extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
+
+has 'attempts'     => (is => 'rw', isa => 'Int');
+has 'wait'         => (is => 'rw', isa => 'Int');
 
 
 
