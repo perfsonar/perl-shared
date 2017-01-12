@@ -143,26 +143,27 @@
  
      my @ntp_response = split /\n/, $ntp_result;
      
-@@ -700,16 +700,11 @@
- }
- 
- sub is_auto_updates_on{
--
-     my ($self) = @_;
- 
--    my $enabled = "enabled";
--
--    my $result = `/etc/init.d/yum-cron status`;
--
--    if(index($result, $enabled) != -1){
-+    if(-e '/etc/apt/apt.conf.d/60unattended-upgrades-perfsonar'){
-         return 1;
--    }else{
-+    } else {
-         return 0;
+@@ -716,10 +716,19 @@
+             )
+             && $os_info->{'distribution_version'} =~ /^7\.\d/ ) {
+                 $is_el7 = 1;
++    } elsif ($os_info->{'distribution_name'} =~ /^Debian/
++            || $os_info->{'distribution_name'}  =~ /^Ubuntu/ ) {
++            $is_debian = 1;
      }
- }
-@@ -773,7 +768,7 @@
+     if ( $is_el7 ) {
+         $result = `/bin/systemctl is-enabled yum-cron`;
+ 
++    } elsif ( $is_debian ) {
++        if (-e '/etc/apt/apt.conf.d/60unattended-upgrades-perfsonar') {
++            $result = 1;
++        } else {
++            $result = 0;
++        }
+     } else {
+         $result = `/etc/init.d/yum-cron status`;
+     }
+@@ -790,7 +799,7 @@
  sub _call_sysctl {
      my ($var_name) = @_;
  
