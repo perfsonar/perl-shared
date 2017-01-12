@@ -6,6 +6,7 @@ use JSON qw(to_json);
 use Digest::MD5 qw(md5_base64);
 
 has 'name' => (is => 'rw', isa => 'Str');
+has 'ttl' => (is => 'rw', isa => 'Str');
 has 'data' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 
 sub data_param {
@@ -28,7 +29,7 @@ sub checksum() {
     my $parameters = validate( @args, { 'include_private' => 0} );
     
     #disable canonical since we don't care at the moment
-    my $archive= { 'name' => $self->name(), 'data' => {} };
+    my $archive= { 'name' => $self->name(), 'ttl' => $self->ttl(),'data' => {} };
     #clear our private fields that won't get displayed by remote tasks
     foreach my $datum(keys %{$self->data()}){
         if($datum =~ /^_/ && !$parameters->{'include_private'}){

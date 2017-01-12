@@ -713,7 +713,24 @@ sub is_auto_updates_on{
 
     my $enabled = "enabled";
 
-    my $result = `/etc/init.d/yum-cron status`;
+    my $os_info = get_operating_system_info();
+
+    my $result;
+
+    my $is_el7 = 0;
+
+    if (    (   $os_info->{'distribution_name'}     =~ /^CentOS/
+                || $os_info->{'distribution_name'}  =~ /^Red Hat/
+            )
+            && $os_info->{'distribution_version'} =~ /^7\.\d/ ) {
+                $is_el7 = 1;
+    }
+    if ( $is_el7 ) {
+        $result = `/bin/systemctl is-enabled yum-cron`;
+
+    } else {
+        $result = `/etc/init.d/yum-cron status`;
+    }
 
     if(index($result, $enabled) != -1){
         return 1;
