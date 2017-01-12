@@ -12,6 +12,8 @@ use Data::UUID;
 
 use Moose;
 
+use perfSONAR_PS::RegularTesting::CreatedBy;
+use perfSONAR_PS::RegularTesting::Reference;
 use perfSONAR_PS::RegularTesting::Target;
 
 extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
@@ -21,15 +23,18 @@ has 'targets'              => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Regula
 has 'disabled'             => (is => 'rw', isa => 'Bool');
 has 'local_address'        => (is => 'rw', isa => 'Str');
 has 'local_interface'      => (is => 'rw', isa => 'Str');
+has 'references'           => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::Reference]', default => sub { [] });
 has 'parameters'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Tests::Base');
 has 'schedule'             => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Schedulers::Base');
 has 'measurement_archives' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Base]');
+has 'created_by'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::CreatedBy');
+
 has 'added_by_mesh'        => (is => 'rw', isa => 'Bool');
 
 my $logger = get_logger(__PACKAGE__);
 
 override 'variable_map' => sub {
-    return { "targets" => "target", "measurement_archives" => "measurement_archive" };
+    return { "targets" => "target", "measurement_archives" => "measurement_archive", "references" => "reference" };
 };
 
 sub validate_test {

@@ -464,6 +464,7 @@ sub _print_task {
     print "Archivers:\n";
     foreach my $a(@{$task->archives()}){
         print "    name: " . $a->name() . "\n";
+        print "    ttl: " . $a->ttl() . "\n" if(defined $a->ttl());
         print "    data:\n";
         foreach my $ad(keys %{$a->data()}){
             print "        $ad: " . (defined $a->data()->{$ad} ? $a->data()->{$ad} : 'n/a') . "\n";

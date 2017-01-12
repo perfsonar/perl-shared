@@ -371,19 +371,23 @@ sub archives{
     if(defined $val){
         $self->data->{'archives'} = [];
         foreach my $v(@{$val}){
-            push @{$self->data->{'archives'}}, {
+            my $tmp_archive = {
                 'archiver' => $v->name(),
                 'data' => $v->data(),
             };
+            $tmp_archive->{'ttl'} = $v->ttl() if(defined $v->ttl());
+            push @{$self->data->{'archives'}}, $tmp_archive;
         }
     }
     
     my @archives = ();
     foreach my $archive(@{$self->data->{'archives'}}){
-        push @archives, new perfSONAR_PS::Client::PScheduler::Archive(
+        my $tmp_archive_obj = new perfSONAR_PS::Client::PScheduler::Archive(
             'name' => $archive->{'archiver'},
             'data' => $archive->{'data'},
         );
+        $tmp_archive_obj->ttl($archive->{'ttl'}) if(exists $archive->{'ttl'} && defined $archive->{'ttl'});
+        push @archives, $tmp_archive_obj;
     }
     
     return \@archives;
@@ -400,10 +404,12 @@ sub add_archive{
         $self->data->{'archives'} = [];
     }
     
-    push @{$self->data->{'archives'}}, {
+    my $tmp_archive = {
             'archiver' =>  $val->name(),
             'data' =>  $val->data()
         };
+    $tmp_archive->{'ttl'} = $val->ttl() if(defined $val->ttl());
+    push @{$self->data->{'archives'}}, $tmp_archive;
 }
 
 sub requested_tools{

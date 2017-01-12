@@ -175,6 +175,10 @@ override 'build_pscheduler_task' => sub {
     
     my $psc_task = new perfSONAR_PS::Client::PScheduler::Task(url => $psc_url);
     $psc_task->reference_param('description', $test->description()) if $test->description();
+    foreach my $test_ref(@{$test->references()}){
+        next if($test_ref->name() eq 'description' || $test_ref->name() eq 'created-by');
+        $psc_task->reference_param($test_ref->name(), $test_ref->value());
+    }
     
     #Test parameters
     my $psc_test_spec = {};

@@ -9,6 +9,7 @@ use Log::Log4perl qw(get_logger);
 use Params::Validate qw(:all);
 use Digest::MD5;
 use Data::UUID;
+use perfSONAR_PS::RegularTesting::Reference;
 
 use Moose;
 
@@ -16,7 +17,6 @@ extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
 
 has 'description'          => (is => 'rw', isa => 'Str');
 has 'address'              => (is => 'rw', isa => 'Str');
-
 has 'override_parameters'  => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Tests::Base');
 
 my $logger = get_logger(__PACKAGE__);

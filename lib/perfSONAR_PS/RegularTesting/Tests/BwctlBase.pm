@@ -447,22 +447,24 @@ override 'to_pscheduler' => sub {
                                      test => $test
                                   });
         
-        # add archives
-        if($archive_map->{$self->pscheduler_archive_type()}){
-            foreach my $psc_ma(@{$archive_map->{$self->pscheduler_archive_type()}}){
-                $psc_task->add_archive($psc_ma->to_pscheduler(local_address => $local_address));
-            }
-        }
-        if($test->measurement_archives()){
-            foreach my $ma(@{$test->measurement_archives()}){
-                $psc_task->add_archive($ma->to_pscheduler(local_address => $local_address));
-            }
-        }
         #optimization that pre-fetches interval
         my $interval;
         if ($test->schedule()->type eq "regular_intervals") {
             $interval = $test->schedule()->interval;
         }
+        
+        # add archives
+        if($archive_map->{$self->pscheduler_archive_type()}){
+            foreach my $psc_ma(@{$archive_map->{$self->pscheduler_archive_type()}}){
+                $psc_task->add_archive($psc_ma->to_pscheduler(local_address => $local_address, default_retry_policy => $self->default_retry_policy(interval => $interval), remote_lead => $individual_test->{local_destination} ));
+            }
+        }
+        if($test->measurement_archives()){
+            foreach my $ma(@{$test->measurement_archives()}){
+                $psc_task->add_archive($ma->to_pscheduler(local_address => $local_address, default_retry_policy => $self->default_retry_policy(interval => $interval), remote_lead => $individual_test->{local_destination} ));
+            }
+        }
+        
         #add task to manager
         $task_manager->add_task(task => $psc_task, local_address => $local_address, repeat_seconds => $interval) if($psc_task);
     }
