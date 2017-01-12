@@ -143,7 +143,14 @@
  
      my @ntp_response = split /\n/, $ntp_result;
      
-@@ -716,10 +716,19 @@
+@@ -710,16 +710,26 @@
+     my $result;
+ 
+     my $is_el7 = 0;
++    my $is_debian = 0;
+ 
+     if (    (   $os_info->{'distribution_name'}     =~ /^CentOS/
+                 || $os_info->{'distribution_name'}  =~ /^Red Hat/
              )
              && $os_info->{'distribution_version'} =~ /^7\.\d/ ) {
                  $is_el7 = 1;
@@ -163,7 +170,7 @@
      } else {
          $result = `/etc/init.d/yum-cron status`;
      }
-@@ -790,7 +799,7 @@
+@@ -790,7 +800,7 @@
  sub _call_sysctl {
      my ($var_name) = @_;
  
