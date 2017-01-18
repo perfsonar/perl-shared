@@ -67,7 +67,7 @@ sub send_http_request{
     my $res = $ua->request($req);
     #compensate for perl's lack of IPv4 fallback. If we get unreachable check if it is 
     # dual-stacked. If it is then try the IPv4 address.
-    if($res->code == 500 && $res->status_line =~ /unreachable/){
+    if($res->code == 500 && ($res->status_line =~ /unreachable/ || $res->status_line =~ /connect/)){
         my $url_obj = new URI::URL($url);
         my $hostname = $url_obj->host;
         #check we are working with a hostname
