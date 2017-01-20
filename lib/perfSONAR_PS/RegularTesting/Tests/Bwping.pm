@@ -29,7 +29,7 @@ has 'packet_ttl' => (is => 'rw', isa => 'Int', );
 has 'inter_packet_time' => (is => 'rw', isa => 'Num', default => 1.0);
 has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
 #new pscheduler fields
-has 'flowlabel' => (is => 'rw', isa => 'Int');
+has 'flow_label' => (is => 'rw', isa => 'Int');
 has 'hostnames' => (is => 'rw', isa => 'Bool');
 has 'suppress_loopback' => (is => 'rw', isa => 'Bool');
 has 'deadline' => (is => 'rw', isa => 'Int');
@@ -180,7 +180,7 @@ override 'build_pscheduler_task' => sub {
     #Test parameters
     my $psc_test_spec = {};
     #TODO: Support the options below
-    #"flowlabel":         { "$ref": "#/pScheduler/CardinalZero" },
+    #"flow_label":         { "$ref": "#/pScheduler/CardinalZero" },
     #"hostnames":         { "$ref": "#/pScheduler/Boolean" },
     #"suppress-loopback": { "$ref": "#/pScheduler/Boolean" },
     #"tos":               { "$ref": "#/pScheduler/Cardinal" },
@@ -204,7 +204,7 @@ override 'build_pscheduler_task' => sub {
     }
     $psc_test_spec->{'deadline'} = "PT" . $test_parameters->deadline  . "S" if $test_parameters->deadline;
     $psc_test_spec->{'timeout'} = "PT" . $test_parameters->timeout  . "S" if $test_parameters->timeout;
-    $psc_test_spec->{'flowlabel'} = int($test_parameters->flowlabel) if $test_parameters->flowlabel;
+    $psc_test_spec->{'flow_label'} = int($test_parameters->flow_label) if $test_parameters->flow_label;
     $psc_test_spec->{'hostnames'} = JSON::true if($test_parameters->{hostnames});
     $psc_test_spec->{'suppress-loopback'} = JSON::true if($test_parameters->{suppress_loopback});
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4 );
