@@ -204,7 +204,8 @@ override 'build_pscheduler_task' => sub {
     }
     $psc_test_spec->{'deadline'} = "PT" . $test_parameters->deadline  . "S" if $test_parameters->deadline;
     $psc_test_spec->{'timeout'} = "PT" . $test_parameters->timeout  . "S" if $test_parameters->timeout;
-    $psc_test_spec->{'flow_label'} = int($test_parameters->flow_label) if $test_parameters->flow_label;
+    $psc_test_spec->{'ip-tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
+    $psc_test_spec->{'flow-label'} = int($test_parameters->flow_label) if $test_parameters->flow_label;
     $psc_test_spec->{'hostnames'} = JSON::true if($test_parameters->{hostnames});
     $psc_test_spec->{'suppress-loopback'} = JSON::true if($test_parameters->{suppress_loopback});
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4 );
