@@ -32,7 +32,6 @@ has 'zero_copy' => (is => 'rw', isa => 'Bool', default => 0);
 has 'tcp_bandwidth' => (is => 'rw', isa => 'Int');
 has 'mss' => (is => 'rw', isa => 'Int');
 has 'dscp' => (is => 'rw', isa => 'Int');
-has 'dynamic_window_size'   => (is => 'rw', isa => 'Int');
 has 'no_delay' => (is => 'rw', isa => 'Bool');
 has 'congestion' => (is => 'rw', isa => 'Str');
 has 'flow_label' => (is => 'rw', isa => 'Str');
@@ -220,7 +219,6 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'zero-copy'} = int($test_parameters->zero_copy) if $test_parameters->zero_copy;
     $psc_test_spec->{'mss'} = int($test_parameters->mss) if $test_parameters->mss;
     $psc_test_spec->{'dscp'} = int($test_parameters->dscp) if $test_parameters->dscp;
-    $psc_test_spec->{'dynamic-window-size'} = int($test_parameters->dynamic_window_size) if $test_parameters->dynamic_window_size;
     $psc_test_spec->{'no-delay'} = JSON::true if($test_parameters->{no_delay});
     $psc_test_spec->{'congestion'} = $test_parameters->congestion if $test_parameters->congestion;
     $psc_test_spec->{'flow-label'} = $test_parameters->flow_label if $test_parameters->flow_label;
