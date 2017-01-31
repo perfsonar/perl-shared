@@ -13,6 +13,7 @@ use Moose;
 
 extends 'perfSONAR_PS::RegularTesting::Tests::Base';
 
+has 'tool' => (is => 'rw', isa => 'Str');
 has 'force_ipv4'      => (is => 'rw', isa => 'Bool');
 has 'force_ipv6'      => (is => 'rw', isa => 'Bool');
 has 'test_ipv4_ipv6'  => (is => 'rw', isa => 'Bool');
@@ -210,6 +211,12 @@ override 'to_pscheduler' => sub {
         
         #Test parameters
         $psc_task->test_type($self->psc_test_type());
+        if($test->parameters->tool){
+            my @tools = split ',', $test->parameters->tool;
+            foreach my $tool(@tools){
+                $psc_task->add_requested_tool($tool);
+            }
+        }
         $psc_task->test_spec($self->psc_test_spec({ 
                                      source => $source,
                                      destination => $destination,
