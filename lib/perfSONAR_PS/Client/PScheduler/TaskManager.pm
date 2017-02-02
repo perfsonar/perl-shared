@@ -82,6 +82,7 @@ sub init {
     $self->existing_archives($tracked_archives);
     
     #build list of existing tasks
+    my %visited_leads = ();
     foreach my $psc_url(keys %{$self->leads()}){
         print "Getting task list from $psc_url\n" if($self->debug());
         #Query lead
@@ -92,6 +93,27 @@ sub init {
         #$psc_filters->detail_enabled(1);
         $psc_filters->reference_param("created-by", $self->created_by());
         my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters);
+        
+        #get hostname to see if this is a server we already visited using a different address
+        my $psc_hostname = $psc_client->get_hostname();
+        if($psc_client->error()){
+            print "Error getting hostname from $psc_url: " . $psc_client->error() . "\n" if($self->debug());
+            $psc_lead->{'error_time'} = time; 
+            push @{$self->errors()}, "Problem retrieving host information from pScheduler lead $psc_url: ".$psc_client->error();
+            next;
+        }elsif(!$psc_hostname){
+            print "Error: $psc_url returned an empty hostname\n" if($self->debug());
+            $psc_lead->{'error_time'} = time; 
+            push @{$self->errors()}, "Empty string returned from $psc_url/hostname. It may not have its hostname configured correctly.";
+            next;
+        }elsif($visited_leads{$psc_hostname}){
+            print "Already visited server at $psc_url using " . $visited_leads{$psc_hostname} . ", so skipping.\n" if($self->debug());
+            next;
+        }else{
+           $visited_leads{$psc_hostname} = $psc_url;
+        }
+        
+        #get tasks
         my $existing_tasks = $psc_client->get_tasks();
         if($existing_tasks && @{$existing_tasks} > 0 && $psc_client->error()){
             #there was an error getting an individual task
@@ -103,6 +125,7 @@ sub init {
             push @{$self->errors()}, "Problem getting existing tests from pScheduler lead $psc_url: ".$psc_client->error();
             next;
         }
+        
         #Add to existing task map
         foreach my $existing_task(@{$existing_tasks}){
             next unless($existing_task->detail_enabled()); #skip disabled tests
@@ -126,8 +149,13 @@ sub add_task {
     my $repeat_seconds = $parameters->{repeat_seconds};
     
     #set reference params
-    $new_task->reference_param('created-by', $self->created_by());
-    $new_task->reference_param('created-by')->{'address'} = $local_address if($local_address);
+    ##need to copy this so different addresses don't break checksum
+    my $tmp_created_by = {};
+    $tmp_created_by->{'address'} = $local_address if($local_address);
+    foreach my $cp(keys %{$self->created_by()}){
+        $tmp_created_by->{$cp} = $self->created_by()->{$cp};
+    }
+    $new_task->reference_param('created-by', $tmp_created_by);
     
     #determine if we need new task and create
     my($need_new_task, $new_task_start) = $self->_need_new_task($new_task);

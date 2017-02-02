@@ -287,6 +287,43 @@ sub get_test() {
     
     return new perfSONAR_PS::Client::PScheduler::Test(data => $test_response_json, url => $test_url, filters => $self->filters, uuid => $test_name);
 }
+
+sub get_hostname() {
+    my $self = shift;
+    
+    #build url
+    my $hostname_url = $self->url;
+    chomp($hostname_url);
+    $hostname_url .= "/" if($self->url !~ /\/$/);
+    $hostname_url .= "hostname";
+    
+    my %filters = ();
+
+    my $response = send_http_request(
+        connection_type => 'GET', 
+        url => $hostname_url, 
+        timeout => $self->filters->timeout,
+        ca_certificate_file => $self->filters->ca_certificate_file,
+        ca_certificate_path => $self->filters->ca_certificate_path,
+        verify_hostname => $self->filters->verify_hostname,
+        #headers => $self->filters->headers()
+    );
+     
+    if(!$response->is_success){
+        my $msg = build_err_msg(http_response => $response);
+        $self->_set_error($msg);
+        return;
+    }
+
+    my $response_json = from_json($response->content, {allow_nonref => 1});
+    if(! $response_json){
+        $self->_set_error("No hostname returned.");
+        return;
+    }
+    
+    return $response_json;
+}
+
 __PACKAGE__->meta->make_immutable;
 
 1;
