@@ -90,7 +90,7 @@ sub get_ips {
         # To get interface aliases, we must use the name at end of the line. 
         # inet6 lines don't have an intf name at the end, so ipv6 addresses will always go with the non-alias name.
         if ( $line =~ /inet (\d+\.\d+\.\d+\.\d+).+scope (global|host) (\S+)/ ) {
-            push @{ $ret_interfaces{$3} }, $1;
+            push @{ $ret_interfaces{$curr_interface} }, $1;
         }
         elsif ( $line =~ /inet6 ([a-fA-F0-9:]+)\/\d+ scope (global|host)/ ) {
             push @{ $ret_interfaces{$curr_interface} }, $1;
@@ -347,7 +347,7 @@ sub discover_primary_address {
     unless ( $disable_ipv4_reverse_lookup) {
         foreach my $iface ( keys %$ips_by_iface ) {
             foreach my $ip ( @{ $ips_by_iface->{$iface } } ) {
-                my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.0/8' );
+                my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16' );
 
                 next unless (is_ipv4($ip));
                 $logger->debug("$ip is IPv4");
@@ -379,6 +379,7 @@ sub discover_primary_address {
     unless ( $disable_ipv6_reverse_lookup or ( $chosen_address and $ipv6_address )) {
         foreach my $iface ( keys %$ips_by_iface ) {
             foreach my $ip ( @{ $ips_by_iface->{$iface } } ) {
+                $logger->debug("iface is $iface");
                 next unless (Net::IP::ip_is_ipv6( $ip ));
                 $logger->debug("$ip is IPv6");
                 next unless (defined $reverse_dns_mapping->{$ip} and $reverse_dns_mapping->{$ip}->[0]);
@@ -408,9 +409,12 @@ sub discover_primary_address {
         foreach my $iface ( keys %$ips_by_iface ) {
             foreach my $ip ( @{ $ips_by_iface->{$iface } } ) {
 
-                my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '127.0.0.0/8' );
+                my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16' );
+                my @localhost_list = ( '127.0.0.0/8' );
 
                 next unless (is_ipv4( $ip ));
+                #never want a loopback address.
+                next if (Net::CIDR::cidrlookup( $ip, @localhost_list ));
                 $logger->debug("$ip is IPv4");
                 next unless ($allow_rfc1918 or not Net::CIDR::cidrlookup( $ip, @private_list ));
                 $logger->debug("$ip isn't private or we're okay with private addresses");
@@ -437,6 +441,9 @@ sub discover_primary_address {
         foreach my $iface ( keys %$ips_by_iface ) {
             foreach my $ip ( @{ $ips_by_iface->{$iface } } ) {
                 next unless (Net::IP::ip_is_ipv6( $ip ));
+                #never want a loopback address.
+                my $ip_obj = new  Net::IP::( $ip );
+                next if ($ip_obj->iptype() eq 'LOOPBACK');
                 $logger->debug("$ip is IPv6");
 
                 unless ( $chosen_address ) { 
