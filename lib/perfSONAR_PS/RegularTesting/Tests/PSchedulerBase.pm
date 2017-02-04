@@ -229,15 +229,8 @@ override 'to_pscheduler' => sub {
         #schedule parameters
         my $interval;
         if ($schedule->type eq "regular_intervals") {
-            if(defined $schedule->interval){
-                $interval = $test->schedule()->interval;
-                $psc_task->schedule_repeat('PT' . $schedule->interval . 'S');
-                #allow a test to be scheduled anytime before the next scheduled run
-                $psc_task->schedule_slip('PT' . $schedule->interval . 'S');
-            }
-            my $randslip = .1;
-            $randslip = $schedule->random_start_percentage/100.0 if(defined $schedule->random_start_percentage);
-            $psc_task->schedule_randslip($randslip);
+            $interval = $schedule->interval;
+            $self->psc_test_interval(schedule => $schedule, psc_task => $psc_task);
         }else{
             $logger->warning("Schedule type " . $schedule->type . " not currently supported. Skipping test.");
             return;

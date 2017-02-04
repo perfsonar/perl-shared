@@ -145,19 +145,19 @@ sub schedule_repeat{
     return $self->data->{'schedule'}->{'repeat'};
 }
 
-sub schedule_randslip{
+sub schedule_sliprand{
     my ($self, $val) = @_;
     
     if(defined $val){
         $self->_init_field($self->data, 'schedule');
-        $self->data->{'schedule'}->{'randslip'} = $val;
+        $self->data->{'schedule'}->{'sliprand'} = $val ? JSON::true : JSON::false;
     }
     
     unless($self->_has_field($self->data, "schedule")){
         return undef;
     }
     
-    return $self->data->{'schedule'}->{'randslip'};
+    return $self->data->{'schedule'}->{'sliprand'};
 }
 
 sub schedule_slip{
