@@ -27,6 +27,7 @@ use Log::Log4perl qw(get_logger);
 use SimpleLookupService::Client::SimpleLS;
 use perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject;
 use SimpleLookupService::Client::Query;
+use perfSONAR_PS::Client::Utils qw(send_http_request);
 use URI;
 use Data::UUID;
 
@@ -104,16 +105,12 @@ sub discover_lookup_services {
     my @active_hosts = ();
 
     foreach my $url (@$locator_urls) {
-        my $ua = new LWP::UserAgent();
-        $ua->agent("SimpleLSBootStrap-v1.0");
-
-        my $http_request = HTTP::Request->new( GET => $url );
-        my $http_response = $ua->request($http_request);
+        my $http_response = send_http_request(connection_type => 'GET', url => $url, timeout => 30);
         if (!$http_response->is_success) {
             $logger->error("Problem retrieving $url: " . $http_response->status_line);
             next;
         }
-
+        
         #Convert to JSON
         my $activehostlist;
         eval {
