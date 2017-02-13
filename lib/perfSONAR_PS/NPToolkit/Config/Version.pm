@@ -19,14 +19,15 @@ use Data::Dumper;
 
 use base 'perfSONAR_PS::NPToolkit::Config::Base';
 
-use fields 'NPTOOLKIT_VERSION_BIN', 'NPTOOLKIT_INSTALL_TYPE_BIN';
+use fields 'NPTOOLKIT_VERSION_BIN', 'NPTOOLKIT_INSTALL_TYPE_BIN', 'NPTOOLKIT_INSTALL_METHOD_BIN';
 
 use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger :nowarn);
 use Storable qw(store retrieve freeze thaw dclone);
 
 my %defaults = ( nptoolkit_version_bin => "/var/lib/perfsonar/bundles/bundle_version", 
-                 nptoolkit_install_type_bin => "/var/lib/perfsonar/bundles/bundle_type",);
+                 nptoolkit_install_type_bin => "/var/lib/perfsonar/bundles/bundle_type",
+                 nptoolkit_install_method_bin => "/var/lib/perfsonar/bundles/install_method",);
 
 =head2 init({ nptoolkit_version_bin => 0 })
 
@@ -43,6 +44,7 @@ sub init {
     # Initialize the defaults
     $self->{NPTOOLKIT_VERSION_BIN} = $defaults{nptoolkit_version_bin};
     $self->{NPTOOLKIT_INSTALL_TYPE_BIN} = $defaults{nptoolkit_install_type_bin};
+    $self->{NPTOOLKIT_INSTALL_METHOD_BIN} = $defaults{nptoolkit_install_method_bin};
     
     # Override any
     $self->{NPTOOLKIT_VERSION_BIN} = $parameters->{enabled_services_file} if ( $parameters->{nptoolkit_version_bin} );
@@ -124,6 +126,29 @@ sub get_install_type {
     my $type;
 
     if ( open( FIN, "<", $self->{NPTOOLKIT_INSTALL_TYPE_BIN} ) ) {
+        while($type = <FIN>){
+            if ( $type ){
+                 chomp( $type );
+                 last;
+            }
+        }
+        close( FIN );
+    }
+
+    return $type;
+}
+
+=head2 get_install_method ({})
+    Returns the install method such as fullinstall iso, netinstall iso, docker, etc
+=cut
+
+sub get_install_method {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, {} );
+
+    my $type;
+
+    if ( open( FIN, "<", $self->{NPTOOLKIT_INSTALL_METHOD_BIN} ) ) {
         while($type = <FIN>){
             if ( $type ){
                  chomp( $type );
