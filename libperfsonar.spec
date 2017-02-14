@@ -50,6 +50,9 @@ Requires:		perl(Time::HiRes)
 Requires:		perl(URI::Split)
 Requires:		perl(XML::LibXML)
 Requires:		perfsonar-common
+%if 0%{?el7}
+Requires:		GeoIP-data
+%endif
 Obsoletes:      perl-perfSONAR_PS-Toolkit
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
 Obsoletes:      perl-perfSONAR_PS-serviceTest
