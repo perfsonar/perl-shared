@@ -34,7 +34,7 @@ has 'mss' => (is => 'rw', isa => 'Int');
 has 'dscp' => (is => 'rw', isa => 'Int');
 has 'no_delay' => (is => 'rw', isa => 'Bool');
 has 'congestion' => (is => 'rw', isa => 'Str');
-has 'flow_label' => (is => 'rw', isa => 'Str');
+has 'flow_label' => (is => 'rw', isa => 'Int');
 has 'client_cpu_affinity' => (is => 'rw', isa => 'Int');
 has 'server_cpu_affinity' => (is => 'rw', isa => 'Int');
         
@@ -221,7 +221,7 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'dscp'} = int($test_parameters->dscp) if $test_parameters->dscp;
     $psc_test_spec->{'no-delay'} = JSON::true if($test_parameters->{no_delay});
     $psc_test_spec->{'congestion'} = $test_parameters->congestion if $test_parameters->congestion;
-    $psc_test_spec->{'flow-label'} = $test_parameters->flow_label if $test_parameters->flow_label;
+    $psc_test_spec->{'flow-label'} = int($test_parameters->flow_label) if $test_parameters->flow_label;
     $psc_test_spec->{'client-cpu-affinity'} = int($test_parameters->client_cpu_affinity) if $test_parameters->client_cpu_affinity;
     $psc_test_spec->{'server-cpu-affinity'} = int($test_parameters->server_cpu_affinity) if $test_parameters->server_cpu_affinity;
      
