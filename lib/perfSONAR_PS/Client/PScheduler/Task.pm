@@ -620,7 +620,7 @@ sub get_lead() {
     my $lead_url = $self->url;
     chomp($lead_url);
     $lead_url .= "/" if($self->url !~ /\/$/);
-    $lead_url .= "tests/" . $self->test_type()  . "/lead";
+    $lead_url .= "tests/" . $self->test_type()  . "/participants";
     
     #fetch lead
     $self->data->{'test'}->{'spec'}->{'schema'} = 1 unless($self->data->{'test'}->{'spec'}->{'schema'}); 
@@ -640,13 +640,21 @@ sub get_lead() {
         return;
     }
     my $lead_response_json;
-    eval{$lead_response_json = from_json($lead_response->content, {allow_nonref => 1});};
+    eval{$lead_response_json = from_json($lead_response->content);};
     if($@){
         $self->_set_error("Error parsing lead object returned from $lead_url: $@");
         return;
     }
+    unless($lead_response_json && exists $lead_response_json->{participants} && $lead_response_json->{participants}){
+        $self->_set_error("Error parsing lead object returned from $lead_url: No participant list returned");
+        return;
+    }
+    unless(@{$lead_response_json->{participants}} > 0){
+        $self->_set_error("Error parsing lead object returned from $lead_url: No participants provided in returned list");
+        return;
+    }
     
-    return $lead_response_json;
+    return $lead_response_json->{participants}->[0];
 }
 
 sub get_lead_url() {
