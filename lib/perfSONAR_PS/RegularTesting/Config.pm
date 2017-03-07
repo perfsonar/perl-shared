@@ -34,6 +34,7 @@ use perfSONAR_PS::RegularTesting::Tests::Bwping2Owamp;
 use perfSONAR_PS::RegularTesting::Tests::Bwtraceroute;
 use perfSONAR_PS::RegularTesting::Tests::Bwtraceroute2;
 use perfSONAR_PS::RegularTesting::Tests::Powstream;
+use perfSONAR_PS::RegularTesting::Tests::SimpleStream;
 
 # Measurement Archives
 use perfSONAR_PS::RegularTesting::MeasurementArchives::Base;

@@ -18,10 +18,10 @@ use warnings;
 our $VERSION = 3.3;
 
 use JSON qw( encode_json decode_json);
-use LWP;
 use Params::Validate qw( :all );
 use URI;
 use DateTime::Format::ISO8601;
+use perfSONAR_PS::Client::Utils qw(send_http_request);
 
 use Net::Ping;
 use Time::HiRes;
@@ -255,17 +255,12 @@ sub send{
     	$url = "http://".$self->{HOST}.":".$self->{PORT}."/".$parameters{resourceLocator};
     }
     
-    my $ua = LWP::UserAgent->new;
-    $ua->timeout($self->{TIMEOUT});
-    $ua->env_proxy();
-  
-    # Create a request
-    my $req = HTTP::Request->new($self->{CONNECTIONTYPE} => $url);
-    $req->content_type('application/json');
-    $req->content($self->{DATA});
-    
-    # Pass request to the user agent and get a response back
-    my $res = $ua->request($req);
+    my $res = send_http_request(
+                                connection_type => $self->{CONNECTIONTYPE}, 
+                                url => $url, 
+                                timeout => $self->{TIMEOUT},
+                                data => $self->{DATA}
+                               );
     
     # Return response
     return $res;
