@@ -87,6 +87,17 @@ sub setBundleVersion {
     
 }
 
+sub getInstallMethod {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_INSTALLMETHOD)};
+}
+
+sub setInstallMethod {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSHOST_INSTALLMETHOD), value=>$value  );
+    
+}
+
 sub getToolkitVersion {
     #Deprecated in favor of getBundleVersion
     my $self = shift;

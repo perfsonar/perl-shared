@@ -32,7 +32,6 @@ has 'zero_copy' => (is => 'rw', isa => 'Bool', default => 0);
 has 'tcp_bandwidth' => (is => 'rw', isa => 'Int');
 has 'mss' => (is => 'rw', isa => 'Int');
 has 'dscp' => (is => 'rw', isa => 'Int');
-has 'dynamic_window_size'   => (is => 'rw', isa => 'Int');
 has 'no_delay' => (is => 'rw', isa => 'Bool');
 has 'congestion' => (is => 'rw', isa => 'Str');
 has 'flow_label' => (is => 'rw', isa => 'Str');
@@ -214,13 +213,12 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'duration'} = "PT" . $test_parameters->duration . "S" if $test_parameters->duration;
     $psc_test_spec->{'omit'} = "PT" . $test_parameters->omit_interval . "S" if $test_parameters->omit_interval;
     $psc_test_spec->{'buffer-length'} = int($test_parameters->buffer_length)  if $test_parameters->buffer_length;
-    $psc_test_spec->{'tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
+    $psc_test_spec->{'ip-tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
     $psc_test_spec->{'parallel'} = int($test_parameters->streams) if $test_parameters->streams;
     $psc_test_spec->{'window-size'} = int($test_parameters->window_size) if $test_parameters->window_size;
     $psc_test_spec->{'zero-copy'} = int($test_parameters->zero_copy) if $test_parameters->zero_copy;
     $psc_test_spec->{'mss'} = int($test_parameters->mss) if $test_parameters->mss;
     $psc_test_spec->{'dscp'} = int($test_parameters->dscp) if $test_parameters->dscp;
-    $psc_test_spec->{'dynamic-window-size'} = int($test_parameters->dynamic_window_size) if $test_parameters->dynamic_window_size;
     $psc_test_spec->{'no-delay'} = JSON::true if($test_parameters->{no_delay});
     $psc_test_spec->{'congestion'} = $test_parameters->congestion if $test_parameters->congestion;
     $psc_test_spec->{'flow-label'} = $test_parameters->flow_label if $test_parameters->flow_label;
@@ -232,12 +230,7 @@ override 'build_pscheduler_task' => sub {
     $psc_task->test_spec($psc_test_spec);
     #TODO: Support for more scheduling params
     if ($schedule->type eq "regular_intervals") {
-        $psc_task->schedule_repeat('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
-         my $randslip = .1;
-         $randslip = $schedule->random_start_percentage/100.0 if(defined $schedule->random_start_percentage);
-         $psc_task->schedule_randslip($randslip);
-         #allow a test to be scheduled anytime before the next scheduled run
-         $psc_task->schedule_slip('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
+        $self->psc_test_interval(schedule => $schedule, psc_task => $psc_task);
     }else{
         $logger->warning("Schedule type " . $schedule->type . " not currently supported. Skipping test.");
         return;

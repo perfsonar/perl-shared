@@ -19,7 +19,7 @@ use Moose;
 extends 'perfSONAR_PS::RegularTesting::Tests::BwctlBase';
 
 has 'bwtraceroute_cmd' => (is => 'rw', isa => 'Str', default => '/usr/bin/bwtraceroute');
-has 'tool' => (is => 'rw', isa => 'Str', default => 'tracepath,traceroute');
+has 'tool' => (is => 'rw', isa => 'Str');
 has 'packet_length' => (is => 'rw', isa => 'Int');
 has 'packet_first_ttl' => (is => 'rw', isa => 'Int', );
 has 'packet_max_ttl' => (is => 'rw', isa => 'Int', );
@@ -209,7 +209,7 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'hostnames'} = JSON::true if $test_parameters->hostnames;
     $psc_test_spec->{'probe-type'} = $test_parameters->probe_type if $test_parameters->probe_type;
     $psc_test_spec->{'queries'} = int($test_parameters->queries) if $test_parameters->queries;
-    $psc_test_spec->{'tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
+    $psc_test_spec->{'ip-tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
     $psc_test_spec->{'sendwait'} = "PT" . $test_parameters->sendwait . "S" if $test_parameters->sendwait;
     $psc_test_spec->{'wait'} = "PT" . $test_parameters->sendwait . "S" if $test_parameters->sendwait;
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4 );
@@ -218,10 +218,7 @@ override 'build_pscheduler_task' => sub {
     
     #TODO: Support for more scheduling params
     if ($schedule->type eq "regular_intervals") {
-        $psc_task->schedule_repeat('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
-        $psc_task->schedule_randslip($schedule->random_start_percentage/100.0) if(defined $schedule->random_start_percentage);
-        #allow a test to be scheduled anytime before the next scheduled run
-        $psc_task->schedule_slip('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
+        $self->psc_test_interval(schedule => $schedule, psc_task => $psc_task);
     }else{
         $logger->warning("Schedule type " . $schedule->type . " not currently supported. Skipping test.");
         return;

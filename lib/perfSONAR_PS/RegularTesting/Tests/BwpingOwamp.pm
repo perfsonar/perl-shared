@@ -25,6 +25,7 @@ has 'packet_count' => (is => 'rw', isa => 'Int', default => 100);
 has 'packet_length' => (is => 'rw', isa => 'Int', default => 1000);
 has 'inter_packet_time' => (is => 'rw', isa => 'Num', default => 0.1);
 has 'output_raw'        => (is => 'rw', isa => 'Bool');
+has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -181,6 +182,7 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'packet-count'} = int($test_parameters->packet_count) if $test_parameters->packet_count;
     $psc_test_spec->{'packet-padding'} = int($test_parameters->packet_length) if $test_parameters->packet_length;
     $psc_test_spec->{'packet-interval'} = $test_parameters->inter_packet_time + 0.0 if $test_parameters->inter_packet_time;  
+    $psc_test_spec->{'ip-tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4 );
     $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
     $psc_test_spec->{'flip'} = JSON::true if($parameters->{local_destination});
@@ -189,10 +191,7 @@ override 'build_pscheduler_task' => sub {
     
     #TODO: Support for more scheduling params
     if ($schedule->type eq "regular_intervals") {
-        $psc_task->schedule_repeat('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
-        $psc_task->schedule_randslip($schedule->random_start_percentage/100.0) if(defined $schedule->random_start_percentage);
-        #allow a test to be scheduled anytime before the next scheduled run
-        $psc_task->schedule_slip('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
+        $self->psc_test_interval(schedule => $schedule, psc_task => $psc_task);
     }else{
         $logger->warning("Schedule type " . $schedule->type . " not currently supported. Skipping test.");
         return;

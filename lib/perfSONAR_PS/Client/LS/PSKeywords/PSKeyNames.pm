@@ -30,6 +30,7 @@ use constant {
     LS_KEY_PSHOST_ACCESSNOTES => "pshost-access-notes",
     LS_KEY_PSHOST_BUNDLE => "pshost-bundle",
     LS_KEY_PSHOST_BUNDLEVERSION => "pshost-bundle-version",
+    LS_KEY_PSHOST_INSTALLMETHOD => "pshost-install-method",
     #deprecated in favor of pshost-bundle-version
     LS_KEY_PSHOST_TOOLKITVERSION => "pshost-toolkitversion", 
     

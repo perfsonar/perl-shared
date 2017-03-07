@@ -1,7 +1,7 @@
 %define install_base /usr/lib/perfsonar/
 %define config_base  /etc/perfsonar
 
-%define relnum   0.10.rc2 
+%define relnum   0.12.rc3 
 
 Name:			libperfsonar
 Version:		4.0
@@ -50,6 +50,9 @@ Requires:		perl(Time::HiRes)
 Requires:		perl(URI::Split)
 Requires:		perl(XML::LibXML)
 Requires:		perfsonar-common
+%if 0%{?el7}
+Requires:		GeoIP-data
+%endif
 Obsoletes:      perl-perfSONAR_PS-Toolkit
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
 Obsoletes:      perl-perfSONAR_PS-serviceTest
@@ -84,6 +87,7 @@ Requires:		perl(Time::HiRes)
 Requires:		perl(URI)
 Requires:		perl(YAML::Syck)
 Requires:		perfsonar-common
+Requires:		libperfsonar-perl
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
 Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
 Obsoletes:      perl-perfSONAR_PS-serviceTest

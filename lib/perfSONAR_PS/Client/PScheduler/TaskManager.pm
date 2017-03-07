@@ -485,7 +485,7 @@ sub _print_task {
         print "    repeat: " . $task->schedule_repeat() . "\n" if(defined $task->schedule_repeat());
         print "    max runs: " . $task->schedule_maxruns() . "\n" if(defined $task->schedule_maxruns());
         print "    slip: " . $task->schedule_slip() . "\n" if(defined $task->schedule_slip());
-        print "    randslip: " . $task->schedule_randslip() . "\n" if(defined $task->schedule_randslip());
+        print "    sliprand: " . $task->schedule_sliprand() . "\n" if(defined $task->schedule_sliprand());
         print "    start: " . $task->schedule_start() . "\n" if(defined $task->schedule_start());
         print "    until: " . $task->schedule_until() . "\n" if(defined $task->schedule_until());
     }

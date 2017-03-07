@@ -27,6 +27,7 @@ use Net::DNS;
 use NetAddr::IP;
 use Regexp::Common;
 use Data::Dumper;
+use Socket;
 use Socket6 qw(inet_ntop);
 
 our @EXPORT_OK = qw( reverse_dns resolve_address resolve_address_multi reverse_dns_multi query_location discover_source_address );
@@ -296,10 +297,10 @@ sub discover_source_address {
     # Create a UDP socket destined for the specified address
     my $sock;
     unless($force_ipv4){
-        $sock = IO::Socket::INET6->new(LocalAddr => $local_address, PeerAddr => $address, PeerPort => '80', Proto => 'udp');
+        $sock = IO::Socket::INET6->new(LocalAddr => $local_address, PeerAddr => $address, PeerPort => '80', Proto => 'udp', Domain => AF_INET6);
     }
     unless($sock || $force_ipv6){
-        $sock = IO::Socket::INET->new(LocalAddr => $local_address, PeerAddr => $address, PeerPort => '80', Proto => 'udp');
+        $sock = IO::Socket::INET6->new(LocalAddr => $local_address, PeerAddr => $address, PeerPort => '80', Proto => 'udp', Domain => AF_INET);
     }
     return unless $sock;
 
