@@ -4,6 +4,7 @@ use base 'Exporter';
 use Net::INET6Glue::INET_is_INET6;
 use LWP::UserAgent;
 use HTTP::Request;
+use HTTP::Response;
 use Params::Validate qw(:all);
 use JSON qw(from_json);
 use URI::URL;
@@ -36,8 +37,14 @@ sub send_http_request{
         }
     }
     
+    #set default timeout so we don't get stuck forever
+    my $timeout = 120;
+    if(exists $parameters{timeout} && defined $parameters{timeout}){
+        $timeout = $parameters{timeout};
+    }
+    
     my $ua = LWP::UserAgent->new;
-    $ua->timeout($parameters{timeout});
+    $ua->timeout($timeout);
     $ua->env_proxy();
     unless($parameters{ca_certificate_file} || $parameters{ca_certificate_path}){
         $ua->ssl_opts(SSL_verify_mode => 0x00);
@@ -64,7 +71,7 @@ sub send_http_request{
     $req->content($parameters{data});
     
     # Pass request to the user agent and get a response back
-    my $res = $ua->request($req);
+    my $res = _send_request_timeout(agent=> $ua, request => $req, timeout => $timeout);
     #compensate for perl's lack of IPv4 fallback. If we get unreachable check if it is 
     # dual-stacked. If it is then try the IPv4 address.
     if($res->code == 500 && ($res->status_line =~ /unreachable/ || $res->status_line =~ /connect/)){
@@ -83,7 +90,7 @@ sub send_http_request{
                         if($dns_rec->type eq 'A'){
                             $url_obj->host($dns_rec->address);
                             $req->uri($url_obj);
-                            $res = $ua->request($req);
+                            $res = _send_request_timeout(agent=> $ua, request => $req, timeout => $timeout);
                             last if($res && $res->is_success);
                         }
                     }
@@ -95,6 +102,31 @@ sub send_http_request{
     # Return response
     return $res;
 }
+
+sub _send_request_timeout {
+    my %parameters = validate( @_, { 
+            agent => 1,
+            request => 1, 
+            timeout => 1
+        } );
+    my $ua = $parameters{'agent'};
+    my $timeout = $parameters{'timeout'};
+    my $req = $parameters{'request'};
+    my $res;
+    $ua->timeout($timeout);
+    eval{
+        local $SIG{ALRM} = sub { die "timeout\n" };
+        alarm $timeout;
+        $res = $ua->request($req);
+        alarm 0;
+    };
+    if($@){
+        $res = new HTTP::Response(500, "Timeout connecting to server");
+    }
+    
+    return $res;
+}
+
 
 sub build_err_msg {
     my $parameters = validate( @_, {http_response => 1});
