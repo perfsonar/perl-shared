@@ -369,12 +369,14 @@ override 'to_pscheduler' => sub {
                                          url => 1,
                                          test => 1,
                                          archive_map => 1,
-                                         task_manager => 1
+                                         task_manager => 1,
+                                         global_bind_map => 1
                                       });
     my $url = $parameters->{url};
     my $test = $parameters->{test};
     my $archive_map = $parameters->{archive_map};
     my $task_manager = $parameters->{task_manager};
+    my $global_bind_map = $parameters->{global_bind_map};
     
     #handle interface definitions, which pscheduler does not support
     my $interface_ips;
@@ -451,6 +453,41 @@ override 'to_pscheduler' => sub {
         my $interval;
         if ($test->schedule()->type eq "regular_intervals") {
             $interval = $test->schedule()->interval;
+        }
+        
+        #update binding addresses
+        if($individual_test->{target}->bind_address()){
+            #prefer binding specified at test level
+            $psc_task->add_bind_map($parsed_target->{address}, $individual_test->{target}->bind_address());
+        }elsif($test->bind_address()){
+            #next check if default bind address at test level
+            $psc_task->add_bind_map($parsed_target->{address}, $test->bind_address());
+        }elsif(exists $global_bind_map->{$parsed_target->{address}} && $global_bind_map->{$parsed_target->{address}}){
+            #fallback to global map where address specified if available
+            $psc_task->add_local_bind_map($global_bind_map->{$parsed_target->{address}});
+        }elsif(exists $global_bind_map->{'_default'} && $global_bind_map->{'_default'}){
+            #fallback to global map default if available
+            $psc_task->add_local_bind_map($global_bind_map->{'_default'});
+            if($local_address){
+                $psc_task->add_bind_map($local_address, $global_bind_map->{'_default'});
+            }
+        }
+        #update lead binding addresses
+        ##Local
+        if($individual_test->{target}->local_lead_bind_address()){
+            $psc_task->add_local_lead_bind_map($individual_test->{target}->local_lead_bind_address());
+            if($local_address){
+                $psc_task->add_lead_bind_map($local_address, $individual_test->{target}->local_lead_bind_address());
+            }
+        }elsif($test->local_lead_bind_address()){
+            $psc_task->add_local_lead_bind_map($test->local_lead_bind_address());
+            if($local_address){
+                $psc_task->add_lead_bind_map($local_address, $test->local_lead_bind_address());
+            }
+        }
+        ##Remote
+        if($individual_test->{target}->lead_bind_address()){
+            $psc_task->add_lead_bind_map($parsed_target->{address}, $individual_test->{target}->lead_bind_address());
         }
         
         # add archives

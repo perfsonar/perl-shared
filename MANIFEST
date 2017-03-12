@@ -104,6 +104,7 @@ lib/perfSONAR_PS/NPToolkit/WebService/Auth.pm
 lib/perfSONAR_PS/NPToolkit/WebService/Method.pm
 lib/perfSONAR_PS/NPToolkit/WebService/ParameterTypes.pm
 lib/perfSONAR_PS/NPToolkit/WebService/Router.pm
+lib/perfSONAR_PS/RegularTesting/BindAddress.pm
 lib/perfSONAR_PS/RegularTesting/Config.pm
 lib/perfSONAR_PS/RegularTesting/CreatedBy.pm
 lib/perfSONAR_PS/RegularTesting/Reference.pm

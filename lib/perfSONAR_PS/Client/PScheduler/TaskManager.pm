@@ -55,6 +55,7 @@ sub init {
                                             new_task_min_ttl => 1,
                                             new_task_min_runs => 1,
                                             old_task_deadline => 1,
+                                            bind_map => 1,
                                             task_renewal_fudge_factor => 0,
                                             debug => 0
                                         } );
@@ -82,6 +83,7 @@ sub init {
     $self->existing_archives($tracked_archives);
     
     #build list of existing tasks
+    my $bind_map = $parameters->{'bind_map'};
     my %visited_leads = ();
     foreach my $psc_url(keys %{$self->leads()}){
         print "Getting task list from $psc_url\n" if($self->debug());
@@ -92,7 +94,7 @@ sub init {
         #TODO: filter on enabled field (not yet supported in pscheduler
         #$psc_filters->detail_enabled(1);
         $psc_filters->reference_param("created-by", $self->created_by());
-        my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters);
+        my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters, bind_map => $bind_map);
         
         #get hostname to see if this is a server we already visited using a different address
         my $psc_hostname = $psc_client->get_hostname();
@@ -222,6 +224,7 @@ sub _delete_tasks {
     }
     foreach my $checksum(keys %{$self->existing_task_map()}){
         my $cached_lead;
+        my $cached_bind;
         my $cmap = $self->existing_task_map()->{$checksum};
         foreach my $tool(keys %{$cmap}){
             my $tmap = $cmap->{$tool};
@@ -232,8 +235,10 @@ sub _delete_tasks {
                 #optimization so don't lookup lead for same params
                 if($cached_lead){
                     $task->url($cached_lead);
+                    $task->bind_address($cached_bind) if($cached_bind);
                 }else{
                     $cached_lead = $task->refresh_lead();
+                    $cached_bind = $task->bind_address();
                 }
                 if($task->error){
                     push @{$self->errors()}, "Problem determining which pscheduler to submit test to for deletion, skipping test: " . $task->error;
@@ -264,6 +269,13 @@ sub _need_new_task {
     my ($self, $new_task) = @_;
     
     my $existing = $self->existing_task_map();
+    
+    #if we use one of bind address maps, we have to refresh the lead here or else the 
+    #checksum will be wrong. If we don't specify then don't worry about it as its a 
+    #performance hit
+    if($new_task->needs_bind_addresses()){
+        $new_task->refresh_lead();
+    }
     
     #if private ma params change, then need new task
     #also update new_archives here so we don't have to re-calculate all the checksums
@@ -470,6 +482,7 @@ sub _print_task {
     print "Enabled: " . (defined $task->detail_enabled() ? $task->detail_enabled() : "n/a"). "\n";
     print "Added: " . (defined $task->detail_added() ? $task->detail_added() : "n/a"). "\n";
     print "Lead URL: " . $task->url() . "\n";
+    print "Lead Bind: " . $task->lead_bind() . "\n" if($task->lead_bind());
     print "Checksum: " . $task->checksum() . "\n";
     print "Created By:\n";
     my $created_by = $task->reference_param('created-by');

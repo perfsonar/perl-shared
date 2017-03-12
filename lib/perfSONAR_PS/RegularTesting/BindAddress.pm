@@ -1,9 +1,9 @@
-package perfSONAR_PS::RegularTesting::Target;
+package perfSONAR_PS::RegularTesting::BindAddress;
 
 use strict;
 use warnings;
 
-our $VERSION = 3.4;
+our $VERSION = 4.0;
 
 use Log::Log4perl qw(get_logger);
 use Params::Validate qw(:all);
@@ -16,11 +16,9 @@ use Moose;
 extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
 
 has 'description'          => (is => 'rw', isa => 'Str');
-has 'address'              => (is => 'rw', isa => 'Str');
+has 'remote_address'              => (is => 'rw', isa => 'Str');
 has 'bind_address'         => (is => 'rw', isa => 'Str');
-has 'lead_bind_address'    => (is => 'rw', isa => 'Str');
-has 'local_lead_bind_address'    => (is => 'rw', isa => 'Str');
-has 'override_parameters'  => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Tests::Base');
+has 'added_by_mesh'        => (is => 'rw', isa => 'Bool');
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -28,7 +26,7 @@ override 'parse' => sub {
     my ($class, $description, $strict) = @_;
 
     unless (ref($description) and ref($description) eq "HASH") {
-        $description = { address => $description };
+        $description = { bind_address => $description };
     }
 
     return $class->SUPER::parse($description, $strict);
@@ -40,8 +38,8 @@ override 'unparse' => sub {
 
     my $result = super();
 
-    if ($result->{address} and scalar(keys %$result) == 1) {
-        $result = $result->{address};
+    if ($result->{bind_address} and scalar(keys %$result) == 1) {
+        $result = $result->{bind_address};
     }
 
     return $result;
