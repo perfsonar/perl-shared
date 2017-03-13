@@ -23,7 +23,8 @@ extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
 has 'tests'                        => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::Test]', default => sub { [] });
 has 'default_parameters'           => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::Tests::Base]', default => sub { [] });
 has 'measurement_archives'         => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Base]', default => sub { [] });
-has 'bind_addresses'                 => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::BindAddress]', default => sub { [] });
+has 'bind_addresses'               => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::BindAddress]', default => sub { [] });
+has 'local_lead_bind_addresses'    => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::BindAddress]', default => sub { [] });
 has 'test_result_directory'        => (is => 'rw', isa => 'Str', default => "/var/lib/perfsonar/regulartesting");
 
 # Tests
@@ -58,7 +59,12 @@ use perfSONAR_PS::RegularTesting::Schedulers::Streaming;
 use perfSONAR_PS::RegularTesting::Schedulers::TimeBasedSchedule;
 
 override 'variable_map' => sub {
-    return { "tests" => "test", "measurement_archives" => "measurement_archive", "bind_addresses" => "bind_address" };
+    return { 
+                "tests" => "test", 
+                "measurement_archives" => "measurement_archive", 
+                "bind_addresses" => "bind_address",
+                "local_lead_bind_addresses" => "local_lead_bind_address",
+           };
 };
 
 sub init {

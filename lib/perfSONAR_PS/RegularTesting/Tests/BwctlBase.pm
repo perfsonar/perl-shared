@@ -370,13 +370,15 @@ override 'to_pscheduler' => sub {
                                          test => 1,
                                          archive_map => 1,
                                          task_manager => 1,
-                                         global_bind_map => 1
+                                         global_bind_map => 1,
+                                         global_lead_bind_map => 1,
                                       });
     my $url = $parameters->{url};
     my $test = $parameters->{test};
     my $archive_map = $parameters->{archive_map};
     my $task_manager = $parameters->{task_manager};
     my $global_bind_map = $parameters->{global_bind_map};
+    my $global_lead_bind_map = $parameters->{global_lead_bind_map};
     
     #handle interface definitions, which pscheduler does not support
     my $interface_ips;
@@ -483,6 +485,15 @@ override 'to_pscheduler' => sub {
             $psc_task->add_local_lead_bind_map($test->local_lead_bind_address());
             if($local_address){
                 $psc_task->add_lead_bind_map($local_address, $test->local_lead_bind_address());
+            }
+        }elsif(exists $global_lead_bind_map->{$parsed_target->{address}} && $global_lead_bind_map->{$parsed_target->{address}}){
+            #fallback to global map where address specified if available
+            $psc_task->add_local_lead_bind_map($global_lead_bind_map->{$parsed_target->{address}});
+        }elsif(exists $global_lead_bind_map->{'_default'} && $global_lead_bind_map->{'_default'}){
+            #fallback to global map default if available
+            $psc_task->add_local_lead_bind_map($global_lead_bind_map->{'_default'});
+            if($local_address){
+                $psc_task->add_lead_bind_map($local_address, $global_lead_bind_map->{'_default'});
             }
         }
         ##Remote
