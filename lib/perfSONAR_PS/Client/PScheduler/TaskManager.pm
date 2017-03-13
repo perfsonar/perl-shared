@@ -202,7 +202,7 @@ sub check_assist_server {
     my ($self) = @_;
     
     my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $self->pscheduler_url());
-    $psc_client->get_tests();
+    $psc_client->get_test_urls();
     if($psc_client->error()){
         print $psc_client->error() . "\n" if($self->debug());
         return 0;

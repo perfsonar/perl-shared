@@ -6,6 +6,7 @@ use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg extract_url_u
 use perfSONAR_PS::Client::PScheduler::Archive;
 use perfSONAR_PS::Client::PScheduler::Run;
 use Digest::MD5 qw(md5_base64);
+use Data::Validate::IP qw(is_loopback_ipv4);
 
 extends 'perfSONAR_PS::Client::PScheduler::BaseNode';
 
@@ -475,7 +476,7 @@ sub add_local_bind_map{
         return;
     }
     
-    $self->bind_map->{'_local'} = $bind;
+    $self->bind_map->{'_default'} = $bind;
 }
 
 sub add_local_lead_bind_map{
@@ -485,7 +486,7 @@ sub add_local_lead_bind_map{
         return;
     }
     
-    $self->lead_bind_map->{'_local'} = $bind;
+    $self->lead_bind_map->{'_default'} = $bind;
 }
 
 sub post_task {
@@ -670,6 +671,17 @@ sub get_lead() {
         return;
     }
     
+    #init bindings if we haven't already done so
+    if($self->needs_bind_addresses() && $self->url){
+        my $url_obj = new URI($self->url);  
+        my $lead = $url_obj->host;
+        if(exists $self->bind_map->{$lead} && $self->bind_map->{$lead}){
+            $self->bind_address($self->bind_map->{$lead});
+        }elsif(exists $self->bind_map->{'_default'} && $self->bind_map->{'_default'}){
+            $self->bind_address($self->bind_map->{'_default'}) unless(is_loopback_ipv4($lead) || $lead eq '::1' || $lead =~ /^localhost/);;
+        }
+    }
+    
     #build url
     my $lead_url = $self->url;
     chomp($lead_url);
@@ -714,15 +726,15 @@ sub get_lead() {
     
     if($lead && exists $self->bind_map->{$lead} && $self->bind_map->{$lead}){
         $self->bind_address($self->bind_map->{$lead});
-    }elsif(!$lead && exists $self->bind_map->{'_local'} && $self->bind_map->{'_local'}){
-        $self->bind_address($self->bind_map->{'_local'});
+    }elsif(exists $self->bind_map->{'_default'} && $self->bind_map->{'_default'}){
+        $self->bind_address($self->bind_map->{'_default'});
     }
     
-    #set lead bind address if we have map set
+    #set lead bind address if we have map set - only set it if we are local (first participant None) or explicitly call out address
     if($lead && exists $self->lead_bind_map->{$lead} && $self->lead_bind_map->{$lead}){
         $self->lead_bind($self->lead_bind_map->{$lead});
-    }elsif(!$lead && exists $self->lead_bind_map->{'_local'} && $self->lead_bind_map->{'_local'}){
-        $self->lead_bind($self->lead_bind_map->{'_local'});
+    }elsif(!$lead && exists $self->lead_bind_map->{'_default'} && $self->lead_bind_map->{'_default'}){
+        $self->lead_bind($self->lead_bind_map->{'_default'});
     }
     
     return $lead;

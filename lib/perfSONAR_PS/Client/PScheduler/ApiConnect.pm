@@ -119,7 +119,7 @@ sub get_task() {
         return;
     }
     
-    return new perfSONAR_PS::Client::PScheduler::Task(data => $task_response_json, url => $self->url, filters => $self->filters, uuid => $task_uuid);
+    return new perfSONAR_PS::Client::PScheduler::Task(data => $task_response_json, url => $self->url, filters => $self->filters, uuid => $task_uuid, bind_map => $self->bind_map);
 }
 
 sub get_tools() {
@@ -210,6 +210,47 @@ sub get_tool() {
     }
     
     return new perfSONAR_PS::Client::PScheduler::Tool(data => $tool_response_json, url => $tool_url, filters => $self->filters, uuid => $tool_name);
+}
+
+sub get_test_urls() {
+    my $self = shift;
+    
+    #build url
+    my $tests_url = $self->url;
+    chomp($tests_url);
+    $tests_url .= "/" if($self->url !~ /\/$/);
+    $tests_url .= "tests";
+    
+    my %filters = ();
+
+    my $response = send_http_request(
+        connection_type => 'GET', 
+        url => $tests_url, 
+        timeout => $self->filters->timeout,
+        ca_certificate_file => $self->filters->ca_certificate_file,
+        ca_certificate_path => $self->filters->ca_certificate_path,
+        verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
+        bind_map => $self->bind_map,
+        #headers => $self->filters->headers()
+    );
+     
+    if(!$response->is_success){
+        my $msg = build_err_msg(http_response => $response);
+        $self->_set_error($msg);
+        return;
+    }
+    my $response_json = from_json($response->content);
+    if(! $response_json){
+        $self->_set_error("No test objects returned.");
+        return;
+    }
+    if(ref($response_json) ne 'ARRAY'){
+        $self->_set_error("Tests must be an array not " . ref($response_json));
+        return;
+    }
+    
+    return $response_json;
 }
 
 sub get_tests() {
