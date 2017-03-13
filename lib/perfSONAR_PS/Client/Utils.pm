@@ -1,6 +1,7 @@
 package perfSONAR_PS::Client::Utils;
 
 use base 'Exporter';
+use Log::Log4perl qw(get_logger);
 use Net::INET6Glue::INET_is_INET6;
 use LWP::UserAgent;
 use LWP::Protocol::http;
@@ -15,6 +16,8 @@ use Data::Validate::IP qw(is_loopback_ipv4);
 use Net::DNS;
 
 our @EXPORT_OK = qw( send_http_request build_err_msg extract_url_uuid );
+
+my $logger = get_logger(__PACKAGE__);
 
 # establishes a HTTP connection and sends the message
 sub send_http_request{
@@ -100,6 +103,7 @@ sub send_http_request{
     push @{ $ua->requests_redirectable }, 'DELETE';
     
     # Create a request
+    $logger->debug("Sending HTTP " . $parameters{connection_type} . " to $url" . ($bind_address ? " with local bind address $bind_address" : ""));
     my $req = HTTP::Request->new($parameters{connection_type} => $url);
     if($parameters{'headers'}){
         foreach my $h(keys %{$parameters{'headers'}}){
