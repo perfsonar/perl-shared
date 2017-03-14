@@ -132,11 +132,11 @@ sub psc_test_interval {
         #always randomize if this option set
         $psc_task->schedule_sliprand(1);
         #change interval to lower bound
-        my $p = int(($schedule->random_start_percentage/100.0) * $schedule->interval);
-        my $lower_bound = $schedule->interval - $p;
-        my $slip = $p * 2;
-        $psc_task->schedule_repeat('PT' . int($lower_bound) . 'S') if(defined $schedule->interval);
-        $psc_task->schedule_slip('PT' . int($slip) . 'S') if(defined $schedule->interval);
+        #my $p = int(($schedule->random_start_percentage/100.0) * $schedule->interval);
+        #my $lower_bound = $schedule->interval - $p;
+        #my $slip = $p * 2;
+        #$psc_task->schedule_repeat('PT' . int($lower_bound) . 'S') if(defined $schedule->interval);
+        #$psc_task->schedule_slip('PT' . int($slip) . 'S') if(defined $schedule->interval);
     }else{
         #allow a test to be scheduled anytime before the next scheduled run
         $psc_task->schedule_slip('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
