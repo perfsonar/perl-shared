@@ -12,6 +12,7 @@ extends 'perfSONAR_PS::Client::PScheduler::BaseNode';
 
 has 'bind_map' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'lead_bind_map' => (is => 'rw', isa => 'HashRef', default => sub { {} });
+has 'lead_address_map' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 
 override '_post_url' => sub {
     my $self = shift;
@@ -469,6 +470,16 @@ sub add_lead_bind_map{
     $self->lead_bind_map->{$target} = $bind;
 }
 
+sub add_lead_address_map{
+    my ($self, $target, $addr) = @_;
+    
+    unless(defined $target && defined $addr){
+        return;
+    }
+    
+    $self->lead_address_map->{$target} = $addr;
+}
+
 sub add_local_bind_map{
     my ($self, $bind) = @_;
     
@@ -671,14 +682,28 @@ sub get_lead() {
         return;
     }
     
-    #init bindings if we haven't already done so
-    if($self->needs_bind_addresses() && $self->url){
+    #do any address-based mappings here
+    if($self->url){
         my $url_obj = new URI($self->url);  
         my $lead = $url_obj->host;
-        if(exists $self->bind_map->{$lead} && $self->bind_map->{$lead}){
-            $self->bind_address($self->bind_map->{$lead});
-        }elsif(exists $self->bind_map->{'_default'} && $self->bind_map->{'_default'}){
-            $self->bind_address($self->bind_map->{'_default'}) unless(is_loopback_ipv4($lead) || $lead eq '::1' || $lead =~ /^localhost/);;
+        #map the URL to a specific public address if needed
+        if(exists $self->lead_address_map->{$lead} && $self->lead_address_map->{$lead}){
+            $url_obj->host($self->lead_address_map->{$lead});
+            $self->url("$url_obj");
+            $lead = $url_obj->host;
+        }
+        #init bindings if we haven't already done so
+        if($self->needs_bind_addresses()){   
+            if(exists $self->bind_map->{$lead} && $self->bind_map->{$lead}){
+                $self->bind_address($self->bind_map->{$lead});
+            }elsif(exists $self->bind_map->{'_default'} && $self->bind_map->{'_default'}){
+                $self->bind_address($self->bind_map->{'_default'}) unless(is_loopback_ipv4($lead) || $lead eq '::1' || $lead =~ /^localhost/);;
+            }
+        }
+        #map the URL to a specific public address if needed
+        if(exists $self->lead_address_map->{$lead} && $self->lead_address_map->{$lead}){
+            $url_obj->host($self->lead_address_map->{$lead});
+            $self->url("$url_obj");
         }
     }
     
@@ -721,9 +746,15 @@ sub get_lead() {
         return;
     }
     
-    #set bind address if we have a bind map populated
+    
     my $lead = $lead_response_json->{participants}->[0];
     
+    #switch to public address if have mapping
+    if($lead  && exists $self->lead_address_map->{$lead} && $self->lead_address_map->{$lead}){
+        $lead = $self->lead_address_map->{$lead};
+    }
+        
+    #set bind address if we have a bind map populated
     if($lead && exists $self->bind_map->{$lead} && $self->bind_map->{$lead}){
         $self->bind_address($self->bind_map->{$lead});
     }elsif(exists $self->bind_map->{'_default'} && $self->bind_map->{'_default'}){

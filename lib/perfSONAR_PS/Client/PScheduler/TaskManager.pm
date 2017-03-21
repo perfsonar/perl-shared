@@ -56,6 +56,7 @@ sub init {
                                             new_task_min_runs => 1,
                                             old_task_deadline => 1,
                                             bind_map => 1,
+                                            lead_address_map => 1,
                                             task_renewal_fudge_factor => 0,
                                             debug => 0
                                         } );
@@ -84,6 +85,7 @@ sub init {
     
     #build list of existing tasks
     my $bind_map = $parameters->{'bind_map'};
+    my $lead_address_map = $parameters->{'lead_address_map'};
     my %visited_leads = ();
     foreach my $psc_url(keys %{$self->leads()}){
         print "Getting task list from $psc_url\n" if($self->debug());
@@ -94,7 +96,7 @@ sub init {
         #TODO: filter on enabled field (not yet supported in pscheduler
         #$psc_filters->detail_enabled(1);
         $psc_filters->reference_param("created-by", $self->created_by());
-        my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters, bind_map => $bind_map);
+        my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters, bind_map => $bind_map, lead_address_map => $lead_address_map);
         
         #get hostname to see if this is a server we already visited using a different address
         my $psc_hostname = $psc_client->get_hostname();

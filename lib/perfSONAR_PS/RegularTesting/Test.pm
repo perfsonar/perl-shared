@@ -24,6 +24,7 @@ has 'disabled'             => (is => 'rw', isa => 'Bool');
 has 'local_address'        => (is => 'rw', isa => 'Str');
 has 'local_interface'      => (is => 'rw', isa => 'Str');
 has 'local_lead_bind_address'        => (is => 'rw', isa => 'Str');
+has 'local_pscheduler_address'       => (is => 'rw', isa => 'Str');
 has 'bind_address'         => (is => 'rw', isa => 'Str');
 has 'references'           => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::Reference]', default => sub { [] });
 has 'parameters'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Tests::Base');

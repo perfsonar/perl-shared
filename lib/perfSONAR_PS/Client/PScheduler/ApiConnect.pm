@@ -25,6 +25,7 @@ our $VERSION = 4.0;
 has 'url' => (is => 'rw', isa => 'Str');
 has 'bind_address' => (is => 'rw', isa => 'Str|Undef');
 has 'bind_map' => (is => 'rw', isa => 'HashRef', default => sub { {} });
+has 'lead_address_map' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'filters' => (is => 'rw', isa => 'perfSONAR_PS::Client::PScheduler::ApiFilters', default => sub { new perfSONAR_PS::Client::PScheduler::ApiFilters(); });
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 
@@ -51,6 +52,7 @@ sub get_tasks() {
         verify_hostname => $self->filters->verify_hostname,
         local_address => $self->bind_address,
         bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
         #headers => $self->filters->headers()
     );
      
@@ -107,6 +109,7 @@ sub get_task() {
         verify_hostname => $self->filters->verify_hostname,
         local_address => $self->bind_address,
         bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
     );
     if(!$task_response->is_success){
         my $msg = build_err_msg(http_response => $task_response);
@@ -119,7 +122,14 @@ sub get_task() {
         return;
     }
     
-    return new perfSONAR_PS::Client::PScheduler::Task(data => $task_response_json, url => $self->url, filters => $self->filters, uuid => $task_uuid, bind_map => $self->bind_map);
+    return new perfSONAR_PS::Client::PScheduler::Task(
+            data => $task_response_json, 
+            url => $self->url, 
+            filters => $self->filters, 
+            uuid => $task_uuid, 
+            bind_map => $self->bind_map, 
+            lead_address_map => $self->lead_address_map
+        );
 }
 
 sub get_tools() {
@@ -142,6 +152,7 @@ sub get_tools() {
         verify_hostname => $self->filters->verify_hostname,
         local_address => $self->bind_address,
         bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
         #headers => $self->filters->headers()
     );
      
@@ -197,6 +208,7 @@ sub get_tool() {
         verify_hostname => $self->filters->verify_hostname,
         local_address => $self->bind_address,
         bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
     );
     if(!$tool_response->is_success){
         my $msg = build_err_msg(http_response => $tool_response);
@@ -232,6 +244,7 @@ sub get_test_urls() {
         verify_hostname => $self->filters->verify_hostname,
         local_address => $self->bind_address,
         bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
         #headers => $self->filters->headers()
     );
      
@@ -273,6 +286,7 @@ sub get_tests() {
         verify_hostname => $self->filters->verify_hostname,
         local_address => $self->bind_address,
         bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
         #headers => $self->filters->headers()
     );
      
@@ -328,6 +342,7 @@ sub get_test() {
         verify_hostname => $self->filters->verify_hostname,
         local_address => $self->bind_address,
         bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
     );
     if(!$test_response->is_success){
         my $msg = build_err_msg(http_response => $test_response);
@@ -363,6 +378,7 @@ sub get_hostname() {
         verify_hostname => $self->filters->verify_hostname,
         local_address => $self->bind_address,
         bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
         #headers => $self->filters->headers()
     );
      

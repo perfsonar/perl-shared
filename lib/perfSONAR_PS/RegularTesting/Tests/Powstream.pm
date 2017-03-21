@@ -397,6 +397,8 @@ override 'to_pscheduler' => sub {
                                          task_manager => 1,
                                          global_bind_map => 1,
                                          global_lead_bind_map => 1,
+                                         global_local_lead_addr_map => 1, 
+                                         global_lead_addr_map => 1,
                                       });
     my $psc_url = $parameters->{url};
     my $test = $parameters->{test};

@@ -12,6 +12,7 @@ use Module::Load;
 
 use perfSONAR_PS::RegularTesting::Test;
 use perfSONAR_PS::RegularTesting::BindAddress;
+use perfSONAR_PS::RegularTesting::PSchedulerAddress;
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -25,6 +26,8 @@ has 'default_parameters'           => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS
 has 'measurement_archives'         => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Base]', default => sub { [] });
 has 'bind_addresses'               => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::BindAddress]', default => sub { [] });
 has 'local_lead_bind_addresses'    => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::BindAddress]', default => sub { [] });
+has 'local_pscheduler_addresses'   => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::PSchedulerAddress]', default => sub { [] });
+has 'pscheduler_addresses'   => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::PSchedulerAddress]', default => sub { [] });
 has 'test_result_directory'        => (is => 'rw', isa => 'Str', default => "/var/lib/perfsonar/regulartesting");
 
 # Tests
@@ -64,6 +67,8 @@ override 'variable_map' => sub {
                 "measurement_archives" => "measurement_archive", 
                 "bind_addresses" => "bind_address",
                 "local_lead_bind_addresses" => "local_lead_bind_address",
+                "local_pscheduler_addresses" => "local_pscheduler_address",
+                "pscheduler_addresses" => "pscheduler_address",
            };
 };
 

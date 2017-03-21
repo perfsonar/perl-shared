@@ -32,7 +32,8 @@ sub send_http_request{
         ca_certificate_file => 0, 
         ca_certificate_path => 0,
         local_address => 0,
-        bind_map => 0} );
+        bind_map => 0,
+        address_map => 0} );
     
     my $url = $parameters{url};
     my $param_count = 0;
@@ -55,6 +56,18 @@ sub send_http_request{
     my $ua = LWP::UserAgent->new;
     $ua->timeout($timeout);
     $ua->env_proxy();
+    
+    #lookup address if map provided
+    my $address_map = $parameters{address_map};
+    if(%{$address_map}){
+        my $url_obj = new URI::URL($url);
+        my $host = $url_obj->host;
+        if(exists $address_map->{$host} && $address_map->{$host}){
+            #if directly referenced, then use it
+            $url_obj->host($address_map->{$host});
+            $url = "$url_obj";
+        }
+    }
     
     #Determine where to bind locally, if needed
     my $bind_address = '';
