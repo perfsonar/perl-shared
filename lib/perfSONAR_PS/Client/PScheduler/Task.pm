@@ -6,8 +6,13 @@ use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg extract_url_u
 use perfSONAR_PS::Client::PScheduler::Archive;
 use perfSONAR_PS::Client::PScheduler::Run;
 use Digest::MD5 qw(md5_base64);
+use Data::Validate::IP qw(is_loopback_ipv4);
 
 extends 'perfSONAR_PS::Client::PScheduler::BaseNode';
+
+has 'bind_map' => (is => 'rw', isa => 'HashRef', default => sub { {} });
+has 'lead_bind_map' => (is => 'rw', isa => 'HashRef', default => sub { {} });
+has 'lead_address_map' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 
 override '_post_url' => sub {
     my $self = shift;
@@ -74,6 +79,14 @@ sub tool{
         $self->data->{'tool'} = $val;
     }
     return $self->data->{'tool'};
+}
+
+sub lead_bind{
+    my ($self, $val) = @_;
+    if(defined $val){
+        $self->data->{'lead-bind'} = $val;
+    }
+    return $self->data->{'lead-bind'};
 }
 
 sub reference{
@@ -437,6 +450,56 @@ sub add_requested_tool{
     push @{$self->data->{'tools'}}, $val;
 }
 
+sub add_bind_map{
+    my ($self, $target, $bind) = @_;
+    
+    unless(defined $target && defined $bind){
+        return;
+    }
+    
+    $self->bind_map->{$target} = $bind;
+}
+
+sub add_lead_bind_map{
+    my ($self, $target, $bind) = @_;
+    
+    unless(defined $target && defined $bind){
+        return;
+    }
+    
+    $self->lead_bind_map->{$target} = $bind;
+}
+
+sub add_lead_address_map{
+    my ($self, $target, $addr) = @_;
+    
+    unless(defined $target && defined $addr){
+        return;
+    }
+    
+    $self->lead_address_map->{$target} = $addr;
+}
+
+sub add_local_bind_map{
+    my ($self, $bind) = @_;
+    
+    unless(defined $bind){
+        return;
+    }
+    
+    $self->bind_map->{'_default'} = $bind;
+}
+
+sub add_local_lead_bind_map{
+    my ($self, $bind) = @_;
+    
+    unless(defined $bind){
+        return;
+    }
+    
+    $self->lead_bind_map->{'_default'} = $bind;
+}
+
 sub post_task {
     my $self = shift;
     
@@ -492,6 +555,7 @@ sub runs(){
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,
         verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
         #headers => $self->filters->headers()
     );
      
@@ -545,6 +609,7 @@ sub run_uuids(){
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,
         verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
         #headers => $self->filters->headers()
     );
      
@@ -593,6 +658,7 @@ sub get_run() {
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,
         verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
     );
     if(!$run_response->is_success){
         my $msg = build_err_msg(http_response => $run_response);
@@ -616,6 +682,31 @@ sub get_lead() {
         return;
     }
     
+    #do any address-based mappings here
+    if($self->url){
+        my $url_obj = new URI($self->url);  
+        my $lead = $url_obj->host;
+        #map the URL to a specific public address if needed
+        if(exists $self->lead_address_map->{$lead} && $self->lead_address_map->{$lead}){
+            $url_obj->host($self->lead_address_map->{$lead});
+            $self->url("$url_obj");
+            $lead = $url_obj->host;
+        }
+        #init bindings if we haven't already done so
+        if($self->needs_bind_addresses()){   
+            if(exists $self->bind_map->{$lead} && $self->bind_map->{$lead}){
+                $self->bind_address($self->bind_map->{$lead});
+            }elsif(exists $self->bind_map->{'_default'} && $self->bind_map->{'_default'}){
+                $self->bind_address($self->bind_map->{'_default'}) unless(is_loopback_ipv4($lead) || $lead eq '::1' || $lead =~ /^localhost/);;
+            }
+        }
+        #map the URL to a specific public address if needed
+        if(exists $self->lead_address_map->{$lead} && $self->lead_address_map->{$lead}){
+            $url_obj->host($self->lead_address_map->{$lead});
+            $self->url("$url_obj");
+        }
+    }
+    
     #build url
     my $lead_url = $self->url;
     chomp($lead_url);
@@ -633,6 +724,7 @@ sub get_lead() {
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,
         verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
     );
     if(!$lead_response->is_success){
         my $msg = build_err_msg(http_response => $lead_response);
@@ -654,7 +746,29 @@ sub get_lead() {
         return;
     }
     
-    return $lead_response_json->{participants}->[0];
+    
+    my $lead = $lead_response_json->{participants}->[0];
+    
+    #switch to public address if have mapping
+    if($lead  && exists $self->lead_address_map->{$lead} && $self->lead_address_map->{$lead}){
+        $lead = $self->lead_address_map->{$lead};
+    }
+        
+    #set bind address if we have a bind map populated
+    if($lead && exists $self->bind_map->{$lead} && $self->bind_map->{$lead}){
+        $self->bind_address($self->bind_map->{$lead});
+    }elsif(exists $self->bind_map->{'_default'} && $self->bind_map->{'_default'}){
+        $self->bind_address($self->bind_map->{'_default'});
+    }
+    
+    #set lead bind address if we have map set - only set it if we are local (first participant None) or explicitly call out address
+    if($lead && exists $self->lead_bind_map->{$lead} && $self->lead_bind_map->{$lead}){
+        $self->lead_bind($self->lead_bind_map->{$lead});
+    }elsif(!$lead && exists $self->lead_bind_map->{'_default'} && $self->lead_bind_map->{'_default'}){
+        $self->lead_bind($self->lead_bind_map->{'_default'});
+    }
+    
+    return $lead;
 }
 
 sub get_lead_url() {
@@ -683,6 +797,20 @@ sub refresh_lead() {
     }
     
     return $lead;
+}
+
+sub needs_bind_addresses() {
+    my ($self) = @_;
+    
+    if(%{$self->bind_map} && !$self->bind_address()){
+        return 1;
+    }
+    
+    if(%{$self->lead_bind_map} && !$self->lead_bind()){
+        return 1;
+    }
+    
+    return 0;
 }
 
 sub checksum() {
