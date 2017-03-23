@@ -154,6 +154,8 @@ override 'build_pscheduler_task' => sub {
                                          force_ipv6 => 0,
                                          test_parameters => 1,
                                          test => 1,
+                                         source_node => 0,
+                                         dest_node => 0,
                                       });
     my $psc_url           = $parameters->{url};
     my $source            = $parameters->{source};

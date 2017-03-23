@@ -159,6 +159,8 @@ override 'build_pscheduler_task' => sub {
                                          force_ipv6 => 0,
                                          test_parameters => 1,
                                          test => 1,
+                                         source_node => 0,
+                                         dest_node => 0,
                                       });
     my $psc_url           = $parameters->{url};
     my $source            = $parameters->{source};
@@ -169,6 +171,7 @@ override 'build_pscheduler_task' => sub {
     my $test_parameters   = $parameters->{test_parameters};
     my $test              = $parameters->{test};
     my $schedule          = $test->schedule();
+    my $source_node       = $parameters->{source_node};
     
     my $psc_task = new perfSONAR_PS::Client::PScheduler::Task(url => $psc_url);
     $psc_task->reference_param('description', $test->description()) if $test->description();
@@ -210,6 +213,7 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'suppress-loopback'} = JSON::true if($test_parameters->{suppress_loopback});
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4 );
     $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
+    $psc_test_spec->{'source-node'} = $source_node if($source_node);
     $psc_task->test_spec($psc_test_spec);
     
     #TODO: Support for more scheduling params

@@ -6,6 +6,7 @@ use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg);
 
 has 'data' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'url' => (is => 'rw', isa => 'Str|Undef');
+has 'bind_address' => (is => 'rw', isa => 'Str|Undef');
 has 'uuid' => (is => 'rw', isa => 'Str|Undef');
 has 'filters' => (is => 'rw', isa => 'perfSONAR_PS::Client::PScheduler::ApiFilters', default => sub { new perfSONAR_PS::Client::PScheduler::ApiFilters()  });
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
@@ -38,6 +39,7 @@ sub _post {
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,
         verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
         #headers => $self->filters->headers(),
         data => $data
     );
@@ -61,6 +63,7 @@ sub _put {
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,
         verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
         #headers => $self->filters->headers(),
         data => $data
     );
@@ -84,6 +87,7 @@ sub _delete {
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,
         verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
         #headers => $self->filters->headers(),
     );
     
