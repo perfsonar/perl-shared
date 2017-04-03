@@ -18,8 +18,6 @@ use perfSONAR_PS::NPToolkit::Services::MaDDash;
 use perfSONAR_PS::NPToolkit::Services::MeshConfigAgent;
 use perfSONAR_PS::NPToolkit::Services::PScheduler;
 use perfSONAR_PS::NPToolkit::Services::MySQL;
-use perfSONAR_PS::NPToolkit::Services::NDT;
-use perfSONAR_PS::NPToolkit::Services::NPAD;
 use perfSONAR_PS::NPToolkit::Services::NTP;
 use perfSONAR_PS::NPToolkit::Services::OWAMP;
 use perfSONAR_PS::NPToolkit::Services::YumCron;
@@ -37,8 +35,6 @@ my %name_to_service_map = (
     lsregistration => "perfSONAR_PS::NPToolkit::Services::LSRegistrationDaemon",
     maddash => "perfSONAR_PS::NPToolkit::Services::MaDDash",
     mysql => "perfSONAR_PS::NPToolkit::Services::MySQL",
-    ndt => "perfSONAR_PS::NPToolkit::Services::NDT",
-    npad => "perfSONAR_PS::NPToolkit::Services::NPAD",
     ntp => "perfSONAR_PS::NPToolkit::Services::NTP",
     owamp => "perfSONAR_PS::NPToolkit::Services::OWAMP",
     meshconfig_agent => "perfSONAR_PS::NPToolkit::Services::MeshConfigAgent",
