@@ -683,6 +683,7 @@ sub get_lead() {
     }
     
     #do any address-based mappings here
+    my $participants_lead_bind = "";
     if($self->url){
         my $url_obj = new URI($self->url);  
         my $lead = $url_obj->host;
@@ -694,12 +695,24 @@ sub get_lead() {
         }
         #init bindings if we haven't already done so
         if($self->needs_bind_addresses()){   
+            #set bind map
             if(exists $self->bind_map->{$lead} && $self->bind_map->{$lead}){
                 $self->bind_address($self->bind_map->{$lead});
             }elsif(exists $self->bind_map->{'_default'} && $self->bind_map->{'_default'}){
-                $self->bind_address($self->bind_map->{'_default'}) unless(is_loopback_ipv4($lead) || $lead eq '::1' || $lead =~ /^localhost/);;
+                $self->bind_address($self->bind_map->{'_default'}) unless(is_loopback_ipv4($lead) || $lead eq '::1' || $lead =~ /^localhost/);
             }
+            #set participants lead
+            if(exists $self->lead_bind_map->{$lead} && $self->lead_bind_map->{$lead}){
+                $participants_lead_bind = $self->lead_bind_map->{$lead};
+            }elsif(exists $self->lead_bind_map->{'_default'} && $self->lead_bind_map->{'_default'}){
+                #Only do this if url points to local pscheduler - may cause problems if default assist server in .conf is remote
+                $participants_lead_bind = $self->lead_bind_map->{'_default'} if(is_loopback_ipv4($lead) || $lead eq '::1' || $lead =~ /^localhost/);
+            }
+        }elsif($self->lead_bind()){
+            #if lead_bind already set, give it to participants
+            $participants_lead_bind = $self->lead_bind();
         }
+        
         #map the URL to a specific public address if needed
         if(exists $self->lead_address_map->{$lead} && $self->lead_address_map->{$lead}){
             $url_obj->host($self->lead_address_map->{$lead});
@@ -716,6 +729,7 @@ sub get_lead() {
     #fetch lead
     $self->data->{'test'}->{'spec'}->{'schema'} = 1 unless($self->data->{'test'}->{'spec'}->{'schema'}); 
     my %get_params = ("spec" => to_json($self->test_spec()));
+    $get_params{'lead-bind'} =  $participants_lead_bind if($participants_lead_bind);
     my $lead_response = send_http_request(
         connection_type => 'GET', 
         url => $lead_url, 
