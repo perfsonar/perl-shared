@@ -473,8 +473,8 @@ sub get_services {
             max_port => 65535,
         };
     }
-    
-    my @service_names = qw(owamp bwctl meshconfig_agent pscheduler esmond ndt npad lsregistration);
+
+    my @service_names = qw(owamp bwctl meshconfig_agent pscheduler esmond lsregistration);
     my %services = ();
     foreach my $service_name ( @service_names ) {
         my $service = get_service_object($service_name);
