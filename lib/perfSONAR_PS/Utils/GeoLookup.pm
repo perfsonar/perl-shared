@@ -18,73 +18,15 @@ our $VERSION = 3.4;
 
 use Geo::IP;
 use Data::Validate::IP;
- use Socket;     #this doesn't help
- use Socket6;
+use Socket;     #this doesn't help
+use Socket6;
 use Net::IP; # doesn't help
 use base 'Exporter';
 use Data::Dumper;
-use JSON::XS;
-require LWP::UserAgent;
 
 our @EXPORT_OK = qw(
-    geoLookup
     geoIPLookup
-    geoWhoisLookup
-    geoReverseLookup
 );
-
-my $REQUEST_TIMEOUT = 5;
-my $REQUEST_FORMAT = "json";
-my $GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/${REQUEST_FORMAT}";
-
-my $ua = LWP::UserAgent->new;
-$ua->timeout($REQUEST_TIMEOUT);
-$ua->env_proxy;
-
-=head2 geoLookup($location)
- 
- Get location information from existing address information
- 
-=cut
-
-sub geoLookup {
-    my ( $location ) = @_;
-
-    my $result = ();
-    my $address = "";
-    if ($location->{"sitename"}) {
-        $address .= $location->{"sitename"} . ", ";
-    }
-    if ($location->{"city"}) {
-        $address .= $location->{"city"} . ", ";
-    }
-    if ($location->{"state"}) {
-        $address .= $location->{"state"};
-        if ($location->{"code"}) {
-            $address .= " " . $location->{"code"};
-        }
-        $address .= ", ";
-    }
-    elsif ($location->{"code"}) {
-        $address .= $location->{"code"} . ", ";
-    }
-    if ($location->{"country"}) {
-        $address .= $location->{"country"};
-    }
-    if ($address) {
-        my $request = "${GEOCODE_URL}?address=${address}";
-        my $response = $ua->get($request);
-        if ($response->is_success) {
-            eval {
-                my $json = decode_json($response->decoded_content);
-                if ($json->{"status"} eq "OK") {
-                    $result = parseGeocodeResult($json->{"results"}[0]);
-                }
-            };
-        }
-    }
-    return $result;
-}
 
 =head2 geoIPLookup($ip)
  
@@ -139,84 +81,9 @@ sub geoIPLookup {
         else {
             warn "IP '".$ip."' was not detected as ipv4 or ipv6.";
         }
-    
-        ##warn "IP: ".$ip; ###
-        ##warn "geoIPLookup result " . Dumper $result;  ###
 
     }
     return $result;
-}
-
-=head2 geoWhoisLookup($address)
- 
- Get location information from a whois lookup
- 
-=cut
-
-sub geoWhoisLookup {
-    my ( $address ) = @_;
-    
-    my $result = ();
-    return $result
-}
-
-=head2 geoReverseLookup($lat, $long)
- 
- Get location information from a latitude and longitude
- 
-=cut
-
-sub geoReverseLookup {
-    my ( $lat, $lng ) = @_;
-    
-    my $result = ();
-    if ($lat && $lng) {
-        my $request = "${GEOCODE_URL}?latlng=${lat},${lng}";
-        my $response = $ua->get($request);
-        if ($response->is_success) {
-            eval {
-                my $json = decode_json($response->decoded_content);
-                if ($json->{"status"} eq "OK") {
-                    $result = parseGeocodeResult($json->{"results"}[0]);
-                }
-            };
-        }
-    }
-    return $result;
-}
-
-=head2 parseGeocodeResult($result)
- 
- Parses a result from the Google geocoding API
- 
-=cut
-
-sub parseGeocodeResult {
-    my ( $result ) = @_;
-    
-    my $location = ();
-    foreach my $component (@{$result->{"address_components"}}) {
-        foreach my $type (@{$component->{"types"}}) {
-            if ($type eq "establishment") {
-                $location->{"sitename"} = $component->{"long_name"};
-            }
-            if ($type eq "locality") {
-                $location->{"city"} = $component->{"long_name"};
-            }
-            if ($type eq "administrative_area_level_1") {
-                $location->{"state"} = $component->{"long_name"};
-            }
-            if ($type eq "country") {
-                $location->{"country"} = $component->{"short_name"};
-            }
-            if ($type eq "postal_code") {
-                $location->{"code"} = $component->{"short_name"};
-            }
-        }
-    }
-    $location->{"latitude"} = $result->{"geometry"}->{"location"}->{"lat"};
-    $location->{"longitude"} = $result->{"geometry"}->{"location"}->{"lng"};
-    return $location;
 }
 
 1;
@@ -262,7 +129,7 @@ __END__
  
  =head1 COPYRIGHT
  
- Copyright (c) 2008-2009, Internet2
+ Copyright (c) 2008-2017, Internet2
  
  All rights reserved.
  
