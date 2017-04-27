@@ -49,7 +49,7 @@ $ua->env_proxy;
 
 sub geoLookup {
     my ( $location ) = @_;
-    
+
     my $result = ();
     my $address = "";
     if ($location->{"sitename"}) {
@@ -99,7 +99,13 @@ sub geoIPLookup {
     if ($ip) {
         my $record;
         if ( is_ipv4($ip) ) {
-            my $city_file =  '/usr/share/GeoIP/GeoIPCity.dat';
+            my $city_file = '/usr/share/GeoIP/GeoIPCity.dat';
+            if ( !-f $city_file ) {
+                $city_file = '/usr/share/GeoIP/GeoIPCity-initial.dat';
+                return $result if ( ! -f $city_file );
+
+
+            }
             my $city_db = Geo::IP->open( $city_file, GEOIP_MEMORY_CACHE);
 
             $record = $city_db->record_by_addr( $ip );
@@ -119,6 +125,10 @@ sub geoIPLookup {
             # The City database seems to have only country info and the lat and long are for the center of it !?
             # so just use the Country db for ipv6
             my $country_ipv6_file =  '/usr/share/GeoIP/GeoIPv6.dat';
+            if ( ! -f $country_ipv6_file ) {
+                $country_ipv6_file =  '/usr/share/GeoIP/GeoIPv6-initial.dat';
+                return $result if ( ! -f $country_ipv6_file );
+            }
             my $country_ipv6_db = Geo::IP->open( $country_ipv6_file, GEOIP_MEMORY_CACHE);
 
             $record = $country_ipv6_db->country_code_by_addr_v6( $ip );
