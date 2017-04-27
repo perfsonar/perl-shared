@@ -424,6 +424,8 @@ override 'to_pscheduler' => sub {
     #build tests
     foreach my $individual_test ($self->get_individual_tests({ test => $test })) {
         my $parsed_target = parse_target(target=>$individual_test->{target}->address());
+        my $force_ipv4 = $individual_test->{force_ipv4};
+        my $force_ipv6 = $individual_test->{force_ipv6};
         
         #determine local address which is only complicated if interface specified
         my ($local_address, $source, $destination);
@@ -433,8 +435,8 @@ override 'to_pscheduler' => sub {
                                                         ifname => $test->local_interface,
                                                         interface_ips => $interface_ips, 
                                                         target_address => $parsed_target->{address},
-                                                        force_ipv4 => $individual_test->{force_ipv6},
-                                                        force_ipv6 => $individual_test->{force_ipv6},
+                                                        force_ipv4 => $force_ipv4,
+                                                        force_ipv6 => $force_ipv6,
                                                     );
             if($choose_status < 0){
                 $logger->error("Error determining local address, skipping test: " . $choose_res);
@@ -456,7 +458,7 @@ override 'to_pscheduler' => sub {
                 $local_address = $parsed_dst->{address} unless($local_address);
             }elsif(!$local_address){
                 #no interface or address given, try to get the routing tables to tell us
-                $local_address = discover_source_address(address => $parsed_target->{address});
+                $local_address = discover_source_address(address => $parsed_target->{address}, force_ipv4 => $force_ipv4, force_ipv6 => $force_ipv6);
                 if(!$local_address){
                     $logger->error("Unable to determine local address for test where local side is destination from " . $parsed_target->{address} . ", skipping test.");
                     next;
@@ -478,7 +480,7 @@ override 'to_pscheduler' => sub {
         }else{
             $local_address = $parsed_src->{address} unless($local_address);
             #always set source so we don't end up with 127.0.0.1
-            $local_address = discover_source_address(address => $parsed_target->{address}) unless($local_address);
+            $local_address = discover_source_address(address => $parsed_target->{address}, force_ipv4 => $force_ipv4, force_ipv6 => $force_ipv6) unless($local_address);
             $source = $local_address;
             $destination = $parsed_dst->{address};
             $source_node = $self->_lookup_pscheduler_address(
