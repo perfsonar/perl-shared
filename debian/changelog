@@ -1,8 +1,14 @@
-libperfsonar-perl (4.0-1~bpo70+1) perfsonar-wheezy-release; urgency=low
+libperfsonar-perl (4.0.0.1-1~bpo70+1) perfsonar-wheezy-release; urgency=low
 
   * Backport to Wheezy.
 
- -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Thu, 13 Apr 2017 17:02:34 +0000
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Fri, 05 May 2017 12:42:03 +0000
+
+libperfsonar-perl (4.0.0.1-1) perfsonar-jessie-release; urgency=low
+
+  * New upstream version.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Fri, 05 May 2017 12:39:47 +0000
 
 libperfsonar-perl (4.0-1) perfsonar-jessie-release; urgency=low
 
