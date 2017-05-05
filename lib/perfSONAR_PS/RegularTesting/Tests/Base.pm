@@ -123,7 +123,14 @@ sub psc_test_interval {
     #by default set interval to given interval
     $psc_task->schedule_repeat('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
     #allow a test to be scheduled anytime before the next scheduled run by default
-    $psc_task->schedule_slip('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
+    if(defined $schedule->interval){
+        if($schedule->interval >= 43200){
+            #set a maximum slip of 12 hours to prevent bumping into time horizon
+            $psc_task->schedule_slip('PT43200S');
+        }else{
+            $psc_task->schedule_slip('PT' . $schedule->interval . 'S');
+        }
+    }
     #by default will randomize (see class definition of RegularIntervals for default)
     $psc_task->schedule_sliprand($schedule->slip_randomize());
     if(defined $schedule->slip){
