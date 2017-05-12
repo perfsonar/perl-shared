@@ -451,16 +451,15 @@ sub save {
     delete($config->{access_policy_notes});
     $config->{access_policy_notes} = $self->{ACCESS_POLICY_NOTES} if $self->{ACCESS_POLICY_NOTES};
 
-    my $content = SaveConfigString( $config );
-    utf8::decode( $content );
+    my $content = SaveConfigString($config);
 
-    my $res = save_file( { file => $self->{CONFIG_FILE}, content => $content } );
-    if ( $res == -1 ) {
+    my ($status, $res) = save_file( { file => $self->{CONFIG_FILE}, content => $content } );
+    if ($status == -1) {
         return -1;
     }
 
-    if ( $parameters->{restart_services} ) {
-        $res = restart_service({ name => "ls_registration_daemon" });
+    if ($parameters->{restart_services}) {
+        $res = restart_service({ name => "lsregistration" });
         if ($res == -1) {
              return -1;
         }

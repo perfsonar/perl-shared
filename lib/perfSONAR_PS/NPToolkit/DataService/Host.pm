@@ -6,7 +6,6 @@ use warnings;
 
 use POSIX;
 
-use Sys::MemInfo qw(totalmem);
 use Sys::Hostname;
 
 use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_counters get_interface_hostnames get_interface_mac get_dmi_info);
@@ -159,13 +158,13 @@ sub get_calculated_lat_lon {
 
     my $external_addresses = discover_primary_address({ disable_ipv4_reverse_lookup => 1, disable_ipv6_reverse_lookup => 1 });
     my $res = geoIPLookup($external_addresses->{primary_address});
-    if (!$res) {
-        return {
-            "error" => "Error Invalid IP address detected for localhost",
-        }
-    }
+    my $result = {};
 
-    return $res;
+    if($res->{longitude} && $res->{latitude} ){
+        $result->{longitude} = $res->{longitude};
+        $result->{latitude} = $res->{latitude};
+    } 
+    return $result;
 
 }
 
@@ -186,6 +185,7 @@ sub get_details {
 
     $status->{toolkit_version} = $version_conf->get_version();
 
+    ## this function now gets all interfaces, not just ethernet
     my @interfaces = get_ethernet_interfaces();
 
     my @interfaceDetails;
@@ -193,10 +193,10 @@ sub get_details {
         my $iface;
         my $addresses = get_interface_addresses_by_type({interface=>$interface});
         $iface = $addresses;    # sets $iface->{ipv4_address} and $iface->{ipv6_address}
-        # get_interface_hostnames() returns a hash (hash-ref) with keys=ip's, values = arrays of hostnames
+        # function get_interface_hostnames() returns a hash (hash-ref) with keys=ip's, values = arrays of hostnames
         my $ipv4_addresses = $addresses->{ipv4_address};  # array-ref
-        my $ipv6_addresses = $addresses->{ipv6_address};
         my $ipv4_hostnames = get_interface_hostnames({interface_addresses=>$ipv4_addresses}); 
+        my $ipv6_addresses = $addresses->{ipv6_address};
         my $ipv6_hostnames = get_interface_hostnames({interface_addresses=>$ipv6_addresses}); 
         $iface->{hostnames} = {%$ipv4_hostnames, %$ipv6_hostnames};
         $iface->{mtu} = get_interface_mtu({interface_name=>$interface});
@@ -308,13 +308,13 @@ sub get_details {
         $toolkit_rpm_version = $config_daemon->package_version;
     }
     $status->{toolkit_rpm_version} = $toolkit_rpm_version;
-
+    
+    # round to nearest GB (LS rounds to MB)
+    # Note: Make sure this is before NTP call because the NTP call breaks sleep
+    $status->{host_memory} = int(get_health_info()->{memstats}->{memtotal}/1024/1024 + .5);
+    
     my $ntp = get_service_object("ntp");
     $status->{ntp}->{synchronized} = $ntp->is_synced();
-
-    # round to nearest GB
-    # but LS rounds to MB so may want to changes
-    $status->{host_memory} = int((&totalmem()/(1024*1024*1024) + .5));
 
     # get OS info
     my $os_info = get_operating_system_info();
@@ -420,29 +420,8 @@ sub get_services {
         };
     }
 
-    my $owamp = get_service_object("owamp");
-    my $bwctl = get_service_object("bwctl");
-    my $npad = get_service_object("npad");
-    my $ndt = get_service_object("ndt");
-    my $regular_testing = get_service_object("regular_testing");
-
-    my @service_names = qw(owamp bwctl regular_testing esmond);
-
-    #print $npad->is_installed();
-
-    #if($npad->is_installed()){
-        push @service_names, "npad";
-        #}
-
-        #if($ndt->is_installed()){
-        push @service_names, "ndt";
-        #}
-
-
+    my @service_names = qw(owamp bwctl meshconfig_agent pscheduler esmond lsregistration);
     my %services = ();
-
-    
-
     foreach my $service_name ( @service_names ) {
         my $service = get_service_object($service_name);
 
@@ -476,9 +455,12 @@ sub get_services {
         }
 
         my $enabled = (not $service->disabled) || 0;
-
+        
+        my $display_name = $service_name;
+        $display_name =~ s/_/-/g;
+        
         my %service_info = ();
-        $service_info{"name"}          = $service_name;
+        $service_info{"name"}          = $display_name;
         $service_info{"enabled"}       = $enabled;
         $service_info{"is_running"}    = $is_running_output;
         $service_info{"is_installed"}  = $is_installed if (defined $is_installed);
@@ -498,7 +480,7 @@ sub get_services {
     }
 
 
-    my @services = values %services;
+    my @services = sort {$a->{name} cmp $b->{name}} values %services;
 
     return {'services', \@services};
 }

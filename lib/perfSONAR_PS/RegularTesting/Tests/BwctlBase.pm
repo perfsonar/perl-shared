@@ -21,6 +21,7 @@ use perfSONAR_PS::RegularTesting::Results::Endpoint;
 use perfSONAR_PS::RegularTesting::Utils qw(choose_endpoint_address parse_target);
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner;
 use perfSONAR_PS::RegularTesting::Utils::CmdRunner::Cmd;
+use perfSONAR_PS::Utils::DNS qw(discover_source_address);
 use perfSONAR_PS::Utils::Host qw(get_interface_addresses_by_type);
 use Moose;
 
@@ -362,18 +363,54 @@ sub build_endpoint {
     return $endpoint;
 }
 
+sub _lookup_pscheduler_address {
+    my ($self, @args) = @_;
+    my $parameters = validate( @args, { 
+                                         address  => 1,
+                                         global   => 0,
+                                         test     => 0,
+                                         target   => 0,
+                                      });
+    
+    my $address = $parameters->{address};
+    my $global = $parameters->{global};
+    my $test = $parameters->{test};
+    my $target = $parameters->{target};
+    
+    if($target){
+        return $target;
+    }elsif($test){
+        return $test;
+    }elsif($global && exists $global->{$address} && $global->{$address}){
+        return $global->{$address};
+    }elsif($global && exists $global->{'_default'} && $global->{'_default'}){
+        return $global->{'_default'};
+    }
+    
+    return;
+}
+
+
 override 'to_pscheduler' => sub {
     my ($self, @args) = @_;
     my $parameters = validate( @args, { 
                                          url => 1,
                                          test => 1,
                                          archive_map => 1,
-                                         task_manager => 1
+                                         task_manager => 1,
+                                         global_bind_map => 1,
+                                         global_lead_bind_map => 1,
+                                         global_local_lead_addr_map => 1, 
+                                         global_lead_addr_map => 1,
                                       });
     my $url = $parameters->{url};
     my $test = $parameters->{test};
     my $archive_map = $parameters->{archive_map};
     my $task_manager = $parameters->{task_manager};
+    my $global_bind_map = $parameters->{global_bind_map};
+    my $global_lead_bind_map = $parameters->{global_lead_bind_map};
+    my $global_local_lead_addr_map = $parameters->{global_local_lead_addr_map};
+    my $global_lead_addr_map = $parameters->{global_lead_addr_map};
     
     #handle interface definitions, which pscheduler does not support
     my $interface_ips;
@@ -387,18 +424,19 @@ override 'to_pscheduler' => sub {
     #build tests
     foreach my $individual_test ($self->get_individual_tests({ test => $test })) {
         my $parsed_target = parse_target(target=>$individual_test->{target}->address());
-        my $parsed_src = parse_target(target=>$individual_test->{source});
-        my $parsed_dst = parse_target(target=>$individual_test->{destination});
+        my $force_ipv4 = $individual_test->{force_ipv4};
+        my $force_ipv6 = $individual_test->{force_ipv6};
         
         #determine local address which is only complicated if interface specified
         my ($local_address, $source, $destination);
         if($interface_ips){
+            #interface was specified
             my ($choose_status, $choose_res) = choose_endpoint_address(
                                                         ifname => $test->local_interface,
                                                         interface_ips => $interface_ips, 
                                                         target_address => $parsed_target->{address},
-                                                        force_ipv4 => $individual_test->{force_ipv6},
-                                                        force_ipv6 => $individual_test->{force_ipv6},
+                                                        force_ipv4 => $force_ipv4,
+                                                        force_ipv6 => $force_ipv6,
                                                     );
             if($choose_status < 0){
                 $logger->error("Error determining local address, skipping test: " . $choose_res);
@@ -409,14 +447,54 @@ override 'to_pscheduler' => sub {
         }
         
         #now determine source and destination - again only complicated by interface names
+        my $parsed_src = parse_target(target=>$individual_test->{source});
+        my $parsed_dst = parse_target(target=>$individual_test->{destination});
+        my $source_node = ''; #pscheduler field related to binding
+        my $dest_node = ''; #pscheduler field related to binding
         if($individual_test->{local_destination}){
-            $local_address = $parsed_dst->{address} unless($local_address);
+            #we always need to specify a dest, as otherwise remote won't know where to go
+            if(!$local_address && $parsed_dst->{address}){
+                #no interface given, but local address was explicitly given
+                $local_address = $parsed_dst->{address} unless($local_address);
+            }elsif(!$local_address){
+                #no interface or address given, try to get the routing tables to tell us
+                $local_address = discover_source_address(address => $parsed_target->{address}, force_ipv4 => $force_ipv4, force_ipv6 => $force_ipv6);
+                if(!$local_address){
+                    $logger->error("Unable to determine local address for test where local side is destination from " . $parsed_target->{address} . ", skipping test.");
+                    next;
+                }
+            }
             $source = $parsed_src->{address};
             $destination = $local_address;
+            $source_node = $self->_lookup_pscheduler_address(
+                    address => $source,
+                    global => $global_lead_addr_map,
+                    target => $individual_test->{target}->pscheduler_address()
+                );
+            $dest_node = $self->_lookup_pscheduler_address(
+                    address => $destination,
+                    global => $global_local_lead_addr_map,
+                    test => $test->local_pscheduler_address(),
+                    target => $individual_test->{target}->local_pscheduler_address()
+                );
         }else{
             $local_address = $parsed_src->{address} unless($local_address);
+            #always set source so we don't end up with 127.0.0.1
+            $local_address = discover_source_address(address => $parsed_target->{address}, force_ipv4 => $force_ipv4, force_ipv6 => $force_ipv6) unless($local_address);
             $source = $local_address;
             $destination = $parsed_dst->{address};
+            $source_node = $self->_lookup_pscheduler_address(
+                    address => $source,
+                    global => $global_local_lead_addr_map,
+                    test => $test->local_pscheduler_address(),
+                    target => $individual_test->{target}->local_pscheduler_address()
+                );
+            $dest_node = $self->_lookup_pscheduler_address(
+                    address => $destination,
+                    global => $global_lead_addr_map,
+                    target => $individual_test->{target}->pscheduler_address()
+                );
+            
         }
         
         # create pscheduler task
@@ -429,25 +507,73 @@ override 'to_pscheduler' => sub {
                                      force_ipv4 => $individual_test->{force_ipv4},
                                      force_ipv6 => $individual_test->{force_ipv6},
                                      test_parameters => $individual_test->{test_parameters},
-                                     test => $test
+                                     test => $test,
+                                     source_node => $source_node,
+                                     dest_node => $dest_node
                                   });
         
-        # add archives
-        if($archive_map->{$self->pscheduler_archive_type()}){
-            foreach my $psc_ma(@{$archive_map->{$self->pscheduler_archive_type()}}){
-                $psc_task->add_archive($psc_ma->to_pscheduler(local_address => $local_address));
-            }
-        }
-        if($test->measurement_archives()){
-            foreach my $ma(@{$test->measurement_archives()}){
-                $psc_task->add_archive($ma->to_pscheduler(local_address => $local_address));
-            }
-        }
         #optimization that pre-fetches interval
         my $interval;
         if ($test->schedule()->type eq "regular_intervals") {
             $interval = $test->schedule()->interval;
         }
+        
+        #update binding addresses
+        if($individual_test->{target}->bind_address()){
+            #prefer binding specified at test level
+            $psc_task->add_bind_map($parsed_target->{address}, $individual_test->{target}->bind_address());
+        }elsif($test->bind_address()){
+            #next check if default bind address at test level
+            $psc_task->add_bind_map($parsed_target->{address}, $test->bind_address());
+        }elsif(exists $global_bind_map->{$parsed_target->{address}} && $global_bind_map->{$parsed_target->{address}}){
+            #fallback to global map where address specified if available
+            $psc_task->add_local_bind_map($global_bind_map->{$parsed_target->{address}});
+        }elsif(exists $global_bind_map->{'_default'} && $global_bind_map->{'_default'}){
+            #fallback to global map default if available
+            $psc_task->add_local_bind_map($global_bind_map->{'_default'});
+            if($local_address){
+                $psc_task->add_bind_map($local_address, $global_bind_map->{'_default'});
+            }
+        }
+        #update lead binding addresses
+        ##Local
+        if($individual_test->{target}->local_lead_bind_address()){
+            $psc_task->add_local_lead_bind_map($individual_test->{target}->local_lead_bind_address());
+            if($local_address){
+                $psc_task->add_lead_bind_map($local_address, $individual_test->{target}->local_lead_bind_address());
+            }
+        }elsif($test->local_lead_bind_address()){
+            $psc_task->add_local_lead_bind_map($test->local_lead_bind_address());
+            if($local_address){
+                $psc_task->add_lead_bind_map($local_address, $test->local_lead_bind_address());
+            }
+        }elsif(exists $global_lead_bind_map->{$parsed_target->{address}} && $global_lead_bind_map->{$parsed_target->{address}}){
+            #fallback to global map where address specified if available
+            $psc_task->add_local_lead_bind_map($global_lead_bind_map->{$parsed_target->{address}});
+        }elsif(exists $global_lead_bind_map->{'_default'} && $global_lead_bind_map->{'_default'}){
+            #fallback to global map default if available
+            $psc_task->add_local_lead_bind_map($global_lead_bind_map->{'_default'});
+            if($local_address){
+                $psc_task->add_lead_bind_map($local_address, $global_lead_bind_map->{'_default'});
+            }
+        }
+        ##Remote
+        if($individual_test->{target}->lead_bind_address()){
+            $psc_task->add_lead_bind_map($parsed_target->{address}, $individual_test->{target}->lead_bind_address());
+        }
+        
+        # add archives
+        if($archive_map->{$self->pscheduler_archive_type()}){
+            foreach my $psc_ma(@{$archive_map->{$self->pscheduler_archive_type()}}){
+                $psc_task->add_archive($psc_ma->to_pscheduler(local_address => $local_address, default_retry_policy => $self->default_retry_policy(interval => $interval), remote_lead => $individual_test->{local_destination} ));
+            }
+        }
+        if($test->measurement_archives()){
+            foreach my $ma(@{$test->measurement_archives()}){
+                $psc_task->add_archive($ma->to_pscheduler(local_address => $local_address, default_retry_policy => $self->default_retry_policy(interval => $interval), remote_lead => $individual_test->{local_destination} ));
+            }
+        }
+        
         #add task to manager
         $task_manager->add_task(task => $psc_task, local_address => $local_address, repeat_seconds => $interval) if($psc_task);
     }
@@ -470,6 +596,8 @@ sub build_pscheduler_task {
                                          force_ipv6 => 0,
                                          test_parameters => 1,
                                          test => 1,
+                                         source_node => 0,
+                                         dest_node => 0,
                                       });
     die "Not implemented. Must be overridden by subclass.";
 }

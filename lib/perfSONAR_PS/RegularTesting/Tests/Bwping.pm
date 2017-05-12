@@ -28,6 +28,12 @@ has 'packet_length' => (is => 'rw', isa => 'Int', default => 1000);
 has 'packet_ttl' => (is => 'rw', isa => 'Int', );
 has 'inter_packet_time' => (is => 'rw', isa => 'Num', default => 1.0);
 has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
+#new pscheduler fields
+has 'flow_label' => (is => 'rw', isa => 'Int');
+has 'hostnames' => (is => 'rw', isa => 'Bool');
+has 'suppress_loopback' => (is => 'rw', isa => 'Bool');
+has 'deadline' => (is => 'rw', isa => 'Int');
+has 'timeout' => (is => 'rw', isa => 'Int');
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -153,6 +159,8 @@ override 'build_pscheduler_task' => sub {
                                          force_ipv6 => 0,
                                          test_parameters => 1,
                                          test => 1,
+                                         source_node => 0,
+                                         dest_node => 0,
                                       });
     my $psc_url           = $parameters->{url};
     my $source            = $parameters->{source};
@@ -163,14 +171,19 @@ override 'build_pscheduler_task' => sub {
     my $test_parameters   = $parameters->{test_parameters};
     my $test              = $parameters->{test};
     my $schedule          = $test->schedule();
+    my $source_node       = $parameters->{source_node};
     
     my $psc_task = new perfSONAR_PS::Client::PScheduler::Task(url => $psc_url);
     $psc_task->reference_param('description', $test->description()) if $test->description();
+    foreach my $test_ref(@{$test->references()}){
+        next if($test_ref->name() eq 'description' || $test_ref->name() eq 'created-by');
+        $psc_task->reference_param($test_ref->name(), $test_ref->value());
+    }
     
     #Test parameters
     my $psc_test_spec = {};
     #TODO: Support the options below
-    #"flowlabel":         { "$ref": "#/pScheduler/CardinalZero" },
+    #"flow_label":         { "$ref": "#/pScheduler/CardinalZero" },
     #"hostnames":         { "$ref": "#/pScheduler/Boolean" },
     #"suppress-loopback": { "$ref": "#/pScheduler/Boolean" },
     #"tos":               { "$ref": "#/pScheduler/Cardinal" },
@@ -178,20 +191,34 @@ override 'build_pscheduler_task' => sub {
     #"timeout":           { "$ref": "#/pScheduler/Duration" },
     #tool?
     $psc_task->test_type('rtt');
-    $psc_test_spec->{'source'} = $source;
+    $psc_test_spec->{'source'} = $source if($source);
     $psc_test_spec->{'dest'} = $destination;
     $psc_test_spec->{'count'} = int($test_parameters->packet_count) if $test_parameters->packet_count;
     $psc_test_spec->{'length'} = int($test_parameters->packet_length) if $test_parameters->packet_length;
     $psc_test_spec->{'ttl'} = int($test_parameters->packet_ttl) if $test_parameters->packet_ttl;
-    $psc_test_spec->{'interval'} = "PT" . $test_parameters->inter_packet_time  . "S" if $test_parameters->inter_packet_time;
+    if($test_parameters->inter_packet_time ){
+        if($test_parameters->inter_packet_time =~ /^\d+$/){
+            #integer
+            $psc_test_spec->{'interval'} = "PT" . $test_parameters->inter_packet_time  . "S";
+        }else{
+            #its a decimal. we must have a leading 0 to make sure pscheduler is happy
+           $psc_test_spec->{'interval'} = "PT" . sprintf("%0.4f", $test_parameters->inter_packet_time)  . "S";
+        }
+    }
+    $psc_test_spec->{'deadline'} = "PT" . $test_parameters->deadline  . "S" if $test_parameters->deadline;
+    $psc_test_spec->{'timeout'} = "PT" . $test_parameters->timeout  . "S" if $test_parameters->timeout;
+    $psc_test_spec->{'ip-tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
+    $psc_test_spec->{'flow-label'} = int($test_parameters->flow_label) if $test_parameters->flow_label;
+    $psc_test_spec->{'hostnames'} = JSON::true if($test_parameters->{hostnames});
+    $psc_test_spec->{'suppress-loopback'} = JSON::true if($test_parameters->{suppress_loopback});
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4 );
     $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
+    $psc_test_spec->{'source-node'} = $source_node if($source_node);
     $psc_task->test_spec($psc_test_spec);
     
     #TODO: Support for more scheduling params
     if ($schedule->type eq "regular_intervals") {
-        $psc_task->schedule_repeat('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
-        $psc_task->schedule_randslip($schedule->random_start_percentage) if(defined $schedule->random_start_percentage);
+        $self->psc_test_interval(schedule => $schedule, psc_task => $psc_task);
     }else{
         $logger->warning("Schedule type " . $schedule->type . " not currently supported. Skipping test.");
         return;

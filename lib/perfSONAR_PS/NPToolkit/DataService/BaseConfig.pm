@@ -82,7 +82,6 @@ sub new {
 sub save_config {
     my $self = shift;
     my $administrative_info_conf = $self->{admin_info_conf};
-    # TODO: Clean this up and see if the service restart is necessary
     my ($status, $res) = $administrative_info_conf->save( { restart_services => 0 } );
     my $error_msg;
     my $status_msg;
@@ -111,7 +110,8 @@ sub save_ls_config {
     my $ls_conf = $self->{ls_conf};
     my $error_msg;
     my $status_msg;
-    my ($status, $res) = $ls_conf->save( { restart_services => 1 } );
+    my ($status, $res) = $ls_conf->save( { restart_services => 0 } );
+
     if ($status != 0) {
         $error_msg = "Problem saving LS configuration; error: " . Dumper $res;
         return {

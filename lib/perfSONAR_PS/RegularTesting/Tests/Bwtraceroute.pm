@@ -19,12 +19,21 @@ use Moose;
 extends 'perfSONAR_PS::RegularTesting::Tests::BwctlBase';
 
 has 'bwtraceroute_cmd' => (is => 'rw', isa => 'Str', default => '/usr/bin/bwtraceroute');
-has 'tool' => (is => 'rw', isa => 'Str', default => 'tracepath,traceroute');
+has 'tool' => (is => 'rw', isa => 'Str');
 has 'packet_length' => (is => 'rw', isa => 'Int');
 has 'packet_first_ttl' => (is => 'rw', isa => 'Int', );
 has 'packet_max_ttl' => (is => 'rw', isa => 'Int', );
 has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
-
+#new pscheduler fields
+has 'algorithm' => (is => 'rw', isa => 'Str');
+has 'as' => (is => 'rw', isa => 'Bool');
+has 'fragment' => (is => 'rw', isa => 'Bool');
+has 'hostnames' => (is => 'rw', isa => 'Bool');
+has 'probe_type' => (is => 'rw', isa => 'Str');
+has 'queries' => (is => 'rw', isa => 'Int');
+has 'sendwait' => (is => 'rw', isa => 'Int');
+has 'wait' => (is => 'rw', isa => 'Int');
+            
 my $logger = get_logger(__PACKAGE__);
 
 override 'type' => sub { "bwtraceroute" };
@@ -152,6 +161,8 @@ override 'build_pscheduler_task' => sub {
                                          force_ipv6 => 0,
                                          test_parameters => 1,
                                          test => 1,
+                                         source_node => 0,
+                                         dest_node => 0,
                                       });
     my $psc_url           = $parameters->{url};
     my $source            = $parameters->{source};
@@ -163,44 +174,55 @@ override 'build_pscheduler_task' => sub {
     my $test_parameters   = $parameters->{test_parameters};
     my $test              = $parameters->{test};
     my $schedule          = $test->schedule();
+    my $source_node       = $parameters->{source_node};
     
     my $psc_task = new perfSONAR_PS::Client::PScheduler::Task(url => $psc_url);
     $psc_task->reference_param('description', $test->description()) if $test->description();
+    foreach my $test_ref(@{$test->references()}){
+        next if($test_ref->name() eq 'description' || $test_ref->name() eq 'created-by');
+        $psc_task->reference_param($test_ref->name(), $test_ref->value());
+    }
     
     #Test parameters
     my $psc_test_spec = {};
-    #TODO: Support the options below
-    #"algorithm":   { "$ref": "#/local/algorithm" },
-    #"as":          { "$ref": "#/pScheduler/Boolean" },
-    #"dest-port":   { "$ref": "#/pScheduler/IPPort" },
-    #"fragment":    { "$ref": "#/pScheduler/Boolean" },
-    #"hostnames":   { "$ref": "#/pScheduler/Boolean" },
-    #"probe-type":  { "$ref": "#/local/probe-type" },
-    #"queries":     { "$ref": "#/pScheduler/Cardinal" },
-    #"sendwait":    { "$ref": "#/pScheduler/Duration" },
-    #"tos":         { "$ref": "#/pScheduler/Cardinal" },
-    #"wait":        { "$ref": "#/pScheduler/Duration" },
     $psc_task->test_type('trace');
-    $psc_test_spec->{'source'} = $source;
+    $psc_test_spec->{'source'} = $source if($source);
     $psc_test_spec->{'dest'} = $destination;
     if($test->parameters->tool){
         my @tools = split ',', $test->parameters->tool;
         foreach my $tool(@tools){
-            $psc_task->add_requested_tool($tool);
+            if($tool eq 'traceroute'){
+                $psc_task->add_requested_tool('bwctltraceroute');
+                $psc_task->add_requested_tool('traceroute');
+            }elsif($tool eq 'tracepath'){
+                $psc_task->add_requested_tool('bwctltracepath');
+                $psc_task->add_requested_tool('tracepath');
+            }else{
+                $psc_task->add_requested_tool($tool);
+            }
         }
     }
     $psc_test_spec->{'dest-port'} = int($destination_port) if($destination_port);
     $psc_test_spec->{'length'} = int($test_parameters->packet_length) if $test_parameters->packet_length;
     $psc_test_spec->{'first-ttl'} = int($test_parameters->packet_first_ttl) if $test_parameters->packet_first_ttl;
     $psc_test_spec->{'hops'} = int($test_parameters->packet_max_ttl) if $test_parameters->packet_max_ttl;
+    $psc_test_spec->{'algorithm'} = $test_parameters->algorithm if $test_parameters->algorithm;
+    $psc_test_spec->{'as'} = JSON::true if $test_parameters->as;
+    $psc_test_spec->{'fragment'} = JSON::true if $test_parameters->fragment;
+    $psc_test_spec->{'hostnames'} = JSON::true if $test_parameters->hostnames;
+    $psc_test_spec->{'probe-type'} = $test_parameters->probe_type if $test_parameters->probe_type;
+    $psc_test_spec->{'queries'} = int($test_parameters->queries) if $test_parameters->queries;
+    $psc_test_spec->{'ip-tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
+    $psc_test_spec->{'sendwait'} = "PT" . $test_parameters->sendwait . "S" if $test_parameters->sendwait;
+    $psc_test_spec->{'wait'} = "PT" . $test_parameters->sendwait . "S" if $test_parameters->sendwait;
     $psc_test_spec->{'ip-version'} = 4 if($force_ipv4 );
     $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
+    $psc_test_spec->{'source-node'} = $source_node if($source_node);
     $psc_task->test_spec($psc_test_spec);
     
     #TODO: Support for more scheduling params
     if ($schedule->type eq "regular_intervals") {
-        $psc_task->schedule_repeat('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
-        $psc_task->schedule_randslip($schedule->random_start_percentage) if(defined $schedule->random_start_percentage);
+        $self->psc_test_interval(schedule => $schedule, psc_task => $psc_task);
     }else{
         $logger->warning("Schedule type " . $schedule->type . " not currently supported. Skipping test.");
         return;

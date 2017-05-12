@@ -13,8 +13,7 @@ perfSONAR_PS::NPToolkit::Config::AdministrativeInfo
 
 Module for configuring the "Administrative Information". This includes the
 keywords for the node, the node's organization and location, the administrators
-name and email. When this module's save function is called, it also configures
-NDT since it uses these same settings for its configuration.
+name and email. 
 
 =cut
 
@@ -27,18 +26,15 @@ use Storable qw(store retrieve freeze thaw dclone);
 use Data::Dumper;
 
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service );
-use perfSONAR_PS::NPToolkit::Config::NDT;
 use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
 
 # These are the defaults for the current NPToolkit
 my %defaults = ( administrative_info_file => "/etc/perfsonar/toolkit/administrative_info", );
 
 =head2 init({ administrative_info_file => 0 })
-
-Initializes the client. Returns 0 on success and -1 on failure. The
-administrative_info_file, if specified, should point to the file that gets read/written
-by the module.
-
+    Initializes the client. Returns 0 on success and -1 on failure. The
+    administrative_info_file, if specified, should point to the file that gets read/written
+    by the module.
 =cut
 
 sub init {
@@ -61,8 +57,7 @@ sub init {
 
 =head2 save({ restart_services => 0 })
     Saves the configuration to disk. All the perfSONAR services depend way on
-    the information configured here. The NDT configuration is
-    updated here as well.
+    the information configured here. 
 =cut
 
 sub save {
@@ -71,32 +66,18 @@ sub save {
 
     my $administrative_info_output = $self->generate_administrative_info_file();
 
-    my $res;
+    my ($status, $res);
 
-    $res = save_file( { file => $self->{SITE_INFO_FILE}, content => $administrative_info_output } );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{SITE_INFO_FILE}, content => $administrative_info_output } );
+    if ( $status == -1 ) {
         return (-1, "Problem saving administrative information");
     }
 
     my @keywords = keys %{ $self->{KEYWORDS} };
 
-    my $ndt_config = perfSONAR_PS::NPToolkit::Config::NDT->new();
-    if ( $ndt_config->init() != 0 ) {
-        return (-1, "Couldn't initialize NDT configuration");
-    }
-
     my $ls_reg_daemon_config = perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon->new();
     if ( $ls_reg_daemon_config->init() != 0 ) {
         return (-1, "Couldn't initialize LS Registration Daemon configuration");
-    }
-
-    $ndt_config->set_location( location => $self->generate_location_string() );
-    $ndt_config->set_administrator_email( administrator_email => $self->{ADMINISTRATOR_EMAIL} );
-    $ndt_config->set_administrator_name( administrator_name => $self->{ADMINISTRATOR_NAME} );
-    $ndt_config->set_organization_name( organization_name => $self->{ORGANIZATION_NAME} );
-    $res = $ndt_config->save({ restart_services => $parameters->{restart_services} });
-    if ($res != 0) {
-        $self->{LOGGER}->warn("Couldn't save or restart ".$ndt_config->get_service_name);
     }
 
     foreach my $service_config ($ls_reg_daemon_config) {

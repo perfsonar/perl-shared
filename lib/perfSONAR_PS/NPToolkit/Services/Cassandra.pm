@@ -10,8 +10,11 @@ sub init {
 
     $conf{description}  = "Cassandra Database" unless $conf{description};
     $conf{init_script} = "cassandra" unless $conf{init_script};
-    $conf{process_names} = "java" unless $conf{process_names};
-    $conf{pid_files} = "/var/run/cassandra/cassandra.pid" unless $conf{pid_files};
+    #switch below to java if uncomment pid files
+    $conf{process_names} = "cassandra" unless $conf{process_names};
+    #Cassandra does not properly create /var/run/cassandra directory on boot, only creates
+    #  on install which then gets removed on reboot. Removing this for now.
+    #$conf{pid_files} = "/var/run/cassandra/cassandra.pid" unless $conf{pid_files};
     $conf{package_names} = [ "cassandra20" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );

@@ -25,57 +25,70 @@ use Data::Dumper;
 our $VERSION = 4.0;
 
 has 'pscheduler_url'      => (is => 'rw', isa => 'Str');
-has 'task_file'           => (is => 'rw', isa => 'Str');
+has 'tracker_file'        => (is => 'rw', isa => 'Str');
 has 'client_uuid_file'    => (is => 'rw', isa => 'Str');
 has 'user_agent'          => (is => 'rw', isa => 'Str');
 has 'new_task_min_ttl' => (is => 'rw', isa => 'Int');
-has 'new_task_min_repeats' => (is => 'rw', isa => 'Int');
+has 'new_task_min_runs' => (is => 'rw', isa => 'Int');
 has 'old_task_deadline'   => (is => 'rw', isa => 'Int');
 has 'task_renewal_fudge_factor'  => (is => 'rw', isa => 'Num', default => 0.0);
 
 has 'new_tasks'           => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PScheduler::Task]', default => sub{ [] });
 has 'existing_task_map'   => (is => 'rw', isa => 'HashRef', default => sub{ {} });
+has 'existing_archives' => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'leads'               => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'errors'              => (is => 'rw', isa => 'ArrayRef', default => sub{ [] });
+has 'deleted_tasks'       => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PScheduler::Task]', default => sub{ [] });
+has 'added_tasks'         => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PScheduler::Task]', default => sub{ [] });
 has 'created_by'          => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'leads_to_keep'       => (is => 'rw', isa => 'HashRef', default => sub{ {} });
-has 'new_task_expiration_ts' => (is => 'rw', isa => 'Int');
-has 'new_task_expiration_iso' => (is => 'rw', isa => 'Str');
+has 'new_archives'        => (is => 'rw', isa => 'HashRef', default => sub{ {} });
+has 'debug'               => (is => 'rw', isa => 'Bool');
 
 sub init {
     my ($self, @args) = @_;
     my $parameters = validate( @args, {
                                             pscheduler_url => 1,
-                                            task_file => 1,
+                                            tracker_file => 1,
                                             client_uuid_file => 1,
                                             user_agent => 1,
                                             new_task_min_ttl => 1,
-                                            new_task_min_repeats => 1,
+                                            new_task_min_runs => 1,
                                             old_task_deadline => 1,
-                                            task_renewal_fudge_factor => 0
+                                            bind_map => 1,
+                                            lead_address_map => 1,
+                                            task_renewal_fudge_factor => 0,
+                                            debug => 0
                                         } );
     #init this object
     $self->errors([]);
     $self->pscheduler_url($parameters->{'pscheduler_url'});
-    $self->task_file($parameters->{'task_file'});
+    $self->tracker_file($parameters->{'tracker_file'});
     $self->client_uuid_file($parameters->{'client_uuid_file'});
     $self->user_agent($parameters->{'user_agent'});
     $self->created_by($self->_created_by());
     $self->new_task_min_ttl($parameters->{'new_task_min_ttl'});
-    $self->new_task_expiration_ts($parameters->{'old_task_deadline'} + $self->new_task_min_ttl());
-    $self->new_task_expiration_iso($self->_ts_to_iso($self->new_task_expiration_ts()));
-    $self->new_task_min_repeats($parameters->{'new_task_min_repeats'});
+    $self->new_task_min_runs($parameters->{'new_task_min_runs'});
     $self->old_task_deadline($parameters->{'old_task_deadline'});
     $self->task_renewal_fudge_factor($parameters->{'task_renewal_fudge_factor'}) if($parameters->{'task_renewal_fudge_factor'});
+    $self->debug($parameters->{'debug'}) if($parameters->{'debug'});
     
     #get list of leads
-    my $task_file_json = $self->_read_json_file($self->task_file());
-    my $psc_leads = $task_file_json->{'leads'} ? $task_file_json->{'leads'} : {};
+    my $tracker_file_json = $self->_read_json_file($self->tracker_file());
+    my $psc_leads = $tracker_file_json->{'leads'} ? $tracker_file_json->{'leads'} : {};
     $self->leads($psc_leads);
     $self->_update_lead($self->pscheduler_url(), {}); #init local url
     
+    #get list of existing MAs
+    my $tracked_archives = $tracker_file_json->{'archives'} ? $tracker_file_json->{'archives'} : {};
+    $self->existing_archives($tracked_archives);
+    
     #build list of existing tasks
+    my $bind_map = $parameters->{'bind_map'};
+    my $lead_address_map = $parameters->{'lead_address_map'};
+    my %visited_leads = ();
     foreach my $psc_url(keys %{$self->leads()}){
+        print "Getting task list from $psc_url\n" if($self->debug());
         #Query lead
         my $psc_lead = $self->leads()->{$psc_url};
         my $existing_task_map = {};
@@ -83,16 +96,44 @@ sub init {
         #TODO: filter on enabled field (not yet supported in pscheduler
         #$psc_filters->detail_enabled(1);
         $psc_filters->reference_param("created-by", $self->created_by());
-        my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters);
-        my $existing_tasks = $psc_client->get_tasks();
+        my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters, bind_map => $bind_map, lead_address_map => $lead_address_map);
+        
+        #get hostname to see if this is a server we already visited using a different address
+        my $psc_hostname = $psc_client->get_hostname();
         if($psc_client->error()){
+            print "Error getting hostname from $psc_url: " . $psc_client->error() . "\n" if($self->debug());
+            $psc_lead->{'error_time'} = time; 
+            push @{$self->errors()}, "Problem retrieving host information from pScheduler lead $psc_url: ".$psc_client->error();
+            next;
+        }elsif(!$psc_hostname){
+            print "Error: $psc_url returned an empty hostname\n" if($self->debug());
+            $psc_lead->{'error_time'} = time; 
+            push @{$self->errors()}, "Empty string returned from $psc_url/hostname. It may not have its hostname configured correctly.";
+            next;
+        }elsif($visited_leads{$psc_hostname}){
+            print "Already visited server at $psc_url using " . $visited_leads{$psc_hostname} . ", so skipping.\n" if($self->debug());
+            next;
+        }else{
+           $visited_leads{$psc_hostname} = $psc_url;
+        }
+        
+        #get tasks
+        my $existing_tasks = $psc_client->get_tasks();
+        if($existing_tasks && @{$existing_tasks} > 0 && $psc_client->error()){
+            #there was an error getting an individual task
+             print "Error fetching an individual task, but was able to get list: " .  $psc_client->error() if($self->debug());
+        }elsif($psc_client->error()){
+            #there was an error getting the entire list
+            print "Error getting task list from $psc_url: " . $psc_client->error() . "\n" if($self->debug());
             $psc_lead->{'error_time'} = time; 
             push @{$self->errors()}, "Problem getting existing tests from pScheduler lead $psc_url: ".$psc_client->error();
             next;
         }
+        
         #Add to existing task map
         foreach my $existing_task(@{$existing_tasks}){
             next unless($existing_task->detail_enabled()); #skip disabled tests
+            $self->_print_task($existing_task) if($self->debug());
             #make an array since could have more than one test with same checksum
             $self->existing_task_map()->{$existing_task->checksum()} = {} unless($self->existing_task_map()->{$existing_task->checksum()});
             $self->existing_task_map()->{$existing_task->checksum()}->{$existing_task->tool()} = {} unless($self->existing_task_map()->{$existing_task->checksum()}->{$existing_task->tool()});
@@ -111,30 +152,41 @@ sub add_task {
     my $local_address = $parameters->{local_address};
     my $repeat_seconds = $parameters->{repeat_seconds};
     
-    #set end time to greater of min repeats and expiration time
-    my $min_repeat_time = 0;
-    if($repeat_seconds){
-        # a bit hacky, but trying to convert an ISO duration to seconds is both imprecise 
-        # and expensive so just use given value since these generally start out as 
-        # seconds anyways.
-        $min_repeat_time = $repeat_seconds * $self->new_task_min_repeats();
+    #set reference params
+    ##need to copy this so different addresses don't break checksum
+    my $tmp_created_by = {};
+    $tmp_created_by->{'address'} = $local_address if($local_address);
+    foreach my $cp(keys %{$self->created_by()}){
+        $tmp_created_by->{$cp} = $self->created_by()->{$cp};
     }
-    if($min_repeat_time > $self->new_task_min_ttl()){
-        my $min_repeat_ts = $self->old_task_deadline() + $min_repeat_time;
-        $new_task->schedule_until($self->_ts_to_iso($min_repeat_ts));
-    }else{
-        $new_task->schedule_until($self->new_task_expiration_iso());
-    }
-    $new_task->reference_param('created-by', $self->created_by());
-    $new_task->reference_param('created-by')->{'address'} = $local_address if($local_address);
+    $new_task->reference_param('created-by', $tmp_created_by);
     
+    #determine if we need new task and create
     my($need_new_task, $new_task_start) = $self->_need_new_task($new_task);
     if($need_new_task){
         #task does not exist, we need to create it
         $new_task->schedule_start($self->_ts_to_iso($new_task_start));
+        #set end time to greater of min repeats and expiration time
+        my $min_repeat_time = 0;
+        if($repeat_seconds){
+            # a bit hacky, but trying to convert an ISO duration to seconds is both imprecise 
+            # and expensive so just use given value since these generally start out as 
+            # seconds anyways.
+            $min_repeat_time = $repeat_seconds * $self->new_task_min_runs();
+        }
+        #use new start time if exists, otherwise start with current time
+        my $new_until = $new_task_start ? $new_task_start: time;
+        if($min_repeat_time > $self->new_task_min_ttl()){
+            #if the minimum number of repeats is longer than the min ttl, use the greater value
+            $new_until += $min_repeat_time;
+        }else{
+            #just add the minimum ttl
+            $new_until += $self->new_task_min_ttl();
+        }
+        $new_task->schedule_until($self->_ts_to_iso($new_until));
+        
         push @{$self->new_tasks()}, $new_task;
     }
-
 }
 
 sub commit {
@@ -145,16 +197,36 @@ sub commit {
     $self->_delete_tasks();
     $self->_create_tasks();
     $self->_cleanup_leads();
-    $self->_write_task_file();
+    $self->_write_tracker_file();
+}
+
+sub check_assist_server {
+    my ($self) = @_;
+    
+    my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $self->pscheduler_url());
+    $psc_client->get_test_urls();
+    if($psc_client->error()){
+        print $psc_client->error() . "\n" if($self->debug());
+        return 0;
+    }
+    
+    return 1;
 }
 
 sub _delete_tasks {
     my ($self) = @_;
-    print "-----------------------------------\n";
-    print "DELETING TASKS\n";
-    print "-----------------------------------\n";
+    
+    #clear out previous deleted tasks
+    $self->deleted_tasks([]);
+    
+    if($self->debug()){
+        print "-----------------------------------\n";
+        print "DELETING TASKS\n";
+        print "-----------------------------------\n";
+    }
     foreach my $checksum(keys %{$self->existing_task_map()}){
         my $cached_lead;
+        my $cached_bind;
         my $cmap = $self->existing_task_map()->{$checksum};
         foreach my $tool(keys %{$cmap}){
             my $tmap = $cmap->{$tool};
@@ -165,8 +237,10 @@ sub _delete_tasks {
                 #optimization so don't lookup lead for same params
                 if($cached_lead){
                     $task->url($cached_lead);
+                    $task->bind_address($cached_bind) if($cached_bind);
                 }else{
                     $cached_lead = $task->refresh_lead();
+                    $cached_bind = $task->bind_address();
                 }
                 if($task->error){
                     push @{$self->errors()}, "Problem determining which pscheduler to submit test to for deletion, skipping test: " . $task->error;
@@ -178,13 +252,15 @@ sub _delete_tasks {
                     #make sure we keep the lead around
                     $self->leads_to_keep()->{$task->url()} = 1;
                 }else{
-                    $self->_print_task($task);
+                    $self->_print_task($task) if($self->debug());
                     $task->delete_task();
                     if($task->error()){
                         $self->leads_to_keep()->{$task->url()} = 1;
                         $self->_update_lead($task->url(), {'error_time' => time});
                         push @{$self->errors()}, "Problem deleting test, continuing with rest of config: " . $task->error();
-                    }                    
+                    }else{
+                        push @{$self->deleted_tasks()}, $task;
+                    }                  
                 }
             }
         }
@@ -196,8 +272,28 @@ sub _need_new_task {
     
     my $existing = $self->existing_task_map();
     
+    #if we use one of bind address maps, we have to refresh the lead here or else the 
+    #checksum will be wrong. If we don't specify then don't worry about it as its a 
+    #performance hit
+    if($new_task->needs_bind_addresses()){
+        $new_task->refresh_lead();
+    }
+    
+    #if private ma params change, then need new task
+    #also update new_archives here so we don't have to re-calculate all the checksums
+    my $ma_changed = 0;
+    foreach my $archive(@{$new_task->archives()}){
+        my $opaque_new_checksum = $archive->checksum();
+        my $old_checksum = $self->existing_archives()->{$opaque_new_checksum};
+        my $new_checksum = $archive->checksum(include_private => 1);
+        $self->new_archives()->{$opaque_new_checksum} = $new_checksum;
+        if(!$old_checksum || $old_checksum ne $new_checksum){
+            $ma_changed = 1;
+        }
+    }
+    
     #if no matching checksum, then does not exist
-    if(!$existing->{$new_task->checksum()}){
+    if($ma_changed || !$existing->{$new_task->checksum()}){
         return (1, undef);
     }
     
@@ -225,6 +321,7 @@ sub _need_new_task {
 
 sub _evaluate_task {
     my ($self, $tmap, $need_new_task, $new_start_time) = @_;
+    my $current_time = time;
     
     foreach my $uuid(keys %{$tmap}){
         my $old_task = $tmap->{$uuid};
@@ -235,8 +332,8 @@ sub _evaluate_task {
                 #if old task has no end time or will not expire before deadline, no task needed
                 $need_new_task = 0 ;
                 #continue with loop since need to mark other tasks that might be older as keep
-            }elsif(!$new_start_time || $new_start_time < $until_ts){
-                #if new_start_time not initialized or found a task that lets us push out, then set
+            }elsif($until_ts > $current_time && (!$new_start_time || $new_start_time < $until_ts)){
+                #if until_ts is in the future or found a task that runs longer then one we already saw, set the start time
                 $new_start_time = $until_ts;
             }
         } 
@@ -248,9 +345,14 @@ sub _evaluate_task {
 sub _create_tasks {
     my ($self) = @_;
     
-    print "+++++++++++++++++++++++++++++++++++\n";
-    print "ADDING TASKS\n";
-    print "+++++++++++++++++++++++++++++++++++\n";
+    # clear out previous added tasks
+    $self->added_tasks([]); 
+    
+    if($self->debug()){
+        print "+++++++++++++++++++++++++++++++++++\n";
+        print "ADDING TASKS\n";
+        print "+++++++++++++++++++++++++++++++++++\n";
+    }
     foreach my $new_task(@{$self->new_tasks()}){
         #determine lead - do here as optimization so we only do it for tests that need to be added
         $new_task->refresh_lead();
@@ -259,25 +361,28 @@ sub _create_tasks {
             next;
         }
         $self->leads_to_keep()->{$new_task->url()} = 1;
-        $self->_print_task($new_task);
+        $self->_print_task($new_task) if($self->debug());
         $new_task->post_task();
         if($new_task->error){
             push @{$self->errors()}, "Problem adding test, continuing with rest of config: " . $new_task->error;
-        }
-        $self->_update_lead($new_task->url(), { 'success_time' => time });
+        }else{
+            push @{$self->added_tasks()}, $new_task;
+            $self->_update_lead($new_task->url(), { 'success_time' => time });
+        } 
     }
 
 }
 
-sub _write_task_file {
+sub _write_tracker_file {
     my ($self) = @_;
     
     eval{
         my $content = {
-            'leads' => $self->leads()
+            'leads' => $self->leads(),
+            'archives' => $self->new_archives()
         };
         my $json = to_json($content, {"pretty" => 1});
-        open( FOUT, ">", $self->task_file() ) or die "unable to open " . $self->task_file() . ": $@";
+        open( FOUT, ">", $self->tracker_file() ) or die "unable to open " . $self->tracker_file() . ": $@";
         print FOUT "$json";
         close( FOUT );
     };
@@ -351,7 +456,7 @@ sub _read_json_file {
         local $/; #enable perl to read an entire file at once
         open( my $json_fh, '<', $json_file ) or die("Unable to open task file $json_file: $@");
         my $json_text   = <$json_fh>;
-        $json= decode_json( $json_text )
+        eval{ $json= decode_json( $json_text ) };
     }
         
     return $json;
@@ -374,11 +479,12 @@ sub _print_task {
     print "Test Type: " . $task->test_type() . "\n";
     print "Tool: " . ($task->tool() ? $task->tool() : 'n/a') . "\n";
     print "Requested Tools: " . ($task->requested_tools() ? join " ", @{$task->requested_tools()} : 'n/a') . "\n";
-    print "Source: " . $task->test_spec_param("source") . "\n";
+    print "Source: " . ($task->test_spec_param("source") ? $task->test_spec_param("source") : 'n/a') . "\n";
     print "Destination: " . ($task->test_spec_param("dest") ?  $task->test_spec_param("dest") : $task->test_spec_param("destination")). "\n";
     print "Enabled: " . (defined $task->detail_enabled() ? $task->detail_enabled() : "n/a"). "\n";
     print "Added: " . (defined $task->detail_added() ? $task->detail_added() : "n/a"). "\n";
     print "Lead URL: " . $task->url() . "\n";
+    print "Lead Bind: " . $task->lead_bind() . "\n" if($task->lead_bind());
     print "Checksum: " . $task->checksum() . "\n";
     print "Created By:\n";
     my $created_by = $task->reference_param('created-by');
@@ -394,14 +500,18 @@ sub _print_task {
         print "    repeat: " . $task->schedule_repeat() . "\n" if(defined $task->schedule_repeat());
         print "    max runs: " . $task->schedule_maxruns() . "\n" if(defined $task->schedule_maxruns());
         print "    slip: " . $task->schedule_slip() . "\n" if(defined $task->schedule_slip());
-        print "    randslip: " . $task->schedule_randslip() . "\n" if(defined $task->schedule_randslip());
+        print "    sliprand: " . $task->schedule_sliprand() . "\n" if(defined $task->schedule_sliprand());
         print "    start: " . $task->schedule_start() . "\n" if(defined $task->schedule_start());
         print "    until: " . $task->schedule_until() . "\n" if(defined $task->schedule_until());
     }
     print "Archivers:\n";
     foreach my $a(@{$task->archives()}){
         print "    name: " . $a->name() . "\n";
-        print "    url: " . $a->data()->{'url'} . "\n";
+        print "    ttl: " . $a->ttl() . "\n" if(defined $a->ttl());
+        print "    data:\n";
+        foreach my $ad(keys %{$a->data()}){
+            print "        $ad: " . (defined $a->data()->{$ad} ? $a->data()->{$ad} : 'n/a') . "\n";
+        }
     }
     print "\n";
 }

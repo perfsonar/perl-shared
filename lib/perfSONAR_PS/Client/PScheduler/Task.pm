@@ -6,8 +6,13 @@ use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg extract_url_u
 use perfSONAR_PS::Client::PScheduler::Archive;
 use perfSONAR_PS::Client::PScheduler::Run;
 use Digest::MD5 qw(md5_base64);
+use Data::Validate::IP qw(is_loopback_ipv4);
 
 extends 'perfSONAR_PS::Client::PScheduler::BaseNode';
+
+has 'bind_map' => (is => 'rw', isa => 'HashRef', default => sub { {} });
+has 'lead_bind_map' => (is => 'rw', isa => 'HashRef', default => sub { {} });
+has 'lead_address_map' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 
 override '_post_url' => sub {
     my $self = shift;
@@ -74,6 +79,14 @@ sub tool{
         $self->data->{'tool'} = $val;
     }
     return $self->data->{'tool'};
+}
+
+sub lead_bind{
+    my ($self, $val) = @_;
+    if(defined $val){
+        $self->data->{'lead-bind'} = $val;
+    }
+    return $self->data->{'lead-bind'};
 }
 
 sub reference{
@@ -145,19 +158,19 @@ sub schedule_repeat{
     return $self->data->{'schedule'}->{'repeat'};
 }
 
-sub schedule_randslip{
+sub schedule_sliprand{
     my ($self, $val) = @_;
     
     if(defined $val){
         $self->_init_field($self->data, 'schedule');
-        $self->data->{'schedule'}->{'randslip'} = $val;
+        $self->data->{'schedule'}->{'sliprand'} = $val ? JSON::true : JSON::false;
     }
     
     unless($self->_has_field($self->data, "schedule")){
         return undef;
     }
     
-    return $self->data->{'schedule'}->{'randslip'};
+    return $self->data->{'schedule'}->{'sliprand'};
 }
 
 sub schedule_slip{
@@ -371,19 +384,23 @@ sub archives{
     if(defined $val){
         $self->data->{'archives'} = [];
         foreach my $v(@{$val}){
-            push @{$self->data->{'archives'}}, {
+            my $tmp_archive = {
                 'archiver' => $v->name(),
                 'data' => $v->data(),
             };
+            $tmp_archive->{'ttl'} = $v->ttl() if(defined $v->ttl());
+            push @{$self->data->{'archives'}}, $tmp_archive;
         }
     }
     
     my @archives = ();
     foreach my $archive(@{$self->data->{'archives'}}){
-        push @archives, new perfSONAR_PS::Client::PScheduler::Archive(
+        my $tmp_archive_obj = new perfSONAR_PS::Client::PScheduler::Archive(
             'name' => $archive->{'archiver'},
             'data' => $archive->{'data'},
         );
+        $tmp_archive_obj->ttl($archive->{'ttl'}) if(exists $archive->{'ttl'} && defined $archive->{'ttl'});
+        push @archives, $tmp_archive_obj;
     }
     
     return \@archives;
@@ -400,10 +417,12 @@ sub add_archive{
         $self->data->{'archives'} = [];
     }
     
-    push @{$self->data->{'archives'}}, {
+    my $tmp_archive = {
             'archiver' =>  $val->name(),
             'data' =>  $val->data()
         };
+    $tmp_archive->{'ttl'} = $val->ttl() if(defined $val->ttl());
+    push @{$self->data->{'archives'}}, $tmp_archive;
 }
 
 sub requested_tools{
@@ -429,6 +448,56 @@ sub add_requested_tool{
     }
     
     push @{$self->data->{'tools'}}, $val;
+}
+
+sub add_bind_map{
+    my ($self, $target, $bind) = @_;
+    
+    unless(defined $target && defined $bind){
+        return;
+    }
+    
+    $self->bind_map->{$target} = $bind;
+}
+
+sub add_lead_bind_map{
+    my ($self, $target, $bind) = @_;
+    
+    unless(defined $target && defined $bind){
+        return;
+    }
+    
+    $self->lead_bind_map->{$target} = $bind;
+}
+
+sub add_lead_address_map{
+    my ($self, $target, $addr) = @_;
+    
+    unless(defined $target && defined $addr){
+        return;
+    }
+    
+    $self->lead_address_map->{$target} = $addr;
+}
+
+sub add_local_bind_map{
+    my ($self, $bind) = @_;
+    
+    unless(defined $bind){
+        return;
+    }
+    
+    $self->bind_map->{'_default'} = $bind;
+}
+
+sub add_local_lead_bind_map{
+    my ($self, $bind) = @_;
+    
+    unless(defined $bind){
+        return;
+    }
+    
+    $self->lead_bind_map->{'_default'} = $bind;
 }
 
 sub post_task {
@@ -486,6 +555,7 @@ sub runs(){
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,
         verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
         #headers => $self->filters->headers()
     );
      
@@ -539,6 +609,7 @@ sub run_uuids(){
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,
         verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
         #headers => $self->filters->headers()
     );
      
@@ -587,6 +658,7 @@ sub get_run() {
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,
         verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
     );
     if(!$run_response->is_success){
         my $msg = build_err_msg(http_response => $run_response);
@@ -610,15 +682,54 @@ sub get_lead() {
         return;
     }
     
+    #do any address-based mappings here
+    my $participants_lead_bind = "";
+    if($self->url){
+        my $url_obj = new URI($self->url);  
+        my $lead = $url_obj->host;
+        #map the URL to a specific public address if needed
+        if(exists $self->lead_address_map->{$lead} && $self->lead_address_map->{$lead}){
+            $url_obj->host($self->lead_address_map->{$lead});
+            $self->url("$url_obj");
+            $lead = $url_obj->host;
+        }
+        #init bindings if we haven't already done so
+        if($self->needs_bind_addresses()){   
+            #set bind map
+            if(exists $self->bind_map->{$lead} && $self->bind_map->{$lead}){
+                $self->bind_address($self->bind_map->{$lead});
+            }elsif(exists $self->bind_map->{'_default'} && $self->bind_map->{'_default'}){
+                $self->bind_address($self->bind_map->{'_default'}) unless(is_loopback_ipv4($lead) || $lead eq '::1' || $lead =~ /^localhost/);
+            }
+            #set participants lead
+            if(exists $self->lead_bind_map->{$lead} && $self->lead_bind_map->{$lead}){
+                $participants_lead_bind = $self->lead_bind_map->{$lead};
+            }elsif(exists $self->lead_bind_map->{'_default'} && $self->lead_bind_map->{'_default'}){
+                #Only do this if url points to local pscheduler - may cause problems if default assist server in .conf is remote
+                $participants_lead_bind = $self->lead_bind_map->{'_default'} if(is_loopback_ipv4($lead) || $lead eq '::1' || $lead =~ /^localhost/);
+            }
+        }elsif($self->lead_bind()){
+            #if lead_bind already set, give it to participants
+            $participants_lead_bind = $self->lead_bind();
+        }
+        
+        #map the URL to a specific public address if needed
+        if(exists $self->lead_address_map->{$lead} && $self->lead_address_map->{$lead}){
+            $url_obj->host($self->lead_address_map->{$lead});
+            $self->url("$url_obj");
+        }
+    }
+    
     #build url
     my $lead_url = $self->url;
     chomp($lead_url);
     $lead_url .= "/" if($self->url !~ /\/$/);
-    $lead_url .= "tests/" . $self->test_type()  . "/lead";
+    $lead_url .= "tests/" . $self->test_type()  . "/participants";
     
     #fetch lead
     $self->data->{'test'}->{'spec'}->{'schema'} = 1 unless($self->data->{'test'}->{'spec'}->{'schema'}); 
     my %get_params = ("spec" => to_json($self->test_spec()));
+    $get_params{'lead-bind'} =  $participants_lead_bind if($participants_lead_bind);
     my $lead_response = send_http_request(
         connection_type => 'GET', 
         url => $lead_url, 
@@ -627,6 +738,7 @@ sub get_lead() {
         ca_certificate_file => $self->filters->ca_certificate_file,
         ca_certificate_path => $self->filters->ca_certificate_path,
         verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
     );
     if(!$lead_response->is_success){
         my $msg = build_err_msg(http_response => $lead_response);
@@ -634,13 +746,43 @@ sub get_lead() {
         return;
     }
     my $lead_response_json;
-    eval{$lead_response_json = from_json($lead_response->content, {allow_nonref => 1});};
+    eval{$lead_response_json = from_json($lead_response->content);};
     if($@){
         $self->_set_error("Error parsing lead object returned from $lead_url: $@");
         return;
     }
+    unless($lead_response_json && exists $lead_response_json->{participants} && $lead_response_json->{participants}){
+        $self->_set_error("Error parsing lead object returned from $lead_url: No participant list returned");
+        return;
+    }
+    unless(@{$lead_response_json->{participants}} > 0){
+        $self->_set_error("Error parsing lead object returned from $lead_url: No participants provided in returned list");
+        return;
+    }
     
-    return $lead_response_json;
+    
+    my $lead = $lead_response_json->{participants}->[0];
+    
+    #switch to public address if have mapping
+    if($lead  && exists $self->lead_address_map->{$lead} && $self->lead_address_map->{$lead}){
+        $lead = $self->lead_address_map->{$lead};
+    }
+        
+    #set bind address if we have a bind map populated
+    if($lead && exists $self->bind_map->{$lead} && $self->bind_map->{$lead}){
+        $self->bind_address($self->bind_map->{$lead});
+    }elsif(exists $self->bind_map->{'_default'} && $self->bind_map->{'_default'}){
+        $self->bind_address($self->bind_map->{'_default'});
+    }
+    
+    #set lead bind address if we have map set - only set it if we are local (first participant None) or explicitly call out address
+    if($lead && exists $self->lead_bind_map->{$lead} && $self->lead_bind_map->{$lead}){
+        $self->lead_bind($self->lead_bind_map->{$lead});
+    }elsif(!$lead && exists $self->lead_bind_map->{'_default'} && $self->lead_bind_map->{'_default'}){
+        $self->lead_bind($self->lead_bind_map->{'_default'});
+    }
+    
+    return $lead;
 }
 
 sub get_lead_url() {
@@ -671,6 +813,20 @@ sub refresh_lead() {
     return $lead;
 }
 
+sub needs_bind_addresses() {
+    my ($self) = @_;
+    
+    if(%{$self->bind_map} && !$self->bind_address()){
+        return 1;
+    }
+    
+    if(%{$self->lead_bind_map} && !$self->lead_bind()){
+        return 1;
+    }
+    
+    return 0;
+}
+
 sub checksum() {
     #calculates checksum for comparing tasks, ignoring stuff like UUID and lead url
     my ($self) = @_;
@@ -687,6 +843,14 @@ sub checksum() {
     $data_copy->{'schedule'}->{'start'} = ''; #clear out temporal values
     $data_copy->{'schedule'}->{'until'} = ''; #clear out temporal values
     $data_copy->{'detail'} = {}; #clear out detail
+    #clear our private fields that won't get displayed by remote tasks
+    foreach my $archive(@{$data_copy->{'archives'}}){
+        foreach my $datum(keys %{$archive->{'data'}}){
+            if($datum =~ /^_/){
+                $archive->{'data'}->{$datum} = '';
+            }
+        }
+    }
     
     #canonical should keep it consistent by sorting keys
     return md5_base64(to_json($data_copy, {'canonical' => 1}));

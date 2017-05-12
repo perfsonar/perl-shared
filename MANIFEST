@@ -40,6 +40,7 @@ lib/perfSONAR_PS/Client/PScheduler/BaseNode.pm
 lib/perfSONAR_PS/Client/PScheduler/Maintainer.pm
 lib/perfSONAR_PS/Client/PScheduler/Run.pm
 lib/perfSONAR_PS/Client/PScheduler/Task.pm
+lib/perfSONAR_PS/Client/PScheduler/TaskManager.pm
 lib/perfSONAR_PS/Client/PScheduler/Test.pm
 lib/perfSONAR_PS/Client/PScheduler/Tool.pm
 lib/perfSONAR_PS/Client/Utils.pm
@@ -91,7 +92,8 @@ lib/perfSONAR_PS/NPToolkit/Services/NPAD.pm
 lib/perfSONAR_PS/NPToolkit/Services/NTP.pm
 lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
 lib/perfSONAR_PS/NPToolkit/Services/OWAMP.pm
-lib/perfSONAR_PS/NPToolkit/Services/RegularTesting.pm
+lib/perfSONAR_PS/NPToolkit/Services/MeshConfigAgent.pm
+lib/perfSONAR_PS/NPToolkit/Services/PScheduler.pm
 lib/perfSONAR_PS/NPToolkit/Services/ServicesMap.pm
 lib/perfSONAR_PS/NPToolkit/Services/SimpleLSBootstrap.pm
 lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
@@ -102,7 +104,11 @@ lib/perfSONAR_PS/NPToolkit/WebService/Auth.pm
 lib/perfSONAR_PS/NPToolkit/WebService/Method.pm
 lib/perfSONAR_PS/NPToolkit/WebService/ParameterTypes.pm
 lib/perfSONAR_PS/NPToolkit/WebService/Router.pm
+lib/perfSONAR_PS/RegularTesting/BindAddress.pm
+lib/perfSONAR_PS/RegularTesting/PSchedulerAddress.pm
 lib/perfSONAR_PS/RegularTesting/Config.pm
+lib/perfSONAR_PS/RegularTesting/CreatedBy.pm
+lib/perfSONAR_PS/RegularTesting/Reference.pm
 lib/perfSONAR_PS/RegularTesting/DirQueue.pm
 lib/perfSONAR_PS/RegularTesting/EventQueue/Event.pm
 lib/perfSONAR_PS/RegularTesting/EventQueue/Queue.pm
@@ -156,6 +162,8 @@ lib/perfSONAR_PS/RegularTesting/Tests/Bwping2Owamp.pm
 lib/perfSONAR_PS/RegularTesting/Tests/BwpingOwamp.pm
 lib/perfSONAR_PS/RegularTesting/Tests/Bwtraceroute.pm
 lib/perfSONAR_PS/RegularTesting/Tests/Bwtraceroute2.pm
+lib/perfSONAR_PS/RegularTesting/Tests/PSchedulerBase.pm
+lib/perfSONAR_PS/RegularTesting/Tests/SimpleStream.pm
 lib/perfSONAR_PS/RegularTesting/Tests/Powstream.pm
 lib/perfSONAR_PS/RegularTesting/Utils.pm
 lib/perfSONAR_PS/RegularTesting/Utils/CmdRunner.pm

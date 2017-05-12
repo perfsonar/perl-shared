@@ -4,7 +4,7 @@
 %define relnum   1 
 
 Name:			libperfsonar
-Version:		3.5.1.9
+Version:		4.0.0.1
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Shared Libraries
 License:		Distributable, see LICENSE
@@ -50,6 +50,9 @@ Requires:		perl(Time::HiRes)
 Requires:		perl(URI::Split)
 Requires:		perl(XML::LibXML)
 Requires:		perfsonar-common
+%if 0%{?el7}
+Requires:		GeoIP-data
+%endif
 Obsoletes:      perl-perfSONAR_PS-Toolkit
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
 Obsoletes:      perl-perfSONAR_PS-serviceTest
@@ -73,6 +76,9 @@ Requires:		perl(DateTime::Format::ISO8601)
 Requires:		perl(Exporter)
 Requires:		perl(JSON)
 Requires:		perl(LWP)
+%if 0%{?el7}
+Requires:		perl(LWP::Protocol::https)
+%endif
 Requires:		perl(Log::Log4perl)
 Requires:		perl(Net::Ping)
 Requires:		perl(Params::Validate)
@@ -81,6 +87,7 @@ Requires:		perl(Time::HiRes)
 Requires:		perl(URI)
 Requires:		perl(YAML::Syck)
 Requires:		perfsonar-common
+Requires:		libperfsonar-perl
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
 Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
 Obsoletes:      perl-perfSONAR_PS-serviceTest
@@ -98,7 +105,11 @@ Requires:		perl(Exporter)
 Requires:		perl(HTTP::Request)
 Requires:		perl(JSON)
 Requires:		perl(LWP::UserAgent)
+%if 0%{?el7}
+Requires:		perl(LWP::Protocol::https)
+%endif
 Requires:		perl(Mouse)
+Requires:               perl(Net::INET6Glue)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
 Requires:		perl(URI::Split)
@@ -121,6 +132,9 @@ Requires:		perl(Exporter)
 Requires:		perl(HTTP::Request)
 Requires:		perl(JSON)
 Requires:		perl(LWP::UserAgent)
+%if 0%{?el7}
+Requires:		perl(LWP::Protocol::https)
+%endif
 Requires:		perl(Mouse)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
@@ -193,7 +207,6 @@ Requires:		perl(Statistics::Descriptive)
 Requires:		perl(Storable)
 Requires:		perl(Symbol)
 Requires:		perl(Sys::Hostname)
-Requires:		perl(Sys::MemInfo)
 Requires:		perl(Sys::Statistics::Linux)
 Requires:		perl(Template)
 Requires:		perl(Template::Filters)

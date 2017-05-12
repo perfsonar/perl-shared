@@ -27,7 +27,17 @@ has 'udp_bandwidth' => (is => 'rw', isa => 'Int');
 has 'buffer_length' => (is => 'rw', isa => 'Int');
 has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
 has 'window_size'   => (is => 'rw', isa => 'Int');
-
+has 'zero_copy' => (is => 'rw', isa => 'Bool', default => 0);
+#new pscheduler parameters
+has 'tcp_bandwidth' => (is => 'rw', isa => 'Int');
+has 'mss' => (is => 'rw', isa => 'Int');
+has 'dscp' => (is => 'rw', isa => 'Int');
+has 'no_delay' => (is => 'rw', isa => 'Bool');
+has 'congestion' => (is => 'rw', isa => 'Str');
+has 'flow_label' => (is => 'rw', isa => 'Int');
+has 'client_cpu_affinity' => (is => 'rw', isa => 'Int');
+has 'server_cpu_affinity' => (is => 'rw', isa => 'Int');
+        
 my $logger = get_logger(__PACKAGE__);
 
 override 'type' => sub { "bwctl" };
@@ -65,6 +75,7 @@ override 'build_cmd' => sub {
     push @cmd, ( '-O', $test_parameters->omit_interval ) if $test_parameters->omit_interval;
     push @cmd, ( '-l', $test_parameters->buffer_length ) if $test_parameters->buffer_length;
     push @cmd, ( '-w', $test_parameters->window_size ) if $test_parameters->window_size;
+    push @cmd, ( '-Z', $test_parameters->zero_copy ) if $test_parameters->zero_copy;
 
     # Set a default reporting interval
     push @cmd, ( '-i', '1' );
@@ -106,6 +117,7 @@ override 'build_results' => sub {
 
     $results->protocol($protocol);
     $results->streams($test_parameters->streams);
+    $results->zero_copy($test_parameters->zero_copy);
     $results->time_duration($test_parameters->duration);
     $results->bandwidth_limit($test_parameters->udp_bandwidth) if $test_parameters->udp_bandwidth;
     $results->buffer_length($test_parameters->buffer_length) if $test_parameters->buffer_length;
@@ -155,6 +167,8 @@ override 'build_pscheduler_task' => sub {
                                          force_ipv6 => 0,
                                          test_parameters => 1,
                                          test => 1,
+                                         source_node => 0,
+                                         dest_node => 0,
                                       });
     my $psc_url           = $parameters->{url};
     my $source            = $parameters->{source};
@@ -165,50 +179,63 @@ override 'build_pscheduler_task' => sub {
     my $test_parameters   = $parameters->{test_parameters};
     my $test              = $parameters->{test};
     my $schedule          = $test->schedule();
+    my $source_node       = $parameters->{source_node};
+    my $dest_node         = $parameters->{dest_node};
     
     my $psc_task = new perfSONAR_PS::Client::PScheduler::Task(url => $psc_url);
     $psc_task->reference_param('description', $test->description()) if $test->description();
+    foreach my $test_ref(@{$test->references()}){
+        next if($test_ref->name() eq 'description' || $test_ref->name() eq 'created-by');
+        $psc_task->reference_param($test_ref->name(), $test_ref->value());
+    }
     
     #Test parameters
     my $psc_test_spec = {};
-    #TODO: Support the options below
-    #"interval":    { "$ref": "#/pScheduler/Duration" },    
-    #"mss":         { "$ref": "#/pScheduler/Cardinal" },
-    #"local-address": { "$ref": "#/pScheduler/Host" },
-    #"dscp":          { "$ref": "#/pScheduler/Cardinal" },
-    #"dynamic-window-size":    { "$ref": "#/pScheduler/Cardinal" },
-    #"no-delay":    { "$ref": "#/pScheduler/Boolean" },
-    #"congestion":    { "$ref": "#/pScheduler/String" },
-    #"zero-copy":    { "$ref": "#/pScheduler/Boolean" },
-    #"flow-label":    { "$ref": "#/pScheduler/String" },
-    #"cpu-affinity":    { "$ref": "#/pScheduler/String" }
     $psc_task->test_type('throughput');
-    $psc_test_spec->{'source'} = $source;
-    $psc_test_spec->{'destination'} = $destination;
+    $psc_test_spec->{'source'} = $source if($source);
+    $psc_test_spec->{'dest'} = $destination;
     if($test->parameters->tool){
         my @tools = split ',', $test->parameters->tool;
         foreach my $tool(@tools){
-            $tool = 'iperf2' if($tool eq 'iperf');
-            $psc_task->add_requested_tool($tool);
+            if($tool eq 'iperf'){
+                $psc_task->add_requested_tool('bwctliperf2');
+                $psc_task->add_requested_tool('iperf2');
+            }elsif($tool eq 'iperf3'){
+                $psc_task->add_requested_tool('bwctliperf3');
+                $psc_task->add_requested_tool('iperf3');
+            }else{
+                $psc_task->add_requested_tool($tool);
+            }
         }
     }
     if($test_parameters->use_udp){
         $psc_test_spec->{'udp'} = JSON::true;
         $psc_test_spec->{'bandwidth'} = int($test_parameters->udp_bandwidth) if $test_parameters->udp_bandwidth;
-    }       
+    }else{
+        $psc_test_spec->{'bandwidth'} = int($test_parameters->tcp_bandwidth) if $test_parameters->tcp_bandwidth;
+    }      
     $psc_test_spec->{'duration'} = "PT" . $test_parameters->duration . "S" if $test_parameters->duration;
-    $psc_test_spec->{'omit'} = int($test_parameters->omit_interval) if $test_parameters->omit_interval;
+    $psc_test_spec->{'omit'} = "PT" . $test_parameters->omit_interval . "S" if $test_parameters->omit_interval;
     $psc_test_spec->{'buffer-length'} = int($test_parameters->buffer_length)  if $test_parameters->buffer_length;
-    $psc_test_spec->{'tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
+    $psc_test_spec->{'ip-tos'} = int($test_parameters->packet_tos_bits) if $test_parameters->packet_tos_bits;
     $psc_test_spec->{'parallel'} = int($test_parameters->streams) if $test_parameters->streams;
     $psc_test_spec->{'window-size'} = int($test_parameters->window_size) if $test_parameters->window_size;
-    $psc_test_spec->{'force-ipv4'} = JSON::true if($force_ipv4);
-    $psc_test_spec->{'force-ipv6'} = JSON::true if($force_ipv6);
+    $psc_test_spec->{'zero-copy'} = int($test_parameters->zero_copy) if $test_parameters->zero_copy;
+    $psc_test_spec->{'mss'} = int($test_parameters->mss) if $test_parameters->mss;
+    $psc_test_spec->{'dscp'} = int($test_parameters->dscp) if $test_parameters->dscp;
+    $psc_test_spec->{'no-delay'} = JSON::true if($test_parameters->{no_delay});
+    $psc_test_spec->{'congestion'} = $test_parameters->congestion if $test_parameters->congestion;
+    $psc_test_spec->{'flow-label'} = int($test_parameters->flow_label) if $test_parameters->flow_label;
+    $psc_test_spec->{'client-cpu-affinity'} = int($test_parameters->client_cpu_affinity) if $test_parameters->client_cpu_affinity;
+    $psc_test_spec->{'server-cpu-affinity'} = int($test_parameters->server_cpu_affinity) if $test_parameters->server_cpu_affinity;
+    $psc_test_spec->{'source-node'} = $source_node if($source_node);
+    $psc_test_spec->{'dest-node'} = $dest_node if($dest_node);
+    $psc_test_spec->{'ip-version'} = 4 if($force_ipv4);
+    $psc_test_spec->{'ip-version'} = 6 if($force_ipv6);
     $psc_task->test_spec($psc_test_spec);
     #TODO: Support for more scheduling params
     if ($schedule->type eq "regular_intervals") {
-        $psc_task->schedule_repeat('PT' . $schedule->interval . 'S') if(defined $schedule->interval);
-        $psc_task->schedule_randslip($schedule->random_start_percentage) if(defined $schedule->random_start_percentage);
+        $self->psc_test_interval(schedule => $schedule, psc_task => $psc_task);
     }else{
         $logger->warning("Schedule type " . $schedule->type . " not currently supported. Skipping test.");
         return;

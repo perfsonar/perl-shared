@@ -84,10 +84,10 @@ sub save {
 
     my $tcpbw100_html_output = $self->generate_tcpbw100_html_file();
 
-    my $res;
+    my ($status, $res);
 
-    $res = save_file( { file => $self->{TCPBW100_HTML_FILE}, content => $tcpbw100_html_output } );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{TCPBW100_HTML_FILE}, content => $tcpbw100_html_output } );
+    if ( $status == -1 ) {
         return -1;
     }
 

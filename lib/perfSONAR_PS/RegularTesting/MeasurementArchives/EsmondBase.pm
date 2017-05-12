@@ -14,6 +14,7 @@ use JSON qw(from_json to_json);
 use LWP;
 use perfSONAR_PS::Utils::DNS qw(discover_source_address);
 use perfSONAR_PS::Client::PScheduler::Archive;
+use URI;
 use URI::Split qw(uri_split uri_join);
 
 use Moose;
@@ -25,7 +26,9 @@ my $logger = get_logger(__PACKAGE__);
 has 'username' => (is => 'rw', isa => 'Str|Undef');
 has 'password' => (is => 'rw', isa => 'Str|Undef');
 has 'database' => (is => 'rw', isa => 'Str');
+has 'public_url' => (is => 'rw', isa => 'Str|Undef');
 has 'summary' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondSummary]', default => sub { [] });
+has 'retry_policy' => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondRetryPolicy');
 has 'disable_default_summaries' => (is => 'rw', isa => 'Bool', default => sub { 0 });
 has 'timeout' => (is => 'rw', isa => 'Int', default => sub { 60 });
 has 'ca_certificate_file' => (is => 'rw', isa => 'Str|Undef');
@@ -381,12 +384,29 @@ sub measurement_agent {
 
 override 'to_pscheduler' => sub {
     my ($self, @args) = @_;
-    my $parameters = validate( @args, { local_address => 0 });
+    my $parameters = validate( @args, { local_address => 0, default_retry_policy => 0, remote_lead => 0 });
     my $local_address = $parameters->{local_address};
+    my $remote_lead = $parameters->{remote_lead};
+    my $default_retry_policy = $parameters->{default_retry_policy};
     
     my $psc_archive = new perfSONAR_PS::Client::PScheduler::Archive();
     $psc_archive->name('esmond');
-    $psc_archive->data_param('url', $self->database());
+    my $archiver_url = $self->database();
+    #handle case where lead is remote and make sure we are not telling it to write to localhost
+    if($remote_lead){
+        if($self->public_url()){
+            $archiver_url = $self->public_url();
+        }elsif($local_address){
+            my $archiver_url_obj = new URI($archiver_url);
+            my $archiver_host = $archiver_url_obj->host;
+            if( $archiver_host =~ /^localhost/ ||  $archiver_host =~ /^127\./ || $archiver_host eq '::1'){
+                #I know this is imperfect, but the versions of Data::Validate::IP are all over the place as far as OSes go
+                $archiver_url_obj->host($local_address);
+            }
+            $archiver_url = "$archiver_url_obj";
+        }
+    }
+    $psc_archive->data_param('url', $archiver_url);
     $psc_archive->data_param('_auth-token', $self->password()) if($self->password());
     $psc_archive->data_param('measurement-agent', $local_address) if($local_address);
     my @psc_summaries = ();
@@ -399,12 +419,18 @@ override 'to_pscheduler' => sub {
     }
     $psc_archive->data_param('summaries', \@psc_summaries) if(@psc_summaries);
     
-    #TODO: Make this configurable
-    $psc_archive->data_param('retry-policy', [
-        {'attempts'=> 5, 'wait'=> "PT60S"},   
-        {'attempts'=> 3, 'wait'=> "PT5M"},   
-        {'attempts'=> 24, 'wait'=> "PT60M"},
-    ]);
+    #add retry policy if configured, otherwise punt to specific test types so they can base on interval
+    if(defined $self->retry_policy()){
+        $psc_archive->ttl("PT" . $self->retry_policy()->ttl() . "S") if $self->retry_policy()->ttl();
+        my @tmp_retries = ();
+        foreach my $retry(@{$self->retry_policy()->retry()}){
+            push @tmp_retries, {'attempts'=> int($retry->attempts()), 'wait'=> "PT" . $retry->wait() . "S"},
+        }
+        $psc_archive->data_param('retry-policy', \@tmp_retries);
+    }elsif($default_retry_policy){
+        $psc_archive->ttl($default_retry_policy->{'ttl'}) if $default_retry_policy->{'ttl'};
+        $psc_archive->data_param('retry-policy', $default_retry_policy->{'retry'});
+    }
     
     return $psc_archive;
 };
@@ -419,6 +445,26 @@ extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
 has 'summary_type'     => (is => 'rw', isa => 'Str');
 has 'event_type' => (is => 'rw', isa => 'Str');
 has 'summary_window' => (is => 'rw', isa => 'Int');
+
+package perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondRetryPolicy;
+
+use Moose;
+use Class::MOP::Class;
+
+extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
+
+has 'ttl'     => (is => 'rw', isa => 'Int', default => sub { 0 });
+has 'retry' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondRetry]', default => sub { [] });
+
+package perfSONAR_PS::RegularTesting::MeasurementArchives::Config::EsmondRetry;
+
+use Moose;
+use Class::MOP::Class;
+
+extends 'perfSONAR_PS::RegularTesting::Utils::SerializableObject';
+
+has 'attempts'     => (is => 'rw', isa => 'Int');
+has 'wait'         => (is => 'rw', isa => 'Int');
 
 
 

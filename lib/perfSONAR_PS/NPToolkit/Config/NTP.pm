@@ -93,26 +93,26 @@ sub save {
     my $ntp_known_servers_output = $self->generate_ntp_server_list();
     my $ntp_step_tickers         = $self->generate_step_tickers_list();
 
-    my $res;
+    my ($status, $res);
 
     return (-1, "Problem generating NTP configuration") unless ( $ntp_conf_output );
     return (-1, "Problem generating list of known servers") unless ( $ntp_known_servers_output );
     return (-1, "Problem generating list of selected servers") unless ($ntp_step_tickers);
 
-    $res = save_file( { file => $self->{NTP_CONF_FILE}, content => $ntp_conf_output } );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{NTP_CONF_FILE}, content => $ntp_conf_output } );
+    if ( $status == -1 ) {
         $self->{LOGGER}->error( "File save failed: " . $self->{KNOWN_SERVERS_FILE} );
         return (-1, "Problem saving NTP configuration");
     }
 
-    $res = save_file( { file => $self->{KNOWN_SERVERS_FILE}, content => $ntp_known_servers_output } );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{KNOWN_SERVERS_FILE}, content => $ntp_known_servers_output } );
+    if ( $status == -1 ) {
         $self->{LOGGER}->error( "File save failed: " . $self->{KNOWN_SERVERS_FILE} );
         return (-1, "Problem saving list of known NTP servers");
     }
 
-    $res = save_file( { file => $self->{STEP_TICKERS_FILE}, content => $ntp_step_tickers} );
-    if ( $res == -1 ) {
+    ($status, $res) = save_file( { file => $self->{STEP_TICKERS_FILE}, content => $ntp_step_tickers} );
+    if ( $status == -1 ) {
         $self->{LOGGER}->error( "File save failed: " . $self->{STEP_TICKERS_FILE} );
         return (-1, "Problem saving NTP configuration");
     }
