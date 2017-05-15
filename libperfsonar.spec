@@ -50,6 +50,7 @@ Requires:		perl(Time::HiRes)
 Requires:		perl(URI::Split)
 Requires:		perl(XML::LibXML)
 Requires:		perfsonar-common
+Requires:		iproute
 %if 0%{?el7}
 Requires:		GeoIP-data
 %endif
