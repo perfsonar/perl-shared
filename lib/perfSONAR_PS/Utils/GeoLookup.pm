@@ -18,7 +18,7 @@ our $VERSION = 3.4;
 
 use Geo::IP;
 use Data::Validate::IP;
-use Socket;     #this doesn't help
+#use Socket;     #this doesn't help
 use Socket6;
 use Net::IP; # doesn't help
 use base 'Exporter';
