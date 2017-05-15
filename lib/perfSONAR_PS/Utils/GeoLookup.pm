@@ -26,7 +26,7 @@ use Data::Dumper;
 
 our @EXPORT_OK = qw(
     geoIPLookup
-    geoIPDBVersion
+    geoIPVersion
 );
 
 =head2 geoIPLookup($ip)
@@ -42,13 +42,8 @@ sub geoIPLookup {
     if ($ip) {
         my $record;
         if ( is_ipv4($ip) ) {
-            my $city_file = '/usr/share/GeoIP/GeoIPCity.dat';
-            if ( !-f $city_file ) {
-                $city_file = '/usr/share/GeoIP/GeoIPCity-initial.dat';
-                return $result if ( ! -f $city_file );
-
-
-            }
+            my $city_file = _get_ipv4_city_db();
+            return $result if ( ! -f $city_file );
             my $city_db = Geo::IP->open( $city_file, GEOIP_MEMORY_CACHE);
 
             $record = $city_db->record_by_addr( $ip );
@@ -87,11 +82,23 @@ sub geoIPLookup {
     return $result;
 }
 
-sub geoIPDBVersion {
-    my $gi = Geo::IP->new(GEOIP_MEMORY_CACHE);
+sub geoIPVersion {
+    my $city_file = _get_ipv4_city_db();
+    my $gi = Geo::IP->open( $city_file, GEOIP_MEMORY_CACHE);
     my $info = $gi->database_info;
     my $libversion = $gi->lib_version;
-    warn "info " . Dumper ($info) . "libversion: " . Dumper ($libversion);
+
+    return { 'db' => $info,
+             'lib' => $libversion };
+}
+
+sub _get_ipv4_city_db { 
+    my $city_file = '/usr/share/GeoIP/GeoIPCity.dat';
+    if ( !-f $city_file ) {
+        $city_file = '/usr/share/GeoIP/GeoIPCity-initial.dat';
+    }
+    return $city_file;
+
 }
 
 1;
