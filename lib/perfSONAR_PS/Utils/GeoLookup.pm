@@ -26,6 +26,7 @@ use Data::Dumper;
 
 our @EXPORT_OK = qw(
     geoIPLookup
+    geoIPDBVersion
 );
 
 =head2 geoIPLookup($ip)
@@ -84,6 +85,13 @@ sub geoIPLookup {
 
     }
     return $result;
+}
+
+sub geoIPDBVersion {
+    my $gi = Geo::IP->new(GEOIP_MEMORY_CACHE);
+    my $info = $gi->database_info;
+    my $libversion = $gi->lib_version;
+    warn "info " . Dumper ($info) . "libversion: " . Dumper ($libversion);
 }
 
 1;
