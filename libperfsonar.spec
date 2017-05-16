@@ -38,7 +38,7 @@ Requires:		perl(Log::Log4perl)
 Requires:		perl(Net::CIDR)
 Requires:		perl(Net::DNS)
 Requires:		perl(Net::IP)
-Requires:		perl(Net::Interface)
+Requires:		perl(IO::Interface)
 Requires:		perl(NetAddr::IP)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
@@ -50,6 +50,7 @@ Requires:		perl(Time::HiRes)
 Requires:		perl(URI::Split)
 Requires:		perl(XML::LibXML)
 Requires:		perfsonar-common
+Requires:		iproute
 %if 0%{?el7}
 Requires:		GeoIP-data
 %endif
@@ -187,7 +188,6 @@ Requires:		perl(Moose)
 Requires:		perl(Net::CIDR)
 Requires:		perl(Net::DNS)
 Requires:		perl(Net::IP)
-Requires:		perl(Net::Interface)
 Requires:		perl(Net::NTP)
 Requires:		perl(Net::Ping)
 Requires:		perl(Net::Server)
