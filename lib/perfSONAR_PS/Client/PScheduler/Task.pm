@@ -856,6 +856,17 @@ sub checksum() {
     return md5_base64(to_json($data_copy, {'canonical' => 1}));
 }
 
+sub to_str() {
+    my ($self) = @_;
+
+    my $str = $self->test_type();
+    $str .= "/" . $self->tool() if $self->tool();
+    $str .= "(" . ($self->test_spec_param("source") ? $self->test_spec_param("source") : 'self');
+    $str .= "->" . ($self->test_spec_param("dest") ?  $self->test_spec_param("dest") : $self->test_spec_param("destination"));
+    $str .= ")";
+
+    return $str;
+}
 
 __PACKAGE__->meta->make_immutable;
 
