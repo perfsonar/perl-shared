@@ -49,6 +49,24 @@
  
  sub new {
      my ( $package ) = @_;
+@@ -150,7 +151,7 @@
+     open(STDERR, ">", File::Spec->devnull());
+     open(STDOUT, ">", File::Spec->devnull());
+ 
+-    my $ret = system( "/usr/bin/systemctl", @param );
++    my $ret = system( "/bin/systemctl", @param );
+ 
+     # restore stderr + stdout
+     open(STDERR, ">&", $stderr);
+@@ -169,7 +170,7 @@
+ 
+     # Use systemd if available
+     return $self->run_systemctl( 'is-enabled' => $self->{INIT_SCRIPT} )
+-        if -x '/usr/bin/systemctl';
++        if -x '/bin/systemctl';
+ 
+     # Check if the service is "on" in this run level.
+     my $curr_runlevel;
 @@ -188,13 +189,21 @@
      open(my $stderr, ">&STDERR");
      open(STDERR, ">", File::Spec->devnull());
@@ -74,6 +92,15 @@
      }
  
      return $disabled;
+@@ -210,7 +219,7 @@
+ 
+     # Use systemd if available
+     return $self->run_systemctl( 'enable' => $self->{INIT_SCRIPT} )
+-        if -x '/usr/bin/systemctl';
++        if -x '/bin/systemctl';
+ 
+     # turn off stderr + stdout
+     open(my $stderr, ">&STDERR");
 @@ -218,9 +227,9 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
@@ -86,6 +113,15 @@
  
      # restore stderr + stdout
      open(STDERR, ">&", $stderr);
+@@ -239,7 +248,7 @@
+ 
+     # Use systemd if available
+     return $self->run_systemctl( 'disable' => $self->{INIT_SCRIPT} )
+-        if -x '/usr/bin/systemctl';
++        if -x '/bin/systemctl';
+ 
+     # turn off stderr + stdout
+     open(my $stderr, ">&STDERR");
 @@ -247,7 +256,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
@@ -95,6 +131,15 @@
  
      # restore stderr + stdout
      open(STDERR, ">&", $stderr);
+@@ -266,7 +275,7 @@
+ 
+     # Use systemd if available
+     return $self->run_systemctl( $cmd => $self->{INIT_SCRIPT} )
+-        if -x '/usr/bin/systemctl';
++        if -x '/bin/systemctl';
+ 
+     # turn off stderr + stdout
+     open(my $stderr, ">&STDERR");
 @@ -274,7 +283,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
