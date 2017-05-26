@@ -530,7 +530,7 @@ sub get_ntp_info {
 }
 
 sub get_operating_system_info {
-    my ($distribution_name, $distribution_version, $os_type, $kernel_version);
+    my ($architecture, $distribution_name, $distribution_version, $os_type, $kernel_version);
 
     # TODO: We could use the perl module Linux::Distribution https://metacpan.org/pod/Linux::Distribution
     if (open(FILE, "/etc/redhat-release")) {
@@ -567,11 +567,15 @@ sub get_operating_system_info {
         }
     }
 
+    $architecture = `uname -m`;
+    chomp($architecture);
+
     $os_type = _call_sysctl("kernel.ostype");
 
     $kernel_version = _call_sysctl("kernel.osrelease");
 
     return {
+        architecture => $architecture,
         os_name => $os_type,
         kernel_version => $kernel_version,
         distribution_name => $distribution_name,

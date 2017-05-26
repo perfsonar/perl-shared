@@ -59,6 +59,7 @@ use constant {
     LS_KEY_HOST_OS_NAME => "host-os-name",
     LS_KEY_HOST_OS_VERSION => "host-os-version",
     LS_KEY_HOST_OS_KERNEL => "host-os-kernel",
+    LS_KEY_HOST_OS_ARCHITECTURE => "host-os-architecture",
     
     LS_KEY_HOST_NET_TCP_CONGESTIONALGORITHM => "host-net-tcp-congestionalgorithm",
     LS_KEY_HOST_NET_TCP_MAXBUFFER_SEND => "host-net-tcp-maxbuffer-send",
