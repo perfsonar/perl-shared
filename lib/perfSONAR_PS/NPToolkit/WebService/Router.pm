@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use JSON::XS;
 use Carp qw( cluck confess );
-use CGI qw( header );
+use CGI qw( header -utf8 );
 use Data::Dumper;
 
 sub new {
