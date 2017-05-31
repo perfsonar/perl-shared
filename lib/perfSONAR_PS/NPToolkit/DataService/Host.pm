@@ -368,8 +368,15 @@ sub get_services {
     my $params = $caller->{'input_params'};
 
     my @bwctl_test_ports = ();
+    my %conf = %{$self->{config}};
+    my $bwctl_config = $conf{'bwctl_config'};
+    my $bwctl_limits;
+
+    warn "conf " . Dumper %conf;
+    warn "bwctl_config: " . Dumper $bwctl_config;
+
     my $bwctld_cfg = perfSONAR_PS::NPToolkit::Config::BWCTL->new();
-    $bwctld_cfg->init();
+    $bwctld_cfg->init( { bwctld_limits => $bwctl_limits, bwctld_conf => $bwctl_config } ) ;
 
     foreach my $port_type ("peer", "iperf", "iperf3", "nuttcp", "thrulay", "owamp", "test") {
         my ($status, $res) = $bwctld_cfg->get_port_range(port_type => $port_type);
