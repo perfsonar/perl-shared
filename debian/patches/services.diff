@@ -188,6 +188,23 @@
  
      my @ntp_response = split /\n/, $ntp_result;
      
+@@ -516,11 +516,11 @@
+             $result->{host} = $host[1];
+             $result->{address} = $ntp_fields[1];
+             $result->{stratum} = $ntp_fields[2];
+-            $result->{polling_interval} = $ntp_fields[3];
+-            $result->{reach} = $ntp_fields[4];
+-            $result->{delay} = $ntp_fields[5];
+-            $result->{offset} = $ntp_fields[6];
+-            $result->{dispersion} = $ntp_fields[7];
++            $result->{polling_interval} = $ntp_fields[5];
++            $result->{reach} = $ntp_fields[6];
++            $result->{delay} = $ntp_fields[7];
++            $result->{offset} = $ntp_fields[8];
++            $result->{dispersion} = $ntp_fields[9];
+             last;
+         }
+     }
 @@ -717,16 +717,26 @@
      my $result;
  
