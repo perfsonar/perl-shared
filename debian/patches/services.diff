@@ -184,7 +184,7 @@
      my $ntp;
  
 -    my $ntp_result = `/usr/sbin/ntpdc -p`;
-+    my $ntp_result = `/usr/bin/ntpdc -p`;
++    my $ntp_result = `/usr/bin/ntpq -p`;
  
      my @ntp_response = split /\n/, $ntp_result;
      
