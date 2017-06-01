@@ -582,6 +582,7 @@ sub get_operating_system_info {
 sub get_processor_info {
     my %lscpu_parse_map = (
         'CPU MHz' => 'speed',
+        'CPU max MHz' => 'max_speed',
         'CPU socket(s)' => 'count',
         'Socket(s)' => 'count', #alternative label for sockets
         'CPU(s)' => 'cores',
@@ -590,23 +591,26 @@ sub get_processor_info {
         'model name' => 'model_name',
     );
     my %cpuinfo = ();
-    
+
     my @lscpu = `lscpu 2>/dev/null`;
+
     unless($?){
+
         foreach my $line(@lscpu){
             chomp $line ;
             my @cols = split /\:\s+/, $line;
             next if(@cols != 2);
-        
+
             if($lscpu_parse_map{$cols[0]}){
                 $cpuinfo{$lscpu_parse_map{_sanitize($cols[0])}} = _sanitize($cols[1]);
             }
         }
+
     }
-    
-    my @cpuinfo = `cat /proc/cpuinfo`;
+
+    my @cpuinfo_lines = `cat /proc/cpuinfo`;
     unless($?){
-        foreach my $line(@cpuinfo){
+        foreach my $line(@cpuinfo_lines){
             chomp $line ;
             my @cols = split /\s*:\s*/, $line;
             next if(@cols != 2);
@@ -615,7 +619,13 @@ sub get_processor_info {
             }
         }
     }
-     
+
+    # If we detected a max speed, replace the cpu speed with the max value
+    if ( exists $cpuinfo{'max_speed'} ) {
+        $cpuinfo{'speed'} = $cpuinfo{'max_speed'};
+        delete $cpuinfo{'max_speed'};
+    }
+
     return \%cpuinfo;
 }
 
