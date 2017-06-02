@@ -370,10 +370,9 @@ sub get_services {
     my @bwctl_test_ports = ();
     my %conf = %{$self->{config}};
     my $bwctl_config = $conf{'bwctl_config'};
-    my $bwctl_limits;
-
-    warn "conf " . Dumper %conf;
-    warn "bwctl_config: " . Dumper $bwctl_config;
+    my $bwctl_limits = $conf{'bwctl_limits'};
+    my $owamp_config = $conf{'owamp_config'};
+    my $owamp_limits = $conf{'owamp_limits'};
 
     my $bwctld_cfg = perfSONAR_PS::NPToolkit::Config::BWCTL->new();
     $bwctld_cfg->init( { bwctld_limits => $bwctl_limits, bwctld_conf => $bwctl_config } ) ;
@@ -407,8 +406,8 @@ sub get_services {
     }
 
     my @owamp_test_ports = ();
-    my $owampd_cfg = perfSONAR_PS::NPToolkit::Config::OWAMP->new();
-    $owampd_cfg->init();
+    my $owampd_cfg = perfSONAR_PS::NPToolkit::Config::OWAMP->new( );
+    $owampd_cfg->init( { owampd_limits => $owamp_limits, owampd_conf => $owamp_config  } ) ;
 
     my ($status, $res) = $owampd_cfg->get_test_port_range();
     if ($status == 0) {
@@ -462,10 +461,10 @@ sub get_services {
         }
 
         my $enabled = (not $service->disabled) || 0;
-        
+
         my $display_name = $service_name;
         $display_name =~ s/_/-/g;
-        
+
         my %service_info = ();
         $service_info{"name"}          = $display_name;
         $service_info{"enabled"}       = $enabled;

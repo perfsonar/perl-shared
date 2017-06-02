@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Data::Validate::IP qw(is_ipv6);
+use Data::Dumper;
 
 use base 'perfSONAR_PS::NPToolkit::Services::NetworkBase';
 
@@ -27,6 +28,8 @@ sub get_addresses {
     my ($self) = @_;
 
     my @interfaces = $self->lookup_interfaces();
+
+    warn "interfaces " . Dumper \@interfaces;
 
     my @addresses = ();
     foreach my $address (@interfaces) {

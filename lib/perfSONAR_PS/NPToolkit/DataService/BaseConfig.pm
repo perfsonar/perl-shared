@@ -59,6 +59,9 @@ sub new {
 
     $self->{config}->{bwctl_config} = $parameters->{bwctl_config};
     $self->{config}->{bwctl_limits} = $parameters->{bwctl_limits};
+    
+    $self->{config}->{owamp_config} = $parameters->{owamp_config};
+    $self->{config}->{owamp_limits} = $parameters->{owamp_limits};
 
     if ( $load_regular_testing ) {
         my $testing_conf = perfSONAR_PS::NPToolkit::Config::RegularTesting->new();
