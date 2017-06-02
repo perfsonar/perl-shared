@@ -503,7 +503,7 @@ sub discover_primary_address {
 sub get_ntp_info {
     my $ntp;
 
-    my $ntp_result = `/usr/sbin/ntpdc -p`;
+    my $ntp_result = `/usr/sbin/ntpq -p`;
 
     my @ntp_response = split /\n/, $ntp_result;
     
@@ -514,13 +514,13 @@ sub get_ntp_info {
             print @ntp_fields;
             my @host = split /\*/, $ntp_fields[0];
             $result->{host} = $host[1];
-            $result->{address} = $ntp_fields[1];
+            $result->{refid} = $ntp_fields[1];
             $result->{stratum} = $ntp_fields[2];
-            $result->{polling_interval} = $ntp_fields[3];
-            $result->{reach} = $ntp_fields[4];
-            $result->{delay} = $ntp_fields[5];
-            $result->{offset} = $ntp_fields[6];
-            $result->{dispersion} = $ntp_fields[7];
+            $result->{polling_interval} = $ntp_fields[5];
+            $result->{reach} = $ntp_fields[6];
+            $result->{delay} = $ntp_fields[7];
+            $result->{offset} = $ntp_fields[8];
+            $result->{dispersion} = $ntp_fields[9];
             last;
         }
     }
