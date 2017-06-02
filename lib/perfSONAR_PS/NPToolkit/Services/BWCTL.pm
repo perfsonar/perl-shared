@@ -29,8 +29,6 @@ sub get_addresses {
 
     my @interfaces = $self->lookup_interfaces();
 
-    warn "interfaces " . Dumper \@interfaces;
-
     my @addresses = ();
     foreach my $address (@interfaces) {
         $address = "[".$address."]" if is_ipv6($address);
