@@ -1,0 +1,15 @@
+--- a/lib/perfSONAR_PS/Utils/GeoLookup.pm
++++ b/lib/perfSONAR_PS/Utils/GeoLookup.pm
+@@ -75,8 +75,10 @@
+ 
+             $record = $country_ipv6_db->country_code_by_addr_v6( $ip );
+             $result->{'country'} = $record if ($record);
+-            $record = $country_ipv6_db->country_name_by_addr_v6( $ip );
+-            $result->{'country_full'} = $record if ($record);
++            if ( $country_ipv6_db->can("country_name_by_addr_v6") ) {
++                $record = $country_ipv6_db->country_name_by_addr_v6( $ip );
++                $result->{'country_full'} = $record if ($record);
++            }
+         }
+         else {
+             warn "IP '".$ip."' was not detected as ipv4 or ipv6.";
