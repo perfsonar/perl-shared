@@ -65,8 +65,6 @@ lib/perfSONAR_PS/NPToolkit/Config/AdministrativeInfo.pm
 lib/perfSONAR_PS/NPToolkit/Config/BWCTL.pm
 lib/perfSONAR_PS/NPToolkit/Config/Base.pm
 lib/perfSONAR_PS/NPToolkit/Config/LSRegistrationDaemon.pm
-lib/perfSONAR_PS/NPToolkit/Config/NDT.pm
-lib/perfSONAR_PS/NPToolkit/Config/NPAD.pm
 lib/perfSONAR_PS/NPToolkit/Config/NTP.pm
 lib/perfSONAR_PS/NPToolkit/Config/OWAMP.pm
 lib/perfSONAR_PS/NPToolkit/Config/RegularTesting.pm
@@ -87,8 +85,6 @@ lib/perfSONAR_PS/NPToolkit/Services/LSCacheDaemon.pm
 lib/perfSONAR_PS/NPToolkit/Services/LSRegistrationDaemon.pm
 lib/perfSONAR_PS/NPToolkit/Services/MaDDash.pm
 lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
-lib/perfSONAR_PS/NPToolkit/Services/NDT.pm
-lib/perfSONAR_PS/NPToolkit/Services/NPAD.pm
 lib/perfSONAR_PS/NPToolkit/Services/NTP.pm
 lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
 lib/perfSONAR_PS/NPToolkit/Services/OWAMP.pm
