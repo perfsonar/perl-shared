@@ -69,7 +69,8 @@ sub _convertToURLArray {
         	if($curCount >= $totalCount-1){
         		$result .= $elem;
         	}else{
-        		$result .= $elem . ",";
+        		$result .= $elem if(defined $elem);
+        		$result .= ",";
         	}
         	$curCount++;
         }
