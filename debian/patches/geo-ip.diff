@@ -1,6 +1,6 @@
 --- a/lib/perfSONAR_PS/Utils/GeoLookup.pm
 +++ b/lib/perfSONAR_PS/Utils/GeoLookup.pm
-@@ -75,8 +75,10 @@
+@@ -71,8 +71,10 @@
  
              $record = $country_ipv6_db->country_code_by_addr_v6( $ip );
              $result->{'country'} = $record if ($record);
