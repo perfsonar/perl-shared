@@ -516,6 +516,8 @@ sub get_ntp_info {
             $result->{host} = $host[1];
             $result->{refid} = $ntp_fields[1];
             $result->{stratum} = $ntp_fields[2];
+            $result->{type} = $ntp_fields[3];
+            $result->{when} = $ntp_fields[4];
             $result->{polling_interval} = $ntp_fields[5];
             $result->{reach} = $ntp_fields[6];
             $result->{delay} = $ntp_fields[7];
