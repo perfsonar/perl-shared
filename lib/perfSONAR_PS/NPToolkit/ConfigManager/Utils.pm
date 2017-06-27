@@ -7,6 +7,7 @@ our $VERSION = 3.3;
 
 use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger);
+use Data::Dumper;
 
 =head1 NAME
 
@@ -57,6 +58,8 @@ sub save_file {
     }
 
     ($status, $res) = $client->saveFile({ filename => $file, content => $content });
+    #warn "status: " . Dumper $status;
+    #warn "res: " . Dumper $res;
     if ($status != 0) {
         return (-1, $res);
     }

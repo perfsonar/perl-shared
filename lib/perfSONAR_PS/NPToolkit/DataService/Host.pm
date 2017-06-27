@@ -62,14 +62,19 @@ sub get_metadata {
         return { 'error' => 'LS Registration Daemon config object not found' };
     }
 
-    my $config = $ls_conf->load_config( { file => $ls_conf->{'CONFIG_FILE'} } );
+    my $config_full = $ls_conf->load_config( { file => $ls_conf->{'CONFIG_FILE'} } );
+    my $config = {};
+    $config->{'role'} = $config_full->{'role'};
+    $config->{'access_policy'} = $config_full->{'access_policy'};
+    $config->{'access_policy_notes'} = $config_full->{'access_policy_notes'};
 
     $meta->{'config'} = $config;
+
 
     my $info = $self->get_admin_information();
     $meta = { %$meta, %$info };
 
-    my $communities = $config->{site_project};
+    my $communities = $config_full->{site_project};
     if ( defined $communities ) {
         my $comm = { 'communities' => $communities };
         $meta = { %$meta, %$comm };
@@ -103,14 +108,9 @@ sub update_metadata {
     );
 
     foreach my $field (@field_names) {
-        if ($args->{$field}->{is_set} == 1) {
+        if ( defined ( $args->{$field} ) && $args->{$field}->{is_set} == 1) {
             $config_args{$field} = $args->{$field}->{value};
-            if ( $args->{$field}->{multiple} == 1 && 0 ) { # TODO: remove this
-                my @row = split(',', $config_args{$field});
-                $config_args{$field} = \@row;
-            }
         }
-
     }
 
     my $role = $config_args{'role'};
@@ -167,62 +167,6 @@ sub get_calculated_lat_lon {
     return $result;
 
 }
-
-sub update_information {
-    my $self = shift;
-    my $caller = shift;
-    my $args = $caller->{'input_params'};
-
-    $self->{authenticated} = $caller->{authenticated};
-    my %config_args = ();
-    my @field_names = (
-        'organization_name', 'admin_name', 'admin_email', 'city', 'state',
-        'postal_code', 'country', 'latitude', 'longitude', 'subscribe'
-
-    );
-    foreach my $field (@field_names) {
-        if ($args->{$field}->{is_set} == 1) {
-            $config_args{$field} = $args->{$field}->{value};
-        }
-
-    }
-    my $res = $self->set_config_information(%config_args);
-    if ($res) {
-    return {
-        %$res,
-
-    };
-
-    } else {
-        return {
-            "error" => "Error updating administrative information",
-        }
-    }
-}
-
-sub set_config_information  {
-    my ( $self, %args) = @_; # $organization_name, $host_location, $city, $state, $country, $zipcode, $administrator_name, $administrator_email, $latitude, $longitude, $subscribe ) = @_;
-
-    my $organization_name = $args{organization_name}; #  if (exists $args{organization_name});
-    my $administrator_name = $args{admin_name}; # if (exists $args{administrator_name});
-    my $administrator_email = $args{admin_email}; # if (exists $args{administrator_email});
-    my $city = $args{city};
-    my $state = $args{state};
-    my $zipcode = $args{postal_code};
-    my $country = $args{country};
-    my $latitude = $args{latitude};
-    my $longitude = $args{longitude};
-    my $subscribe = $args{subscribe};
-
-    if($administrator_email && defined ($subscribe) && $subscribe == 1){
-        subscribe($administrator_email);
-    }
-    #$is_modified = 1;
-
-    return $self->save_config();
-
-}
-
 
 sub get_details {
     my $self = shift;
@@ -420,10 +364,18 @@ sub get_ntp_information{
 
 sub get_services {
     my $self = shift;
+    my $caller = shift;
+    my $params = $caller->{'input_params'};
 
     my @bwctl_test_ports = ();
+    my %conf = %{$self->{config}};
+    my $bwctl_config = $conf{'bwctl_config'};
+    my $bwctl_limits = $conf{'bwctl_limits'};
+    my $owamp_config = $conf{'owamp_config'};
+    my $owamp_limits = $conf{'owamp_limits'};
+
     my $bwctld_cfg = perfSONAR_PS::NPToolkit::Config::BWCTL->new();
-    $bwctld_cfg->init();
+    $bwctld_cfg->init( { bwctld_limits => $bwctl_limits, bwctld_conf => $bwctl_config } ) ;
 
     foreach my $port_type ("peer", "iperf", "iperf3", "nuttcp", "thrulay", "owamp", "test") {
         my ($status, $res) = $bwctld_cfg->get_port_range(port_type => $port_type);
@@ -454,8 +406,8 @@ sub get_services {
     }
 
     my @owamp_test_ports = ();
-    my $owampd_cfg = perfSONAR_PS::NPToolkit::Config::OWAMP->new();
-    $owampd_cfg->init();
+    my $owampd_cfg = perfSONAR_PS::NPToolkit::Config::OWAMP->new( );
+    $owampd_cfg->init( { owampd_limits => $owamp_limits, owampd_conf => $owamp_config  } ) ;
 
     my ($status, $res) = $owampd_cfg->get_test_port_range();
     if ($status == 0) {
@@ -509,10 +461,10 @@ sub get_services {
         }
 
         my $enabled = (not $service->disabled) || 0;
-        
+
         my $display_name = $service_name;
         $display_name =~ s/_/-/g;
-        
+
         my %service_info = ();
         $service_info{"name"}          = $display_name;
         $service_info{"enabled"}       = $enabled;
@@ -591,7 +543,7 @@ sub update_enabled_services {
 
     my $logger = $self->{LOGGER};
 
-    $self->{LOGGER}->error("CONFIG: ".Dumper($params));
+    $self->{LOGGER}->debug("CONFIG: ".Dumper($params));
 
     # be optimistic
     $success = 1;

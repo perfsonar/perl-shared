@@ -52,8 +52,12 @@ sub new {
 
     $self->{LOGGER} = get_logger( $class );
 
-    my $regular_testing_conf = perfSONAR_PS::NPToolkit::Config::RegularTesting->new();
-    $regular_testing_conf->init();
+    my $config_file = $parameters->{'config_file'};
+    my $test_params = {};
+    $test_params->{'regular_testing_config_file'} = $config_file if $config_file;
+
+    my $regular_testing_conf = perfSONAR_PS::NPToolkit::Config::RegularTesting->new( );
+    $regular_testing_conf->init( $test_params );
     $self->{test_config_defaults_file} = $parameters->{test_config_defaults_file};
     $self->{regular_testing_conf} = $regular_testing_conf;
     #warn "params: " . Dumper @params;

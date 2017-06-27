@@ -33,11 +33,15 @@ sub new {
         @params,
         {
             config_file => 1,
-            regular_testing_config_file => 0, 
-            ls_config_file => 0, 
-            test_config_defaults_file => 0, 
-            load_regular_testing => 0, 
+            regular_testing_config_file => 0,
+            ls_config_file => 0,
+            test_config_defaults_file => 0,
+            load_regular_testing => 0,
             load_ls_registration => 0,
+            owamp_config => 0,
+            owamp_limits => 0,
+            bwctl_config => 0,
+            bwctl_limits => 0,
         }
     );
 
@@ -52,6 +56,12 @@ sub new {
 
     my $test_config_defaults_file = $parameters->{test_config_defaults_file};
     $config->{test_config_defaults_file} = $test_config_defaults_file;
+
+    $self->{config}->{bwctl_config} = $parameters->{bwctl_config};
+    $self->{config}->{bwctl_limits} = $parameters->{bwctl_limits};
+    
+    $self->{config}->{owamp_config} = $parameters->{owamp_config};
+    $self->{config}->{owamp_limits} = $parameters->{owamp_limits};
 
     if ( $load_regular_testing ) {
         my $testing_conf = perfSONAR_PS::NPToolkit::Config::RegularTesting->new();
@@ -113,7 +123,7 @@ sub save_ls_config {
     my ($status, $res) = $ls_conf->save( { restart_services => 0 } );
 
     if ($status != 0) {
-        $error_msg = "Problem saving LS configuration: $res";
+        $error_msg = "Problem saving LS configuration; error: " . Dumper $res;
         return {
             error_msg => $error_msg,
             success => 0,

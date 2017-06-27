@@ -197,12 +197,13 @@ sub _parse_input_parameters {
         # TODO: add min and max numerical value constraints
 
         my $value;
-        my @role_values = $cgi->param('role');
+        my $param_method = $cgi->can('multi_param') || $cgi->can('param');
+        my @role_values = $cgi->$param_method('role');
         if (defined $cgi->param($param_name)) { 
             if ($param->{'multiple'} == 0) {
                 $value = $cgi->param($param_name);
             } else {
-                my @values = $cgi->param($param_name);
+                my @values = $cgi->$param_method($param_name);
                 $value = \@values;
             } 
         } elsif (defined $cgi->url_param($param_name)) {
