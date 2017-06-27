@@ -29,7 +29,7 @@ sub init {
     my ( $self, @args ) = @_;
     my %parameters = validate( @args, { hostName => 1, memory => 0, 
     									processorSpeed =>0, processorCount =>0, processorCore => 0,
-    									cpuId => 0, osName=>0, osVersion=>0, osKernel => 0, 
+    									cpuId => 0, osName=>0, osVersion=>0, osKernel => 0, osArchitecture => 0,
     									interfaces =>0, tcpCongestionAlgorithm =>0,
     									 tcpMaxBufferSend =>0, tcpAutoMaxBufferSend =>0, 
     									 tcpMaxBufferRecv =>0, tcpAutoMaxBufferRecv =>0, 
@@ -107,6 +107,14 @@ sub init {
     
     if(defined $parameters{osKernel}){
     	my $ret = $self->setOSKernel($parameters{osKernel});
+    	if($ret <0){
+    		cluck "Error initializing Host record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{osArchitecture}){
+    	my $ret = $self->setOSArchitecture($parameters{osArchitecture});
     	if($ret <0){
     		cluck "Error initializing Host record";
     		return $ret;
@@ -373,6 +381,16 @@ sub setOSKernel {
     my ( $self, $value ) = @_;
     $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_KERNEL), value=>$value  );
     
+}
+
+sub getOSArchitecture {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_ARCHITECTURE)};
+}
+
+sub setOSArchitecture {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_ARCHITECTURE), value=>$value  );
 }
 
 sub getInterfaces {

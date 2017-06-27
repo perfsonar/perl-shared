@@ -243,7 +243,7 @@ sub _delete_tasks {
                     $cached_bind = $task->bind_address();
                 }
                 if($task->error){
-                    push @{$self->errors()}, "Problem determining which pscheduler to submit test to for deletion, skipping test: " . $task->error;
+                    push @{$self->errors()}, sprintf("Problem determining which pscheduler to submit test to for deletion, skipping test %s: %s", $task->to_str, $task->error);
                     next;
                 }
                 
@@ -257,7 +257,7 @@ sub _delete_tasks {
                     if($task->error()){
                         $self->leads_to_keep()->{$task->url()} = 1;
                         $self->_update_lead($task->url(), {'error_time' => time});
-                        push @{$self->errors()}, "Problem deleting test, continuing with rest of config: " . $task->error();
+                        push @{$self->errors()}, sprintf("Problem deleting test %s, continuing with rest of config: %s", $task->to_str, $task->error);
                     }else{
                         push @{$self->deleted_tasks()}, $task;
                     }                  
@@ -357,14 +357,14 @@ sub _create_tasks {
         #determine lead - do here as optimization so we only do it for tests that need to be added
         $new_task->refresh_lead();
         if($new_task->error()){
-            push @{$self->errors()}, "Problem determining which pscheduler to submit test to for creation, skipping test: " . $new_task->error();
+            push @{$self->errors()}, sprintf("Problem determining which pscheduler to submit test to for creation, skipping test %s: %s", $new_task->to_str, $new_task->error);
             next;
         }
         $self->leads_to_keep()->{$new_task->url()} = 1;
         $self->_print_task($new_task) if($self->debug());
         $new_task->post_task();
         if($new_task->error){
-            push @{$self->errors()}, "Problem adding test, continuing with rest of config: " . $new_task->error;
+            push @{$self->errors()}, sprintf("Problem adding test %s, continuing with rest of config: %s", $new_task->to_str, $new_task->error);
         }else{
             push @{$self->added_tasks()}, $new_task;
             $self->_update_lead($new_task->url(), { 'success_time' => time });

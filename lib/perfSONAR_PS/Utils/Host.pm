@@ -503,7 +503,7 @@ sub discover_primary_address {
 sub get_ntp_info {
     my $ntp;
 
-    my $ntp_result = `/usr/sbin/ntpdc -p`;
+    my $ntp_result = `/usr/sbin/ntpq -p`;
 
     my @ntp_response = split /\n/, $ntp_result;
     
@@ -514,13 +514,15 @@ sub get_ntp_info {
             print @ntp_fields;
             my @host = split /\*/, $ntp_fields[0];
             $result->{host} = $host[1];
-            $result->{address} = $ntp_fields[1];
+            $result->{refid} = $ntp_fields[1];
             $result->{stratum} = $ntp_fields[2];
-            $result->{polling_interval} = $ntp_fields[3];
-            $result->{reach} = $ntp_fields[4];
-            $result->{delay} = $ntp_fields[5];
-            $result->{offset} = $ntp_fields[6];
-            $result->{dispersion} = $ntp_fields[7];
+            $result->{type} = $ntp_fields[3];
+            $result->{when} = $ntp_fields[4];
+            $result->{polling_interval} = $ntp_fields[5];
+            $result->{reach} = $ntp_fields[6];
+            $result->{delay} = $ntp_fields[7];
+            $result->{offset} = $ntp_fields[8];
+            $result->{dispersion} = $ntp_fields[9];
             last;
         }
     }
@@ -530,7 +532,7 @@ sub get_ntp_info {
 }
 
 sub get_operating_system_info {
-    my ($distribution_name, $distribution_version, $os_type, $kernel_version);
+    my ($architecture, $distribution_name, $distribution_version, $os_type, $kernel_version);
 
     # TODO: We could use the perl module Linux::Distribution https://metacpan.org/pod/Linux::Distribution
     if (open(FILE, "/etc/redhat-release")) {
@@ -567,11 +569,15 @@ sub get_operating_system_info {
         }
     }
 
+    $architecture = `uname -m`;
+    chomp($architecture);
+
     $os_type = _call_sysctl("kernel.ostype");
 
     $kernel_version = _call_sysctl("kernel.osrelease");
 
     return {
+        architecture => $architecture,
         os_name => $os_type,
         kernel_version => $kernel_version,
         distribution_name => $distribution_name,
@@ -582,6 +588,7 @@ sub get_operating_system_info {
 sub get_processor_info {
     my %lscpu_parse_map = (
         'CPU MHz' => 'speed',
+        'CPU max MHz' => 'max_speed',
         'CPU socket(s)' => 'count',
         'Socket(s)' => 'count', #alternative label for sockets
         'CPU(s)' => 'cores',
@@ -590,23 +597,26 @@ sub get_processor_info {
         'model name' => 'model_name',
     );
     my %cpuinfo = ();
-    
+
     my @lscpu = `lscpu 2>/dev/null`;
+
     unless($?){
+
         foreach my $line(@lscpu){
             chomp $line ;
             my @cols = split /\:\s+/, $line;
             next if(@cols != 2);
-        
+
             if($lscpu_parse_map{$cols[0]}){
                 $cpuinfo{$lscpu_parse_map{_sanitize($cols[0])}} = _sanitize($cols[1]);
             }
         }
+
     }
-    
-    my @cpuinfo = `cat /proc/cpuinfo`;
+
+    my @cpuinfo_lines = `cat /proc/cpuinfo`;
     unless($?){
-        foreach my $line(@cpuinfo){
+        foreach my $line(@cpuinfo_lines){
             chomp $line ;
             my @cols = split /\s*:\s*/, $line;
             next if(@cols != 2);
@@ -615,7 +625,13 @@ sub get_processor_info {
             }
         }
     }
-     
+
+    # If we detected a max speed, replace the cpu speed with the max value
+    if ( exists $cpuinfo{'max_speed'} ) {
+        $cpuinfo{'speed'} = $cpuinfo{'max_speed'};
+        delete $cpuinfo{'max_speed'};
+    }
+
     return \%cpuinfo;
 }
 

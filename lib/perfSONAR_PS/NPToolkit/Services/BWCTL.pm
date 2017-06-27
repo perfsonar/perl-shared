@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Data::Validate::IP qw(is_ipv6);
+use Data::Dumper;
 
 use base 'perfSONAR_PS::NPToolkit::Services::NetworkBase';
 

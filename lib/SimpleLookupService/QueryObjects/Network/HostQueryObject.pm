@@ -132,6 +132,17 @@ sub setOSKernel {
     return $ret;
 }
 
+sub getOSArchitecture {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_ARCHITECTURE)};
+}
+
+sub setOSArchitecture {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_OS_ARCHITECTURE), value=>$value  );
+    return $ret;
+}
+
 sub getInterfaces {
     my $self = shift;
     return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_TCP_INTERFACES)};
