@@ -151,6 +151,15 @@
  
 --- a/lib/perfSONAR_PS/Utils/Host.pm
 +++ b/lib/perfSONAR_PS/Utils/Host.pm
+@@ -503,7 +503,7 @@
+ sub get_ntp_info {
+     my $ntp;
+ 
+-    my $ntp_result = `/usr/sbin/ntpq -p`;
++    my $ntp_result = `/usr/bin/ntpq -p`;
+ 
+     my @ntp_response = split /\n/, $ntp_result;
+     
 @@ -733,16 +733,26 @@
      my $result;
  
