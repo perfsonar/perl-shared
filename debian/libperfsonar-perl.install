@@ -8,3 +8,4 @@ lib/perfSONAR_PS/Utils/Host.pm /usr/share/perl5/perfSONAR_PS/Utils/
 lib/perfSONAR_PS/Utils/NTP.pm /usr/share/perl5/perfSONAR_PS/Utils/
 lib/perfSONAR_PS/Utils/NetLogger.pm /usr/share/perl5/perfSONAR_PS/Utils/
 lib/perfSONAR_PS/Utils/ParameterValidation.pm /usr/share/perl5/perfSONAR_PS/Utils/
+lib/perfSONAR_PS/Graphs/Functions.pm /usr/share/perl5/perfSONAR_PS/Graphs/
