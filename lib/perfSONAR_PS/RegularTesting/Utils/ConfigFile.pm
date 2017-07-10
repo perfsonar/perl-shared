@@ -34,7 +34,7 @@ sub parse_file {
     my $parameters = validate( @_, { file => 1 });
     my $file = $parameters->{file};
 
-    unless (open(FILE, $file)) {
+    unless (open(FILE, "<:encoding(UTF-8)", $file)) {
         my $msg = "Couldn't open $file";
         $logger->error($msg);
         return (-1, $msg);
