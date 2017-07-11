@@ -75,21 +75,40 @@ sub get_tasks() {
 
     my @tasks = ();
     foreach my $task_response_json(@{$response_json}){
-        next unless($task_response_json->{"detail"} && $task_response_json->{"detail"}->{"href"});
-        my $task_url = $task_response_json->{"detail"}->{"href"};
+        my $task_url;
+        my $task;
+        my $has_detail = 0;
+        if($task_response_json->{"detail"} && $task_response_json->{"detail"}->{"href"}){
+            #check if we get detail back since was not added until 4.0.1
+            $task_url = $task_response_json->{"detail"}->{"href"};
+            $has_detail = 1;
+        }elsif($task_response_json->{"href"}){
+            #if no detail, we have some backward compatibility to do
+            $task_url = $task_response_json->{"href"};
+        }else{
+            next;
+        }
         my $task_uuid = extract_url_uuid(url => $task_url);
         unless($task_uuid){
             $self->_set_error("Unable to extract UUID from url $task_url");
             next;
         }
-        my $task = new perfSONAR_PS::Client::PScheduler::Task(
-            data => $task_response_json, 
-            url => $self->url, 
-            filters => $self->filters, 
-            uuid => $task_uuid, 
-            bind_map => $self->bind_map, 
-            lead_address_map => $self->lead_address_map
-        );
+        
+        if($has_detail){
+            #we got the detail, so create the object
+            $task = new perfSONAR_PS::Client::PScheduler::Task(
+                data => $task_response_json, 
+                url => $self->url, 
+                filters => $self->filters, 
+                uuid => $task_uuid, 
+                bind_map => $self->bind_map, 
+                lead_address_map => $self->lead_address_map
+            );
+        }else{
+            #no detail, so we have to retrieve it
+            $task = $self->get_task($task_uuid);
+        }
+        
         unless($task){
             #there was an error
             next;
