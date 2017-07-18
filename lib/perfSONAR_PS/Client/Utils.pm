@@ -123,7 +123,8 @@ sub send_http_request{
            $req->header($h => $parameters{'headers'}->{$h}); 
         }
     }
-    $req->header('Content-Type' => 'application/json'); #always set this
+    $req->header('Content-Type' => 'application/json; charset=utf-8'); #always set this
+    utf8::encode($parameters{data});
     $req->content($parameters{data});
     
     # Pass request to the user agent and get a response back
