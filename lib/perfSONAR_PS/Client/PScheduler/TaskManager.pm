@@ -13,8 +13,6 @@ A client for interacting with pScheduler
 use Mouse;
 use Params::Validate qw(:all);
 use JSON qw(from_json to_json decode_json);
-use threads;
-use threads::shared;
 
 use perfSONAR_PS::Client::PScheduler::ApiConnect;
 use perfSONAR_PS::Client::PScheduler::ApiFilters;
@@ -46,28 +44,6 @@ has 'created_by'          => (is => 'rw', isa => 'HashRef', default => sub{ {} }
 has 'leads_to_keep'       => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'new_archives'        => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'debug'               => (is => 'rw', isa => 'Bool');
-
-sub _get_tasks {
-    my $self = shift;
-    my $psc_url = shift;
-    my $psc_client = shift;
-    my $psc_lead = shift;
-    
-    #get tasks
-    my $existing_tasks = $psc_client->get_tasks();
-    if($existing_tasks && @{$existing_tasks} > 0 && $psc_client->error()){
-        #there was an error getting an individual task
-         print "Error fetching an individual task, but was able to get list: " .  $psc_client->error() if($self->debug());
-    }elsif($psc_client->error()){
-        #there was an error getting the entire list
-        print "Error getting task list from $psc_url: " . $psc_client->error() . "\n" if($self->debug());
-        $psc_lead->{'error_time'} = time; 
-        push @{$self->errors()}, "Problem getting existing tests from pScheduler lead $psc_url: ".$psc_client->error();
-        return;
-    }
-    
-    return $existing_tasks;
-}
 
 sub init {
     my ($self, @args) = @_;
@@ -111,9 +87,6 @@ sub init {
     my $bind_map = $parameters->{'bind_map'};
     my $lead_address_map = $parameters->{'lead_address_map'};
     my %visited_leads = ();
-    my @task_threads = ();
-    my $max_workers = 5;
-    my $running_count = 0;
     foreach my $psc_url(keys %{$self->leads()}){
         print "Getting task list from $psc_url\n" if($self->debug());
         #Query lead
@@ -144,25 +117,20 @@ sub init {
            $visited_leads{$psc_hostname} = $psc_url;
         }
         
-        #get tasks, do up to max_workers in parallel.
-        my $task_thread = threads->create(\&_get_tasks, $self, $psc_url, $psc_client, $psc_lead);
-        push @task_threads, $task_thread;
-        $running_count++;
-        print "Current number of jobs retrieving tasks: $running_count\n" if($self->debug());
-        while($running_count >= $max_workers){
-            print "Hit max number of task retrieval jobs, waiting for more to finish\n" if($self->debug());
-            my @running = threads->list(threads::running);
-            $running_count = scalar @running;
-            print "...Current number of jobs retrieving tasks is now: $running_count\n" if($self->debug());
-            sleep 1 if($running_count >= $max_workers);
+        #get tasks
+        my $existing_tasks = $psc_client->get_tasks();
+        if($existing_tasks && @{$existing_tasks} > 0 && $psc_client->error()){
+            #there was an error getting an individual task
+             print "Error fetching an individual task, but was able to get list: " .  $psc_client->error() if($self->debug());
+        }elsif($psc_client->error()){
+            #there was an error getting the entire list
+            print "Error getting task list from $psc_url: " . $psc_client->error() . "\n" if($self->debug());
+            $psc_lead->{'error_time'} = time; 
+            push @{$self->errors()}, "Problem getting existing tests from pScheduler lead $psc_url: ".$psc_client->error();
+            next;
         }
-    }
-    
-    #join results
-    foreach my $task_thread(@task_threads){
+        
         #Add to existing task map
-        my $existing_tasks = $task_thread->join();
-        next unless $existing_tasks;
         foreach my $existing_task(@{$existing_tasks}){
             next unless($existing_task->detail_enabled()); #skip disabled tests
             $self->_print_task($existing_task) if($self->debug());
