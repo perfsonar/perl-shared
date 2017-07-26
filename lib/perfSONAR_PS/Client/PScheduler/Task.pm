@@ -6,7 +6,7 @@ use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg extract_url_u
 use perfSONAR_PS::Client::PScheduler::Archive;
 use perfSONAR_PS::Client::PScheduler::Run;
 use Digest::MD5 qw(md5_base64);
-use Data::Validate::IP qw(is_loopback_ipv4);
+use Data::Validate::IP qw(is_loopback_ipv4 is_ipv6);
 
 extends 'perfSONAR_PS::Client::PScheduler::BaseNode';
 
@@ -797,6 +797,11 @@ sub get_lead_url() {
     #Get address
     my $address = $self->get_lead();
     return unless($address);
+    
+    #bracket ipv6
+    if(is_ipv6($address)){
+        $address = "[$address]";
+    }
     
     return "${scheme}://${address}${port}${path}";
 }

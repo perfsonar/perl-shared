@@ -31,14 +31,14 @@ has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 
 sub get_tasks() {
     my $self = shift;
-    
+
     #build url
     my $tasks_url = $self->url;
     chomp($tasks_url);
     $tasks_url .= "/" if($self->url !~ /\/$/);
     $tasks_url .= "tasks";
     
-    my %filters = ();
+    my %filters = ("detail" => 1, "expanded" => 1);
     if($self->filters->task_filters){
         $filters{"json"} = to_json($self->filters->task_filters);
     }
@@ -55,30 +55,60 @@ sub get_tasks() {
         address_map => $self->lead_address_map,
         #headers => $self->filters->headers()
     );
-     
+
     if(!$response->is_success){
         my $msg = build_err_msg(http_response => $response);
         $self->_set_error($msg);
         return;
     }
+
     my $response_json = from_json($response->content);
     if(! $response_json){
         $self->_set_error("No task objects returned.");
         return;
     }
+
     if(ref($response_json) ne 'ARRAY'){
         $self->_set_error("Tasks must be an array not " . ref($response_json));
         return;
     }
-    
+
     my @tasks = ();
-    foreach my $task_url(@{$response_json}){
+    foreach my $task_response_json(@{$response_json}){
+        my $task_url;
+        my $task;
+        my $has_detail = 0;
+        if($task_response_json->{"detail"} && $task_response_json->{"detail"}->{"href"}){
+            #check if we get detail back since was not added until 4.0.1
+            $task_url = $task_response_json->{"detail"}->{"href"};
+            $has_detail = 1;
+        }elsif($task_response_json->{"href"}){
+            #if no detail, we have some backward compatibility to do
+            $task_url = $task_response_json->{"href"};
+        }else{
+            next;
+        }
         my $task_uuid = extract_url_uuid(url => $task_url);
         unless($task_uuid){
             $self->_set_error("Unable to extract UUID from url $task_url");
-            return;
+            next;
         }
-        my $task = $self->get_task($task_uuid);
+        
+        if($has_detail){
+            #we got the detail, so create the object
+            $task = new perfSONAR_PS::Client::PScheduler::Task(
+                data => $task_response_json, 
+                url => $self->url, 
+                filters => $self->filters, 
+                uuid => $task_uuid, 
+                bind_map => $self->bind_map, 
+                lead_address_map => $self->lead_address_map
+            );
+        }else{
+            #no detail, so we have to retrieve it
+            $task = $self->get_task($task_uuid);
+        }
+        
         unless($task){
             #there was an error
             next;
