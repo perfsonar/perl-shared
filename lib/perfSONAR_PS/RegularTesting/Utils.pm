@@ -49,7 +49,11 @@ sub parse_target {
     
     my ($address, $port);
 
-    if ($target =~ /^\[(.*)\]:(\d+)$/) {
+    if(is_ipv6($target)){
+        $address = $target;
+    }elsif(is_ipv4($target)){
+        $address = $target;
+    }elsif ($target =~ /^\[(.*)\]:(\d+)$/) {
         $address = $1;
         $port    = $2;
     }
