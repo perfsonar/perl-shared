@@ -520,9 +520,11 @@ sub get_ntp_info {
             $result->{when} = $ntp_fields[4];
             $result->{polling_interval} = $ntp_fields[5];
             $result->{reach} = $ntp_fields[6];
-            $result->{delay} = $ntp_fields[7];
-            $result->{offset} = $ntp_fields[8];
-            $result->{dispersion} = $ntp_fields[9];
+            #convert below to seconds for backward compatibility.
+            #used to use ntpdc which outputs in seconds then switched to ntpq which is ms
+            $result->{delay} = $ntp_fields[7]/1000.0 if(defined $ntp_fields[7]);
+            $result->{offset} = $ntp_fields[8]/1000.0 if(defined $ntp_fields[8]);
+            $result->{dispersion} = $ntp_fields[9]/1000.0 if(defined $ntp_fields[9]);
             last;
         }
     }
