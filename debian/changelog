@@ -1,11 +1,11 @@
-libperfsonar-perl (4.0.1~1.rc1-1) perfsonar-jessie-staging; urgency=low
+libperfsonar-perl (4.0.1-1) perfsonar-jessie-release; urgency=low
 
   * New upstream version.
   * Replacing iproute dependency by iproute2.
   * Adding geoip-database and geoip-database-extra dependencies.
   * Removing IO::Interface::Simple patch that is ported upstream.
 
- -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Thu, 27 Jul 2017 00:04:19 +0200
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Mon, 14 Aug 2017 15:48:37 +0100
 
 libperfsonar-perl (4.0.0.1-1) perfsonar-jessie-release; urgency=low
 
