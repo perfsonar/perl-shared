@@ -30,8 +30,10 @@ use SimpleLookupService::Client::Query;
 use perfSONAR_PS::Client::Utils qw(send_http_request);
 use URI;
 use Data::UUID;
+use Data::Dumper;
+use Net::Ping;
 
-our @EXPORT_OK = qw( lookup_services_latency_diff discover_lookup_services discover_primary_lookup_service lookup_service_is_active is_host_registered get_client_uuid set_client_uuid);
+our @EXPORT_OK = qw( lookup_services_latency_diff discover_lookup_caches discover_lookup_services discover_primary_lookup_service lookup_service_is_active is_host_registered get_client_uuid set_client_uuid);
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -148,6 +150,92 @@ sub discover_lookup_services {
 
     return \@active_hosts;
 }
+
+
+sub discover_lookup_caches {
+    my $parameters = validate( @_, { locator_urls => 0} );
+    my $locator_urls = $parameters->{locator_urls};
+    $locator_urls = [ "http://ps1.es.net:8096/lookup/activehosts.json" ] unless ($locator_urls);
+
+    my @active_hosts = ();
+
+    foreach my $locator_url (@$locator_urls) {
+        my $http_response = send_http_request(connection_type => 'GET', url => $locator_url, timeout => 30);
+        #warn "http_response" . Dumper $http_response;
+        if (!$http_response->is_success) {
+            $logger->error("Problem retrieving $locator_url: " . $http_response->status_line);
+            next;
+        }
+
+        
+        #Convert to JSON
+        my $activehostlist;
+        eval {
+            my $json = JSON->new()->relaxed();
+            $activehostlist = $json->decode($http_response->content);
+            warn "activehostlist" . Dumper $activehostlist;
+        };
+        if ($@) {
+            $logger->error("Problem decoding JSON from $locator_url: " . $@);
+            next;
+        }
+        
+        if ( not exists $activehostlist->{caches} ) {
+            logger->error("No LS cache listing found at $locator_url");
+            next;
+        } elsif ( @{$activehostlist->{caches}} < 1 ) {
+            logger->error("No hosts in LS cache listing found at $locator_url");
+            next;
+
+        }
+
+        #Determine URL
+        foreach my $activehost (@{ $activehostlist->{caches} }) {
+        	my $url = URI->new($activehost->{locator});
+
+        	unless ($url->host() and $url->port()) {
+        	    $logger->error("Invalid URL: $url");
+        	    next;
+        	}
+
+            if($activehost->{status} and $activehost->{status} eq "alive") {
+                my $p = Net::Ping->new();
+                $p->hires();
+                $p->port_number( $url->port() );
+
+                my ($status, $latency);
+                my ($ret, $duration, $ip) = $p->ping($url->host(), 5.5);
+        
+                if(defined $ret && $ret){
+                    $status = 'alive'; 
+                    $latency =  sprintf "%.2f", (1000 * $duration);
+                }elsif(!defined $ret){
+                    $status = 'unknown';
+                }else{
+                    $status = 'unreachable';
+                }
+
+                my %row = ();
+                $row{'status'} = $status;
+                $row{'latency'} = $latency if defined $latency;
+                $row{'ip'} = $ip if defined $ip;
+                $row{'locator_url'} = $locator_url;
+                $row{'url'} = $activehost->{locator};
+                $row{'port'} = $url->port();
+                $row{'hostname'} = $url->host();
+
+                push @active_hosts, \%row;
+
+            }
+        }
+    }
+
+    @active_hosts = sort { $a->{'latency'} <=> $b->{'latency'} } @active_hosts;
+    warn "active_hosts" . Dumper \@active_hosts;
+
+    return \@active_hosts;
+}
+
 
 sub is_host_registered{
     my ($address) = @_;
