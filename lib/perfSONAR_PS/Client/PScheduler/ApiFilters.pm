@@ -189,10 +189,10 @@ sub detail{
     my ($self, $val) = @_;
     
     if(defined $val){
-        $self->task_filters->{'schedule'} = $val;
+        $self->task_filters->{'detail'} = $val;
     }
     
-    return $self->task_filters->{'schedule'};
+    return $self->task_filters->{'detail'};
 }
 
 sub detail_enabled{
