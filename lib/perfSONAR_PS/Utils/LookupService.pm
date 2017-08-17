@@ -161,7 +161,6 @@ sub discover_lookup_caches {
 
     foreach my $locator_url (@$locator_urls) {
         my $http_response = send_http_request(connection_type => 'GET', url => $locator_url, timeout => 30);
-        #warn "http_response" . Dumper $http_response;
         if (!$http_response->is_success) {
             $logger->error("Problem retrieving $locator_url: " . $http_response->status_line);
             next;
@@ -173,7 +172,6 @@ sub discover_lookup_caches {
         eval {
             my $json = JSON->new()->relaxed();
             $activehostlist = $json->decode($http_response->content);
-            warn "activehostlist" . Dumper $activehostlist;
         };
         if ($@) {
             $logger->error("Problem decoding JSON from $locator_url: " . $@);
@@ -191,6 +189,7 @@ sub discover_lookup_caches {
 
         #Determine URL
         foreach my $activehost (@{ $activehostlist->{caches} }) {
+            next if not defined $activehost->{locator};
         	my $url = URI->new($activehost->{locator});
 
         	unless ($url->host() and $url->port()) {
@@ -231,7 +230,6 @@ sub discover_lookup_caches {
     }
 
     @active_hosts = sort { $a->{'latency'} <=> $b->{'latency'} } @active_hosts;
-    warn "active_hosts" . Dumper \@active_hosts;
 
     return \@active_hosts;
 }
