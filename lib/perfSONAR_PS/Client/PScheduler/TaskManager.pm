@@ -94,7 +94,7 @@ sub init {
         my $existing_task_map = {};
         my $psc_filters = new perfSONAR_PS::Client::PScheduler::ApiFilters();
         #TODO: filter on enabled field (not yet supported in pscheduler
-        #$psc_filters->detail_enabled(1);
+        $psc_filters->detail_enabled(1);
         $psc_filters->reference_param("created-by", $self->created_by());
         my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters, bind_map => $bind_map, lead_address_map => $lead_address_map);
         
@@ -128,6 +128,18 @@ sub init {
             $psc_lead->{'error_time'} = time; 
             push @{$self->errors()}, "Problem getting existing tests from pScheduler lead $psc_url: ".$psc_client->error();
             next;
+        }elsif(@{$existing_tasks} == 0){
+            #TODO: Drop this when 4.0 deprecated. fallback in case detail filter not supported (added in 4.0.2).
+            print "Trying to get task list without enabled filter\n" if($self->debug());
+            delete $psc_client->filters()->task_filters()->{"detail"};
+            $existing_tasks = $psc_client->get_tasks();
+            if($psc_client->error()){
+                #there was an error getting the entire list
+                print "Error getting task list (no enabled filter) from $psc_url: " . $psc_client->error() . "\n" if($self->debug());
+                $psc_lead->{'error_time'} = time; 
+                push @{$self->errors()}, "Problem getting existing tests from pScheduler lead $psc_url: ".$psc_client->error();
+                next;
+            }
         }
         
         #Add to existing task map
