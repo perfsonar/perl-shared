@@ -86,6 +86,7 @@ sub saveFile {
     my $filename = $parameters->{filename};
     my $content  = $parameters->{content};
 
+    utf8::encode($content) if $RPC::XML::Client::VERSION <= 1.40;
     my $res = $self->{CLIENT}->simple_request("writeFile", $filename, $content);
     unless (defined $res) {
         my $msg = "Problem writing file $filename: ".$RPC::XML::ERROR;
