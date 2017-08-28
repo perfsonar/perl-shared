@@ -73,6 +73,7 @@ sub add_test_configuration {
     my $input_data = $caller->{'input_params'}->{'POSTDATA'};
     my $json_text = $input_data->{'value'};
 
+    utf8::encode($json_text) if $JSON::VERSION <= 2.59;
     my $data = from_json($json_text, {utf8 => 1});
 
     my $response = $self->_add_test_configuration($data);
@@ -102,6 +103,7 @@ sub update_test_configuration{
     my $input_data = $caller->{'input_params'}->{'POSTDATA'};
     my $json_text = $input_data->{'value'};
 
+    utf8::encode($json_text) if $JSON::VERSION <= 2.59;
     my $data = from_json($json_text, {utf8 => 1});
 
 

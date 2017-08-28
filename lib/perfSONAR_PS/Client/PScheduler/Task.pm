@@ -6,7 +6,7 @@ use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg extract_url_u
 use perfSONAR_PS::Client::PScheduler::Archive;
 use perfSONAR_PS::Client::PScheduler::Run;
 use Digest::MD5 qw(md5_base64);
-use Data::Validate::IP qw(is_loopback_ipv4);
+use Data::Validate::IP qw(is_loopback_ipv4 is_ipv6);
 
 extends 'perfSONAR_PS::Client::PScheduler::BaseNode';
 
@@ -798,6 +798,11 @@ sub get_lead_url() {
     my $address = $self->get_lead();
     return unless($address);
     
+    #bracket ipv6
+    if(is_ipv6($address)){
+        $address = "[$address]";
+    }
+    
     return "${scheme}://${address}${port}${path}";
 }
 
@@ -838,7 +843,7 @@ sub checksum() {
     $self->data->{'schedule'} = {}  unless($self->data->{'schedule'});
     
     #disable canonical since we don't care at the moment
-    my $data_copy = from_json(to_json($self->data, {'canonical' => 0}));
+    my $data_copy = from_json(to_json($self->data, {canonical => 0, utf8 => 1}));
     $data_copy->{'tool'} = ''; #clear out tool since set by server
     $data_copy->{'schedule'}->{'start'} = ''; #clear out temporal values
     $data_copy->{'schedule'}->{'until'} = ''; #clear out temporal values
@@ -853,7 +858,7 @@ sub checksum() {
     }
     
     #canonical should keep it consistent by sorting keys
-    return md5_base64(to_json($data_copy, {'canonical' => 1}));
+    return md5_base64(to_json($data_copy, {canonical => 1, utf8 => 1}));
 }
 
 sub to_str() {
