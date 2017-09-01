@@ -222,10 +222,10 @@ sub detail{
     my ($self, $val) = @_;
     
     if(defined $val){
-        $self->data->{'schedule'} = $val;
+        $self->data->{'detail'} = $val;
     }
     
-    return $self->data->{'schedule'};
+    return $self->data->{'detail'};
 }
 
 sub detail_enabled{
