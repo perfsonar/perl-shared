@@ -91,7 +91,7 @@ sub get_hosts_in_community {
     my $test_type = $args->{'test_type'}->{'value'};
 
     my $ret = $self->lookup_servers( $test_type, $community );
-    
+
     if ( defined $self->{'error_message'} ) {
         $caller->{'error_message'} = $self->{'error_message'};
         return;
@@ -185,6 +185,8 @@ sub lookup_servers {
     my $dns_cache = {};
 
     my ($status, $res) = $self->lookup_servers_cache($test_type, $keyword);
+
+    warn "lookup_servers " . Dumper $res;
 
     if ($status != 0) {
         $self->{'error_message'} = $res;
@@ -357,6 +359,20 @@ sub lookup_servers {
 
 sub lookup_servers_cache {
     my ( $self, $service_type, $keyword ) = @_;
+
+    # NEXT STEPS:
+    # 1. query ls cache for services based on the test type and community
+    # 2. Make a list of host UUIDs while doing #1 (hash keyed on UUID)
+    # 3. Query, the ls cache for hosts, using the hash of the UUIDs, and extract host info from there]
+    # {
+    #     'addresses' => [, 
+    #             'tcp://[2001:4118:900:cc00:215:17ff:fece:cd]:4823'
+    #       ],
+    #       name' => 'Institute of Experimental Physics, Slovak Academy of Sciences BWCTL Server',
+    #       description' => 'Institute of Experimental Physics, Slovak Academy of Sciences, Kosice, SK'
+    # }
+    #
+    # Should we add an input parameter for the cache URL to query?
 
     my $error_msg;
 
