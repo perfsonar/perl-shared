@@ -18,6 +18,7 @@ use perfSONAR_PS::Client::LS::PSQueryObjects::PSHostQueryObject;
 use perfSONAR_PS::Client::LS::PSQueryObjects::PSServiceQueryObject;
 use Time::HiRes;
 
+use LWP::UserAgent;
 use Data::Validate::IP qw(is_ipv4);
 use Data::Validate::Domain qw(is_hostname);
 use Net::IP;
@@ -90,7 +91,9 @@ sub get_hosts_in_community {
 
     my $test_type = $args->{'test_type'}->{'value'};
 
-    my $ret = $self->lookup_servers( $test_type, $community );
+    my $cache = $args->{'cache'}->{'value'};
+
+    my $ret = $self->lookup_servers( $test_type, $community, $cache );
 
     if ( defined $self->{'error_message'} ) {
         $caller->{'error_message'} = $self->{'error_message'};
@@ -180,18 +183,16 @@ sub get_host_details {
 
 # Looks up servers from the local LS cache
 sub lookup_servers {
-    my ( $self, $test_type, $keyword ) = @_;
+    my ( $self, $test_type, $keyword, $cache ) = @_;
+
     my $error_msg;
     my $dns_cache = {};
 
-    my ($status, $res) = $self->lookup_servers_cache($test_type, $keyword);
+    my ($status, $res) = $self->lookup_servers_cache($test_type, $keyword, $cache);
 
-    warn "lookup_servers " . Dumper $res;
 
     if ($status != 0) {
         $self->{'error_message'} = $res;
-        warn "error_message: " . $res;
-        #return display_body();
         return;
     }
 
@@ -201,7 +202,7 @@ sub lookup_servers {
         foreach my $full_addr (@{ $service->{addresses} }) {
             my $addr;
 
-            if ( $full_addr =~ /^(tcp|https?):\/\/\[[^\]]*\]/ ) {
+            if ( $full_addr =~ /^(tcp|https?):\/\/\[([^\]]*)\]/ ) {
                 $addr = $2;
             }
             elsif ( $full_addr =~ /^(tcp|https?):\/\/([^\/:]*)/ ) {
@@ -211,9 +212,11 @@ sub lookup_servers {
                 $addr = $full_addr;
             }
 
+
             push @addresses, $addr;
         }
     }
+
 
     $self->lookup_addresses(\@addresses, $dns_cache);
 
@@ -231,17 +234,63 @@ sub lookup_servers {
         my $host_dns_name;
         my %host_row = ();
         my $port;
+        my $pscheduler_url;
 
         foreach my $contact (@{ $service->{addresses} }) {
 
             my $addr;
-            #warn "contact: $contact";
             if ( $test_type eq "pinger" ) {
                 $addr = $contact;
+                if ( $contact =~ /^(https?):\/\/\[([^\]]*)\](:(\d+))?\/pscheduler/ ) {
+                    $addr = $2;
+                    my $proto = $1;                    
+                    $port = $4;
+                    if ( ! $port ) {
+                        $port = ( $proto eq "http" ? 80 : 443 );
+
+                    }
+                    $pscheduler_url = $contact;
+                }
+                elsif ( $contact =~ /^(https?):\/\/([^\/:]*)(:(\d+))?\/pscheduler/ ) {
+                    $addr = $2;
+                    my $proto = $1;                    
+                    $port = $4;
+                    if ( ! $port ) {
+                        $port = ( $proto eq "http" ? 80 : 443 );
+
+                    }
+                    $pscheduler_url = $contact;
+                } 
+
             }
             else {
-                # The addresses here are tcp://ip:port or tcp://[ip]:[port] or similar
-                if ( $contact =~ /^tcp:\/\/\[(.*)\]:(\d+)$/ ) {
+                # The addresses here are 
+                # http(s)://ip:port/pscheduler
+                # or tcp://ip:port or tcp://[ip]:[port] 
+                # or similar
+                #
+                
+                if ( $contact =~ /^(https?):\/\/\[([^\]]*)\](:(\d+))?\/pscheduler/ ) {
+                    $addr = $2;
+                    my $proto = $1;                    
+                    $port = $4;
+                    if ( ! $port ) {
+                        $port = ( $proto eq "http" ? 80 : 443 );
+
+                    }
+                    $pscheduler_url = $contact;
+                }
+                elsif ( $contact =~ /^(https?):\/\/([^\/:]*)(:(\d+))?\/pscheduler/ ) {
+                    $addr = $2;
+                    my $proto = $1;
+                    $port = $4;
+                    if ( ! $port ) {
+                        $port = ( $proto eq "http" ? 80 : 443 );
+
+                    }
+                    $pscheduler_url = $contact;
+                } 
+                elsif ( $contact =~ /^tcp:\/\/\[(.*)\]:(\d+)$/ ) {
                     $addr = $1;
                     $port = $2;
                 }
@@ -334,6 +383,7 @@ sub lookup_servers {
         $host_row{"ip"} = $host_ip;
         $host_row{"dns_name"} = $host_dns_name;
         $host_row{"port"} = $port;
+        $host_row{"pscheduler_url"} = $pscheduler_url if $pscheduler_url;
 
         push @hosts_simple, \%host_row;
 
@@ -358,10 +408,14 @@ sub lookup_servers {
 }
 
 sub lookup_servers_cache {
-    my ( $self, $service_type, $keyword ) = @_;
+    my ( $self, $service_type, $keyword, $cache ) = @_;
+
+    my $ua = LWP::UserAgent->new;
+    
+    
 
     # NEXT STEPS:
-    # 1. query ls cache for services based on the test type and community
+    # 1. query ls cache ($cache) for services based on the test type and community
     # 2. Make a list of host UUIDs while doing #1 (hash keyed on UUID)
     # 3. Query, the ls cache for hosts, using the hash of the UUIDs, and extract host info from there]
     # {
@@ -372,55 +426,134 @@ sub lookup_servers_cache {
     #       description' => 'Institute of Experimental Physics, Slovak Academy of Sciences, Kosice, SK'
     # }
     #
-    # Should we add an input parameter for the cache URL to query?
 
     my $error_msg;
 
-    my $service_cache_file;
-    if ( $service_type eq "pinger" ) {
-        $service_cache_file = "list.ping";
-    }
-    elsif ( $service_type eq "bwctl/throughput" ) {
-        $service_cache_file = "list.bwctl";
-    }
-    elsif ( $service_type eq "owamp" ) {
-        $service_cache_file = "list.owamp";
-    }
-    elsif ( $service_type eq "traceroute" ) {
-        $service_cache_file = "list.traceroute";
-    }
-    else {
-        $error_msg = "Unknown server type specified";
-        return (-1, $error_msg);
-    }
+    my $query = {};
 
-    my $project_keyword = "project:" . $keyword;
 
     my @hosts = ();
 
-    open(SERVICE_FILE, "<", $self->{'config'}->{'cache_directory'}."/".$service_cache_file);
-    while(<SERVICE_FILE>) {
-        chomp;
+    # bwctl/owamp type lookup
+    my $service_types = {
+        "bwctl/throughput" => "bwctl",
+        "rtt" => "ping"
+    };
 
-        my ($url, $name, $type, $description, $keyword_list) = split(/\|/, $_);
+    my $old_service_type = $service_types->{ $service_type } || $service_type;
 
-        my @keywords = split ',', $keyword_list;
-        my $kw_found = 0;
-        foreach my $kw(@keywords){
-            if($kw eq $project_keyword){
-                $kw_found = 1;
-                last;
+    # pscheduler type lookup
+    my $ps_types = {
+        "bwctl/throughput" => "throughput",
+        "bwctl" => "throughput",
+        "owamp" => "latency",
+        "pinger" => "rtt",
+        "traceroute" => "trace"
+
+    };
+    
+    my $ps_service_type = $ps_types->{ $service_type } || $service_type;
+
+
+
+    $query->{'query'} = {
+        "constant_score" => {
+            filter => {
+                bool => {
+                    must => [
+                        { match => { "type" => "service" } },
+                        { term => { "group-communities.keyword" => $keyword } },
+                        { bool => {
+                                should => [
+                                    { term => { "service-type.keyword" => $old_service_type } },
+                                    { term => { "pscheduler-tests.keyword" => "$ps_service_type" } }
+
+
+                                ]
+
+                            }
+                        }
+                        
+                    ]
+
+                }
+
             }
+
+
         }
-        next unless($kw_found);
 
-        push @hosts, { addresses => [ $url ], name => $name, description => $description };
+
+    };
+
+    my $pattern = "^https?://[^/]+/perfsonar/?";
+    my $re = qr/$pattern/;
+    my $url = $cache;
+    if ( $url =~ $re ) {
+        my $req = HTTP::Request->new(
+            POST => $url
+        );
+
+        my $json = encode_json($query);
+
+        if ( defined $json ) {
+            $req->content( $json );
+
+        }
+
+        # perform http $method request on the URL
+        my $res = $ua->request($req);
+
+        # success
+        if ( $res->is_success ) {
+            #print $cgi->header('application/json');
+            my $message = $res->decoded_content;
+            my $data = decode_json( $message );
+            $data = $self->extract_addresses_from_json( $data );
+            @hosts = @$data;
+            #print $message;
+        } else {
+            # if there is an error, return the error message and code
+            #error($res->message, $res->code);
+        }
+    } else {
+        # url does not appear to be a valid esmond archive
+        my $description = "Error: not a valid ps cache URL";
+        #error( $description );
     }
-    close(SERVICE_FILE);
 
-    my ( $mtime ) = ( stat( $self->{'config'}->{'cache_directory'}."/".$service_cache_file ) )[9];
+    return (0, { hosts => \@hosts });
+}
 
-    return (0, { hosts => \@hosts, check_time => $mtime });
+sub extract_addresses_from_json {
+    my ( $self, $data ) = @_;
+
+    my $out = [];
+
+    my $hits = $data->{'hits'}->{'hits'};
+
+    foreach my $source ( @$hits ) {
+        my $row = $source->{'_source'};
+        my $addresses = $row->{'service-locator'};
+        my $name = $row->{'service-name'};
+        my $description = $row->{'location-sitename'};
+        my $service_type = $row->{'service-type'};
+
+        my $outrow = {
+            addresses => $addresses,
+            name => $name,
+            description => $description,
+            service_type => $service_type
+        };
+
+        push @$out, $outrow;
+
+
+
+    }
+
+    return $out;
+
 }
 
 
