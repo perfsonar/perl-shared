@@ -1,10 +1,10 @@
 %define install_base /usr/lib/perfsonar/
 %define config_base  /etc/perfsonar
 
-%define relnum   1 
+%define relnum   0.1.b1
 
 Name:			libperfsonar
-Version:		4.0.1
+Version:		4.0.2
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Shared Libraries
 License:		Distributable, see LICENSE
