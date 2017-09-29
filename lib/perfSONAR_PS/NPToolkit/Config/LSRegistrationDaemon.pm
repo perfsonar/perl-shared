@@ -453,6 +453,7 @@ sub save {
 
     my $content = SaveConfigString($config);
 
+    utf8::decode($content);
     my ($status, $res) = save_file( { file => $self->{CONFIG_FILE}, content => $content } );
     if ($status == -1) {
         return -1;

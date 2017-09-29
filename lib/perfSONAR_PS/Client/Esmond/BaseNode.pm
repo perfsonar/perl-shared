@@ -12,11 +12,18 @@ has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 sub _post_url {
     my $self = shift;
     #return the api URL by default. override to build new URL
+    
     return $self->url;
 }
 
 sub _post {
     my ($self, $data) = @_;
+    
+    #verify its a valid esmond URL to prevent shady dealings
+    if ($self->_post_url() !~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
+        $self->_set_error("Invalid Esmond URL provided to POST; could not connect");
+        return;
+    }
     
     my $response = send_http_request(
         connection_type => 'POST', 
@@ -40,6 +47,12 @@ sub _post {
 
 sub _put {
     my ($self, $data) = @_;
+    
+    #verify its a valid esmond URL to prevent shady dealings
+    if ($self->_post_url() !~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
+        $self->_set_error("Invalid Esmond URL provided to PUT; could not connect");
+        return;
+    }
     
     my $response = send_http_request(
         connection_type => 'PUT', 
