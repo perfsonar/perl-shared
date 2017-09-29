@@ -59,7 +59,7 @@ sub send_http_request{
     
     #lookup address if map provided
     my $address_map = $parameters{address_map};
-    if(%{$address_map}){
+    if($address_map && %{$address_map}){
         my $url_obj = new URI::URL($url);
         my $host = $url_obj->host;
         if(exists $address_map->{$host} && $address_map->{$host}){
@@ -72,7 +72,7 @@ sub send_http_request{
     #Determine where to bind locally, if needed
     my $bind_address = '';
     my $bind_map = $parameters{bind_map};
-    if(%{$bind_map}){
+    if($bind_map && %{$bind_map}){
         #prefer bind map since it is more explicit
         my $url_obj = new URI::URL($url);
         my $host = $url_obj->host;
@@ -123,7 +123,8 @@ sub send_http_request{
            $req->header($h => $parameters{'headers'}->{$h}); 
         }
     }
-    $req->header('Content-Type' => 'application/json'); #always set this
+    $req->header('Content-Type' => 'application/json; charset=utf-8'); #always set this
+    utf8::encode($parameters{data}) if($parameters{data});
     $req->content($parameters{data});
     
     # Pass request to the user agent and get a response back

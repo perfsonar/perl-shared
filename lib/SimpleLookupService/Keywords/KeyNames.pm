@@ -69,6 +69,7 @@ use constant {
     LS_KEY_HOST_NET_TCP_MAXBACKLOG => "host-net-tcp-maxbacklog",
     LS_KEY_HOST_NET_TCP_MAXACHIEVABLE => "host-net-tcp-maxachievable",
     LS_KEY_HOST_NET_TCP_INTERFACES => "host-net-interfaces",
+    LS_KEY_HOST_NET_IPV6_ENABLED => "host-net-ipv6-enabled",
     
     LS_KEY_HOST_VM => "host-vm",
     LS_KEY_HOST_MANUFACTURER => "host-manufacturer",

@@ -30,7 +30,7 @@ sub init {
     my %parameters = validate( @args, { hostName => 1, memory => 0, 
     									processorSpeed =>0, processorCount =>0, processorCore => 0,
     									cpuId => 0, osName=>0, osVersion=>0, osKernel => 0, osArchitecture => 0,
-    									interfaces =>0, tcpCongestionAlgorithm =>0,
+    									ipv6Enabled =>0, interfaces =>0, tcpCongestionAlgorithm =>0,
     									 tcpMaxBufferSend =>0, tcpAutoMaxBufferSend =>0, 
     									 tcpMaxBufferRecv =>0, tcpAutoMaxBufferRecv =>0, 
     									 tcpMaxBacklog =>0, tcpMaxAchievable =>0,
@@ -42,6 +42,14 @@ sub init {
     
    if(defined $parameters{hostName}){
     	my $ret = $self->setHostName($parameters{hostName});
+    	if($ret <0){
+    		cluck "Error initializing Service record";
+    		return $ret;
+    	}
+    }
+    
+    if(defined $parameters{ipv6Enabled}){
+    	my $ret = $self->setIPv6Enabled($parameters{ipv6Enabled});
     	if($ret <0){
     		cluck "Error initializing Service record";
     		return $ret;
@@ -292,6 +300,17 @@ sub getHostName {
 sub setHostName {
     my ( $self, $value ) = @_;
     $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NAME), value=>$value  );
+    
+}
+
+sub getIPv6Enabled {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_IPV6_ENABLED)};
+}
+
+sub setIPv6Enabled {
+    my ( $self, $value ) = @_;
+    $self->SUPER::addField(key=>(SimpleLookupService::Keywords::KeyNames::LS_KEY_HOST_NET_IPV6_ENABLED), value=>$value  );
     
 }
 
