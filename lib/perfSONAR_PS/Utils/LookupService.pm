@@ -105,7 +105,7 @@ sub discover_lookup_services {
     my @active_hosts = ();
 
     foreach my $url (@$locator_urls) {
-        my $http_response = send_http_request(connection_type => 'GET', url => $url, timeout => 30);
+        my $http_response = send_http_request(connection_type => 'GET', url => $url, timeout => 5);
         if (!$http_response->is_success) {
             $logger->error("Problem retrieving $url: " . $http_response->status_line);
             next;

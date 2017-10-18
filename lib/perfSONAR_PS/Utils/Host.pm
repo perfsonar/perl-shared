@@ -738,6 +738,7 @@ sub is_auto_updates_on{
 
     if (    (   $os_info->{'distribution_name'}     =~ /^CentOS/
                 || $os_info->{'distribution_name'}  =~ /^Red Hat/
+                || $os_info->{'distribution_name'}  =~ /^Scientific/
             )
             && $os_info->{'distribution_version'} =~ /^7\.\d/ ) {
                 $is_el7 = 1;
