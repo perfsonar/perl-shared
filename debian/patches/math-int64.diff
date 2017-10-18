@@ -19,7 +19,7 @@
  use perfSONAR_PS::Utils::DNS qw(resolve_address);
  
  use DateTime;
-@@ -82,8 +82,10 @@
+@@ -86,8 +86,10 @@
  sub owptime2datetime {
      my ($owptime) = @_;
  
@@ -32,7 +32,7 @@
      $tstamp -= JAN_1970;
      return DateTime->from_epoch(epoch => $tstamp);
  }
-@@ -107,12 +109,12 @@
+@@ -111,12 +113,12 @@
  sub datetime2owptime {
      my ($datetime) = @_;
  
@@ -50,7 +50,7 @@
  }
  
  =head2 datetime2owptstampi($datetime)
-@@ -121,9 +123,10 @@
+@@ -125,9 +127,10 @@
  sub datetime2owptstampi{
      my ($datetime) = @_;
  
