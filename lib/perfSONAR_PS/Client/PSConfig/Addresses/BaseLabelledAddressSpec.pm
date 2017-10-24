@@ -60,12 +60,6 @@ sub remove_label {
     $self->_remove_map_item('labels', $field);
 }
 
-sub remove_labels {
-    my ($self) = @_;
-    $self->_remove_map('labels');
-}
-
-
 __PACKAGE__->meta->make_immutable;
 
 1;

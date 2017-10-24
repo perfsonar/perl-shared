@@ -31,15 +31,15 @@ sub remote_addresses{
     my ($self, $val) = @_;
     
     if(defined $val){
-        $self->data->{'remote_addresses'} = {};
+        $self->data->{'remote-addresses'} = {};
         foreach my $v(keys %{$val}){
             my $tmp_ra = $val->{$v}->data;
-            $self->data->{'remote_addresses'}->{$v} = $tmp_ra;
+            $self->data->{'remote-addresses'}->{$v} = $tmp_ra;
         }
     }
     
     my %remote_addresses = ();
-    foreach my $ra(keys %{$self->data->{'remote_addresses'}}){
+    foreach my $ra(keys %{$self->data->{'remote-addresses'}}){
         my $tmp_ra_obj = $self->remote_address($ra);
         $remote_addresses{$ra} = $tmp_ra_obj;
     }
@@ -55,36 +55,31 @@ sub remote_address{
     }
     
     if(defined $val){
-        $self->_init_field($self->data, 'remote_addresses');
-        $self->data->{'remote_addresses'}->{$field} = $val->data;
+        $self->_init_field($self->data, 'remote-addresses');
+        $self->data->{'remote-addresses'}->{$field} = $val->data;
     }
     
-    unless($self->_has_field($self->data, "remote_addresses")){
+    unless($self->_has_field($self->data, "remote-addresses")){
         return undef;
     }
     
-    unless($self->_has_field($self->data->{'remote_addresses'}, $field)){
+    unless($self->_has_field($self->data->{'remote-addresses'}, $field)){
         return undef;
     }
     
     return new perfSONAR_PS::Client::PSConfig::Addresses::RemoteAddressSpec(
-            data => $self->data->{'remote_addresses'}->{$field}
+            data => $self->data->{'remote-addresses'}->{$field}
         );
 } 
 
 sub remote_address_names{
     my ($self) = @_;
-    return $self->_get_map_names("remote_addresses");
+    return $self->_get_map_names("remote-addresses");
 } 
 
 sub remove_remote_address {
     my ($self, $field) = @_;
-    $self->_remove_map_item('remote_addresses', $field);
-}
-
-sub remove_remote_addresses {
-    my ($self) = @_;
-    $self->_remove_map('remote_addresses');
+    $self->_remove_map_item('remote-addresses', $field);
 }
 
 

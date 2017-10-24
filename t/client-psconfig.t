@@ -258,67 +258,71 @@ is($psconfig->task("task1", $pstask)->checksum(), $pstask->checksum());
 ########
 #Test additional utilities - clears out JSON
 ########
+
+is(@{$excl_ap->target_addresses()}, 2);
+$excl_ap->remove_list_item('target_addresses', 0);
+is(@{$excl_ap->target_addresses()}, 1);
+
 is(@{$psaddr->label_names()}, 1);
 ok($psaddr->remove_label("ipv6"));
 is(@{$psaddr->label_names()}, 0);
-ok($psaddr->remove_labels());
+ok($psaddr->remove('labels'));
 ok(!exists $psaddr->data()->{'labels'});
 
 is(@{$psaddr->remote_address_names()}, 1);
 ok($psaddr->remove_remote_address("10.0.0.2"));
 is(@{$psaddr->remote_address_names()}, 0);
-ok($psaddr->remove_remote_addresses());
+ok($psaddr->remove('remote_addresses'));
 ok(!exists $psaddr->data()->{'remote_addresses'});
 
 is(@{$psconfig->address_names()}, 1);
 ok($psconfig->remove_address("lbl-pt1.es.net"));
 is(@{$psconfig->address_names()}, 0);
-ok($psconfig->remove_addresses());
+ok($psconfig->remove('addresses'));
 ok(!exists $psconfig->data()->{'addresses'});
 
 is(@{$psconfig->archive_names()}, 1);
 ok($psconfig->remove_archive("lbl-pt1.es.net"));
 is(@{$psconfig->archive_names()}, 0);
-ok($psconfig->remove_archives());
+ok($psconfig->remove('archives'));
 ok(!exists $psconfig->data()->{'archives'});
 
 is(@{$psconfig->context_names()}, 1);
 ok($psconfig->remove_context("ctx1"));
 is(@{$psconfig->context_names()}, 0);
-ok($psconfig->remove_contexts());
+ok($psconfig->remove('contexts'));
 ok(!exists $psconfig->data()->{'contexts'});
 
 is(@{$psconfig->group_names()}, 3);
 ok($psconfig->remove_group("disjoint"));
 is(@{$psconfig->group_names()}, 2);
-ok($psconfig->remove_groups());
+ok($psconfig->remove('groups'));
 ok(!exists $psconfig->data()->{'groups'});
 
 is(@{$psconfig->host_names()}, 1);
 ok($psconfig->remove_host("lbl-pt1.es.net"));
 is(@{$psconfig->host_names()}, 0);
-ok($psconfig->remove_hosts());
+ok($psconfig->remove('hosts'));
 ok(!exists $psconfig->data()->{'hosts'});
 
 is(@{$psconfig->schedule_names()}, 1);
 ok($psconfig->remove_schedule("example"));
 is(@{$psconfig->schedule_names()}, 0);
-ok($psconfig->remove_schedules());
+ok($psconfig->remove('schedules'));
 ok(!exists $psconfig->data()->{'schedules'});
 
 is(@{$psconfig->task_names()}, 1);
 ok($psconfig->remove_task("task1"));
 is(@{$psconfig->task_names()}, 0);
-ok($psconfig->remove_tasks());
+ok($psconfig->remove('tasks'));;
 ok(!exists $psconfig->data()->{'tasks'});
 
 is(@{$psconfig->test_names()}, 1);
 ok($psconfig->remove_test("example"));
 is(@{$psconfig->test_names()}, 0);
-ok($psconfig->remove_tests());
+ok($psconfig->remove('tests'));
 ok(!exists $psconfig->data()->{'tests'});
 
-ok($psconfig->remove_psconfig_meta_param("project"));
 ok($psconfig->remove_psconfig_meta());
 ok(!exists $psconfig->data()->{'_meta'});
 

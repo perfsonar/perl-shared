@@ -31,6 +31,34 @@ sub json {
      return to_json($self->data, $formatting_params);
 }
 
+sub remove {
+    my ($self, $field) = @_;
+    $self->_remove_map($self->_normalize_key($field));
+}
+
+sub remove_list_item{
+    my ($self, $field, $index) = @_;
+    $field = $self->_normalize_key($field);
+    
+    unless(defined $index && $index =~ /^\d+$/ && int($index) >= 0){
+        return;
+    }
+    
+    unless(exists $self->data()->{$field} && 
+            ref $self->data()->{$field} eq 'ARRAY' && 
+            @{$self->data()->{$field}} >= $index){
+        return;
+    }
+    
+    splice @{$self->data()->{$field}}, $index, 1;
+}
+
+sub _normalize_key {
+    my ($self, $field) = @_;
+    $field =~ s/_/-/g; #normalize to json key in case used perl style key
+    return $field;
+}
+
 sub _has_field{
      my ($self, $parent, $field) = @_;
      return (exists $parent->{$field} && defined $parent->{$field});

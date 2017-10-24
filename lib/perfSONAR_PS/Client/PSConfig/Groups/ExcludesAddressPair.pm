@@ -46,7 +46,6 @@ sub add_target_address{
     push @{$self->data->{'target-addresses'}}, $val->data;
 }
 
-
   
 __PACKAGE__->meta->make_immutable;
 

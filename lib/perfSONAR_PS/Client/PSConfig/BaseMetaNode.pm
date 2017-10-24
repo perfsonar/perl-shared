@@ -37,11 +37,6 @@ sub psconfig_meta_param{
     return $self->data->{'_meta'}->{$field};
 }
 
-sub remove_psconfig_meta_param {
-    my ($self, $field) = @_;
-    $self->_remove_map_item('_meta', $field);
-}
-
 sub remove_psconfig_meta {
     my ($self) = @_;
     $self->_remove_map('_meta');

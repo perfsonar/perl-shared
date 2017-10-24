@@ -66,11 +66,6 @@ sub remove_address {
     $self->_remove_map_item('addresses', $field);
 }
 
-sub remove_addresses {
-    my ($self) = @_;
-    $self->_remove_map('addresses');
-}
-
 sub address_classes{
     my ($self, $val) = @_;
     #TODO: Should return map of classes
@@ -131,11 +126,6 @@ sub remove_archive {
     $self->_remove_map_item('archives', $field);
 }
 
-sub remove_archives {
-    my ($self) = @_;
-    $self->_remove_map('archives');
-}
-
 sub contexts{
     my ($self, $val) = @_;
     
@@ -189,11 +179,6 @@ sub context_names{
 sub remove_context {
     my ($self, $field) = @_;
     $self->_remove_map_item('contexts', $field);
-}
-
-sub remove_contexts {
-    my ($self) = @_;
-    $self->_remove_map('contexts');
 }
 
 sub groups{
@@ -251,12 +236,6 @@ sub remove_group {
     $self->_remove_map_item('groups', $field);
 }
 
-sub remove_groups {
-    my ($self) = @_;
-    $self->_remove_map('groups');
-}
-
-
 sub hosts{
     my ($self, $val) = @_;
     
@@ -311,12 +290,6 @@ sub remove_host {
     my ($self, $field) = @_;
     $self->_remove_map_item('hosts', $field);
 }
-
-sub remove_hosts {
-    my ($self) = @_;
-    $self->_remove_map('hosts');
-}
-
 
 sub includes{
     my ($self, $val) = @_;
@@ -378,12 +351,6 @@ sub remove_schedule {
     $self->_remove_map_item('schedules', $field);
 }
 
-sub remove_schedules {
-    my ($self) = @_;
-    $self->_remove_map('schedules');
-}
-
-
 sub subtasks{
     my ($self, $val) = @_;
     #TODO
@@ -444,11 +411,6 @@ sub remove_task {
     $self->_remove_map_item('tasks', $field);
 }
 
-sub remove_tasks {
-    my ($self) = @_;
-    $self->_remove_map('tasks');
-}
-
 sub tests{
     my ($self, $val) = @_;
     
@@ -503,12 +465,6 @@ sub remove_test {
     my ($self, $field) = @_;
     $self->_remove_map_item('tests', $field);
 }
-
-sub remove_tests {
-    my ($self) = @_;
-    $self->_remove_map('tests');
-}
-
 
 sub save {
     my $self = shift;
