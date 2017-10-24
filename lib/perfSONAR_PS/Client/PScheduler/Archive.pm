@@ -7,6 +7,7 @@ use Digest::MD5 qw(md5_base64);
 
 has 'name' => (is => 'rw', isa => 'Str');
 has 'ttl' => (is => 'rw', isa => 'Str');
+has 'transform' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'data' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 
 sub data_param {
