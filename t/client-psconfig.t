@@ -40,6 +40,7 @@ my $psaddr;
 ok($psaddr = new perfSONAR_PS::Client::PSConfig::Addresses::AddressSpec(), "unable to create AddressSpec object");
 ##Test BaseAddressSpec fields
 is($psaddr->address("lbl-pt1.es.net"), "lbl-pt1.es.net");
+is($psaddr->host_ref("lbl-pt1.es.net"), "lbl-pt1.es.net");
 is($psaddr->agent_bind_address("lbl-pt1.es.net"), "lbl-pt1.es.net");
 is($psaddr->lead_bind_address("lbl-pt1.es.net"), "lbl-pt1.es.net");
 is($psaddr->pscheduler_address("lbl-pt1.es.net"), "lbl-pt1.es.net");
@@ -201,8 +202,6 @@ my $pshost;
 ok($pshost = new perfSONAR_PS::Client::PSConfig::Host(), "unable to create Host object");
 is($pshost->psconfig_meta({'foo'=> 'bar'})->{'foo'}, 'bar');
 is($pshost->psconfig_meta_param('project', 'perfSONAR'), 'perfSONAR');
-ok($pshost->add_address_ref('lbl-pt1.es.net'));
-is($pshost->address_refs()->[0], 'lbl-pt1.es.net');
 ok($pshost->add_tag('dev'));
 is($pshost->tags()->[0], 'dev');
 ok($pshost->add_archive_ref('lbl-pt1.es.net'));

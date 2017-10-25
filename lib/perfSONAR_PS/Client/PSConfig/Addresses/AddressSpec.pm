@@ -5,6 +5,14 @@ use Mouse;
 
 extends 'perfSONAR_PS::Client::PSConfig::Addresses::BaseLabelledAddressSpec';
 
+sub host_ref{
+    my ($self, $val) = @_;
+    if(defined $val){
+        $self->data->{'host'} = $val;
+    }
+    return $self->data->{'host'};
+}
+
 sub tags{
     my ($self, $val) = @_;
     if(defined $val){

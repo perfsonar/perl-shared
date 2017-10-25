@@ -1,6 +1,7 @@
 package perfSONAR_PS::Client::PSConfig::Config;
 
 use Mouse;
+use JSON qw(to_json);
 use perfSONAR_PS::Client::PSConfig::Archive;
 use perfSONAR_PS::Client::PSConfig::Schedule;
 use perfSONAR_PS::Client::PSConfig::Test;
@@ -10,6 +11,7 @@ use perfSONAR_PS::Client::PSConfig::Groups::BaseGroup;
 extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
 has 'filename' => (is => 'rw', isa => 'Str', default => sub { "" });
+has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 
 sub addresses{
     my ($self, $val) = @_;
@@ -466,13 +468,21 @@ sub remove_test {
     $self->_remove_map_item('tests', $field);
 }
 
-sub save {
-    my $self = shift;
+sub save() {
+    my ($self, $formatting_params) = @_;
+    $formatting_params = {} unless $formatting_params;
+    my $filename = $self->filename();
     
-    #TODO
-    
-    return 0;
+    eval{
+        open(my $fh, ">:encoding(UTF-8)", $filename) or die("Can't open $filename: $!");
+        print $fh $self->json($formatting_params);
+        close $fh;
+    };
+    if($@){
+        $self->_set_error($@);
+    }
 }
+
 
 sub validate {
     my $self = shift;
