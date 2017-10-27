@@ -14,7 +14,7 @@ has 'type' => (
 
 sub class{
     my ($self, $val) = @_;
-    return $self->_field('class', $val);
+    return $self->_field_name('class', $val);
 }
   
 

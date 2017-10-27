@@ -14,12 +14,12 @@ has 'type' => (
 
 sub name{
     my ($self, $val) = @_;
-    return $self->_field('name', $val);
+    return $self->_field_name('name', $val);
 }
  
 sub label{
     my ($self, $val) = @_;
-    return $self->_field('label', $val);
+    return $self->_field_name('label', $val);
 }
 
   

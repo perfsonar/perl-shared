@@ -7,7 +7,7 @@ extends 'perfSONAR_PS::Client::PSConfig::Addresses::BaseLabelledAddress';
 
 sub host_ref{
     my ($self, $val) = @_;
-    return $self->_field('host', $val);
+    return $self->_field_name('host', $val);
 }
 
 sub tags{

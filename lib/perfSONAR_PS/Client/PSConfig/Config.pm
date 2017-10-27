@@ -2,6 +2,7 @@ package perfSONAR_PS::Client::PSConfig::Config;
 
 use Mouse;
 use JSON qw(to_json);
+use JSON::Validator;
 use perfSONAR_PS::Client::PSConfig::Archive;
 use perfSONAR_PS::Client::PSConfig::Schedule;
 use perfSONAR_PS::Client::PSConfig::Test;
@@ -9,6 +10,7 @@ use perfSONAR_PS::Client::PSConfig::Context;
 use perfSONAR_PS::Client::PSConfig::Groups::BaseGroup;
 use perfSONAR_PS::Client::PSConfig::Groups::GroupFactory;
 use perfSONAR_PS::Client::PSConfig::AddressClasses::AddressClass;
+use perfSONAR_PS::Client::PSConfig::Schema qw(psconfig_json_schema);
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
@@ -575,13 +577,13 @@ sub remove_test {
 }
 
 
-# sub validate {
-#     my $self = shift;
-#     
-#     #TODO
-#     
-#     return 0;
-# }
+sub validate {
+    my $self = shift;
+    my $validator = new JSON::Validator();
+    $validator->schema(psconfig_json_schema());
+
+    return $validator->validate($self->data());
+}
 
 
 __PACKAGE__->meta->make_immutable;

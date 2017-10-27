@@ -7,22 +7,22 @@ extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
 sub address{
     my ($self, $val) = @_;
-    return $self->_field('address', $val);
+    return $self->_field_host('address', $val);
 }
 
 sub agent_bind_address{
     my ($self, $val) = @_;
-    return $self->_field('agent-bind-address', $val);
+    return $self->_field_host('agent-bind-address', $val);
 }
 
 sub lead_bind_address{
     my ($self, $val) = @_;
-    return $self->_field('lead-bind-address', $val);
+    return $self->_field_host('lead-bind-address', $val);
 }
 
 sub pscheduler_address{
     my ($self, $val) = @_;
-    return $self->_field('pscheduler-address', $val);
+    return $self->_field_urlhostport('pscheduler-address', $val);
 }
 
 sub disabled{

@@ -15,7 +15,7 @@ has 'type' => (
 
 sub ip_version{
     my ($self, $val) = @_;
-    return $self->_field('ip-version', $val);
+    return $self->_field_ipversion('ip-version', $val);
 }
 
 __PACKAGE__->meta->make_immutable;

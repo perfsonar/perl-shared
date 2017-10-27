@@ -53,12 +53,24 @@ is($psconfig->psconfig_meta_param('blah'), undef); #fail - null val
 my $psaddr;
 ok($psaddr = new perfSONAR_PS::Client::PSConfig::Addresses::Address());
 ##Test BaseAddress fields
+is($psaddr->address("foo#bar"), undef);
+is($psaddr->address("198.129.254.30"), "198.129.254.30");
+is($psaddr->address("2001:400:201:1150::3"), "2001:400:201:1150::3");
 is($psaddr->address("lbl-pt1.es.net"), "lbl-pt1.es.net");
+## _field_name edge cases
+is($psaddr->host_ref("lbl-pt1\@es.net"), undef);
+####
 is($psaddr->host_ref("lbl-pt1.es.net"), "lbl-pt1.es.net");
 is($psaddr->agent_bind_address("lbl-pt1.es.net"), "lbl-pt1.es.net");
 is($psaddr->lead_bind_address("lbl-pt1.es.net"), "lbl-pt1.es.net");
+##test _field_urlhostport edge cases
+is($psaddr->pscheduler_address("foo#bar"), undef);
+is($psaddr->pscheduler_address("[::1]:443"), "[::1]:443");
+#####
 is($psaddr->pscheduler_address("lbl-pt1.es.net"), "lbl-pt1.es.net");
+is($psaddr->pscheduler_address(), "lbl-pt1.es.net");
 is($psaddr->disabled(), 0);
+is($psaddr->disabled('blah'), undef);
 is($psaddr->disabled(1), 1);
 is($psaddr->disabled(0), 0);
 is($psaddr->disabled(), 0);
@@ -139,11 +151,17 @@ is($psaddrclass_filter_host->no_agent(0), 0);
 ###IPVersion filter
 my $psaddrclass_filter_ipv;
 ok($psaddrclass_filter_ipv = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::IPVersion());
+is($psaddrclass_filter_ipv->ip_version(), undef);
+is($psaddrclass_filter_ipv->ip_version(5), undef);
+is($psaddrclass_filter_ipv->ip_version(4), 4);
 is($psaddrclass_filter_ipv->ip_version(6), 6);
 ###Netmask filter
 my $psaddrclass_filter_netmask;
 ok($psaddrclass_filter_netmask = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Netmask());
+is($psaddrclass_filter_netmask->netmask('blah'), undef);
+is($psaddrclass_filter_netmask->netmask('2620:0:2d0:2df::7/64'), '2620:0:2d0:2df::7/64');
 is($psaddrclass_filter_netmask->netmask('10.0.0.0/24'), '10.0.0.0/24');
+is($psaddrclass_filter_netmask->netmask(), '10.0.0.0/24');
 ###Tag filter
 my $psaddrclass_filter_tag;
 ok($psaddrclass_filter_tag = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Tag());
@@ -322,7 +340,9 @@ is($grp_factory->build({'type'=>'blah'}), undef);
 my $psarchive;
 ok($psarchive = new perfSONAR_PS::Client::PSConfig::Archive());
 is($psarchive->archiver('esmond'), 'esmond');
-is($psarchive->ttl('PT1D'), 'PT1D');
+is($psarchive->ttl('PT1D'), undef); #fail -invalid
+is($psarchive->ttl('P1D'), 'P1D');
+is($psarchive->ttl(), 'P1D');
 is($psarchive->archiver_data({'_api_key' => 'ABC123'})->{'_api_key'}, 'ABC123');
 is($psarchive->archiver_data_param('url', 'https://foo.bar/esmond/perfsonar/archive/'), 'https://foo.bar/esmond/perfsonar/archive/');
 is($psarchive->archiver_data_param('_api_key'), 'ABC123');
@@ -349,13 +369,21 @@ my $psschedule;
 ok($psschedule = new perfSONAR_PS::Client::PSConfig::Schedule());
 is($psschedule->psconfig_meta({'foo'=> 'bar'})->{'foo'}, 'bar');
 is($psschedule->psconfig_meta_param('project', 'perfSONAR'), 'perfSONAR');
+## _field_timestampabsrel
+is($psschedule->start('blah'), undef);
+is($psschedule->start('PT1H'), 'PT1H');
+is($psschedule->start('@PT1H'), '@PT1H');
+####
 is($psschedule->start('2017-10-23T17:56:52+00:00'), '2017-10-23T17:56:52+00:00');
+is($psschedule->start(), '2017-10-23T17:56:52+00:00');
 is($psschedule->slip('PT10M'), 'PT10M');
 is($psschedule->sliprand(0), 0);
 is($psschedule->sliprand(1), 1);
 is($psschedule->repeat('PT60M'), 'PT60M');
 is($psschedule->until('2017-10-24T17:56:52+00:00'), '2017-10-24T17:56:52+00:00');
+is($psschedule->max_runs(0), undef);
 is($psschedule->max_runs(24), 24);
+is($psschedule->max_runs(), 24);
 ##Test connecting schedules to config
 is($psconfig->schedule("blah"), undef);#fail - map does not exist
 is(keys %{$psconfig->schedules()}, 0); 
@@ -469,7 +497,14 @@ is($pssubtask->schedule_offset(), undef);
 my $psschedule_offset;
 ok($psschedule_offset = new perfSONAR_PS::Client::PSConfig::ScheduleOffset());
 is($psschedule_offset->type('start'), 'start');
+##edge cases of _field_enum
+is($psschedule_offset->relation('blah'), undef);
+is($psschedule_offset->relation(), undef);
+is($psschedule_offset->_field_enum('relation', 'blah'), 'blah');
+##
 is($psschedule_offset->relation('before'), 'before');
+
+
 is($psschedule_offset->offset('PT5S'), 'PT5S');
 is($pssubtask->schedule_offset($psschedule_offset)->checksum(), $psschedule_offset->checksum());
 isa_ok($pssubtask->schedule_offset(), 'perfSONAR_PS::Client::PSConfig::ScheduleOffset');
@@ -498,9 +533,16 @@ ok($psconfig->add_include('file:///tmp/tmp.tmp'));
 is($psconfig->includes()->[0], 'file:///tmp/tmp.tmp');
 
 ########
+#Test validation
+########
+is($psconfig->validate(), 0); #no validation errors
+
+
+########
 #Test additional utilities and edge cases - clears out JSON
 ########
 
+is($excl_ap->_validate_duration(), 0); # fail -edge case for validate_duration
 is(@{$excl_ap->target_addresses()}, 2);
 is($excl_ap->remove_list_item('target_addresses'), undef); #fail - no index
 is($excl_ap->remove_list_item('target_addresses', 'blah'), undef); #fail - bad index
@@ -596,6 +638,7 @@ ok($psconfig->remove_psconfig_meta());
 ok(!exists $psconfig->data()->{'_meta'});
 is($psconfig->psconfig_meta_param('project'), undef); #fail - null _meta
 
+is($psconfig->validate(), 4); #should have 1 error for each missing required field
 is($psconfig->json(), '{}');
 is($psconfig->json({ 'utf8' => undef, 'canonical' => undef}), '{}');
 is($psconfig->json({ 'utf8' => 0, 'canonical' => 0}), '{}');

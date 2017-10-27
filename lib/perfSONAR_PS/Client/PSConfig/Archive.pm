@@ -40,7 +40,7 @@ sub transform{
 
 sub ttl{
     my ($self, $val) = @_;
-    return $self->_field('ttl', $val);
+    return $self->_field_duration('ttl', $val);
 }
 
 

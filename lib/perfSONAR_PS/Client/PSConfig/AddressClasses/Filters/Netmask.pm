@@ -15,7 +15,7 @@ has 'type' => (
 
 sub netmask{
     my ($self, $val) = @_;
-    return $self->_field('netmask', $val);
+    return $self->_field_ipcidr('netmask', $val);
 }
 
 __PACKAGE__->meta->make_immutable;

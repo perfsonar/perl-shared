@@ -6,12 +6,12 @@ extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
 sub start{
     my ($self, $val) = @_;
-    return $self->_field('start', $val);
+    return $self->_field_timestampabsrel('start', $val);
 }
 
 sub slip{
     my ($self, $val) = @_;
-    return $self->_field('slip', $val);
+    return $self->_field_duration('slip', $val);
 }
 
 sub sliprand{
@@ -21,17 +21,17 @@ sub sliprand{
 
 sub repeat{
     my ($self, $val) = @_;
-    return $self->_field('repeat', $val);
+    return $self->_field_duration('repeat', $val);
 }
 
 sub until{
     my ($self, $val) = @_;
-    return $self->_field('until', $val);
+    return $self->_field_timestampabsrel('until', $val);
 }
 
 sub max_runs{
     my ($self, $val) = @_;
-    return $self->_field('max-runs', $val);
+    return $self->_field_cardinal('max-runs', $val);
 }
 
 
