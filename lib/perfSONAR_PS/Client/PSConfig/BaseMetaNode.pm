@@ -10,12 +10,7 @@ has 'data' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 
 sub psconfig_meta{
     my ($self, $val) = @_;
-    
-    if(defined $val){
-        $self->data->{'_meta'} = $val;
-    }
-    
-    return $self->data->{'_meta'};
+    return $self->_field('_meta', $val);
 }
 
 sub psconfig_meta_param{

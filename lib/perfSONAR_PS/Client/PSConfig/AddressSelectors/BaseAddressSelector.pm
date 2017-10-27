@@ -14,10 +14,7 @@ has 'type' => (
 
 sub disabled{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'disabled'} = $val ? JSON::true : JSON::false;
-    }
-    return $self->data->{'disabled'} ? 1 : 0;
+    return $self->_field_bool('disabled', $val);
 }
 
 __PACKAGE__->meta->make_immutable;

@@ -7,18 +7,12 @@ extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
 sub archiver{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'archiver'} = $val;
-    }
-    return $self->data->{'archiver'};
+    return $self->_field('archiver', $val);
 }
 
 sub archiver_data{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'data'} = $val;
-    }
-    return $self->data->{'data'};
+    return $self->_field('data', $val);
 }
 
 sub archiver_data_param {
@@ -46,10 +40,7 @@ sub transform{
 
 sub ttl{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'ttl'} = $val;
-    }
-    return $self->data->{'ttl'};
+    return $self->_field('ttl', $val);
 }
 
 

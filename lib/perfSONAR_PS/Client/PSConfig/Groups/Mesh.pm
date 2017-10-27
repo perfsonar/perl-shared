@@ -35,16 +35,7 @@ sub addresses{
 
 sub add_address{
     my ($self, $val) = @_;
-    
-    unless(defined $val){
-        return;
-    }
-    
-    unless($self->data->{'addresses'}){
-        $self->data->{'addresses'} = [];
-    }
-
-    push @{$self->data->{'addresses'}}, $val->data;
+    $self->_add_list_item_obj('addresses', $val);
 }
 
 

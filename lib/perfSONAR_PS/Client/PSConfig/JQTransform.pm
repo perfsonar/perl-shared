@@ -7,19 +7,13 @@ extends 'perfSONAR_PS::Client::PSConfig::BaseNode';
 
 sub script{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'script'} = $val;
-    }
-    return $self->data->{'script'};
+    return $self->_field('script', $val);
 }
 
 
 sub output_raw{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'output_raw'} = $val ? JSON::true : JSON::false;
-    }
-    return $self->data->{'output_raw'} ? 1 : 0;
+    return $self->_field_bool('output-raw', $val);
 }
 
 

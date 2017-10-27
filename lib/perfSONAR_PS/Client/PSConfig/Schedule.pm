@@ -6,50 +6,32 @@ extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
 sub start{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'start'} = $val;
-    }
-    return $self->data->{'start'};
+    return $self->_field('start', $val);
 }
 
 sub slip{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'slip'} = $val;
-    }
-    return $self->data->{'slip'};
+    return $self->_field('slip', $val);
 }
 
 sub sliprand{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'sliprand'} = $val ? JSON::true : JSON::false;
-    }
-    return $self->data->{'sliprand'} ? 1 : 0;
+    return $self->_field_bool('sliprand', $val);
 }
 
 sub repeat{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'repeat'} = $val;
-    }
-    return $self->data->{'repeat'};
+    return $self->_field('repeat', $val);
 }
 
 sub until{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'until'} = $val;
-    }
-    return $self->data->{'until'};
+    return $self->_field('until', $val);
 }
 
 sub max_runs{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'max-runs'} = $val;
-    }
-    return $self->data->{'max-runs'};
+    return $self->_field('max-runs', $val);
 }
 
 

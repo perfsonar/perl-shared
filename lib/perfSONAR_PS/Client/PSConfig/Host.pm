@@ -4,94 +4,39 @@ use Mouse;
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
-sub address_refs{
-    my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'addresses'} = $val;
-    }
-    return $self->data->{'addresses'};
-}
-
-sub add_address_ref{
-    my ($self, $val) = @_;
-    
-    unless(defined $val){
-        return;
-    }
-    
-    unless($self->data->{'addresses'}){
-        $self->data->{'addresses'} = [];
-    }
-
-    push @{$self->data->{'addresses'}}, $val;
-}
-
 sub archive_refs{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'archives'} = $val;
-    }
-    return $self->data->{'archives'};
+    return $self->_field('archives', $val);
 }
 
 sub add_archive_ref{
     my ($self, $val) = @_;
-    
-    unless(defined $val){
-        return;
-    }
-    
-    unless($self->data->{'archives'}){
-        $self->data->{'archives'} = [];
-    }
-
-    push @{$self->data->{'archives'}}, $val;
+    $self->_add_list_item('archives', $val);
 }
 
 sub site{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'site'} = $val;
-    }
-    return $self->data->{'site'};
+    return $self->_field('site', $val);
 }
 
 sub tags{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'tags'} = $val;
-    }
-    return $self->data->{'tags'};
+    return $self->_field('tags', $val);
 }
 
 sub add_tag{
     my ($self, $val) = @_;
-    
-    unless(defined $val){
-        return;
-    }
-    
-    unless($self->data->{'tags'}){
-        $self->data->{'tags'} = [];
-    }
-
-    push @{$self->data->{'tags'}}, $val;
+    $self->_add_list_item('tags', $val);
 }
 
 sub disabled{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'disabled'} = $val ? JSON::true : JSON::false;
-    }
-    return $self->data->{'disabled'} ? 1 : 0;
+    return $self->_field_bool('disabled', $val);
 }
 
 sub no_agent{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'no-agent'} = $val ? JSON::true : JSON::false;
-    }
-    return $self->data->{'no-agent'} ? 1 : 0;
+    return $self->_field_bool('no-agent', $val);
 }
 
 

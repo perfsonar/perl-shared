@@ -20,18 +20,16 @@ has 'dimension_count' => (
       },
   );
 
-sub dimension{
-    #accepts 1 int param indicating dimension to retrieve. Returns undef if not exists
-    die("Override this");
-}
+# sub dimension{
+#     #accepts 1 int param indicating dimension to retrieve. Returns undef if not exists
+#     die("Override this");
+# }
 
 sub default_address_label{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'default-address-label'} = $val;
-    }
-    return $self->data->{'default-address-label'};
+    return $self->_field('default-address-label', $val);
 }
+
 
 __PACKAGE__->meta->make_immutable;
 

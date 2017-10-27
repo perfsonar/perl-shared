@@ -14,20 +14,13 @@ has 'type' => (
 
 sub name{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'name'} = $val;
-    }
-    return $self->data->{'name'};
+    return $self->_field('name', $val);
 }
  
 sub label{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'label'} = $val;
-    }
-    return $self->data->{'label'};
+    return $self->_field('label', $val);
 }
-
 
   
 __PACKAGE__->meta->make_immutable;

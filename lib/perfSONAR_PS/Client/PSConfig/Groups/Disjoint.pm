@@ -35,17 +35,9 @@ sub a_addresses{
 
 sub add_a_address{
     my ($self, $val) = @_;
-    
-    unless(defined $val){
-        return;
-    }
-    
-    unless($self->data->{'a-addresses'}){
-        $self->data->{'a-addresses'} = [];
-    }
-
-    push @{$self->data->{'a-addresses'}}, $val->data;
+    $self->_add_list_item_obj('a-addresses', $val);
 }
+
 
 sub b_addresses{
     my ($self, $val) = @_;
@@ -66,18 +58,8 @@ sub b_addresses{
 
 sub add_b_address{
     my ($self, $val) = @_;
-    
-    unless(defined $val){
-        return;
-    }
-    
-    unless($self->data->{'b-addresses'}){
-        $self->data->{'b-addresses'} = [];
-    }
-
-    push @{$self->data->{'b-addresses'}}, $val->data;
+    $self->_add_list_item_obj('b-addresses', $val);
 }
-
 
 __PACKAGE__->meta->make_immutable;
 

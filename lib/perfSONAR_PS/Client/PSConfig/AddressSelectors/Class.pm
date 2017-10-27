@@ -14,10 +14,7 @@ has 'type' => (
 
 sub class{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'class'} = $val;
-    }
-    return $self->data->{'class'};
+    return $self->_field('class', $val);
 }
   
 

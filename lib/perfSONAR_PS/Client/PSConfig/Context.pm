@@ -6,18 +6,12 @@ extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
 sub context{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'context'} = $val;
-    }
-    return $self->data->{'context'};
+    return $self->_field('context', $val);
 }
 
 sub context_data{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'data'} = $val;
-    }
-    return $self->data->{'data'};
+    return $self->_field('data', $val);
 }
 
 sub context_data_param {

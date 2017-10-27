@@ -6,18 +6,12 @@ extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
 sub type{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'type'} = $val;
-    }
-    return $self->data->{'type'};
+    return $self->_field('type', $val);
 }
 
 sub spec{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'spec'} = $val;
-    }
-    return $self->data->{'spec'};
+    return $self->_field('spec', $val);
 }
 
 sub spec_param {

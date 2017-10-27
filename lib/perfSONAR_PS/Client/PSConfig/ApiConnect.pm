@@ -21,6 +21,7 @@ use perfSONAR_PS::Client::PSConfig::Config;
 our $VERSION = 4.1;
 
 has 'url' => (is => 'rw', isa => 'Str');
+has 'save_filename' => (is => 'rw', isa => 'Str');
 has 'bind_address' => (is => 'rw', isa => 'Str|Undef');
 has 'filters' => (is => 'rw', isa => 'perfSONAR_PS::Client::PSConfig::ApiFilters', default => sub { new perfSONAR_PS::Client::PSConfig::ApiFilters(); });
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
@@ -30,7 +31,8 @@ sub _config_from_file() {
     
     #remove prefix
     my $filename = $self->url();
-    $filename =~ s/file:\/\///g;
+    chomp $filename;
+    $filename =~ s/^file:\/\///g;
     my $psconfig;
     
     eval{
@@ -46,7 +48,7 @@ sub _config_from_file() {
             return;
         }
         
-        $psconfig = new perfSONAR_PS::Client::PSConfig::Config(data => $json_obj, filename => $filename);
+        $psconfig = new perfSONAR_PS::Client::PSConfig::Config(data => $json_obj);
     };
     if($@){
         $self->_set_error($@);
@@ -116,6 +118,27 @@ sub get_config() {
     }
     
     
+}
+
+sub save_config() {
+    my ($self, $psconfig, $formatting_params) = @_;
+    $formatting_params = {} unless $formatting_params;
+    my $filename = $self->save_filename();
+    chomp $filename;
+    $filename =~ s/^file:\/\///g;
+    unless($filename) {
+        $self->_set_error("No save_filename set");
+        return;
+    }
+    
+    eval{
+        open(my $fh, ">:encoding(UTF-8)", $filename) or die("Can't open $filename: $!");
+        print $fh $psconfig->json($formatting_params);
+        close $fh;
+    };
+    if($@){
+        $self->_set_error($@);
+    }
 }
 
 

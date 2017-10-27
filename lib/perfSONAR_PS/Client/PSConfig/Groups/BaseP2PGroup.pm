@@ -15,10 +15,7 @@ has 'dimension_count' => (
 
 sub force_bidirectional{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'force-bidirectional'} = $val ? JSON::true : JSON::false;
-    }
-    return $self->data->{'force-bidirectional'} ? 1 : 0;
+    return $self->_field_bool('force-bidirectional', $val);
 }
 
 sub excludes_self{
@@ -53,16 +50,7 @@ sub excludes{
 
 sub add_exclude{
     my ($self, $val) = @_;
-    
-    unless(defined $val){
-        return;
-    }
-    
-    unless($self->data->{'excludes'}){
-        $self->data->{'excludes'} = [];
-    }
-
-    push @{$self->data->{'excludes'}}, $val->data;
+    $self->_add_list_item_obj('excludes', $val);
 }
 
 __PACKAGE__->meta->make_immutable;

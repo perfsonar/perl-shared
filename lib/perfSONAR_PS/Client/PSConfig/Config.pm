@@ -7,10 +7,11 @@ use perfSONAR_PS::Client::PSConfig::Schedule;
 use perfSONAR_PS::Client::PSConfig::Test;
 use perfSONAR_PS::Client::PSConfig::Context;
 use perfSONAR_PS::Client::PSConfig::Groups::BaseGroup;
+use perfSONAR_PS::Client::PSConfig::Groups::GroupFactory;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::AddressClass;
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
-has 'filename' => (is => 'rw', isa => 'Str', default => sub { "" });
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 
 sub addresses{
@@ -53,7 +54,7 @@ sub address{
         return undef;
     }
     
-    return new perfSONAR_PS::Client::PSConfig::Addresses::AddressSpec(
+    return new perfSONAR_PS::Client::PSConfig::Addresses::Address(
             data => $self->data->{'addresses'}->{$field}
         );
 } 
@@ -70,7 +71,57 @@ sub remove_address {
 
 sub address_classes{
     my ($self, $val) = @_;
-    #TODO: Should return map of classes
+    
+    if(defined $val){
+        $self->data->{'address-classes'} = {};
+        foreach my $v(keys %{$val}){
+            my $tmp_addr_class = $val->{$v}->data;
+            $self->data->{'address-classes'}->{$v} = $tmp_addr_class;
+        }
+    }
+    
+    my %address_classes = ();
+    foreach my $addr_class(keys %{$self->data->{'address-classes'}}){
+        my $tmp_addr_class_obj = $self->address_class($addr_class);
+        $address_classes{$addr_class} = $tmp_addr_class_obj;
+    }
+    
+    return \%address_classes;
+}
+
+sub address_class{
+    my ($self, $field, $val) = @_;
+    
+    unless(defined $field){
+        return undef;
+    }
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'address-classes');
+        $self->data->{'address-classes'}->{$field} = $val->data;
+    }
+    
+    unless($self->_has_field($self->data, "address-classes")){
+        return undef;
+    }
+    
+    unless($self->_has_field($self->data->{'address-classes'}, $field)){
+        return undef;
+    }
+    
+    return new perfSONAR_PS::Client::PSConfig::AddressClasses::AddressClass(
+            data => $self->data->{'address-classes'}->{$field}
+        );
+} 
+
+sub address_class_names{
+    my ($self) = @_;
+    return $self->_get_map_names("address-classes");
+} 
+
+sub remove_address_class {
+    my ($self, $field) = @_;
+    $self->_remove_map_item('address-classes', $field);
 }
 
 sub archives{
@@ -223,9 +274,8 @@ sub group{
         return undef;
     }
     
-    return new perfSONAR_PS::Client::PSConfig::Groups::BaseGroup(
-            data => $self->data->{'groups'}->{$field}
-        );
+    my $group_factory = new perfSONAR_PS::Client::PSConfig::Groups::GroupFactory();
+    return $group_factory->build($self->data->{'groups'}->{$field});
 } 
 
 sub group_names{
@@ -295,7 +345,12 @@ sub remove_host {
 
 sub includes{
     my ($self, $val) = @_;
-    #TODO
+    return $self->_field('includes', $val);
+}
+
+sub add_include{
+    my ($self, $val) = @_;
+    $self->_add_list_item('includes', $val);
 }
 
 sub schedules{
@@ -355,8 +410,59 @@ sub remove_schedule {
 
 sub subtasks{
     my ($self, $val) = @_;
-    #TODO
+    
+    if(defined $val){
+        $self->data->{'subtasks'} = {};
+        foreach my $v(keys %{$val}){
+            my $tmp_task = $val->{$v}->data;
+            $self->data->{'subtasks'}->{$v} = $tmp_task;
+        }
+    }
+    
+    my %tasks = ();
+    foreach my $task(keys %{$self->data->{'subtasks'}}){
+        my $tmp_task_obj = $self->subtask($task);
+        $tasks{$task} = $tmp_task_obj;
+    }
+    
+    return \%tasks;
 }
+
+sub subtask{
+    my ($self, $field, $val) = @_;
+    
+    unless(defined $field){
+        return undef;
+    }
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'subtasks');
+        $self->data->{'subtasks'}->{$field} = $val->data;
+    }
+    
+    unless($self->_has_field($self->data, "subtasks")){
+        return undef;
+    }
+    
+    unless($self->_has_field($self->data->{'subtasks'}, $field)){
+        return undef;
+    }
+    
+    return new perfSONAR_PS::Client::PSConfig::Subtask(
+            data => $self->data->{'subtasks'}->{$field}
+        );
+} 
+
+sub subtask_names{
+    my ($self) = @_;
+    return $self->_get_map_names("subtasks");
+} 
+
+sub remove_subtask {
+    my ($self, $field) = @_;
+    $self->_remove_map_item('subtasks', $field);
+}
+
 
 sub tasks{
     my ($self, $val) = @_;
@@ -468,29 +574,14 @@ sub remove_test {
     $self->_remove_map_item('tests', $field);
 }
 
-sub save() {
-    my ($self, $formatting_params) = @_;
-    $formatting_params = {} unless $formatting_params;
-    my $filename = $self->filename();
-    
-    eval{
-        open(my $fh, ">:encoding(UTF-8)", $filename) or die("Can't open $filename: $!");
-        print $fh $self->json($formatting_params);
-        close $fh;
-    };
-    if($@){
-        $self->_set_error($@);
-    }
-}
 
-
-sub validate {
-    my $self = shift;
-    
-    #TODO
-    
-    return 0;
-}
+# sub validate {
+#     my $self = shift;
+#     
+#     #TODO
+#     
+#     return 0;
+# }
 
 
 __PACKAGE__->meta->make_immutable;

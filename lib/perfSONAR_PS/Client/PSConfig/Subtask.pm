@@ -1,22 +1,24 @@
-package perfSONAR_PS::Client::PSConfig::Task;
+package perfSONAR_PS::Client::PSConfig::Subtask;
 
 use Mouse;
+use perfSONAR_PS::Client::PSConfig::ScheduleOffset;
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
-
-sub group_ref{
-    my ($self, $val) = @_;
-    return $self->_field('group', $val);
-}
 
 sub test_ref{
     my ($self, $val) = @_;
     return $self->_field('test', $val);
 }
 
-sub schedule_ref{
+sub schedule_offset{
     my ($self, $val) = @_;
-    return $self->_field('schedule', $val);
+    if(defined $val){
+        $self->data->{'schedule-offset'} = $val->data;
+    }
+    unless($self->data->{'schedule-offset'}){
+        return;
+    }
+    return new perfSONAR_PS::Client::PSConfig::ScheduleOffset(data => $self->data->{'schedule-offset'});
 }
 
 sub archive_refs{
@@ -38,17 +40,6 @@ sub add_tool{
     my ($self, $val) = @_;
     $self->_add_list_item('tools', $val);
 }
-
-sub subtask_refs{
-    my ($self, $val) = @_;
-    return $self->_field('subtasks', $val);
-}
-
-sub add_subtask_ref{
-    my ($self, $val) = @_;
-    $self->_add_list_item('subtasks', $val);
-}
-
 
 sub reference{
     my ($self, $val) = @_;

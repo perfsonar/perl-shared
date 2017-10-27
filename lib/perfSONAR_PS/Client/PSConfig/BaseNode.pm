@@ -40,17 +40,61 @@ sub remove_list_item{
     my ($self, $field, $index) = @_;
     $field = $self->_normalize_key($field);
     
-    unless(defined $index && $index =~ /^\d+$/ && int($index) >= 0){
+    unless(defined $index && $index =~ /^\d+$/){
         return;
     }
     
     unless(exists $self->data()->{$field} && 
             ref $self->data()->{$field} eq 'ARRAY' && 
-            @{$self->data()->{$field}} >= $index){
+            @{$self->data()->{$field}} > $index){
         return;
     }
     
     splice @{$self->data()->{$field}}, $index, 1;
+}
+
+sub _add_list_item{
+    my ($self, $field, $val) = @_;
+    
+    unless(defined $val){
+        return;
+    }
+    
+    unless($self->data->{$field}){
+        $self->data->{$field} = [];
+    }
+
+    push @{$self->data->{$field}}, $val;
+}
+
+sub _add_list_item_obj{
+    my ($self, $field, $val) = @_;
+    
+    unless(defined $val){
+        return;
+    }
+    
+    unless($self->data->{$field}){
+        $self->data->{$field} = [];
+    }
+
+    push @{$self->data->{$field}}, $val->data;
+}
+
+sub _field{
+    my ($self, $field, $val) = @_;
+    if(defined $val){
+        $self->data->{$field} = $val;
+    }
+    return $self->data->{$field};
+}
+
+sub _field_bool{
+    my ($self, $field, $val) = @_;
+    if(defined $val){
+        $self->data->{$field} = $val ? JSON::true : JSON::false;
+    }
+    return $self->data->{$field} ? 1 : 0;
 }
 
 sub _normalize_key {
