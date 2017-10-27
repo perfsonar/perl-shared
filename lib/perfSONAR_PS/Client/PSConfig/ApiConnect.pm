@@ -14,17 +14,48 @@ use Mouse;
 use Params::Validate qw(:all);
 use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg extract_url_uuid);
 use JSON qw(from_json to_json);
+use Log::Log4perl qw(get_logger);
 
 use perfSONAR_PS::Client::PSConfig::ApiFilters;
 use perfSONAR_PS::Client::PSConfig::Config;
 
 our $VERSION = 4.1;
 
+my $logger = get_logger(__PACKAGE__);
+
 has 'url' => (is => 'rw', isa => 'Str');
 has 'save_filename' => (is => 'rw', isa => 'Str');
 has 'bind_address' => (is => 'rw', isa => 'Str|Undef');
 has 'filters' => (is => 'rw', isa => 'perfSONAR_PS::Client::PSConfig::ApiFilters', default => sub { new perfSONAR_PS::Client::PSConfig::ApiFilters(); });
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
+
+sub _merge_configs {
+    my ($self, $psconfig1, $psconfig2) = @_;
+    
+    #if no configs then nothing to do
+    unless($psconfig1 && $psconfig2){
+        return;
+    }
+    
+    #merge psconfig2 into psconfig1
+    my @fields = ('addresses', 'address-classes', 'archives', 
+                    'contexts', 'groups', 'hosts', 'schedules', 'subtasks', 
+                    'tasks', 'tests');
+    foreach my $field(@fields){
+        #if no key, then next
+        next unless exists $psconfig2->data()->{$field};
+        #init psconfig1 if needed
+        $psconfig1->data()->{$field} = {} unless exists $psconfig1->data()->{$field};
+        #iterate through psconfig2 but do not overwrite any fields that already exist
+        foreach my $psconfig2_key(keys %{$psconfig2->data()->{$field}}){
+            if(exists $psconfig1->data()->{$field}->{$psconfig2_key}){
+                $logger->warn("PSConfig merge: Skipping $field field's $psconfig2_key because it already exists");
+            }else{
+                $psconfig1->data()->{$field}->{$psconfig2_key} = $psconfig2->data()->{$field}->{$psconfig2_key};
+            }
+        }
+    }
+}
 
 sub _config_from_file() {
     my $self = shift;
@@ -140,6 +171,40 @@ sub save_config() {
         $self->_set_error($@);
     }
 }
+
+sub expand_config() {
+    my ($self, $psconfig1) = @_;
+    
+    #exit if no psconfig
+    my $includes = $psconfig1->includes();
+    unless($psconfig1 && $includes){
+        return;
+    }
+    
+    #iterate through includes and expand
+    $self->clear_error();#clear out errors
+    my @errors = ();
+    foreach my $include_url(@{$includes}){
+        my $psconfig2_client = new perfSONAR_PS::Client::PSConfig::ApiConnect(url=>$include_url);
+        my $psconfig2 = $psconfig2_client->get_config();
+        if($psconfig2_client->error()){
+            #if error getting an include, proceed with the rest
+            push @errors, "Error including $include_url: " . $psconfig2_client->error();
+            next;
+        }
+        #do the merge
+        $self->_merge_configs($psconfig1, $psconfig2);
+    }
+    if(@errors > 0){
+         $self->_set_error(join "\n", @errors);
+    }
+}
+
+sub clear_error(){
+    my ($self) = @_;
+    $self->_set_error('');
+}
+
 
 
 
