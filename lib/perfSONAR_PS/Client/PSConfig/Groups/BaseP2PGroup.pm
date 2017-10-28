@@ -33,24 +33,12 @@ sub excludes_self{
 
 sub excludes{
     my ($self, $val) = @_;
-    if(defined $val){
-        my @tmp_excls = ();
-        foreach my $excl(@{$val}){
-            push @tmp_excls, $excl->data;
-        }
-        $self->data->{'excludes'} = \@tmp_excls;
-    }
-    
-    my @tmp_excls_objs = ();
-    foreach my $excl_data(@{$self->data->{'excludes'}}){
-        push @tmp_excls_objs, new perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair(data => $excl_data);
-    }
-    return \@tmp_excls_objs;
+    return $self->_field_class_list('excludes', 'perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair', $val);
 }
 
 sub add_exclude{
     my ($self, $val) = @_;
-    $self->_add_list_item_obj('excludes', $val);
+    $self->_add_field_class('excludes', 'perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair', $val);
 }
 
 __PACKAGE__->meta->make_immutable;

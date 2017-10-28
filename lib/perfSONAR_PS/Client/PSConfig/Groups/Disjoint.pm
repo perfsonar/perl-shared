@@ -15,51 +15,33 @@ has 'type' => (
       },
   );
 
-
 sub a_addresses{
     my ($self, $val) = @_;
-    if(defined $val){
-        my @tmp_addrs = ();
-        foreach my $addr(@{$val}){
-            push @tmp_addrs, $addr->data;
-        }
-        $self->data->{'a-addresses'} = \@tmp_addrs;
-    }
-    my @tmp_addr_objs = ();
-    my $factory = new perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory();
-    foreach my $addr_data(@{$self->data->{'a-addresses'}}){
-        push @tmp_addr_objs, $factory->build($addr_data);
-    }
-    return \@tmp_addr_objs;
+    return $self->_field_class_factory_list('a-addresses', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory', 
+        $val);
 }
 
 sub add_a_address{
     my ($self, $val) = @_;
-    $self->_add_list_item_obj('a-addresses', $val);
+    $self->_add_field_class('a-addresses', 'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', $val);
 }
-
 
 sub b_addresses{
     my ($self, $val) = @_;
-    if(defined $val){
-        my @tmp_addrs = ();
-        foreach my $addr(@{$val}){
-            push @tmp_addrs, $addr->data;
-        }
-        $self->data->{'b-addresses'} = \@tmp_addrs;
-    }
-    my @tmp_addr_objs = ();
-    my $factory = new perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory();
-    foreach my $addr_data(@{$self->data->{'b-addresses'}}){
-        push @tmp_addr_objs, $factory->build($addr_data);
-    }
-    return \@tmp_addr_objs;
+    return $self->_field_class_factory_list('b-addresses', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory', 
+        $val);
 }
 
 sub add_b_address{
     my ($self, $val) = @_;
-    $self->_add_list_item_obj('b-addresses', $val);
+    $self->_add_field_class('b-addresses', 'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', $val);
 }
+
+
 
 __PACKAGE__->meta->make_immutable;
 

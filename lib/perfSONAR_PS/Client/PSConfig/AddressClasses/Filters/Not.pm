@@ -16,11 +16,10 @@ has 'type' => (
 
 sub filter{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'filter'} = $val->data;
-    }
-    my $factory = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::FilterFactory();
-    return $factory->build($self->data->{'filter'});
+    return $self->_field_class_factory('filter', 
+        'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::BaseFilter',
+        'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::FilterFactory', 
+        $val);
 }
 
 __PACKAGE__->meta->make_immutable;

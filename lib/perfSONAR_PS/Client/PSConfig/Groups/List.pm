@@ -24,24 +24,15 @@ has 'dimension_count' => (
 
 sub addresses{
     my ($self, $val) = @_;
-    if(defined $val){
-        my @tmp_addrs = ();
-        foreach my $addr(@{$val}){
-            push @tmp_addrs, $addr->data;
-        }
-        $self->data->{'addresses'} = \@tmp_addrs;
-    }
-    my @tmp_addr_objs = ();
-    my $factory = new perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory();
-    foreach my $addr_data(@{$self->data->{'addresses'}}){
-        push @tmp_addr_objs, $factory->build($addr_data);
-    }
-    return \@tmp_addr_objs;
+    return $self->_field_class_factory_list('addresses', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory', 
+        $val);
 }
 
 sub add_address{
     my ($self, $val) = @_;
-    $self->_add_list_item_obj('addresses', $val);
+    $self->_add_field_class('addresses', 'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', $val);
 }
 
 

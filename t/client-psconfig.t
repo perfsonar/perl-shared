@@ -77,7 +77,10 @@ is($psaddr->disabled(), 0);
 is($psaddr->no_agent(1), 1);
 is($psaddr->no_agent(0), 0);
 is($psaddr->context_refs(['ctx1'])->[0], 'ctx1');
+is($psaddr->context_refs(['foo@bar']), undef); #fail
+is($psaddr->context_refs({}), undef); #fail
 ok($psaddr->add_context_ref('ctx2'));
+is($psaddr->add_context_ref('foo@bar'), undef);
 is($psaddr->context_refs()->[1], 'ctx2');
 is($psaddr->context_refs()->[1], 'ctx2');
 is($psaddr->psconfig_meta({'foo'=> 'bar'})->{'foo'}, 'bar');
@@ -92,6 +95,8 @@ is($psaddr->label("blah"), undef); # fail - no label
 is($psaddr->label(), undef); # fail - null label
 is($psaddr->labels()->{"ipv6"}->address(), "2001:400:210:151::25");
 is($psaddr->labels({"ipv6" => $psaddr_label})->{"ipv6"}->address(), "2001:400:210:151::25");
+is($psaddr->labels("blah"), undef);
+is($psaddr->labels({"foo" => "bar"}), undef);
 
 ##Test Address fields
 ok($psaddr->add_tag('dev'));
@@ -289,11 +294,14 @@ is($psgrp_disjoint->add_exclude(), undef);#fail - no val
 is($psgrp_disjoint->excludes()->[0]->checksum(), $excl_ap->checksum());
 ok($psgrp_disjoint->add_exclude($excl_ap)); #test when already and exclude
 is($psgrp_disjoint->excludes([$excl_ap])->[0]->checksum(), $excl_ap->checksum());
+is($psgrp_disjoint->excludes("blah"), undef);
+is($psgrp_disjoint->excludes(["blah"]), undef);
 
 ##Disjoint specific
 is(@{$psgrp_disjoint->a_addresses()}, 0);
 is(@{$psgrp_disjoint->b_addresses()}, 0);
 is($psgrp_disjoint->a_addresses([$excl_addr_sel_nl2])->[0]->checksum(), $excl_addr_sel_nl2->checksum());
+is($psgrp_disjoint->a_addresses(["blah"]), undef);
 ok($psgrp_disjoint->add_a_address($excl_addr_sel_nl));
 is($psgrp_disjoint->a_addresses()->[1]->checksum(), $excl_addr_sel_nl->checksum());
 ok($psgrp_disjoint->add_b_address($excl_addr_sel_nl2));
@@ -343,10 +351,13 @@ is($psarchive->archiver('esmond'), 'esmond');
 is($psarchive->ttl('PT1D'), undef); #fail -invalid
 is($psarchive->ttl('P1D'), 'P1D');
 is($psarchive->ttl(), 'P1D');
+is($psarchive->archiver_data(), undef); # fail - no val
+is($psarchive->archiver_data("blah"), undef); # fail - invalid val
 is($psarchive->archiver_data({'_api_key' => 'ABC123'})->{'_api_key'}, 'ABC123');
 is($psarchive->archiver_data_param('url', 'https://foo.bar/esmond/perfsonar/archive/'), 'https://foo.bar/esmond/perfsonar/archive/');
 is($psarchive->archiver_data_param('_api_key'), 'ABC123');
 is($psarchive->archiver_data_param(), undef); # fail - null key
+
 ##Test transform
 my $psarchive_jq;
 ok($psarchive_jq = new perfSONAR_PS::Client::PSConfig::JQTransform());
@@ -354,6 +365,7 @@ is($psarchive_jq->script('.'), '.');
 is($psarchive_jq->output_raw(0), 0);
 is($psarchive->transform($psarchive_jq)->checksum(), $psarchive_jq->checksum());
 is($psarchive->transform()->checksum(), $psarchive_jq->checksum());
+
 ##Test connecting archives to config
 is($psconfig->archive("blah"), undef);#fail - map does not exist
 is(keys %{$psconfig->archives()}, 0); 
@@ -551,8 +563,50 @@ is($excl_ap->remove_list_item('blah', 0), undef); #fail - not a key
 is($excl_ap->remove_list_item('local_address', 0), undef); #fail - not a list
 $excl_ap->remove_list_item('target_addresses', 0);
 is(@{$excl_ap->target_addresses()}, 1);
-
-
+is(@{$excl_ap->target_addresses()}, 1);
+#######
+# _field_class() failure cases  
+#######
+is($excl_ap->_field_class(), undef);
+is($excl_ap->_field_class("blah"), undef);
+is($excl_ap->_field_class("foo", 'perfSONAR_PS::Client::PSConfig::Config', "bar"), undef);
+#######
+# _field_class_map_item() failure cases  
+#######
+is($excl_ap->_field_class_map_item(), undef);
+is($excl_ap->_field_class_map_item("blah"), undef);
+is($excl_ap->_field_class_map_item("foo", 'perfSONAR_PS::Client::PSConfig::Config'), undef);
+is($excl_ap->_field_class_map_item("foo", 'perfSONAR_PS::Client::PSConfig::Config', "bar"), undef);
+is($excl_ap->_field_class_map_item("foo", 'perfSONAR_PS::Client::PSConfig::Config', "bar", "foobar"), undef);
+#######
+# _field_class_factory() failure cases  
+#######
+is($excl_ap->_field_class_factory(), undef);
+is($excl_ap->_field_class_factory("blah"), undef);
+is($excl_ap->_field_class_factory("foo", 
+    'perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::DataSourceFactory',
+    'perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::BaseDataSource',
+    'bar'
+    ), undef);
+#######
+# _field_anyobj_param() failure cases  
+#######
+is($excl_ap->_field_anyobj_param(), undef);
+#######
+# _add_field_class() failure cases  
+#######
+is($excl_ap->_add_field_class(), undef);
+is($excl_ap->_add_field_class("foo"), undef);
+is($excl_ap->_add_field_class("foo", 
+    'perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::BaseDataSource',
+    'bar'
+    ), undef);
+#######
+# _validate_class() failure cases  
+#######
+is($excl_ap->_validate_class("blah"), 0);
+is($excl_ap->_validate_name(), 0);
+    
 is(@{$psaddr->label_names()}, 1);
 ok($psaddr->remove_label("ipv6"));
 is($psaddr->remove_label("blah"), undef);#fail - no label

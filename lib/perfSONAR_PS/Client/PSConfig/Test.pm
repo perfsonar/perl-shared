@@ -11,22 +11,12 @@ sub type{
 
 sub spec{
     my ($self, $val) = @_;
-    return $self->_field('spec', $val);
+    return $self->_field_anyobj('spec', $val);
 }
 
-sub spec_param {
-    my ($self, $field, $val) = @_;
-    
-    unless(defined $field){
-        return undef;
-    }
-    
-    if(defined $val){
-        $self->_init_field($self->data, 'spec');
-        $self->data->{'spec'}->{$field} = $val;
-    }
-    
-    return $self->data->{'spec'}->{$field};
+sub spec_param{
+    my ($self, $field, $val) = @_;    
+    return $self->_field_anyobj_param('spec', $field, $val);
 }
 
 

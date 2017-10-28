@@ -6,12 +6,12 @@ extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
 sub archive_refs{
     my ($self, $val) = @_;
-    return $self->_field('archives', $val);
+    return $self->_field_refs('archives', $val);
 }
 
 sub add_archive_ref{
     my ($self, $val) = @_;
-    $self->_add_list_item('archives', $val);
+    $self->_add_field_ref('archives', $val);
 }
 
 sub site{

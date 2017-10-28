@@ -7,36 +7,26 @@ extends 'perfSONAR_PS::Client::PSConfig::BaseNode';
 
 sub local_address{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'local-address'} = $val->data;
-    }
-    
-    my $factory = new perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory();
-    return $factory->build($self->data->{'local-address'});
+    return $self->_field_class_factory('local-address', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory', 
+        $val);
 }
 
 sub target_addresses{
     my ($self, $val) = @_;
-    if(defined $val){
-        my @tmp_addrs = ();
-        foreach my $addr(@{$val}){
-            push @tmp_addrs, $addr->data;
-        }
-        $self->data->{'target-addresses'} = \@tmp_addrs;
-    }
-    my @tmp_addr_objs = ();
-    my $factory = new perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory();
-    foreach my $addr_data(@{$self->data->{'target-addresses'}}){
-        push @tmp_addr_objs, $factory->build($addr_data);
-    }
-    return \@tmp_addr_objs;
+    return $self->_field_class_factory_list('target-addresses', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory', 
+        $val);
 }
 
 sub add_target_address{
     my ($self, $val) = @_;
-    $self->_add_list_item_obj('target-addresses', $val);
+    $self->_add_field_class('target-addresses', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', 
+        $val);
 }
-
   
 __PACKAGE__->meta->make_immutable;
 

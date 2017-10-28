@@ -37,12 +37,12 @@ sub no_agent{
 
 sub context_refs{
     my ($self, $val) = @_;
-    return $self->_field('contexts', $val);
+    return $self->_field_refs('contexts', $val);
 }
 
 sub add_context_ref{
     my ($self, $val) = @_;
-    $self->_add_list_item('contexts', $val);
+    $self->_add_field_ref('contexts', $val);
 }
 
 __PACKAGE__->meta->make_immutable;

@@ -12,30 +12,17 @@ sub archiver{
 
 sub archiver_data{
     my ($self, $val) = @_;
-    return $self->_field('data', $val);
+    return $self->_field_anyobj('data', $val);
 }
 
 sub archiver_data_param {
     my ($self, $field, $val) = @_;
-    
-    unless(defined $field){
-        return undef;
-    }
-    
-    if(defined $val){
-        $self->_init_field($self->data, 'data');
-        $self->data->{'data'}->{$field} = $val;
-    }
-    
-    return $self->data->{'data'}->{$field};
+    return $self->_field_anyobj_param('data', $field, $val);
 }
 
 sub transform{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'transform'} = $val->data;
-    }
-    return new perfSONAR_PS::Client::PSConfig::JQTransform(data => $self->data->{'transform'});
+    return $self->_field_class('transform', 'perfSONAR_PS::Client::PSConfig::JQTransform', $val);
 }
 
 sub ttl{

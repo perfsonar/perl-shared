@@ -7,28 +7,22 @@ extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
 sub test_ref{
     my ($self, $val) = @_;
-    return $self->_field('test', $val);
+    return $self->_field_name('test', $val);
 }
 
 sub schedule_offset{
     my ($self, $val) = @_;
-    if(defined $val){
-        $self->data->{'schedule-offset'} = $val->data;
-    }
-    unless($self->data->{'schedule-offset'}){
-        return;
-    }
-    return new perfSONAR_PS::Client::PSConfig::ScheduleOffset(data => $self->data->{'schedule-offset'});
+    return $self->_field_class('schedule-offset', 'perfSONAR_PS::Client::PSConfig::ScheduleOffset', $val);
 }
 
 sub archive_refs{
     my ($self, $val) = @_;
-    return $self->_field('archives', $val);
+    return $self->_field_refs('archives', $val);
 }
 
 sub add_archive_ref{
     my ($self, $val) = @_;
-    $self->_add_list_item('archives', $val);
+    $self->_add_field_ref('archives', $val);
 }
 
 sub tools{
@@ -43,22 +37,12 @@ sub add_tool{
 
 sub reference{
     my ($self, $val) = @_;
-    return $self->_field('reference', $val);
+    return $self->_field_anyobj('reference', $val);
 }
 
-sub reference_param {
-    my ($self, $field, $val) = @_;
-    
-    unless(defined $field){
-        return undef;
-    }
-    
-    if(defined $val){
-        $self->_init_field($self->data, 'reference');
-        $self->data->{'reference'}->{$field} = $val;
-    }
-    
-    return $self->data->{'reference'}->{$field};
+sub reference_param{
+    my ($self, $field, $val) = @_;    
+    return $self->_field_anyobj_param('reference', $field, $val);
 }
 
 sub disabled{

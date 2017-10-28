@@ -23,46 +23,13 @@ sub add_tag{
 sub remote_addresses{
     my ($self, $val) = @_;
     
-    if(defined $val){
-        $self->data->{'remote-addresses'} = {};
-        foreach my $v(keys %{$val}){
-            my $tmp_ra = $val->{$v}->data;
-            $self->data->{'remote-addresses'}->{$v} = $tmp_ra;
-        }
-    }
-    
-    my %remote_addresses = ();
-    foreach my $ra(keys %{$self->data->{'remote-addresses'}}){
-        my $tmp_ra_obj = $self->remote_address($ra);
-        $remote_addresses{$ra} = $tmp_ra_obj;
-    }
-    
-    return \%remote_addresses;
+    return $self->_field_class_map('remote-addresses', 'perfSONAR_PS::Client::PSConfig::Addresses::RemoteAddress', $val);
 }
 
 sub remote_address{
     my ($self, $field, $val) = @_;
     
-    unless(defined $field){
-        return undef;
-    }
-    
-    if(defined $val){
-        $self->_init_field($self->data, 'remote-addresses');
-        $self->data->{'remote-addresses'}->{$field} = $val->data;
-    }
-    
-    unless($self->_has_field($self->data, "remote-addresses")){
-        return undef;
-    }
-    
-    unless($self->_has_field($self->data->{'remote-addresses'}, $field)){
-        return undef;
-    }
-    
-    return new perfSONAR_PS::Client::PSConfig::Addresses::RemoteAddress(
-            data => $self->data->{'remote-addresses'}->{$field}
-        );
+    return $self->_field_class_map_item('remote-addresses', $field, 'perfSONAR_PS::Client::PSConfig::Addresses::RemoteAddress', $val);
 } 
 
 sub remote_address_names{

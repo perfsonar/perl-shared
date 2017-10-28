@@ -17,9 +17,6 @@ sub class{
     return $self->_field_name('class', $val);
 }
   
-
-
-  
 __PACKAGE__->meta->make_immutable;
 
 1;

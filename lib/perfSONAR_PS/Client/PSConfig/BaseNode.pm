@@ -70,26 +70,248 @@ sub _add_list_item{
     push @{$self->data->{$field}}, $val;
 }
 
-sub _add_list_item_obj{
-    my ($self, $field, $val) = @_;
-    
-    unless(defined $val){
-        return;
-    }
-    
-    unless($self->data->{$field}){
-        $self->data->{$field} = [];
-    }
-
-    push @{$self->data->{$field}}, $val->data;
-}
-
 sub _field{
     my ($self, $field, $val) = @_;
     if(defined $val){
         $self->data->{$field} = $val;
     }
     return $self->data->{$field};
+}
+
+sub _field_class{
+    my ($self, $field, $class, $val) = @_;
+    
+    unless(defined $field && defined $class){
+        return;
+    }
+    
+    if(defined $val){
+        if($self->_validate_class($field, $class, $val)){
+            $self->data->{$field} = $val->data;
+        }else{
+            return;
+        }
+    }
+    unless(exists $self->data->{$field}){
+        return;
+    }
+    
+    return $class->new(data => $self->data->{$field});
+}
+
+sub _field_class_map{
+    my ($self, $field, $class, $val) = @_;
+    
+    if(defined $val){
+        unless(ref $val eq 'HASH'){
+            $self->_set_validation_error("Unable to set $field. Value must be a hashref.");
+            return;
+        }
+        my $tmp_map = {};
+        foreach my $v(keys %{$val}){
+            if($self->_validate_class($field, $class, $val->{$v})){
+                $tmp_map->{$v} = $val->{$v}->data;
+            }else{
+                return;
+            }
+        }
+        $self->data->{$field} = $tmp_map;
+    }
+    
+    my %tmp_obj_map = ();
+    foreach my $field_key(keys %{$self->data->{$field}}){
+        my $tmp_obj = $self->_field_class_map_item($field, $field_key, $class);
+        $tmp_obj_map{$field_key} = $tmp_obj;
+    }
+    
+    return \%tmp_obj_map;
+}
+
+sub _field_class_map_item{
+    my ($self, $field, $param, $class, $val) = @_;
+    
+    unless(defined $field && defined $param && defined $class){
+        return undef;
+    }
+    
+    if(defined $val){
+        if($self->_validate_class($field, $class, $val)){
+            $self->_init_field($self->data, $field);
+            $self->data->{$field}->{$param} = $val->data;
+        }else{
+            return;
+        }
+    }
+    
+    unless($self->_has_field($self->data, $field)){
+        return undef;
+    }
+    
+    unless($self->_has_field($self->data->{$field}, $param)){
+        return undef;
+    }
+    
+    return $class->new(data => $self->data->{$field}->{$param});
+} 
+
+
+
+sub _field_class_factory{
+    my ($self, $field, $base_class, $factory_class, $val) = @_;
+
+    unless(defined $field && defined $factory_class){
+        return;        
+    }
+    
+    if(defined $val){
+        if($self->_validate_class($field, $base_class, $val)){
+           $self->data->{$field} = $val->data;
+        }else{
+            return;
+        }
+    }
+    my $factory = $factory_class->new();
+    return $factory->build($self->data->{$field});
+}
+
+sub _field_class_factory_list{
+    my ($self, $field, $base_class, $factory_class, $val) = @_;
+    if(defined $val){
+        if(ref $val ne 'ARRAY'){
+            $self->_set_validation_error("$field must be an arrayref");
+            return;
+        }
+        my @tmp = ();
+        foreach my $v(@{$val}){
+            if($self->_validate_class($field, $base_class, $v)){
+               push @tmp, $v->data;
+            }else{
+                return;
+            }
+        }
+        $self->data->{$field} = \@tmp;
+    }
+    my @tmp_objs = ();
+    my $factory = $factory_class->new();
+    foreach my $data(@{$self->data->{$field}}){
+        push @tmp_objs, $factory->build($data);
+    }
+    return \@tmp_objs;
+}
+
+sub _field_class_list{
+    my ($self, $field, $class, $val) = @_;
+    
+    if(defined $val){
+        if(ref $val ne 'ARRAY'){
+            $self->_set_validation_error("$field must be an arrayref");
+            return;
+        }
+        my @tmp = ();
+        foreach my $v(@{$val}){
+            if($self->_validate_class($field, $class, $v)){
+                push @tmp, $v->data;
+            }else{
+                return;
+            }
+        }
+        $self->data->{$field} = \@tmp;
+    }
+    
+    my @tmp_objs = ();
+    foreach my $data(@{$self->data->{$field}}){
+        push @tmp_objs, $class->new(data => $data);
+    }
+    return \@tmp_objs;
+}
+
+sub _add_field_class{
+    my ($self, $field, $class, $val) = @_;
+    
+    unless(defined $field && defined $class && defined $val){
+        return;
+    }
+    
+    unless($self->data->{$field}){
+        $self->data->{$field} = [];
+    }
+    
+    if($self->_validate_class($field, $class, $val)){
+        push @{$self->data->{$field}}, $val->data;
+    }else{
+        return;
+    }
+    
+}
+
+sub _field_refs{
+    my ($self, $field, $val) = @_;
+    if(defined $val){
+        if(ref $val ne 'ARRAY'){
+            $self->_set_validation_error("$field must be an arrayref");
+            return;
+        }
+        foreach my $v(@{$val}){
+            unless($self->_validate_name($v)){
+                $self->_set_validation_error("$field cannot be set to $val. Must contain only letters, numbers, periods, underscores, hyphens and colons.");
+                return;
+            }
+        }
+
+        $self->data->{$field} = $val;
+    }
+    return $self->data->{$field};
+}
+
+sub _add_field_ref{
+    my ($self, $field, $val) = @_;
+    
+    unless(defined $val){
+        return;
+    }
+    
+    unless($self->_validate_name($val)){
+        $self->_set_validation_error("$field cannot be set to $val. Must contain only letters, numbers, periods, underscores, hyphens and colons.");
+        return;
+    }
+    
+    unless($self->data->{$field}){
+        $self->data->{$field} = [];
+    }
+    
+    push @{$self->data->{$field}}, $val;
+}
+
+sub _field_anyobj{
+    my ($self, $field, $val) = @_;
+    if(defined $val){
+        if(ref $val eq 'HASH'){
+            $self->data->{$field} = $val;
+        }else{
+            $self->_set_validation_error("Unable to set $field. Value must be a hashref.");
+            return;
+        }
+    }
+    return $self->data->{$field};
+}
+
+sub _field_anyobj_param {
+    my ($self, $field, $param, $val) = @_;
+    
+    unless(defined $field && defined $param){
+        return undef;
+    }
+    
+    if(defined $val){
+        $self->_init_field($self->data, $field);
+        $self->data->{$field}->{$param} = $val;
+    }
+    
+    unless($self->_has_field($self->data, $field)){
+        return undef;
+    }
+    
+    return $self->data->{$field}->{$param};
 }
 
 sub _field_enum{
@@ -112,7 +334,7 @@ sub _field_enum{
 sub _field_name{
     my ($self, $field, $val) = @_;
     if(defined $val){
-        if($val =~ /^[a-zA-Z0-9:._\-]+$/){
+        if($self->_validate_name($val)){
             $self->data->{$field} = $val;
         }else{
             $self->_set_validation_error("$field cannot be set to $val. Must contain only letters, numbers, periods, underscores, hyphens and colons.");
@@ -248,10 +470,37 @@ sub _normalize_key {
     return $field;
 }
 
+sub _validate_class {
+    my ($self, $field, $class, $val) = @_;
+    if(defined $val){
+        eval{ 
+            unless($val->isa($class)){
+                die("Value of $field is an object but must be of type $class");
+            }    
+        };
+        if($@){
+            $self->_set_validation_error("Error validating $field is of type $class: $@");
+            return 0;
+        }
+        return 1;
+    }
+    return 0;
+}
+
 sub _validate_duration{
     my ($self, $val) = @_;
     if(defined $val){
         if($val =~ /^P(?:\d+(?:\.\d+)?W)?(?:\d+(?:\.\d+)?D)?(?:T(?:\d+(?:\.\d+)?H)?(?:\d+(?:\.\d+)?M)?(?:\d+(?:\.\d+)?S)?)?$/){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+sub _validate_name{
+    my ($self, $val) = @_;
+    if(defined $val){
+        if($val =~ /^[a-zA-Z0-9:._\-]+$/){
             return 1;
         }
     }
