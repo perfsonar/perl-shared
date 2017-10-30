@@ -533,54 +533,6 @@ sub update_auto_updates {
 
 }
 
-sub update_enabled_services {
-    my $self = shift;
-    my $caller = shift;
-    my $params = $caller->{'input_params'};
-
-    my ($success, $res);
-
-
-    my $logger = $self->{LOGGER};
-
-    $self->{LOGGER}->debug("CONFIG: ".Dumper($params));
-
-    # be optimistic
-    $success = 1;
-
-    foreach my $name (keys %$params) {
-        # skip the function name
-        next if ($name eq 'fname');
-        next if not $params->{$name}->{is_set};
-        unless (get_service_object($name)) {
-            #$logger->error("Service $name not found");
-            next;
-        }
-
-        $self->{LOGGER}->debug("Service $name found");
-
-        if ($params->{$name}->{'value'} == 1) {
-            $res = start_service( { name => $name, enable => 1 });
-        } else {
-            $res = stop_service( { name => $name, disable => 1 });
-        }
-
-        $success = 0 if ($res != 0);
-    }
-
-    my %resp;
-
-    if ($success) {
-        %resp = ( message => "Configuration Saved And Services Restarted" );	
-    }
-    else {
-        %resp = ( error => "Error while restarting services, configuration NOT saved. Please consult the logs for more information.");
-    }
-
-    
-    return \%resp;
-}
-
 sub _get_port_from_url {
     my $self = shift;
     my $url = shift;

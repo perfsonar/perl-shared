@@ -27,6 +27,12 @@ sub get_data {
     my ($scheme, $auth, $path, $query, $frag) = uri_split($self->url);
     my $url = uri_join($scheme, $auth, $self->_uri());
     
+    #verify its a valid esmond URL to prevent shady dealings
+    if ($url !~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
+        $self->_set_error("Invalid Esmond URL provided to data GET; could not connect");
+        return;
+    }
+    
     #sent request
     my $response = send_http_request(
         connection_type => 'GET', 

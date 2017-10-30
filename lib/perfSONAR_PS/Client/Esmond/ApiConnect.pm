@@ -12,9 +12,9 @@ A client for interacting with the MA as implemented by esmond
 
 use Mouse;
 use Params::Validate qw(:all);
-use  perfSONAR_PS::Client::Esmond::ApiFilters;
-use  perfSONAR_PS::Client::Esmond::DataConnect;
-use  perfSONAR_PS::Client::Esmond::Metadata;
+use perfSONAR_PS::Client::Esmond::ApiFilters;
+use perfSONAR_PS::Client::Esmond::DataConnect;
+use perfSONAR_PS::Client::Esmond::Metadata;
 use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg);
 use JSON qw(from_json);
 
@@ -26,10 +26,18 @@ has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 
 sub get_metadata() {
     my $self = shift;
-    
+
+    my $valid_url = $self->check_esmond_url( $self->url );
+    if(!$valid_url){
+        #my $msg = build_err_msg(http_response => "Invalid Esmond URL provided; could not connect");
+        my $msg = "Invalid Esmond URL provided; could not connect";
+        $self->_set_error($msg);
+        return;
+    }
+
     my %all_filters = (%{$self->filters->metadata_filters}, %{$self->filters->time_filters});
     my $response = send_http_request(
-        connection_type => 'GET', 
+        connection_type => 'GET',
         url => $self->url, 
         timeout => $self->filters->timeout,
         get_params => \%all_filters,
@@ -38,7 +46,7 @@ sub get_metadata() {
         verify_hostname => $self->filters->verify_hostname,
         headers => $self->filters->headers()
     );
-     
+
     if(!$response->is_success){
         my $msg = build_err_msg(http_response => $response);
         $self->_set_error($msg);
@@ -53,21 +61,43 @@ sub get_metadata() {
         $self->_set_error("Metadata must be an array not " . ref($response_metadata));
         return;
     }
-    
+
     my @md_objs = ();
     foreach my $md(@{$response_metadata}){
         push @md_objs, new perfSONAR_PS::Client::Esmond::Metadata(data => $md, url => $self->url, filters => $self->filters);
     }
-    
+
     return \@md_objs;
 }
 
 sub get_data() {
     my ($self, $uri) = @_;
+    my $valid_url = $self->check_esmond_url( $self->url );
+    if(!$valid_url){
+        #my $msg = build_err_msg(http_response => "Invalid Esmond URL provided; could not connect");
+        my $msg = "Invalid Esmond URL provided; could not connect";
+        $self->_set_error($msg);
+        return;
+    }
     my $data_client = new perfSONAR_PS::Client::Esmond::DataConnect(url => $self->url, filters => $self->filters, uri => $uri);
     my $data = $data_client->get_data();
     $self->_set_error($data_client->error) if($data_client->error);
     return $data;
+}
+
+sub check_esmond_url( ) {
+    my ( $self, $url ) = @_;
+    my $valid = 0;
+
+    if ( defined ( $url ) && $url ne "" ) {
+        if ( $url =~ m|^https?://[^/]+/esmond/perfsonar/archive| ) {
+            $valid = 1;
+        }
+
+    }
+
+    return $valid;
+
 }
 
 __PACKAGE__->meta->make_immutable;
