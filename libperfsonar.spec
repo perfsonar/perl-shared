@@ -127,7 +127,7 @@ Obsoletes:      perl-perfSONAR-graphs
 perfSONAR Meaurement Archive perl clients for esmond
 
 %package pscheduler-perl
-Summary:        perfSONAR Meaurement Archive perl clients for esmond
+Summary:        perfSONAR Meaurement Archive perl clients for pScheduler
 Group:          Applications/Communications
 Requires:		perl(Exporter)
 Requires:		perl(HTTP::Request)
@@ -145,6 +145,31 @@ Requires:		libperfsonar-perl
 
 %description pscheduler-perl
 pScheduler perl client libraries
+
+%package psconfig-perl
+Summary:        perfSONAR Meaurement Archive perl clients for pSConfig
+Group:          Applications/Communications
+Requires:		perl(Data::Validate::IP)
+equires:		perl(Data::Validate::Domain)
+Requires:		perl(Digest::MD5)
+Requires:		perl(Exporter)
+Requires:		perl(HTTP::Request)
+Requires:		perl(JSON)
+Requires:		perl(JSON::Validator)
+Requires:		perl(Log::Log4perl)
+Requires:		perl(LWP::UserAgent)
+%if 0%{?el7}
+Requires:		perl(LWP::Protocol::https)
+%endif
+Requires:		perl(Mouse)
+Requires:		perl(POSIX)
+Requires:		perl(Params::Validate)
+Requires:		perl(URI::Split)
+Requires:		perfsonar-common
+Requires:		libperfsonar-perl
+
+%description psconfig-perl
+pSConfig perl client libraries
 
 
 %package toolkit-perl
@@ -330,6 +355,10 @@ rm -rf %{buildroot}
 %files pscheduler-perl
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/perfSONAR_PS/Client/PScheduler/*
+
+%files psconfig-perl
+%defattr(0644,perfsonar,perfsonar,0755)
+%{install_base}/lib/perfSONAR_PS/Client/PSConfig/*
 
 %files toolkit-perl
 %defattr(0644,perfsonar,perfsonar,0755)
