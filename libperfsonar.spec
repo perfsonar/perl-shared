@@ -1,10 +1,10 @@
 %define install_base /usr/lib/perfsonar/
 %define config_base  /etc/perfsonar
 
-%define relnum   0.2.b1
+%define relnum   0.0.a1
 
 Name:			libperfsonar
-Version:		4.0.2
+Version:		4.1
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Shared Libraries
 License:		Distributable, see LICENSE
@@ -150,7 +150,7 @@ pScheduler perl client libraries
 Summary:        perfSONAR Meaurement Archive perl clients for pSConfig
 Group:          Applications/Communications
 Requires:		perl(Data::Validate::IP)
-equires:		perl(Data::Validate::Domain)
+Requires:		perl(Data::Validate::Domain)
 Requires:		perl(Digest::MD5)
 Requires:		perl(Exporter)
 Requires:		perl(HTTP::Request)
