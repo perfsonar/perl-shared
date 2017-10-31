@@ -330,8 +330,7 @@ sub psconfig_json_schema() {
                  "no-agent": { "type": "boolean" },
                 "_meta": { "$ref": "#/pSConfig/AnyJSON" }
             },
-            "additionalProperties": false,
-            "required": [ "address" ]
+            "additionalProperties": false
         },
         
         "AnyJSON": {
