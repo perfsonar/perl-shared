@@ -1,15 +1,15 @@
-libperfsonar-perl (4.0.2~2.b1-1~bpo70+1) perfsonar-wheezy-staging; urgency=low
+libperfsonar-perl (4.0.2-1~bpo70+1) perfsonar-wheezy-release; urgency=low
 
   * Backport to Wheezy.
 
- -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Fri, 29 Sep 2017 11:17:03 +0000
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Wed, 01 Nov 2017 18:25:26 +0000
 
-libperfsonar-perl (4.0.2~2.b1-1) perfsonar-jessie-staging; urgency=low
+libperfsonar-perl (4.0.2-1) perfsonar-jessie-release; urgency=low
 
   * New upstream version.
   * Lowering libgeo-ip-perl requirement to (>= 1.43) so to support Trusty.
 
- -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Fri, 29 Sep 2017 11:01:54 +0000
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Wed, 01 Nov 2017 18:24:11 +0000
 
 libperfsonar-perl (4.0.1-1) perfsonar-jessie-release; urgency=low
 

@@ -1,5 +1,7 @@
---- a/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
+Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
+===================================================================
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2017-11-01 18:24:13.000000000 +0000
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2017-11-01 18:25:26.000000000 +0000
 @@ -6,7 +6,8 @@
  use Log::Log4perl qw(:easy);
  use File::Spec;
@@ -50,8 +52,10 @@
      }
  
      return $version;
---- a/lib/perfSONAR_PS/Web/Sidebar.pm
-+++ b/lib/perfSONAR_PS/Web/Sidebar.pm
+Index: perl-shared/lib/perfSONAR_PS/Web/Sidebar.pm
+===================================================================
+--- perl-shared.orig/lib/perfSONAR_PS/Web/Sidebar.pm	2017-11-01 18:24:13.000000000 +0000
++++ perl-shared/lib/perfSONAR_PS/Web/Sidebar.pm	2017-11-01 18:25:26.000000000 +0000
 @@ -9,7 +9,7 @@
  use Params::Validate;
  use Data::Dumper;
