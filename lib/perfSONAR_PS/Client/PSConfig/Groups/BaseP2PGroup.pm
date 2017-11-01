@@ -36,6 +36,11 @@ sub excludes{
     return $self->_field_class_list('excludes', 'perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair', $val);
 }
 
+sub exclude{
+    my ($self, $index, $val) = @_;
+    return $self->_field_class_list_item('excludes', $index, 'perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair', $val);
+}
+
 sub add_exclude{
     my ($self, $val) = @_;
     $self->_add_field_class('excludes', 'perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair', $val);

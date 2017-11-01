@@ -13,6 +13,14 @@ sub filters{
         $val);
 }
 
+sub filter{
+    my ($self, $index, $val) = @_;
+    return $self->_field_class_factory_list_item('filters', $index,
+        'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::BaseFilter', 
+        'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::FilterFactory', 
+        $val);
+}
+
 sub add_filter{
     my ($self, $val) = @_;
     $self->_add_field_class('filters', 'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::BaseFilter', $val);

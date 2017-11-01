@@ -21,6 +21,14 @@ sub target_addresses{
         $val);
 }
 
+sub target_address{
+    my ($self, $index, $val) = @_;
+    return $self->_field_class_factory_list_item('target-addresses', $index, 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory', 
+        $val);
+}
+
 sub add_target_address{
     my ($self, $val) = @_;
     $self->_add_field_class('target-addresses', 
