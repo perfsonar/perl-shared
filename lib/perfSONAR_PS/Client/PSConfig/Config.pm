@@ -106,12 +106,23 @@ sub remove_context {
 
 sub groups{
     my ($self, $val) = @_;
-    return $self->_field_class_map('groups', 'perfSONAR_PS::Client::PSConfig::Groups::BaseGroup', $val);
+    return $self->_field_class_factory_map(
+        'groups', 
+        'perfSONAR_PS::Client::PSConfig::Groups::BaseGroup', 
+        'perfSONAR_PS::Client::PSConfig::Groups::GroupFactory',
+        $val
+    );
 }
 
 sub group{
     my ($self, $field, $val) = @_;
-    return $self->_field_class_map_item('groups', $field, 'perfSONAR_PS::Client::PSConfig::Groups::BaseGroup', $val);
+    return $self->_field_class_factory_map_item(
+        'groups', 
+        $field, 
+        'perfSONAR_PS::Client::PSConfig::Groups::BaseGroup', 
+        'perfSONAR_PS::Client::PSConfig::Groups::GroupFactory',
+        $val
+    );
 }
 
 sub group_names{

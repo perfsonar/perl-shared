@@ -1,6 +1,8 @@
 package perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory;
 
 use Mouse;
+use perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel;
+use perfSONAR_PS::Client::PSConfig::AddressSelectors::Class;
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseNode';
 

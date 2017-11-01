@@ -99,6 +99,52 @@ sub _field_class{
     return $class->new(data => $self->data->{$field});
 }
 
+sub _field_class_list{
+    my ($self, $field, $class, $val) = @_;
+    
+    if(defined $val){
+        if(ref $val ne 'ARRAY'){
+            $self->_set_validation_error("$field must be an arrayref");
+            return;
+        }
+        my @tmp = ();
+        foreach my $v(@{$val}){
+            if($self->_validate_class($field, $class, $v)){
+                push @tmp, $v->data;
+            }else{
+                return;
+            }
+        }
+        $self->data->{$field} = \@tmp;
+    }
+    
+    my @tmp_objs = ();
+    foreach my $data(@{$self->data->{$field}}){
+        push @tmp_objs, $class->new(data => $data);
+    }
+    return \@tmp_objs;
+}
+
+sub _field_class_list_item{
+    my ($self, $field, $index, $class, $val) = @_;
+    
+    unless(exists $self->data->{$field} && 
+            ref $self->data->{$field} eq 'ARRAY' &&
+            @{$self->data->{$field}} > $index){
+        return;
+    }
+    
+    if(defined $val){
+        if($self->_validate_class($field, $class, $val)){
+            $self->data->{$field}->[$index] = $val->data;
+        }else{
+            return;
+        }
+    }
+    
+    return $class->new(data => $self->data->{$field}->[$index]);
+}
+
 sub _field_class_map{
     my ($self, $field, $class, $val) = @_;
     
@@ -159,7 +205,7 @@ sub _field_class_map_item{
 sub _field_class_factory{
     my ($self, $field, $base_class, $factory_class, $val) = @_;
 
-    unless(defined $field && defined $factory_class){
+    unless(defined $field && defined $base_class && defined $factory_class){
         return;        
     }
     
@@ -199,31 +245,82 @@ sub _field_class_factory_list{
     return \@tmp_objs;
 }
 
-sub _field_class_list{
-    my ($self, $field, $class, $val) = @_;
+sub _field_class_factory_list_item{
+    my ($self, $field, $index, $base_class, $factory_class, $val) = @_;
+    
+    unless(exists $self->data->{$field} && 
+            ref $self->data->{$field} eq 'ARRAY' &&
+            @{$self->data->{$field}} > $index){
+        return;
+    }
     
     if(defined $val){
-        if(ref $val ne 'ARRAY'){
-            $self->_set_validation_error("$field must be an arrayref");
+        if($self->_validate_class($field, $base_class, $val)){
+            $self->data->{$field}->[$index] = $val->data;
+        }else{
             return;
         }
-        my @tmp = ();
-        foreach my $v(@{$val}){
-            if($self->_validate_class($field, $class, $v)){
-                push @tmp, $v->data;
+    }
+    
+    my $factory = $factory_class->new();
+    return $factory->build($self->data->{$field}->[$index]);
+}
+
+sub _field_class_factory_map{
+    my ($self, $field, $base_class, $factory_class, $val) = @_;
+    
+    if(defined $val){
+        unless(ref $val eq 'HASH'){
+            $self->_set_validation_error("Unable to set $field. Value must be a hashref.");
+            return;
+        }
+        my $tmp_map = {};
+        foreach my $v(keys %{$val}){
+            if($self->_validate_class($field, $base_class, $val->{$v})){
+                $tmp_map->{$v} = $val->{$v}->data;
             }else{
                 return;
             }
         }
-        $self->data->{$field} = \@tmp;
+        $self->data->{$field} = $tmp_map;
     }
     
-    my @tmp_objs = ();
-    foreach my $data(@{$self->data->{$field}}){
-        push @tmp_objs, $class->new(data => $data);
+    my %tmp_obj_map = ();
+    foreach my $field_key(keys %{$self->data->{$field}}){
+        my $tmp_obj = $self->_field_class_factory_map_item($field, $field_key, $base_class, $factory_class);
+        $tmp_obj_map{$field_key} = $tmp_obj;
     }
-    return \@tmp_objs;
+    
+    return \%tmp_obj_map;
 }
+
+sub _field_class_factory_map_item{
+    my ($self, $field, $param, $base_class, $factory_class, $val) = @_;
+    
+    unless(defined $field && defined $param && defined $base_class && defined $factory_class){
+        return undef;
+    }
+    
+    if(defined $val){
+        if($self->_validate_class($field, $base_class, $val)){
+            $self->_init_field($self->data, $field);
+            $self->data->{$field}->{$param} = $val->data;
+        }else{
+            return;
+        }
+    }
+    
+    unless($self->_has_field($self->data, $field)){
+        return undef;
+    }
+    
+    unless($self->_has_field($self->data->{$field}, $param)){
+        return undef;
+    }
+    
+    my $factory = $factory_class->new();
+    return $factory->build($self->data->{$field}->{$param});
+} 
 
 sub _add_field_class{
     my ($self, $field, $class, $val) = @_;

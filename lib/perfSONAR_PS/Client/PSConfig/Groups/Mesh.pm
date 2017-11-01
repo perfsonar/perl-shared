@@ -24,6 +24,14 @@ sub addresses{
         $val);
 }
 
+sub address{
+    my ($self, $index, $val) = @_;
+    return $self->_field_class_factory_list_item('addresses', $index,
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', 
+        'perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory', 
+        $val);
+}
+
 sub add_address{
     my ($self, $val) = @_;
     $self->_add_field_class('addresses', 'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', $val);
