@@ -15,13 +15,21 @@ use Params::Validate qw(:all);
 use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg extract_url_uuid);
 use JSON qw(from_json to_json);
 use Log::Log4perl qw(get_logger);
+use URI;
 
 use perfSONAR_PS::Client::PSConfig::ApiFilters;
 use perfSONAR_PS::Client::PSConfig::Config;
 
 our $VERSION = 4.1;
 
-my $logger = get_logger(__PACKAGE__);
+my $logger;
+if(Log::Log4perl->initialized()) {
+    #this is intended to be a lib reliant on someone else initializing env
+    #detect if they did but quietly move on if not
+    #anything using $logger will need to check if defined
+    $logger = get_logger(__PACKAGE__);
+}
+
 
 has 'url' => (is => 'rw', isa => 'Str');
 has 'save_filename' => (is => 'rw', isa => 'Str');
@@ -49,7 +57,7 @@ sub _merge_configs {
         #iterate through psconfig2 but do not overwrite any fields that already exist
         foreach my $psconfig2_key(keys %{$psconfig2->data()->{$field}}){
             if(exists $psconfig1->data()->{$field}->{$psconfig2_key}){
-                $logger->warn("PSConfig merge: Skipping $field field's $psconfig2_key because it already exists");
+                logger->warn("PSConfig merge: Skipping $field field's $psconfig2_key because it already exists") if($logger);
             }else{
                 $psconfig1->data()->{$field}->{$psconfig2_key} = $psconfig2->data()->{$field}->{$psconfig2_key};
             }
@@ -137,18 +145,17 @@ sub get_config() {
     }
     
     #Retrieve based on URL type
-    if($self->url() =~ /^https?:\/\//){
-        #http or https
-        return $self->_config_from_http();
-    }elsif($self->url() =~ /^file:\/\//){
+    my $uri = new URI($self->url());
+    if(!$uri->scheme || $uri->scheme eq 'file'){
         #local file
         return $self->_config_from_file();
+    }elsif($uri->scheme =~ /^https?$/){
+        #http or https
+        return $self->_config_from_http();
     }else{
-        $self->_set_error("Unrecognized URL type (" . $self->url() . "). Must start with http:// or file://");
+        $self->_set_error("Unrecognized URL type (" . $self->url() . "). Must start with http://, file:// or be a file path");
         return;
     }
-    
-    
 }
 
 sub save_config() {

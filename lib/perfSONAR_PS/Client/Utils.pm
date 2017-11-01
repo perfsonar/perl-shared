@@ -17,7 +17,14 @@ use Net::DNS;
 
 our @EXPORT_OK = qw( send_http_request build_err_msg extract_url_uuid );
 
-my $logger = get_logger(__PACKAGE__);
+my $logger;
+if(Log::Log4perl->initialized()) {
+    #this is intended to be a lib reliant on someone else initializing env
+    #detect if they did but quietly move on if not
+    #anything using $logger will need to check if defined
+    $logger = get_logger(__PACKAGE__);
+}
+
 
 # establishes a HTTP connection and sends the message
 sub send_http_request{
@@ -116,7 +123,7 @@ sub send_http_request{
     push @{ $ua->requests_redirectable }, 'DELETE';
     
     # Create a request
-    $logger->debug("Sending HTTP " . $parameters{connection_type} . " to $url" . ($bind_address ? " with local bind address $bind_address" : ""));
+    $logger->debug("Sending HTTP " . $parameters{connection_type} . " to $url" . ($bind_address ? " with local bind address $bind_address" : "")) if($logger);
     my $req = HTTP::Request->new($parameters{connection_type} => $url);
     if($parameters{'headers'}){
         foreach my $h(keys %{$parameters{'headers'}}){
@@ -219,3 +226,5 @@ sub extract_url_uuid {
 
     return $task_uuid;
 }
+
+1;
