@@ -15,12 +15,9 @@ has 'type' => (
       },
   );
 
-has 'dimension_count' => (
-      is      => 'ro',
-      default => sub {
-          return 1;
-      },
-  );
+sub dimension_count{
+    return 1;
+}
 
 sub addresses{
     my ($self, $val) = @_;
@@ -41,6 +38,27 @@ sub address{
 sub add_address{
     my ($self, $val) = @_;
     $self->_add_field_class('addresses', 'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', $val);
+}
+
+sub dimension_size{
+    my ($self, $dimension) = @_;
+    
+    unless(defined $dimension && $dimension < $self->dimension_count()){
+        return;
+    }  
+    
+    my $size = @{$self->data->{'addresses'}};
+    return $size;
+}
+
+sub dimension{
+    my ($self, $dimension, $index) = @_;
+    
+    unless(defined $dimension && $dimension < $self->dimension_count()){
+        return;
+    }
+
+    return defined $index ? $self->address($index) : $self->addresses();
 }
 
 

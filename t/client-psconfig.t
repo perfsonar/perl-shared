@@ -99,6 +99,7 @@ is($psaddr->labels("blah"), undef);
 is($psaddr->labels({"foo" => "bar"}), undef);
 
 ##Test Address fields
+ok($psaddr->tags([]));
 ok($psaddr->add_tag('dev'));
 is($psaddr->add_tag(), undef);
 is($psaddr->tags()->[0], 'dev');
@@ -188,6 +189,9 @@ ok($psaddrclass_filter_or_filters = $psaddrclass_filter_or->filters());
 is(@{$psaddrclass_filter_or_filters}, 2);
 isa_ok($psaddrclass_filter_or_filters->[0], 'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::AddressClass');
 isa_ok($psaddrclass_filter_or_filters->[1], 'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Host');
+is($psaddrclass_filter_or->filter(0)->checksum(), $psaddrclass_filter_or_filters->[0]->checksum());
+is($psaddrclass_filter_or->filter(1)->checksum(), $psaddrclass_filter_or_filters->[1]->checksum());
+
 ###And filter
 my $psaddrclass_filter_and1;
 ok($psaddrclass_filter_and1 = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::And());
@@ -260,9 +264,13 @@ is($psgrp_disjoint->excludes_self(), perfSONAR_PS::Client::PSConfig::Groups::Exc
 is($psconfig->group("blah"), undef);#fail - map does not exist
 is(keys %{$psconfig->groups()}, 0); 
 is($psconfig->groups({"disjoint", $psgrp_disjoint})->{"disjoint"}->checksum(), $psgrp_disjoint->checksum());
+is($psconfig->groups("blah"), undef);#fail - key does not exist
+is($psconfig->groups({"foo" => "bar"}), undef);#fail - key does not exist
+is($psconfig->group("disjoint", "blah"), undef);
 is($psconfig->group("disjoint", $psgrp_disjoint)->checksum(), $psgrp_disjoint->checksum());
 is($psconfig->group(), undef); #fail - no key specified
 is($psconfig->group("blah"), undef);#fail - key does not exist
+
 ##Excludes
 my $as_factory;
 ok($as_factory = new perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory());
@@ -289,25 +297,66 @@ is($excl_addr_sel_class->class("example"), "example");
 is($excl_ap->target_addresses([$excl_addr_sel_class])->[0]->checksum(), $excl_addr_sel_class->checksum());
 ok($excl_ap->add_target_address($excl_addr_sel_nl2));
 is($excl_ap->target_addresses()->[1]->checksum(), $excl_addr_sel_nl2->checksum());
+is($excl_ap->target_address(1)->checksum(), $excl_addr_sel_nl2->checksum());
+is($excl_ap->target_address(1, $excl_addr_sel_class)->checksum(), $excl_addr_sel_class->checksum());
+is($excl_ap->target_address(1, $excl_addr_sel_nl2)->checksum(), $excl_addr_sel_nl2->checksum());
+is($excl_ap->target_address(1, "blah"), undef);
+is($excl_ap->target_address(), undef);
+is($excl_ap->target_address(10), undef);
 ok($psgrp_disjoint->add_exclude($excl_ap));
 is($psgrp_disjoint->add_exclude(), undef);#fail - no val
 is($psgrp_disjoint->excludes()->[0]->checksum(), $excl_ap->checksum());
-ok($psgrp_disjoint->add_exclude($excl_ap)); #test when already and exclude
+is($psgrp_disjoint->exclude(0)->checksum(), $excl_ap->checksum());
+ok($psgrp_disjoint->add_exclude($excl_ap)); #test when already an exclude
+ok($psgrp_disjoint->exclude(1, $excl_ap));
+is($psgrp_disjoint->exclude(0, "blah"), undef);
 is($psgrp_disjoint->excludes([$excl_ap])->[0]->checksum(), $excl_ap->checksum());
 is($psgrp_disjoint->excludes("blah"), undef);
 is($psgrp_disjoint->excludes(["blah"]), undef);
+is($psgrp_disjoint->exclude(), undef);
+
+is($psgrp_disjoint->exclude(999), undef);
 
 ##Disjoint specific
 is(@{$psgrp_disjoint->a_addresses()}, 0);
 is(@{$psgrp_disjoint->b_addresses()}, 0);
 is($psgrp_disjoint->a_addresses([$excl_addr_sel_nl2])->[0]->checksum(), $excl_addr_sel_nl2->checksum());
+is($psgrp_disjoint->a_addresses("blah"), undef);
 is($psgrp_disjoint->a_addresses(["blah"]), undef);
 ok($psgrp_disjoint->add_a_address($excl_addr_sel_nl));
 is($psgrp_disjoint->a_addresses()->[1]->checksum(), $excl_addr_sel_nl->checksum());
 ok($psgrp_disjoint->add_b_address($excl_addr_sel_nl2));
 is($psgrp_disjoint->b_addresses()->[0]->checksum(), $excl_addr_sel_nl2->checksum());
 is($psgrp_disjoint->b_addresses([$excl_addr_sel_class])->[0]->checksum(), $excl_addr_sel_class->checksum());
+is($psgrp_disjoint->dimension_size(), undef);
+is($psgrp_disjoint->dimension_size(0), 2);
+is($psgrp_disjoint->dimension_size(1), 1);
+is($psgrp_disjoint->dimension_size(3), undef);
+is($psgrp_disjoint->dimension(), undef);
+is($psgrp_disjoint->dimension(0)->[1]->checksum(), $excl_addr_sel_nl->checksum());
+is($psgrp_disjoint->dimension(1)->[0]->checksum(), $excl_addr_sel_class->checksum());
+is($psgrp_disjoint->dimension(0,1)->checksum(), $excl_addr_sel_nl->checksum());
+is($psgrp_disjoint->dimension(1,0)->checksum(), $excl_addr_sel_class->checksum());
+is($psgrp_disjoint->dimension(10), undef);
+is($psgrp_disjoint->dimension(1,10), undef);
 
+##iterate through tests
+my @pair;
+is($psgrp_disjoint->max_iter(), 1);
+ok(@pair = $psgrp_disjoint->next());
+is(@pair, 2);
+is($pair[0]->checksum(), $excl_addr_sel_nl2->checksum());
+is($pair[1]->checksum(), $excl_addr_sel_class->checksum());
+is($psgrp_disjoint->is_excluded_selectors(\@pair), 0);
+ok(@pair = $psgrp_disjoint->next());
+is($pair[0]->checksum(), $excl_addr_sel_nl->checksum());
+is($pair[1]->checksum(), $excl_addr_sel_class->checksum());
+is($psgrp_disjoint->is_excluded_selectors(\@pair), 1);
+is($psgrp_disjoint->next(), undef);
+##edge cases
+is($psgrp_disjoint->is_excluded_selectors(), undef);
+is($psgrp_disjoint->is_excluded_selectors("blah"), undef);
+is($psgrp_disjoint->is_excluded_selectors(["blah"]), undef);
 ########
 #Test Mesh group
 ########
@@ -318,8 +367,25 @@ is($psgrp_mesh->dimension_count(), 2);
 is($psgrp_mesh->addresses([$excl_addr_sel_nl2])->[0]->checksum(), $excl_addr_sel_nl2->checksum());
 ok($psgrp_mesh->add_address($excl_addr_sel_nl));
 is($psgrp_mesh->addresses()->[1]->checksum(), $excl_addr_sel_nl->checksum());
+is($psgrp_mesh->dimension_size(), undef);
+is($psgrp_mesh->dimension_size(0), 2);
+is($psgrp_mesh->dimension_size(1), 2);
+is($psgrp_mesh->dimension_size(3), undef);
+is($psgrp_mesh->dimension(), undef);
+is($psgrp_mesh->dimension(0)->[0]->checksum(), $excl_addr_sel_nl2->checksum());
+is($psgrp_mesh->dimension(1)->[0]->checksum(), $excl_addr_sel_nl2->checksum());
+is($psgrp_mesh->dimension(0,0)->checksum(), $excl_addr_sel_nl2->checksum());
+is($psgrp_mesh->dimension(1,0)->checksum(), $excl_addr_sel_nl2->checksum());
+is($psgrp_mesh->dimension(10), undef);
+is($psgrp_mesh->dimension(1,10), undef);
 is($psconfig->group("mesh", $psgrp_mesh)->checksum(), $psgrp_mesh->checksum());
-
+##iterate through tests
+is($psgrp_mesh->max_iter(), 3);
+ok(@pair = $psgrp_mesh->next());
+is(@pair, 2);
+is($pair[0]->checksum(), $excl_addr_sel_nl2->checksum());
+is($pair[1]->checksum(), $excl_addr_sel_nl2->checksum());
+is($psgrp_mesh->is_excluded_selectors(\@pair), 0);
 
 ########
 #Test List group
@@ -331,6 +397,14 @@ is($psgrp_list->dimension_count(), 1);
 is($psgrp_list->addresses([$excl_addr_sel_nl2])->[0]->checksum(), $excl_addr_sel_nl2->checksum());
 ok($psgrp_list->add_address($excl_addr_sel_nl));
 is($psgrp_list->addresses()->[1]->checksum(), $excl_addr_sel_nl->checksum());
+is($psgrp_list->dimension_size(), undef);
+is($psgrp_list->dimension_size(0), 2);
+is($psgrp_list->dimension_size(1), undef);
+is($psgrp_list->dimension(), undef);
+is($psgrp_list->dimension(0)->[0]->checksum(), $excl_addr_sel_nl2->checksum());
+is($psgrp_list->dimension(0,0)->checksum(), $excl_addr_sel_nl2->checksum());
+is($psgrp_list->dimension(10), undef);
+is($psgrp_list->dimension(0,10), undef);
 is($psconfig->group("list", $psgrp_list)->checksum(), $psgrp_list->checksum());
 
 ########
@@ -585,9 +659,31 @@ is($excl_ap->_field_class_factory(), undef);
 is($excl_ap->_field_class_factory("blah"), undef);
 is($excl_ap->_field_class_factory("foo", 
     'perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::DataSourceFactory',
+    ), undef);
+is($excl_ap->_field_class_factory("foo", 
+    'perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::DataSourceFactory',
     'perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::BaseDataSource',
     'bar'
     ), undef);
+#######
+# _field_class_list_item() failure cases  
+#######
+is($excl_ap->_field_class_list_item(), undef);
+is($excl_ap->_field_class_list_item("blah"), undef);
+is($excl_ap->_field_class_list_item("local-address"), undef);
+#######
+# _field_class_factory_list_item() failure cases  
+#######
+is($excl_ap->_field_class_factory_list_item(), undef);
+is($excl_ap->_field_class_factory_list_item("blah"), undef);
+is($excl_ap->_field_class_factory_list_item("local-address"), undef);
+#######
+# _field_class_factory_map_item() failure cases  
+#######
+is($excl_ap->_field_class_factory_map_item(), undef);
+is($excl_ap->_field_class_factory_map_item("blah"), undef);
+is($excl_ap->_field_class_factory_map_item("blah", "blah"), undef);
+is($excl_ap->_field_class_factory_map_item("blah", "blah", "blah"), undef);
 #######
 # _field_anyobj_param() failure cases  
 #######

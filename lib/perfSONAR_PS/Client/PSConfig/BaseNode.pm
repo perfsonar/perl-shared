@@ -128,8 +128,9 @@ sub _field_class_list{
 sub _field_class_list_item{
     my ($self, $field, $index, $class, $val) = @_;
     
-    unless(exists $self->data->{$field} && 
+    unless($field && exists $self->data->{$field} && 
             ref $self->data->{$field} eq 'ARRAY' &&
+            defined $index &&
             @{$self->data->{$field}} > $index){
         return;
     }
@@ -248,8 +249,9 @@ sub _field_class_factory_list{
 sub _field_class_factory_list_item{
     my ($self, $field, $index, $base_class, $factory_class, $val) = @_;
     
-    unless(exists $self->data->{$field} && 
+    unless($field && exists $self->data->{$field} && 
             ref $self->data->{$field} eq 'ARRAY' &&
+            defined $index &&
             @{$self->data->{$field}} > $index){
         return;
     }

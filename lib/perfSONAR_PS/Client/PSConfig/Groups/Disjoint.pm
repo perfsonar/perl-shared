@@ -57,32 +57,36 @@ sub add_b_address{
     $self->_add_field_class('b-addresses', 'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', $val);
 }
 
-sub next{
-    my ($self) = @_;
+sub dimension_size{
+    my ($self, $dimension) = @_;
     
-    #TODO: Can we generalize this to infinite dimensions?
-    #TODO: how do we handle exclusions in a general way?
-    my $a_size = @{$self->data->{'a-addresses'}}; #use data directly for efficiency
-    my $b_size = @{$self->data->{'b-addresses'}};
-    my $a_index = int($self->iter() / $b_size);
-    my $b_index = int($self->iter() % $b_size);
-    
-    print "$a_index, $b_index\n";
-    #check the bounds
-    if($a_index >= $a_size){
-        #we reached the end
+    unless(defined $dimension && $dimension < $self->dimension_count()){
         return;
-    }elsif($b_index >= $b_size){
-        #this should never happen
-        $self->_set_error("Tried to access b-address at $b_index but only $b_size items. This is likely a bug.");
+    }  
+    
+    my $size;
+    if($dimension == 0){
+        $size = @{$self->data->{'a-addresses'}};
+    }else{
+        $size = @{$self->data->{'b-addresses'}};
+    }
+
+    return $size;
+}
+
+sub dimension{
+    my ($self, $dimension, $index) = @_;
+    
+    unless(defined $dimension && $dimension < $self->dimension_count()){
         return;
     }
     
-    #increment and return the pair
-    $self->_increment_iter();
-    return ($self->a_address($a_index), $self->b_address($b_index));
+    if($dimension == 0){
+        return defined $index ? $self->a_address($index) : $self->a_addresses();
+    }
+    
+    return defined $index ? $self->b_address($index) : $self->b_addresses();
 }
-
 
 
 __PACKAGE__->meta->make_immutable;
