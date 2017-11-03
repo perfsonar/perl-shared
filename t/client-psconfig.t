@@ -17,6 +17,7 @@ use perfSONAR_PS::Client::PSConfig::Schedule;
 use perfSONAR_PS::Client::PSConfig::Test;
 use perfSONAR_PS::Client::PSConfig::Host;
 use perfSONAR_PS::Client::PSConfig::Task;
+use perfSONAR_PS::Client::PSConfig::Groups::BaseGroup;
 use perfSONAR_PS::Client::PSConfig::Groups::Disjoint;
 use perfSONAR_PS::Client::PSConfig::Groups::List;
 use perfSONAR_PS::Client::PSConfig::Groups::Mesh;
@@ -357,6 +358,9 @@ is($psgrp_disjoint->next(), undef);
 is($psgrp_disjoint->is_excluded_selectors(), undef);
 is($psgrp_disjoint->is_excluded_selectors("blah"), undef);
 is($psgrp_disjoint->is_excluded_selectors(["blah"]), undef);
+is($psgrp_disjoint->reset(), undef);
+is($psgrp_disjoint->_exclude_checksum_map(), undef);
+is($psgrp_disjoint->iter(), 0);
 ########
 #Test Mesh group
 ########
@@ -386,7 +390,28 @@ is(@pair, 2);
 is($pair[0]->checksum(), $excl_addr_sel_nl2->checksum());
 is($pair[1]->checksum(), $excl_addr_sel_nl2->checksum());
 is($psgrp_mesh->is_excluded_selectors(\@pair), 0);
-
+is($psgrp_mesh->reset(), undef);
+##edge cases for exclusion
+my $psgrp_mesh2;
+ok($psgrp_mesh2 = new perfSONAR_PS::Client::PSConfig::Groups::Mesh());
+ok($psgrp_mesh2->addresses([$excl_addr_sel_nl, $excl_addr_sel_nl2, $excl_addr_sel_class]));
+my $excl_ap2;
+ok($excl_ap2 = new perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair());
+ok($excl_ap2->local_address($excl_addr_sel_nl));
+ok($excl_ap2->add_target_address($excl_addr_sel_nl));
+my $excl_ap3;
+ok($excl_ap3 = new perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair());
+ok($excl_ap3->local_address($excl_addr_sel_nl));
+ok($excl_ap3->add_target_address($excl_addr_sel_nl2));
+ok($psgrp_mesh2->add_exclude($excl_ap2));
+ok($psgrp_mesh2->add_exclude($excl_ap3));
+ok(@pair = $psgrp_mesh2->next());
+is($psgrp_mesh2->is_excluded_selectors(\@pair), 1);
+ok(@pair = $psgrp_mesh2->next());
+is($psgrp_mesh2->is_excluded_selectors(\@pair), 1);
+ok(@pair = $psgrp_mesh2->next());
+is($psgrp_mesh2->is_excluded_selectors(\@pair), 0);
+is($psgrp_mesh2->reset(), undef);
 ########
 #Test List group
 ########
@@ -405,6 +430,9 @@ is($psgrp_list->dimension(0)->[0]->checksum(), $excl_addr_sel_nl2->checksum());
 is($psgrp_list->dimension(0,0)->checksum(), $excl_addr_sel_nl2->checksum());
 is($psgrp_list->dimension(10), undef);
 is($psgrp_list->dimension(0,10), undef);
+is($psgrp_list->is_excluded_selectors([$excl_addr_sel_nl2]), 0);
+is($psgrp_list->is_excluded_addresses([]), 0);
+is($psgrp_list->reset(), undef);
 is($psconfig->group("list", $psgrp_list)->checksum(), $psgrp_list->checksum());
 
 ########
@@ -792,6 +820,16 @@ is($psconfig->validate(), 4); #should have 1 error for each missing required fie
 is($psconfig->json(), '{}');
 is($psconfig->json({ 'utf8' => undef, 'canonical' => undef}), '{}');
 is($psconfig->json({ 'utf8' => 0, 'canonical' => 0}), '{}');
+
+#honestly pretty worthless tests for overridden functions, but complete coverage
+my $psconfig_basegrp = new perfSONAR_PS::Client::PSConfig::Groups::BaseGroup();
+eval{$psconfig_basegrp->dimension_count()};
+ok($@);
+eval{$psconfig_basegrp->dimension()};
+ok($@);
+eval{$psconfig_basegrp->dimension_size()};
+ok($@);
+
 
 ##################################################################
 #TODO: Delete below

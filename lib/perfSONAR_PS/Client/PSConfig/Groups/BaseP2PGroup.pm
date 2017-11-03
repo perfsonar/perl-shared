@@ -79,7 +79,6 @@ sub is_excluded_selectors {
         my $a_checksum = $addr_sels->[0]->checksum();
         my $b_checksum = $addr_sels->[1]->checksum();
         if(exists $self->_exclude_checksum_map()->{$a_checksum} &&
-            exists $self->_exclude_checksum_map()->{$a_checksum}->{$b_checksum} &&
             $self->_exclude_checksum_map()->{$a_checksum}->{$b_checksum}){
             $exclude_this = 1;
         }
@@ -87,6 +86,12 @@ sub is_excluded_selectors {
     
     return $exclude_this;
 }
+
+sub _reset {
+    my ($self) = @_;
+    $self->_set_exclude_checksum_map(undef);
+}
+
 
 
 __PACKAGE__->meta->make_immutable;

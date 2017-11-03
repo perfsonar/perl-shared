@@ -86,6 +86,18 @@ sub next{
 
 }
 
+sub reset {
+    my ($self) = @_;
+    $self->_reset_iter();
+    $self->_reset();
+}
+
+sub _reset {
+    my ($self) = @_;
+    #override this if you have local state to reset
+    return;
+}
+
 sub max_iter{
     my ($self) = @_;
     
