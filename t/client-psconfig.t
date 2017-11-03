@@ -315,7 +315,6 @@ is($psgrp_disjoint->excludes([$excl_ap])->[0]->checksum(), $excl_ap->checksum())
 is($psgrp_disjoint->excludes("blah"), undef);
 is($psgrp_disjoint->excludes(["blah"]), undef);
 is($psgrp_disjoint->exclude(), undef);
-
 is($psgrp_disjoint->exclude(999), undef);
 
 ##Disjoint specific
@@ -411,6 +410,45 @@ ok(@pair = $psgrp_mesh2->next());
 is($psgrp_mesh2->is_excluded_selectors(\@pair), 1);
 ok(@pair = $psgrp_mesh2->next());
 is($psgrp_mesh2->is_excluded_selectors(\@pair), 0);
+#create some more addresses
+my $psaddr_lblpt1;
+my $psaddr_lblowamp;
+my $psaddr_sacrpt1;
+ok($psaddr_lblpt1 = new perfSONAR_PS::Client::PSConfig::Addresses::Address());
+ok($psaddr_lblowamp = new perfSONAR_PS::Client::PSConfig::Addresses::Address());
+ok($psaddr_sacrpt1 = new perfSONAR_PS::Client::PSConfig::Addresses::Address());
+#test a few edge cases
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblpt1]), 0);
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]), 0);
+ok($psaddr_lblpt1->host_ref('lbl'));
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]), 0);
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblowamp, $psaddr_lblpt1]), 0);
+ok($psaddr_lblowamp->host_ref('lbl'));
+ok($psaddr_sacrpt1->host_ref('sacr'));
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblpt1]), 1);
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]),1);
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_sacrpt1]), 0);
+ok($psgrp_mesh2->excludes_self(perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST));
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblpt1]), 1);
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]), 1);
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_sacrpt1]), 0);
+ok($psgrp_mesh2->excludes_self(perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::ADDRESS));
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblpt1]), 0);
+ok($psaddr_lblpt1->address('lbl-pt1.es.net'));
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblpt1]), 1);
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]), 0);
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblowamp, $psaddr_lblpt1]), 0);
+ok($psaddr_lblowamp->address('lbl-owamp.es.net'));
+ok($psaddr_sacrpt1->address('sacr-pt1.es.net')); 
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]), 0);
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_sacrpt1]), 0);
+ok($psgrp_mesh2->excludes_self(perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::DISABLED));
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblpt1]), 0);
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]), 0);
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_sacrpt1]), 0);
+is($psgrp_mesh2->is_excluded_addresses(), undef);
+is($psgrp_mesh2->is_excluded_addresses("blah"), undef);
+is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1]), undef);
 is($psgrp_mesh2->reset(), undef);
 ########
 #Test List group

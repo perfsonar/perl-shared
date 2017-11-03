@@ -87,6 +87,39 @@ sub is_excluded_selectors {
     return $exclude_this;
 }
 
+sub is_excluded_addresses {
+    my ($self, $addrs) = @_;
+
+    #validate
+    unless($addrs && ref $addrs eq 'ARRAY' && @{$addrs} == 2){
+        return;
+    }
+    
+    #default exclude_self is host
+    my $exclude_self = $self->excludes_self();
+    unless($exclude_self){
+        $exclude_self = perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST;
+    }
+    
+    #if disabled then nothing to do
+    if($exclude_self eq perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST){
+        my $host1 = $addrs->[0]->host_ref();
+        my $host2 = $addrs->[1]->host_ref();
+        if($host1 && $host2 && $host1 eq $host2){
+            return 1;
+        }
+    }elsif($exclude_self eq perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::ADDRESS){
+        my $addr1 = $addrs->[0]->address();
+        my $addr2 = $addrs->[1]->address();
+        if($addr1 && $addr2 && $addr1 eq $addr2){
+            return 1;
+        }
+    } 
+    
+    #disabled or unrecognized then dont exclude it
+    return 0;
+}
+
 sub _reset {
     my ($self) = @_;
     $self->_set_exclude_checksum_map(undef);
