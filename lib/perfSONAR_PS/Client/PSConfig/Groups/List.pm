@@ -61,6 +61,22 @@ sub dimension{
     return defined $index ? $self->address($index) : $self->addresses();
 }
 
+sub select_addresses{
+    my ($self, $addr_nlas) = @_;
+    
+    #validate
+    unless($addr_nlas && ref $addr_nlas eq 'ARRAY' && @{$addr_nlas} == 1){
+        return;
+    }
+    
+    my @addresses = ();
+    foreach my $addr_nla(@{$addr_nlas->[0]}){
+        push @addresses, [$addr_nla->{'address'}];
+    }
+    
+    return \@addresses;
+}
+
 
 __PACKAGE__->meta->make_immutable;
 

@@ -404,7 +404,8 @@ sub psconfig_json_schema() {
             "type": "object",
             "properties": {
                 "default-address-label": { "type": "string" },
-                "force-bidirectional": { "type": "boolean" },
+                "flip": { "type": "boolean" },
+                "unidirectional": { "type": "boolean" },
                 "type": { 
                     "type": "string",
                     "enum": ["disjoint"]
@@ -438,7 +439,7 @@ sub psconfig_json_schema() {
             "type": "object",
             "properties": {
                 "default-address-label": { "type": "string" },
-                "force-bidirectional": { "type": "boolean" },
+                "flip": { "type": "boolean" },
                 "type": { 
                     "type": "string",
                     "enum": ["mesh"]

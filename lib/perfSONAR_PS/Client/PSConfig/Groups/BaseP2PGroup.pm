@@ -17,9 +17,9 @@ sub dimension_count{
     return 2;
 }
 
-sub force_bidirectional{
+sub flip{
     my ($self, $val) = @_;
-    return $self->_field_bool('force-bidirectional', $val);
+    return $self->_field_bool('flip', $val);
 }
 
 sub excludes_self{
@@ -89,7 +89,7 @@ sub is_excluded_selectors {
 
 sub is_excluded_addresses {
     my ($self, $addrs) = @_;
-
+    
     #validate
     unless($addrs && ref $addrs eq 'ARRAY' && @{$addrs} == 2){
         return;
@@ -108,7 +108,9 @@ sub is_excluded_addresses {
         if($host1 && $host2 && $host1 eq $host2){
             return 1;
         }
-    }elsif($exclude_self eq perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::ADDRESS){
+    }
+    if($exclude_self eq perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST ||
+        $exclude_self eq perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::ADDRESS){
         my $addr1 = $addrs->[0]->address();
         my $addr2 = $addrs->[1]->address();
         if($addr1 && $addr2 && $addr1 eq $addr2){
@@ -120,7 +122,66 @@ sub is_excluded_addresses {
     return 0;
 }
 
-sub _reset {
+sub select_addresses{
+    my ($self, $addr_nlas) = @_;
+    
+    #validate
+    unless($addr_nlas && ref $addr_nlas eq 'ARRAY' && @{$addr_nlas} == 2){
+        return;
+    }
+    
+    my @address_pairs = ();
+    foreach my $a_addr_nla(@{$addr_nlas->[0]}){
+        foreach my $b_addr_nla(@{$addr_nlas->[1]}){
+            my $a_addr = $self->select_address(
+                $a_addr_nla->{'address'}, 
+                $a_addr_nla->{'label'}, 
+                $b_addr_nla->{'name'}
+            );
+            my $b_addr = $self->select_address(
+                $b_addr_nla->{'address'}, 
+                $b_addr_nla->{'label'}, 
+                $a_addr_nla->{'name'}
+            );
+            unless($self->is_excluded_addresses([$a_addr, $b_addr])){
+                push @address_pairs, [$a_addr, $b_addr];
+            }
+        }
+    }
+    
+    return \@address_pairs;
+}
+
+sub select_address {
+    my ($self, $local_addr, $local_label, $remote_addr_key ) = @_;
+    
+    #validate
+    unless($local_addr){
+        return;
+    }
+    
+    #check for remotes first
+    my $remote_addr_entry = $local_addr->remote_address($remote_addr_key);
+    if($remote_addr_entry){
+        my $remote_label_entry = $remote_addr_entry->label($local_label);
+        if($remote_label_entry){
+            return $remote_label_entry;
+        }else{
+            return $remote_addr_entry;
+        }
+    }
+    
+    #check for label next
+    my $label_entry = $local_addr->label($local_label);
+    if($label_entry){
+        return $label_entry;
+    }
+    
+    #finally, if none of the above work, just use the address obj as is
+    return $local_addr;
+}
+
+sub _stop {
     my ($self) = @_;
     $self->_set_exclude_checksum_map(undef);
 }

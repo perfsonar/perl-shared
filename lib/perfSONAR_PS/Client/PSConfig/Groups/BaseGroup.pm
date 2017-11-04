@@ -12,8 +12,12 @@ has 'type' => (
       },
   );
 
+has 'started' => (is => 'ro', isa => 'Bool', writer => '_set_started');
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 has 'iter' => (is => 'ro', isa => 'Int', writer => '_set_iter', default => sub{0});
+has '_address_queue' => (is => 'ro', isa => 'ArrayRef', default => sub{[]});
+has '_psconfig' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Config|Undef', writer => '_set_psconfig');
+
 
 sub default_address_label{
     my ($self, $val) = @_;
@@ -39,6 +43,14 @@ sub dimension_size{
     die("Override this");
 }
 
+sub select_addresses{
+    my ($self, $addr_nlas) = @_;
+    #given an array of HashRefs containing {name=> '..', label=> '..', address=> Address }
+    # find all the combose an return and array of arrarys of BaseAddress objects where things
+    # like remote address and labelled address have been worked-out.
+    die("Override this");
+}
+
 sub is_excluded_selectors {
     my ($self, $addr_sels) = @_;
     
@@ -46,53 +58,93 @@ sub is_excluded_selectors {
     return 0;
 }
 
-sub is_excluded_addresses {
-    my ($self, $addrs) = @_;
+sub start{
+    #Gets the next group of address selectors
+    my ($self, $psconfig) = @_;
     
-    #override this if group has ways to exclude address combinations
-    return 0;
+    #if already started, return
+    if($self->started()){
+        return;
+    }
+    
+    $self->_reset_iter();
+    $self->_set_psconfig($psconfig);
+    $self->_start();
+    $self->_set_started(1);
+}
+
+sub _start {
+    my ($self) = @_;
+    #override this if you have local state to set on start
+    return;
 }
 
 sub next{
     #Gets the next group of address selectors
     my ($self) = @_;
     
-    #exit if reached max
-    if($self->iter() > $self->max_iter()){
+    #only run this if we ran start
+    unless($self->started()){
         return;
     }
     
     #Loop generalized for N dimensions that iterates through each dimension
-    #and grabs next item in series. Once have tried all combos, returns undef
-    my $working_size = 1;
-    my @addr_sels = ();
-    for(my $i = $self->dimension_count(); $i > 0; $i--){
-        my $index;
+    #and grabs next item in series.
+    while(!@{$self->_address_queue()}){
+        my $excluded = 1;
+        my @addr_sels = ();
+        while($excluded){
+            #exit if reached max
+            if($self->iter() > $self->max_iter()){
+                return;
+            }
+            
+            my $working_size = 1;
+            @addr_sels = ();
+            for(my $i = $self->dimension_count(); $i > 0; $i--){
+                my $index;
         
-        if($i == $self->dimension_count()){
-            $index = $self->iter() % $self->dimension_size($i - 1);
-        }else{
-            $working_size *= $self->dimension_size($i);
-            $index = int($self->iter() / $working_size);
+                if($i == $self->dimension_count()){
+                    $index = $self->iter() % $self->dimension_size($i - 1);
+                }else{
+                    $working_size *= $self->dimension_size($i);
+                    $index = int($self->iter() / $working_size);
+                }
+        
+                my $addr_sel = $self->dimension($i - 1, $index);
+                unshift @addr_sels, $addr_sel;
+            }
+
+            $excluded = $self->is_excluded_selectors(\@addr_sels);
+            $self->_increment_iter();
         }
-        
-        my $addr_sel = $self->dimension($i - 1, $index);
-        unshift @addr_sels, $addr_sel;
-    }
     
-    #increment iterator
-    $self->_increment_iter();
-    return @addr_sels;
+        #we now have the selectors, time to expand
+        my @addr_nlas = ();
+        foreach my $addr_sel(@addr_sels){
+            push @addr_nlas, $addr_sel->select($self->_psconfig());
+        }
 
+        #we now have the name,label,addresses, time to combine in group specific way
+        my $addr_combos = $self->select_addresses(\@addr_nlas);
+        
+        push @{$self->_address_queue()}, @{$addr_combos};
+    }
+        
+    my $addresses = shift @{$self->_address_queue()};
+    return @{$addresses};
 }
 
-sub reset {
+sub stop {
     my ($self) = @_;
+    
+    $self->_set_started(0);
     $self->_reset_iter();
-    $self->_reset();
+    $self->_stop();
+    $self->_set_psconfig(undef);
 }
 
-sub _reset {
+sub _stop {
     my ($self) = @_;
     #override this if you have local state to reset
     return;
