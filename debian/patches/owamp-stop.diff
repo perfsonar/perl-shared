@@ -1,7 +1,7 @@
 Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/OWAMP.pm
 ===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/OWAMP.pm	2017-11-01 18:24:12.000000000 +0000
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/OWAMP.pm	2017-11-01 18:25:27.000000000 +0000
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/OWAMP.pm	2017-11-08 15:33:49.000000000 +0000
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/OWAMP.pm	2017-11-08 15:35:20.000000000 +0000
 @@ -40,20 +40,25 @@
  
  # Try to stop gracefully, and if not, kill the owampd processes
