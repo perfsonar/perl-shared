@@ -845,6 +845,7 @@ sub checksum() {
     #disable canonical since we don't care at the moment
     my $data_copy = from_json(to_json($self->data, {canonical => 0, utf8 => 1}));
     $data_copy->{'tool'} = ''; #clear out tool since set by server
+    $data_copy->{'href'} = ''; #clear out href
     $data_copy->{'schedule'}->{'start'} = ''; #clear out temporal values
     $data_copy->{'schedule'}->{'until'} = ''; #clear out temporal values
     $data_copy->{'detail'} = {}; #clear out detail
