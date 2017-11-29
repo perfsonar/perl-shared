@@ -22,6 +22,19 @@ sub filter{
         $val);
 }
 
+sub matches{
+    my ($self, $address, $psconfig) = @_;
+    
+    #return match if no filter defined
+    my $filter = $self->filter();
+    return 1 unless($filter);
+    
+    #can't do anything unless address is defined
+    return 0 unless($address);
+    
+    return $filter->matches($address, $psconfig) ? 0 : 1;
+}
+
 __PACKAGE__->meta->make_immutable;
 
 1;

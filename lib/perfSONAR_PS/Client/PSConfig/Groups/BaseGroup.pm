@@ -128,7 +128,7 @@ sub next{
         #we now have the name,label,addresses, time to combine in group specific way
         my $addr_combos = $self->select_addresses(\@addr_nlas);
         
-        push @{$self->_address_queue()}, @{$addr_combos};
+        push @{$self->_address_queue()}, @{$addr_combos} if($addr_combos);
     }
         
     my $addresses = shift @{$self->_address_queue()};

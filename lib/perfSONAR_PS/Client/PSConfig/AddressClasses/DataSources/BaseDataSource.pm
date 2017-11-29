@@ -12,6 +12,13 @@ has 'type' => (
       },
   );
 
+sub fetch{
+    my ($self, $config) = @_;
+    
+    #a function for accepting a config and returning an array of Address objects
+    die("Override this");
+}
+
 __PACKAGE__->meta->make_immutable;
 
 1;

@@ -4,6 +4,7 @@ use Mouse;
 use JSON qw(to_json);
 use JSON::Validator;
 use perfSONAR_PS::Client::PSConfig::Archive;
+use perfSONAR_PS::Client::PSConfig::Host;
 use perfSONAR_PS::Client::PSConfig::Schedule;
 use perfSONAR_PS::Client::PSConfig::Test;
 use perfSONAR_PS::Client::PSConfig::Context;
@@ -14,6 +15,8 @@ use perfSONAR_PS::Client::PSConfig::Schema qw(psconfig_json_schema);
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
+#HashRef of "name" => "address"
+has 'requesting_agent_addresses' => (is => 'rw', isa => 'HashRef', default => sub {{}});
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 
 sub addresses{

@@ -28,6 +28,62 @@ sub no_agent{
     return $self->_field_bool('no-agent', $val);
 }
 
+sub matches{
+    my ($self, $address, $psconfig) = @_;
+    
+    #can't do anything unless address is defined
+    return 0 unless($address);
+
+    #get the host, return 0 if can't find it
+    my $host = $psconfig->host($address->host_ref());
+    return 0 unless($host);
+    
+    #check site, if defined
+    if($self->site()){
+        if($host->site()){
+            #unless sites match, fail
+            if(lc($self->site()) ne lc($host->site())){
+                return 0;
+            }
+        }else{
+            #no site so no match
+            return 0;
+        }
+    }
+    
+    #check tags, if defined
+    if($self->tag()){
+        if($host->tags()){
+            my $tag_match = 0;
+            foreach my $host_tag(@{$host->tags()}){
+                if(lc($host_tag) eq lc($self->tag())){
+                    $tag_match = 1;
+                    last;
+                }
+            }
+            return 0 unless($tag_match);
+        }else{
+            #no tags so no match
+            return 0;
+        }
+    }
+    
+    #check no_agent, if defined
+    if(defined $self->no_agent()){
+        if(defined $host->no_agent()){
+            #normalize booleans
+            my $filter_no_agent = $self->no_agent() ? 1 : 0;
+            my $host_no_agent = $host->no_agent() ? 1 : 0;
+            return 0 unless($filter_no_agent == $host_no_agent);
+        }elsif($self->no_agent()){
+            #default for no_agent is false, so if match against true then fail, otherwise ok
+            return 0;
+        }
+    }
+    
+    return 1;
+}
+
 __PACKAGE__->meta->make_immutable;
 
 1;

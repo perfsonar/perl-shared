@@ -12,6 +12,13 @@ has 'type' => (
       },
   );
 
+sub matches{
+    my ($self, $address, $psconfig) = @_;
+    
+    #given Address object and config, return whether matches filter
+    die("Override this");
+}
+
 __PACKAGE__->meta->make_immutable;
 
 1;

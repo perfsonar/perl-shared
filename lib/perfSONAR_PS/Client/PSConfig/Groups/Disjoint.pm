@@ -68,6 +68,11 @@ sub add_b_address{
 }
 
 sub dimension_size{
+    ##
+    # This is primarily used by next and won't have much utility outide that.
+    # It merges a_addresses and b_addresses and returnes the total size as needed
+    # by the next() algorithm genealized for n dimensions. Tests are then excluded
+    # using the is_excluded_selectors below.
     my ($self, $dimension) = @_;
     
     unless(defined $dimension && $dimension < $self->dimension_count()){
@@ -80,6 +85,9 @@ sub dimension_size{
 }
 
 sub dimension{
+    ##
+    # Similar to dimension size, not very useful outside of next() context. See 
+    # dimension_size() comment
     my ($self, $dimension, $index) = @_;
     
     unless(defined $dimension && $dimension < $self->dimension_count()){

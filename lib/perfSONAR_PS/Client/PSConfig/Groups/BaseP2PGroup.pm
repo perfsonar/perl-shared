@@ -17,11 +17,6 @@ sub dimension_count{
     return 2;
 }
 
-sub flip{
-    my ($self, $val) = @_;
-    return $self->_field_bool('flip', $val);
-}
-
 sub excludes_self{
     my ($self, $val) = @_;
     if(defined $val){
@@ -88,10 +83,10 @@ sub is_excluded_selectors {
 }
 
 sub is_excluded_addresses {
-    my ($self, $addrs) = @_;
+    my ($self, $a_addr, $b_addr, $a_host, $b_host) = @_;
     
     #validate
-    unless($addrs && ref $addrs eq 'ARRAY' && @{$addrs} == 2){
+    unless($a_addr && $b_addr){
         return;
     }
     
@@ -103,16 +98,14 @@ sub is_excluded_addresses {
     
     #if disabled then nothing to do
     if($exclude_self eq perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST){
-        my $host1 = $addrs->[0]->host_ref();
-        my $host2 = $addrs->[1]->host_ref();
-        if($host1 && $host2 && $host1 eq $host2){
+        if($a_host && $b_host && lc($a_host) eq lc($b_host)){
             return 1;
         }
     }
     if($exclude_self eq perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST ||
         $exclude_self eq perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::ADDRESS){
-        my $addr1 = $addrs->[0]->address();
-        my $addr2 = $addrs->[1]->address();
+        my $addr1 = $a_addr->address();
+        my $addr2 = $b_addr->address();
         if($addr1 && $addr2 && $addr1 eq $addr2){
             return 1;
         }
@@ -143,7 +136,10 @@ sub select_addresses{
                 $b_addr_nla->{'label'}, 
                 $a_addr_nla->{'name'}
             );
-            unless($self->is_excluded_addresses([$a_addr, $b_addr])){
+            my $a_host = $a_addr_nla->{'address'}->host_ref();
+            my $b_host = $b_addr_nla->{'address'}->host_ref();
+            #pass host directly since AddressLabel won't have host_ref
+            unless($self->is_excluded_addresses($a_addr, $b_addr, $a_host, $b_host)){
                 push @address_pairs, [$a_addr, $b_addr];
             }
         }

@@ -404,7 +404,6 @@ sub psconfig_json_schema() {
             "type": "object",
             "properties": {
                 "default-address-label": { "type": "string" },
-                "flip": { "type": "boolean" },
                 "unidirectional": { "type": "boolean" },
                 "type": { 
                     "type": "string",
@@ -439,7 +438,6 @@ sub psconfig_json_schema() {
             "type": "object",
             "properties": {
                 "default-address-label": { "type": "string" },
-                "flip": { "type": "boolean" },
                 "type": { 
                     "type": "string",
                     "enum": ["mesh"]
@@ -592,6 +590,7 @@ sub psconfig_json_schema() {
         "TaskSpecification": {
             "type": "object",
             "properties": {
+                "scheduled-by": { "$ref": "#/pSConfig/Cardinal" },
                 "group": { "$ref": "#/pSConfig/NameType" },
                 "test": { "$ref": "#/pSConfig/NameType" },
                 "schedule": { "$ref": "#/pSConfig/NameType" },

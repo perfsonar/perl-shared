@@ -249,16 +249,22 @@ is($psconfig->address_class(), undef); #fail - no key specified
 is($psconfig->address_class("blah"), undef);#fail - key does not exist
 
 ########
-#Test disjoint group
+#Test group factory edge cases
 ########
-##Create disjoint group
+my $grp_factory;
+ok($grp_factory = new perfSONAR_PS::Client::PSConfig::Groups::GroupFactory());
+is($grp_factory->build(), undef);
+is($grp_factory->build({}), undef);
+is($grp_factory->build({'type'=>'blah'}), undef);
+
+########
+#Test disjoint group - initialization and edge cases
+########
+##Create disjoint group. No members yet, just initialization and edge cases
 my $psgrp_disjoint;
 ok($psgrp_disjoint = new perfSONAR_PS::Client::PSConfig::Groups::Disjoint());
-is($psgrp_disjoint->dimension_count(), 2);
 is($psgrp_disjoint->default_address_label(), undef);
 is($psgrp_disjoint->default_address_label("ipv6"), "ipv6");
-is($psgrp_disjoint->force_bidirectional(0), 0);
-is($psgrp_disjoint->force_bidirectional(1), 1);
 is($psgrp_disjoint->excludes_self('invalid'), undef);
 is($psgrp_disjoint->excludes_self(perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST), perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST);
 is($psgrp_disjoint->excludes_self(), perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST);
@@ -272,13 +278,15 @@ is($psconfig->group("disjoint", $psgrp_disjoint)->checksum(), $psgrp_disjoint->c
 is($psconfig->group(), undef); #fail - no key specified
 is($psconfig->group("blah"), undef);#fail - key does not exist
 
-##Excludes
+##AddressSelectorFactory
 my $as_factory;
 ok($as_factory = new perfSONAR_PS::Client::PSConfig::AddressSelectors::AddressSelectorFactory());
 is($as_factory->build({}), undef);
 is($as_factory->build(), undef);
 is($as_factory->build({'name'=>''}), undef);
 is($as_factory->build({'class'=>''}), undef);
+
+##Excludes - initialization and edge cases
 my $excl_ap;
 ok($excl_ap = new perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair());
 my $excl_addr_sel_nl;
@@ -328,128 +336,18 @@ is($psgrp_disjoint->a_addresses()->[1]->checksum(), $excl_addr_sel_nl->checksum(
 ok($psgrp_disjoint->add_b_address($excl_addr_sel_nl2));
 is($psgrp_disjoint->b_addresses()->[0]->checksum(), $excl_addr_sel_nl2->checksum());
 is($psgrp_disjoint->b_addresses([$excl_addr_sel_class])->[0]->checksum(), $excl_addr_sel_class->checksum());
-is($psgrp_disjoint->dimension_size(), undef);
-is($psgrp_disjoint->dimension_size(0), 2);
-is($psgrp_disjoint->dimension_size(1), 1);
-is($psgrp_disjoint->dimension_size(3), undef);
-is($psgrp_disjoint->dimension(), undef);
-is($psgrp_disjoint->dimension(0)->[1]->checksum(), $excl_addr_sel_nl->checksum());
-is($psgrp_disjoint->dimension(1)->[0]->checksum(), $excl_addr_sel_class->checksum());
-is($psgrp_disjoint->dimension(0,1)->checksum(), $excl_addr_sel_nl->checksum());
-is($psgrp_disjoint->dimension(1,0)->checksum(), $excl_addr_sel_class->checksum());
-is($psgrp_disjoint->dimension(10), undef);
-is($psgrp_disjoint->dimension(1,10), undef);
 
-##iterate through tests
-my @pair;
-is($psgrp_disjoint->max_iter(), 1);
-ok(@pair = $psgrp_disjoint->next());
-is(@pair, 2);
-is($pair[0]->checksum(), $excl_addr_sel_nl2->checksum());
-is($pair[1]->checksum(), $excl_addr_sel_class->checksum());
-is($psgrp_disjoint->is_excluded_selectors(\@pair), 0);
-ok(@pair = $psgrp_disjoint->next());
-is($pair[0]->checksum(), $excl_addr_sel_nl->checksum());
-is($pair[1]->checksum(), $excl_addr_sel_class->checksum());
-is($psgrp_disjoint->is_excluded_selectors(\@pair), 1);
-is($psgrp_disjoint->next(), undef);
-##edge cases
-is($psgrp_disjoint->is_excluded_selectors(), undef);
-is($psgrp_disjoint->is_excluded_selectors("blah"), undef);
-is($psgrp_disjoint->is_excluded_selectors(["blah"]), undef);
-is($psgrp_disjoint->reset(), undef);
-is($psgrp_disjoint->_exclude_checksum_map(), undef);
-is($psgrp_disjoint->iter(), 0);
 ########
 #Test Mesh group
 ########
 #can do less because shares lots of code with disjoint
 my $psgrp_mesh;
 ok($psgrp_mesh = new perfSONAR_PS::Client::PSConfig::Groups::Mesh());
-is($psgrp_mesh->dimension_count(), 2);
 is($psgrp_mesh->addresses([$excl_addr_sel_nl2])->[0]->checksum(), $excl_addr_sel_nl2->checksum());
 ok($psgrp_mesh->add_address($excl_addr_sel_nl));
 is($psgrp_mesh->addresses()->[1]->checksum(), $excl_addr_sel_nl->checksum());
-is($psgrp_mesh->dimension_size(), undef);
-is($psgrp_mesh->dimension_size(0), 2);
-is($psgrp_mesh->dimension_size(1), 2);
-is($psgrp_mesh->dimension_size(3), undef);
-is($psgrp_mesh->dimension(), undef);
-is($psgrp_mesh->dimension(0)->[0]->checksum(), $excl_addr_sel_nl2->checksum());
-is($psgrp_mesh->dimension(1)->[0]->checksum(), $excl_addr_sel_nl2->checksum());
-is($psgrp_mesh->dimension(0,0)->checksum(), $excl_addr_sel_nl2->checksum());
-is($psgrp_mesh->dimension(1,0)->checksum(), $excl_addr_sel_nl2->checksum());
-is($psgrp_mesh->dimension(10), undef);
-is($psgrp_mesh->dimension(1,10), undef);
 is($psconfig->group("mesh", $psgrp_mesh)->checksum(), $psgrp_mesh->checksum());
-##iterate through tests
-is($psgrp_mesh->max_iter(), 3);
-ok(@pair = $psgrp_mesh->next());
-is(@pair, 2);
-is($pair[0]->checksum(), $excl_addr_sel_nl2->checksum());
-is($pair[1]->checksum(), $excl_addr_sel_nl2->checksum());
-is($psgrp_mesh->is_excluded_selectors(\@pair), 0);
-is($psgrp_mesh->reset(), undef);
-##edge cases for exclusion
-my $psgrp_mesh2;
-ok($psgrp_mesh2 = new perfSONAR_PS::Client::PSConfig::Groups::Mesh());
-ok($psgrp_mesh2->addresses([$excl_addr_sel_nl, $excl_addr_sel_nl2, $excl_addr_sel_class]));
-my $excl_ap2;
-ok($excl_ap2 = new perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair());
-ok($excl_ap2->local_address($excl_addr_sel_nl));
-ok($excl_ap2->add_target_address($excl_addr_sel_nl));
-my $excl_ap3;
-ok($excl_ap3 = new perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair());
-ok($excl_ap3->local_address($excl_addr_sel_nl));
-ok($excl_ap3->add_target_address($excl_addr_sel_nl2));
-ok($psgrp_mesh2->add_exclude($excl_ap2));
-ok($psgrp_mesh2->add_exclude($excl_ap3));
-ok(@pair = $psgrp_mesh2->next());
-is($psgrp_mesh2->is_excluded_selectors(\@pair), 1);
-ok(@pair = $psgrp_mesh2->next());
-is($psgrp_mesh2->is_excluded_selectors(\@pair), 1);
-ok(@pair = $psgrp_mesh2->next());
-is($psgrp_mesh2->is_excluded_selectors(\@pair), 0);
-#create some more addresses
-my $psaddr_lblpt1;
-my $psaddr_lblowamp;
-my $psaddr_sacrpt1;
-ok($psaddr_lblpt1 = new perfSONAR_PS::Client::PSConfig::Addresses::Address());
-ok($psaddr_lblowamp = new perfSONAR_PS::Client::PSConfig::Addresses::Address());
-ok($psaddr_sacrpt1 = new perfSONAR_PS::Client::PSConfig::Addresses::Address());
-#test a few edge cases
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblpt1]), 0);
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]), 0);
-ok($psaddr_lblpt1->host_ref('lbl'));
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]), 0);
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblowamp, $psaddr_lblpt1]), 0);
-ok($psaddr_lblowamp->host_ref('lbl'));
-ok($psaddr_sacrpt1->host_ref('sacr'));
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblpt1]), 1);
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]),1);
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_sacrpt1]), 0);
-ok($psgrp_mesh2->excludes_self(perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST));
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblpt1]), 1);
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]), 1);
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_sacrpt1]), 0);
-ok($psgrp_mesh2->excludes_self(perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::ADDRESS));
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblpt1]), 0);
-ok($psaddr_lblpt1->address('lbl-pt1.es.net'));
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblpt1]), 1);
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]), 0);
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblowamp, $psaddr_lblpt1]), 0);
-ok($psaddr_lblowamp->address('lbl-owamp.es.net'));
-ok($psaddr_sacrpt1->address('sacr-pt1.es.net')); 
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]), 0);
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_sacrpt1]), 0);
-ok($psgrp_mesh2->excludes_self(perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::DISABLED));
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblpt1]), 0);
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_lblowamp]), 0);
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1, $psaddr_sacrpt1]), 0);
-is($psgrp_mesh2->is_excluded_addresses(), undef);
-is($psgrp_mesh2->is_excluded_addresses("blah"), undef);
-is($psgrp_mesh2->is_excluded_addresses([$psaddr_lblpt1]), undef);
-is($psgrp_mesh2->reset(), undef);
+
 ########
 #Test List group
 ########
@@ -460,27 +358,8 @@ is($psgrp_list->dimension_count(), 1);
 is($psgrp_list->addresses([$excl_addr_sel_nl2])->[0]->checksum(), $excl_addr_sel_nl2->checksum());
 ok($psgrp_list->add_address($excl_addr_sel_nl));
 is($psgrp_list->addresses()->[1]->checksum(), $excl_addr_sel_nl->checksum());
-is($psgrp_list->dimension_size(), undef);
-is($psgrp_list->dimension_size(0), 2);
-is($psgrp_list->dimension_size(1), undef);
-is($psgrp_list->dimension(), undef);
-is($psgrp_list->dimension(0)->[0]->checksum(), $excl_addr_sel_nl2->checksum());
-is($psgrp_list->dimension(0,0)->checksum(), $excl_addr_sel_nl2->checksum());
-is($psgrp_list->dimension(10), undef);
-is($psgrp_list->dimension(0,10), undef);
-is($psgrp_list->is_excluded_selectors([$excl_addr_sel_nl2]), 0);
-is($psgrp_list->is_excluded_addresses([]), 0);
-is($psgrp_list->reset(), undef);
 is($psconfig->group("list", $psgrp_list)->checksum(), $psgrp_list->checksum());
 
-########
-#Test group factory edge cases
-########
-my $grp_factory;
-ok($grp_factory = new perfSONAR_PS::Client::PSConfig::Groups::GroupFactory());
-is($grp_factory->build(), undef);
-is($grp_factory->build({}), undef);
-is($grp_factory->build({'type'=>'blah'}), undef);
 
 ########
 # Test Archives
@@ -689,7 +568,6 @@ is($psconfig->includes()->[0], 'file:///tmp/tmp.tmp');
 ########
 is($psconfig->validate(), 0); #no validation errors
 
-
 ########
 #Test additional utilities and edge cases - clears out JSON
 ########
@@ -812,6 +690,7 @@ is(@{$psconfig->context_names()}, 0);
 ok($psconfig->remove('contexts'));
 ok(!exists $psconfig->data()->{'contexts'});
 
+## Add groups
 is(@{$psconfig->group_names()}, 3);
 ok($psconfig->remove_group("disjoint"));
 is(@{$psconfig->group_names()}, 2);
