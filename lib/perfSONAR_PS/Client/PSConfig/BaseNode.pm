@@ -5,6 +5,8 @@ use JSON qw(to_json from_json);
 use Digest::MD5 qw(md5_base64);
 use Data::Validate::IP qw(is_ipv4 is_ipv6);
 use Data::Validate::Domain qw(is_hostname);
+use perfSONAR_PS::Client::PSConfig::Addresses::Address;
+use perfSONAR_PS::Client::PSConfig::Addresses::RemoteAddress;
 
 has 'data' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'validation_error' => (is => 'ro', isa => 'Str', writer => '_set_validation_error');

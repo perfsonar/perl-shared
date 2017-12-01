@@ -291,6 +291,8 @@ my $excl_ap;
 ok($excl_ap = new perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair());
 my $excl_addr_sel_nl;
 ok($excl_addr_sel_nl = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel());
+is($excl_addr_sel_nl->select(), undef); #edge case
+is($excl_addr_sel_nl->select($psconfig), undef); #edge case
 is($excl_addr_sel_nl->name("lbl-pt1.es.net"), "lbl-pt1.es.net");
 is($excl_addr_sel_nl->label("ipv6"), "ipv6");
 is($excl_addr_sel_nl->disabled(1), 1);
@@ -746,7 +748,20 @@ eval{$psconfig_basegrp->dimension()};
 ok($@);
 eval{$psconfig_basegrp->dimension_size()};
 ok($@);
-
+eval{$psconfig_basegrp->select_addresses()};
+ok($@);
+is($psconfig_basegrp->next(), undef);
+ok($psconfig_basegrp->start());
+is($psconfig_basegrp->start(), undef);
+is($psconfig_basegrp->merge_parents(), undef);
+is($psconfig_basegrp->merge_parents("foo"), undef);
+my $psconfig_basep2pgrp = new perfSONAR_PS::Client::PSConfig::Groups::BaseP2PGroup();
+is($psconfig_basep2pgrp->is_excluded_selectors(), undef);
+is($psconfig_basep2pgrp->is_excluded_selectors("foo"), undef);
+is($psconfig_basep2pgrp->is_excluded_selectors(["foo"]), undef);
+my $psconfig_baseaddrsel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector();
+eval{$psconfig_baseaddrsel->select()};
+ok($@);
 
 ##################################################################
 #TODO: Delete below

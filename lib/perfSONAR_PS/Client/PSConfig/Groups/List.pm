@@ -71,7 +71,12 @@ sub select_addresses{
     
     my @addresses = ();
     foreach my $addr_nla(@{$addr_nlas->[0]}){
-        push @addresses, [$addr_nla->{'address'}];
+         my $selected_addr = $self->select_address(
+                $addr_nla->{'address'}, 
+                $addr_nla->{'label'}, 
+                $addr_nla->{'name'}
+            );
+        push @addresses, [$selected_addr] if($selected_addr);
     }
     
     return \@addresses;

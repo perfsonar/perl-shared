@@ -87,7 +87,7 @@ sub is_excluded_addresses {
     
     #validate
     unless($a_addr && $b_addr){
-        return;
+        return 1;
     }
     
     #default exclude_self is host
@@ -96,22 +96,23 @@ sub is_excluded_addresses {
         $exclude_self = perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST;
     }
     
-    #if disabled then nothing to do
+    #check host scope
     if($exclude_self eq perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST){
         if($a_host && $b_host && lc($a_host) eq lc($b_host)){
             return 1;
         }
     }
+    #check address scope
     if($exclude_self eq perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::HOST ||
         $exclude_self eq perfSONAR_PS::Client::PSConfig::Groups::ExcludeSelfScope::ADDRESS){
-        my $addr1 = $a_addr->address();
-        my $addr2 = $b_addr->address();
+        my $addr1 = $a_addr->_parent_address() ? $a_addr->_parent_address() : $a_addr->address();
+        my $addr2 = $b_addr->_parent_address() ? $b_addr->_parent_address() : $b_addr->address();
         if($addr1 && $addr2 && $addr1 eq $addr2){
             return 1;
         }
     } 
     
-    #disabled or unrecognized then dont exclude it
+    #don't exclude
     return 0;
 }
 
@@ -138,6 +139,7 @@ sub select_addresses{
             );
             my $a_host = $a_addr_nla->{'address'}->host_ref();
             my $b_host = $b_addr_nla->{'address'}->host_ref();
+
             #pass host directly since AddressLabel won't have host_ref
             unless($self->is_excluded_addresses($a_addr, $b_addr, $a_host, $b_host)){
                 push @address_pairs, [$a_addr, $b_addr];
@@ -146,35 +148,6 @@ sub select_addresses{
     }
     
     return \@address_pairs;
-}
-
-sub select_address {
-    my ($self, $local_addr, $local_label, $remote_addr_key ) = @_;
-    
-    #validate
-    unless($local_addr){
-        return;
-    }
-    
-    #check for remotes first
-    my $remote_addr_entry = $local_addr->remote_address($remote_addr_key);
-    if($remote_addr_entry){
-        my $remote_label_entry = $remote_addr_entry->label($local_label);
-        if($remote_label_entry){
-            return $remote_label_entry;
-        }else{
-            return $remote_addr_entry;
-        }
-    }
-    
-    #check for label next
-    my $label_entry = $local_addr->label($local_label);
-    if($label_entry){
-        return $label_entry;
-    }
-    
-    #finally, if none of the above work, just use the address obj as is
-    return $local_addr;
 }
 
 sub _stop {

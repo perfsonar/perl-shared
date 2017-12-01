@@ -6,6 +6,7 @@ use JSON::Validator;
 use perfSONAR_PS::Client::PSConfig::Archive;
 use perfSONAR_PS::Client::PSConfig::Host;
 use perfSONAR_PS::Client::PSConfig::Schedule;
+use perfSONAR_PS::Client::PSConfig::Task;
 use perfSONAR_PS::Client::PSConfig::Test;
 use perfSONAR_PS::Client::PSConfig::Context;
 use perfSONAR_PS::Client::PSConfig::Groups::BaseGroup;
