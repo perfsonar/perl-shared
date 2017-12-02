@@ -32,7 +32,7 @@ sub matches{
     my ($self, $address, $psconfig) = @_;
     
     #can't do anything unless address is defined
-    return 0 unless($address);
+    return 0 unless($address && $psconfig);
 
     #get the host, return 0 if can't find it
     my $host = $psconfig->host($address->host_ref());
@@ -68,18 +68,12 @@ sub matches{
         }
     }
     
-    #check no_agent, if defined
-    if(defined $self->no_agent()){
-        if(defined $host->no_agent()){
-            #normalize booleans
-            my $filter_no_agent = $self->no_agent() ? 1 : 0;
-            my $host_no_agent = $host->no_agent() ? 1 : 0;
-            return 0 unless($filter_no_agent == $host_no_agent);
-        }elsif($self->no_agent()){
-            #default for no_agent is false, so if match against true then fail, otherwise ok
-            return 0;
-        }
-    }
+    
+    #no_agent always defined (default false), so normalize booleans and compare
+    my $filter_no_agent = $self->no_agent() ? 1 : 0;
+    my $host_no_agent = $host->no_agent() ? 1 : 0;
+    return 0 unless($filter_no_agent == $host_no_agent);
+    
     
     return 1;
 }

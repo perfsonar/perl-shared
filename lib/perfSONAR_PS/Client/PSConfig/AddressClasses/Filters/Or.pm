@@ -18,7 +18,6 @@ sub matches{
     
     #return match if no filters defined
     my $filters = $self->filters();
-    return 1 unless($filters);
     
     #can't do anything unless address is defined
     return 0 unless($address);

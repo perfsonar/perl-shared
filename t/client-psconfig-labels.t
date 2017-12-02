@@ -217,15 +217,7 @@ my $config_obj = from_json($config_json);
 my $psconfig;
 ok($psconfig = new perfSONAR_PS::Client::PSConfig::Config(data => $config_obj));
 is($psconfig->validate(), 0);
-my @errors = $psconfig->validate();
-if(@errors){
-    foreach my $error(@errors){
-        diag "Error: " . $error->message . "\n";
-        diag "Path: " . $error->path . "\n\n";
-    }
-    print "Invalid JSON\n";
-    exit 1;
-}
+
 ########
 # Iterate through entire mesh
 ########

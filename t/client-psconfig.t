@@ -124,6 +124,31 @@ is($psconfig->address(), undef); #fail - no key specified
 is($psconfig->address("blah"), undef);#fail - key does not exist
 
 ########
+#Test Hosts
+########
+my $pshost;
+ok($pshost = new perfSONAR_PS::Client::PSConfig::Host());
+is($pshost->psconfig_meta({'foo'=> 'bar'})->{'foo'}, 'bar');
+is($pshost->psconfig_meta_param('project', 'perfSONAR'), 'perfSONAR');
+ok($pshost->add_tag('dev'));
+is($pshost->tags()->[0], 'dev');
+ok($pshost->remove('tags'));
+ok($pshost->add_archive_ref('lbl-pt1.es.net'));
+is($pshost->archive_refs()->[0], 'lbl-pt1.es.net');
+is($pshost->site("LBL"), "LBL");
+is($pshost->disabled(1), 1);
+is($pshost->disabled(0), 0);
+is($pshost->no_agent(1), 1);
+is($pshost->no_agent(0), 0);
+##Test connecting hosts to config
+is($psconfig->host("blah"), undef);#fail - map does not exist
+is(keys %{$psconfig->hosts()}, 0); 
+is($psconfig->hosts({"lbl-pt1.es.net", $pshost})->{"lbl-pt1.es.net"}->checksum(), $pshost->checksum());
+is($psconfig->host("lbl-pt1.es.net", $pshost)->checksum(), $pshost->checksum());
+is($psconfig->host(), undef); #fail - no key specified
+is($psconfig->host("blah"), undef);#fail - key does not exist
+
+########
 #Test Address classes
 ########
 ##Create data sources
@@ -145,19 +170,28 @@ is($filter_factory->build({'type'=>'blah'}), undef);
 ###AddressClass filter
 my $psaddrclass_filter_addrclass;
 ok($psaddrclass_filter_addrclass = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::AddressClass());
+is($psaddrclass_filter_addrclass->matches(), 1);
 is($psaddrclass_filter_addrclass->class('example'), 'example');
 is($psaddrclass_filter_addrclass->class(), 'example');
+is($psaddrclass_filter_addrclass->matches(), 0);
+is($psaddrclass_filter_addrclass->matches("foo", $psconfig), 0);
 ###Host filter
 my $psaddrclass_filter_host;
 ok($psaddrclass_filter_host = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Host());
-is($psaddrclass_filter_host->site('site1'), 'site1');
+is($psaddrclass_filter_host->matches(), 0);
+is($psaddrclass_filter_host->matches($psaddr), 0);
+is($psaddrclass_filter_host->matches($psaddr, $psconfig), 1);
 is($psaddrclass_filter_host->tag('tag1'), 'tag1');
+is($psaddrclass_filter_host->matches($psaddr, $psconfig), 0);
+is($psaddrclass_filter_host->site('site1'), 'site1');
 is($psaddrclass_filter_host->tag('tag1'), 'tag1');
 is($psaddrclass_filter_host->no_agent(1), 1);
 is($psaddrclass_filter_host->no_agent(0), 0);
 ###IPVersion filter
 my $psaddrclass_filter_ipv;
 ok($psaddrclass_filter_ipv = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::IPVersion());
+is($psaddrclass_filter_ipv->matches(), 0);
+is($psaddrclass_filter_ipv->matches(new perfSONAR_PS::Client::PSConfig::Addresses::Address()), 0);
 is($psaddrclass_filter_ipv->ip_version(), undef);
 is($psaddrclass_filter_ipv->ip_version(5), undef);
 is($psaddrclass_filter_ipv->ip_version(4), 4);
@@ -165,6 +199,8 @@ is($psaddrclass_filter_ipv->ip_version(6), 6);
 ###Netmask filter
 my $psaddrclass_filter_netmask;
 ok($psaddrclass_filter_netmask = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Netmask());
+is($psaddrclass_filter_netmask->matches(), 0);
+is($psaddrclass_filter_netmask->matches(new perfSONAR_PS::Client::PSConfig::Addresses::Address()), 0);
 is($psaddrclass_filter_netmask->netmask('blah'), undef);
 is($psaddrclass_filter_netmask->netmask('2620:0:2d0:2df::7/64'), '2620:0:2d0:2df::7/64');
 is($psaddrclass_filter_netmask->netmask('10.0.0.0/24'), '10.0.0.0/24');
@@ -172,15 +208,20 @@ is($psaddrclass_filter_netmask->netmask(), '10.0.0.0/24');
 ###Tag filter
 my $psaddrclass_filter_tag;
 ok($psaddrclass_filter_tag = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Tag());
+is($psaddrclass_filter_tag->matches(), 1);
 is($psaddrclass_filter_tag->tag('tag2'), 'tag2');
+is($psaddrclass_filter_tag->matches(), 0);
 ###Not filter
 my $psaddrclass_filter_not;
 ok($psaddrclass_filter_not = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Not());
+is($psaddrclass_filter_not->matches(), 1);
 is($psaddrclass_filter_not->filter($psaddrclass_filter_tag)->checksum(), $psaddrclass_filter_tag->checksum());
 isa_ok($psaddrclass_filter_not->filter(), 'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Tag');
+is($psaddrclass_filter_not->matches(), 0);
 ###Or filter
 my $psaddrclass_filter_or;
 ok($psaddrclass_filter_or = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Or());
+is($psaddrclass_filter_or->matches(), 0);
 ok($psaddrclass_filter_or->add_filter($psaddrclass_filter_addrclass));
 is($psaddrclass_filter_or->filters([$psaddrclass_filter_addrclass])->[0]->checksum(), $psaddrclass_filter_addrclass->checksum());
 is($psaddrclass_filter_or->add_filter(), undef);
@@ -192,13 +233,14 @@ isa_ok($psaddrclass_filter_or_filters->[0], 'perfSONAR_PS::Client::PSConfig::Add
 isa_ok($psaddrclass_filter_or_filters->[1], 'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Host');
 is($psaddrclass_filter_or->filter(0)->checksum(), $psaddrclass_filter_or_filters->[0]->checksum());
 is($psaddrclass_filter_or->filter(1)->checksum(), $psaddrclass_filter_or_filters->[1]->checksum());
-
 ###And filter
 my $psaddrclass_filter_and1;
 ok($psaddrclass_filter_and1 = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::And());
+is($psaddrclass_filter_and1->matches(), 0);
 is(@{$psaddrclass_filter_and1->filters()}, 0);
 ok($psaddrclass_filter_and1->add_filter($psaddrclass_filter_ipv));
 ok($psaddrclass_filter_and1->add_filter($psaddrclass_filter_netmask));
+is($psaddrclass_filter_and1->matches(), 0);
 my $psaddrclass_filter_and1_filters;
 ok($psaddrclass_filter_and1_filters = $psaddrclass_filter_and1->filters());
 is(@{$psaddrclass_filter_and1_filters}, 2);
@@ -293,6 +335,8 @@ my $excl_addr_sel_nl;
 ok($excl_addr_sel_nl = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel());
 is($excl_addr_sel_nl->select(), undef); #edge case
 is($excl_addr_sel_nl->select($psconfig), undef); #edge case
+is($excl_addr_sel_nl->name("foo"), "foo");
+is($excl_addr_sel_nl->select($psconfig), undef); #edge case
 is($excl_addr_sel_nl->name("lbl-pt1.es.net"), "lbl-pt1.es.net");
 is($excl_addr_sel_nl->label("ipv6"), "ipv6");
 is($excl_addr_sel_nl->disabled(1), 1);
@@ -304,6 +348,10 @@ is($excl_ap->local_address($excl_addr_sel_nl)->checksum(), $excl_addr_sel_nl->ch
 is($excl_ap->local_address()->checksum(), $excl_addr_sel_nl->checksum());
 my $excl_addr_sel_class;
 ok($excl_addr_sel_class = new perfSONAR_PS::Client::PSConfig::AddressSelectors::Class());
+is($excl_addr_sel_class->select(), undef); #edge case
+is($excl_addr_sel_class->select($psconfig), undef); #edge case
+is($excl_addr_sel_class->class("foo"), "foo");
+is($excl_addr_sel_class->select($psconfig), undef); #edge case
 is($excl_addr_sel_class->class("example"), "example");
 is($excl_ap->target_addresses([$excl_addr_sel_class])->[0]->checksum(), $excl_addr_sel_class->checksum());
 ok($excl_ap->add_target_address($excl_addr_sel_nl2));
@@ -444,30 +492,6 @@ is($psconfig->tests({"example", $pstest})->{"example"}->checksum(), $pstest->che
 is($psconfig->test("example", $pstest)->checksum(), $pstest->checksum());
 is($psconfig->test(), undef); #fail - no key specified
 is($psconfig->test("blah"), undef);#fail - key does not exist
-
-########
-#Test Hosts
-########
-my $pshost;
-ok($pshost = new perfSONAR_PS::Client::PSConfig::Host());
-is($pshost->psconfig_meta({'foo'=> 'bar'})->{'foo'}, 'bar');
-is($pshost->psconfig_meta_param('project', 'perfSONAR'), 'perfSONAR');
-ok($pshost->add_tag('dev'));
-is($pshost->tags()->[0], 'dev');
-ok($pshost->add_archive_ref('lbl-pt1.es.net'));
-is($pshost->archive_refs()->[0], 'lbl-pt1.es.net');
-is($pshost->site("LBL"), "LBL");
-is($pshost->disabled(1), 1);
-is($pshost->disabled(0), 0);
-is($pshost->no_agent(1), 1);
-is($pshost->no_agent(0), 0);
-##Test connecting hosts to config
-is($psconfig->host("blah"), undef);#fail - map does not exist
-is(keys %{$psconfig->hosts()}, 0); 
-is($psconfig->hosts({"lbl-pt1.es.net", $pshost})->{"lbl-pt1.es.net"}->checksum(), $pshost->checksum());
-is($psconfig->host("lbl-pt1.es.net", $pshost)->checksum(), $pshost->checksum());
-is($psconfig->host(), undef); #fail - no key specified
-is($psconfig->host("blah"), undef);#fail - key does not exist
 
 ########
 # Test Contexts
@@ -740,7 +764,9 @@ is($psconfig->json(), '{}');
 is($psconfig->json({ 'utf8' => undef, 'canonical' => undef}), '{}');
 is($psconfig->json({ 'utf8' => 0, 'canonical' => 0}), '{}');
 
-#honestly pretty worthless tests for overridden functions, but complete coverage
+############
+#honestly pretty worthless tests for overridden functions and edge cases, but complete coverage
+############
 my $psconfig_basegrp = new perfSONAR_PS::Client::PSConfig::Groups::BaseGroup();
 eval{$psconfig_basegrp->dimension_count()};
 ok($@);
@@ -755,13 +781,34 @@ ok($psconfig_basegrp->start());
 is($psconfig_basegrp->start(), undef);
 is($psconfig_basegrp->merge_parents(), undef);
 is($psconfig_basegrp->merge_parents("foo"), undef);
+
 my $psconfig_basep2pgrp = new perfSONAR_PS::Client::PSConfig::Groups::BaseP2PGroup();
 is($psconfig_basep2pgrp->is_excluded_selectors(), undef);
 is($psconfig_basep2pgrp->is_excluded_selectors("foo"), undef);
 is($psconfig_basep2pgrp->is_excluded_selectors(["foo"]), undef);
+
 my $psconfig_baseaddrsel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector();
 eval{$psconfig_baseaddrsel->select()};
 ok($@);
+
+my $psconfig_baseds = new perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::BaseDataSource();
+eval{$psconfig_baseds->fetch()};
+ok($@);
+
+my $psconfig_basefilter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::BaseFilter();
+eval{$psconfig_basefilter->matches()};
+ok($@);
+
+my $psconfig_dscurrentconfig = new perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::CurrentConfig();
+is($psconfig_dscurrentconfig->fetch(), undef);
+
+my $psconfig_dsrequestingagent = new perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::RequestingAgent();
+is($psconfig_dsrequestingagent->fetch(), undef);
+
+my $psconfig_addrclass = new perfSONAR_PS::Client::PSConfig::AddressClasses::AddressClass();
+is($psconfig_addrclass->select(), undef);
+is($psconfig_addrclass->select("foo"), undef);
+
 
 ##################################################################
 #TODO: Delete below

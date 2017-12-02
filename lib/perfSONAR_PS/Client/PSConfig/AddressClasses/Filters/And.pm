@@ -16,14 +16,13 @@ has 'type' => (
 sub matches{
     my ($self, $address, $psconfig) = @_;
     
-    #return match if no filters defined
+    #Get filters
     my $filters = $self->filters();
-    return 1 unless($filters);
     
     #can't do anything unless address is defined
     return 0 unless($address);
 
-    #if something does not match, then exit
+    #if something does not match, then exit. if no filters then wil be true
     foreach my $filter(@{$filters}){
         return 0 unless($filter->matches($address, $psconfig));
     }

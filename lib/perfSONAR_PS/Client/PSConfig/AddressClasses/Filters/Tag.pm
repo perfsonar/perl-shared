@@ -22,8 +22,9 @@ sub matches{
     my ($self, $address, $psconfig) = @_;
     
     #return match if no tag defined
-    my $tag = lc($self->tag());
+    my $tag = $self->tag();
     return 1 unless($tag);
+    $tag = lc($self->tag());
     
     #can't do anything unless address is defined
     return 0 unless($address);
