@@ -21,63 +21,63 @@ my $config_json = <<'EOF';
             "archiver": "esmond",
             "data": {
                 "url": "https://lsvn-pt1.es.net/esmond/perfsonar/archive/",
-                "measurement-agent": "$requesting-agent"
+                "measurement-agent": "{% scheduled_by_address %}"
             }
         },
         "archive-ga": {
             "archiver": "esmond",
             "data": {
                 "url": "https://ga-pt1.es.net/esmond/perfsonar/archive/",
-                "measurement-agent": "$requesting-agent"
+                "measurement-agent": "{% scheduled_by_address %}"
             }
         },
         "archive-bost": {
             "archiver": "esmond",
             "data": {
                 "url": "https://bost-pt1.es.net/esmond/perfsonar/archive/",
-                "measurement-agent": "$requesting-agent"
+                "measurement-agent": "{% scheduled_by_address %}"
             }
         },
         "archive-amst": {
             "archiver": "esmond",
             "data": {
                 "url": "https://amst-pt1.es.net/esmond/perfsonar/archive/",
-                "measurement-agent": "$requesting-agent"
+                "measurement-agent": "{% scheduled_by_address %}"
             }
         },
         "archive-newy": {
             "archiver": "esmond",
             "data": {
                 "url": "https://newy-pt1.es.net/esmond/perfsonar/archive/",
-                "measurement-agent": "$requesting-agent"
+                "measurement-agent": "{% scheduled_by_address %}"
             }
         },
         "archive-lond": {
             "archiver": "esmond",
             "data": {
                 "url": "https://lond-pt1.es.net/esmond/perfsonar/archive/",
-                "measurement-agent": "$requesting-agent"
+                "measurement-agent": "{% scheduled_by_address %}"
             }
         },
         "archive-aofa": {
             "archiver": "esmond",
             "data": {
                 "url": "https://aofa-pt1.es.net/esmond/perfsonar/archive/",
-                "measurement-agent": "$requesting-agent"
+                "measurement-agent": "{% scheduled_by_address %}"
             }
         },
         "archive-wash": {
             "archiver": "esmond",
             "data": {
                 "url": "https://wash-pt1.es.net/esmond/perfsonar/archive/",
-                "measurement-agent": "$requesting-agent"
+                "measurement-agent": "{% scheduled_by_address %}"
             }
         },
         "archive-cern-513": {
             "archiver": "esmond",
             "data": {
                 "url": "https://cern-513-pt1.es.net/esmond/perfsonar/archive/",
-                "measurement-agent": "$requesting-agent"
+                "measurement-agent": "{% scheduled_by_address %}"
             }
         }
     },
@@ -412,16 +412,16 @@ my $config_json = <<'EOF';
         "throughput-default": {
             "type": "throughput",
             "spec": {
-                "source": "$group::0",
-                "dest": "$group::1",
+                "source": "{% address[0] %}",
+                "dest": "{% address[1] %}",
                 "duration": "PT30S"
             }
         },
         "latencybg-default": {
             "type": "latencybg",
             "spec": {
-                "source": "$group::0",
-                "dest": "$group::1",
+                "source": "{% address[0] %}",
+                "dest": "{% address[1] %}",
                 "packet-interval": 0.1,
                 "packet-count": 600
             }

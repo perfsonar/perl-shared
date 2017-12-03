@@ -21,7 +21,7 @@ my $config_json = <<'EOF';
             "archiver": "esmond",
             "data": {
                 "url": "https://archive.perfsonar.net/esmond/perfsonar/archive/",
-                "measurement-agent": "$requesting-agent"
+                "measurement-agent": "{% scheduled_by_address %}"
             }
         }
     },
@@ -47,7 +47,7 @@ my $config_json = <<'EOF';
         "example-test-throughput": {
             "type": "throughput",
             "spec": {
-                "dest": "$group::0",
+                "dest": "{% address[0] %}",
                 "duration": "PT30S"
             }
         }

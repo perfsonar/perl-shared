@@ -16,6 +16,7 @@ use Params::Validate qw(:all);
 use Log::Log4perl qw(get_logger);
 
 use perfSONAR_PS::Client::PSConfig::Config;
+use perfSONAR_PS::Client::PSConfig::Parsers::Template;
 
 our $VERSION = 4.1;
 
@@ -38,6 +39,7 @@ has 'started' => (is => 'ro', isa => 'Bool', writer => '_set_started');
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 has 'task' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Task|Undef', writer => '_set_task');
 has 'group' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Groups::BaseGroup|Undef', writer => '_set_group');
+has 'test' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Test|Undef', writer => '_set_test');
 has '_match_addresses_map' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_match_addresses_map');
 
 sub start {
@@ -71,6 +73,15 @@ sub start {
         return;
     }
     
+    #find test
+    my $test = $self->psconfig()->test($task->test_ref());
+    if($test){
+        $self->_set_test($test);
+    }else{
+        $self->_set_error("Unable to find a test with name " . $task->test_ref());
+        return;
+    }
+    
     #set match addresses if any
     if(@{$self->match_addresses()} > 0){
         my %match_addresses_map = map { $_ => 1 } @{$self->match_addresses()};
@@ -80,9 +91,6 @@ sub start {
     }
     
     #validate specs?
-    
-    #iterate through hosts
-    
     
     #start group
     $group->start($self->psconfig());
@@ -183,6 +191,7 @@ sub next {
     use Data::Dumper;
     
     my $matched = 0;
+    my $scheduled_by_addr;
     while(@addrs = $self->group()->next()){
         #validate scheduled by
         if($scheduled_by >= @addrs){
@@ -201,7 +210,7 @@ sub next {
         next if($disabled);
         
         #get the scheduled-by address
-        my $scheduled_by_addr = $addrs[$scheduled_by];
+        $scheduled_by_addr = $addrs[$scheduled_by];
         #if the default scheduled-by address is no-agent, pick first address that is not no-agent
         my $has_agent = 0;
         if($self->is_no_agent($scheduled_by_addr)){
@@ -225,6 +234,11 @@ sub next {
     
     #todo: the will return an entire filled-in task, this is just for testing
     if($matched){
+        my $template = new perfSONAR_PS::Client::PSConfig::Parsers::Template(
+            groups => \@addrs,
+            scheduled_by_address => $scheduled_by_addr
+        );
+        $template->expand($self->test()->spec());
         return @addrs;
     }
     
