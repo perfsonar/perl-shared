@@ -34,12 +34,22 @@ has 'psconfig' => (is => 'rw', isa => 'perfSONAR_PS::Client::PSConfig::Config', 
 has 'match_addresses' => (is => 'rw', isa => 'ArrayRef[Str]', default => sub {[]});
 has 'pscheduler_url' => (is => 'rw', isa => 'Str');
 
-#private
+#read-only
+##Updated whenever an error occurs
+has 'error' => (is => 'ro', isa => 'Str|Undef', writer => '_set_error');
+##Updated on call to start()
 has 'started' => (is => 'ro', isa => 'Bool', writer => '_set_started');
-has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 has 'task' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Task|Undef', writer => '_set_task');
 has 'group' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Groups::BaseGroup|Undef', writer => '_set_group');
 has 'test' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Test|Undef', writer => '_set_test');
+##Updated each call to next()
+has 'expanded_test' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_expanded_test');
+has 'expanded_archives' => (is => 'ro', isa => 'ArrayRef|Undef', writer => '_set_expanded_archives');
+has 'expanded_contexts' => (is => 'ro', isa => 'ArrayRef|Undef', writer => '_set_expanded_contexts');
+has 'expanded_reference' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_expanded_reference');
+has 'scheduled_by_address' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Addresses::BaseAddress|Undef', writer => '_set_scheduled_by_address');
+
+#private
 has '_match_addresses_map' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_match_addresses_map');
 
 sub start {
@@ -182,14 +192,94 @@ sub is_disabled{
     return 0;
 }
 
+sub get_archives{
+    my ($self, $address, $template) = @_;
+    
+    my @archives = ();
+    unless($address){
+        return \@archives;
+    }
+    
+    #init some values
+    my $task = $self->task();
+    my $psconfig = $self->psconfig();
+    my %archive_tracker = ();
+    my $host;
+    if($address->can('host_ref') && $address->host_ref()){
+        $host = $self->psconfig()->host($address->host_ref());
+    }elsif($address->_parent_host_ref()){
+        $host = $self->psconfig()->host($address->_parent_host_ref());
+    }
+    my @archive_refs = ();
+    push @archive_refs, @{$task->archive_refs()} if($task->archive_refs());
+    push @archive_refs, @{$host->archive_refs()} if($host && $host->archive_refs());
+    #iterate through archives skipping duplicates
+    foreach my $archive_ref(@archive_refs){
+        #get archive obj
+        my $archive = $psconfig->archive($archive_ref);
+        unless($archive){
+            $self->_set_error("Unable to find archive defined in task: $archive_ref");
+            return;
+        }
+        #check if duplicate
+        my $checksum = $archive->checksum();
+        next if($archive_tracker{$checksum}); #skip duplicates
+        #expand template vars
+        my $expanded = $template->expand($archive->data());
+        unless($expanded){
+            self->_set_error("Error expanding archive template variables: " . $template->error());
+            return;
+        }
+        #if made it here, add to the list
+        $archive_tracker{$checksum} = 1;
+        push @archives, $expanded;
+    }
+    
+    return \@archives;
+    
+}
+
+sub get_contexts{
+    my ($self, $address, $template) = @_;
+    
+    my @contexts = ();
+    unless($address && $address->context_refs()){
+        return \@contexts;
+    }
+    
+    #init some values
+    my $psconfig = $self->psconfig();
+    foreach my $context_ref(@{$address->context_refs()}){
+        my $context = $psconfig->context($context_ref);
+        unless($context){
+            $self->_set_error("Unable to find context '$context_ref' defined for address ". $address->address());
+            return;
+        }
+        my $expanded = $template->expand($context->data());
+        unless($expanded){
+            self->_set_error("Error expanding context template variables: " . $template->error());
+            return;
+        }
+        push @contexts, $expanded;
+    }
+    
+    return \@contexts;
+}
+
 sub next {
     my ($self) = @_;
+    
+    #make sure we are started
+    unless($self->started()){
+        return;
+    }
+    
+    #clear out stuff set each next iteration
+    $self->_reset_next();
     
     #find the next test we have to run
     my $scheduled_by = $self->task()->scheduled_by() ?  ($self->task()->scheduled_by() - 1) : 0;
     my @addrs;
-    use Data::Dumper;
-    
     my $matched = 0;
     my $scheduled_by_addr;
     while(@addrs = $self->group()->next()){
@@ -232,29 +322,102 @@ sub next {
         }  
     }
     
-    #todo: the will return an entire filled-in task, this is just for testing
-    if($matched){
-        my $template = new perfSONAR_PS::Client::PSConfig::Parsers::Template(
-            groups => \@addrs,
-            scheduled_by_address => $scheduled_by_addr
-        );
-        $template->expand($self->test()->spec());
-        return @addrs;
+    #if no match, then exit
+    unless($matched){
+        return;
     }
     
-    return;
+    #init template so we can start explanding variables
+    my $template = new perfSONAR_PS::Client::PSConfig::Parsers::Template(
+        groups => \@addrs,
+        scheduled_by_address => $scheduled_by_addr
+    );
+    
+    #set scheduled_by_address for this iteration
+    $self->_set_scheduled_by_address($scheduled_by_addr);
+    
+    #expand test spec
+    my $test_spec = $template->expand($self->test()->spec());
+    if($test_spec){
+        $self->_set_expanded_test($test_spec);
+    }else{
+        return $self->handle_next_error(\@addrs, "Error expanding test specification: " . $template->error());
+    }
+    
+    #expand archivers
+    my $archives = $self->get_archives($scheduled_by_addr, $template);
+    if($archives){
+        $self->_set_expanded_archives($archives);
+    }else{
+        return $self->handle_next_error(\@addrs, "Error expanding archives: " . $self->error());
+    }
+    
+    #expand contexts
+    #Note: Assumes first address is first participant, second is second participant, etc.
+    my $contexts = [];
+    foreach my $addr(@addrs){
+        my $addr_contexts = $self->get_contexts($addr, $template);
+        if($addr_contexts){
+            push @{$contexts}, $addr_contexts;
+        }else{
+            return $self->handle_next_error(\@addrs, "Error expanding contexts: " . $self->error());
+        }
+    }
+    $self->_set_expanded_contexts($contexts);
+    
+    #expand reference
+    my $reference;
+    if($self->task()->reference()){
+        $reference = $template->expand($self->task()->reference()->data());
+        if($reference){
+            $self->_set_expanded_reference($reference);
+        }else{
+            return $self->handle_next_error(\@addrs, "Error expanding reference: " . $self->error());
+        }
+    }
+    
+    #return the matching address set
+    return @addrs;
+}
+
+sub _reset_next {
+    my ($self) = @_;
+    
+    $self->_set_error(undef);
+    $self->_set_expanded_test(undef);
+    $self->_set_expanded_archives(undef);
+    $self->_set_expanded_contexts(undef);
+    $self->_set_expanded_reference(undef);
+    $self->_set_scheduled_by_address(undef);
 }
 
 sub stop {
     my ($self) = @_;
     
+    $self->_reset_next();
     $self->_set_started(0);
     $self->group()->stop();
     $self->_set_task(undef);
     $self->_set_group(undef);
 }
 
-
+sub handle_next_error {
+    my ($self, $addrs, $error) = @_;
+    
+    my $addr_string = "";
+    foreach my $addr(@{$addrs}){
+        $addr_string .= '->' if($addr_string);
+        if($addr && $addr->address()){
+            $addr_string .= $addr->address();
+        }else{
+            print "undefined";
+        }   
+    }
+    
+    $self->_set_error("task=" . $self->task_name . ",addresses=" . $addr_string . ",error=" . $error);
+    
+    return @{$addrs};
+}
  
 
 __PACKAGE__->meta->make_immutable;

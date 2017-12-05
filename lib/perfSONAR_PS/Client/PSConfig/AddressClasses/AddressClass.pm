@@ -31,17 +31,6 @@ sub exclude_filter{
         $val);
 }
 
-#TODO: Remove archive refs? presumably could put in test or address definitions 
-sub archive_refs{
-    my ($self, $val) = @_;
-    return $self->_field_refs('archives', $val);
-}
-
-sub add_archive_ref{
-    my ($self, $val) = @_;
-    $self->_add_field_ref('archives', $val);
-}
-
 sub select{
     my ($self, $psconfig) = @_;
     
