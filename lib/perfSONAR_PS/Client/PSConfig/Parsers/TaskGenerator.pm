@@ -17,6 +17,7 @@ use Log::Log4perl qw(get_logger);
 
 use perfSONAR_PS::Client::PSConfig::Config;
 use perfSONAR_PS::Client::PSConfig::Parsers::Template;
+use perfSONAR_PS::Client::PScheduler::Task;
 
 our $VERSION = 4.1;
 
@@ -48,6 +49,7 @@ has 'expanded_archives' => (is => 'ro', isa => 'ArrayRef|Undef', writer => '_set
 has 'expanded_contexts' => (is => 'ro', isa => 'ArrayRef|Undef', writer => '_set_expanded_contexts');
 has 'expanded_reference' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_expanded_reference');
 has 'scheduled_by_address' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Addresses::BaseAddress|Undef', writer => '_set_scheduled_by_address');
+has 'addresses' => (is => 'ro', isa => 'ArrayRef[perfSONAR_PS::Client::PSConfig::Addresses::BaseAddress]|Undef', writer => '_set_addresses');
 
 #private
 has '_match_addresses_map' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_match_addresses_map');
@@ -113,7 +115,213 @@ sub start {
     
 }
 
-sub is_matching_address{
+sub next {
+    my ($self) = @_;
+    
+    #make sure we are started
+    unless($self->started()){
+        return;
+    }
+    
+    #clear out stuff set each next iteration
+    $self->_reset_next();
+    
+    #find the next test we have to run
+    my $scheduled_by = $self->task()->scheduled_by() ?  ($self->task()->scheduled_by() - 1) : 0;
+    my @addrs;
+    my $matched = 0;
+    my $scheduled_by_addr;
+    while(@addrs = $self->group()->next()){
+        #validate scheduled by
+        if($scheduled_by >= @addrs){
+            $self->_set_error("The scheduled-by property for task  " . $self->task_name() . " is too big. It is set to $scheduled_by but must not be bigger than " . @addrs);
+            return;
+        }
+        
+        #check if disabled
+        my $disabled = 0;
+        foreach my $addr(@addrs){
+            if($self->_is_disabled($addr)){
+                $disabled = 1;
+                last;
+            }
+        }
+        next if($disabled);
+        
+        #get the scheduled-by address
+        $scheduled_by_addr = $addrs[$scheduled_by];
+        #if the default scheduled-by address is no-agent, pick first address that is not no-agent
+        my $has_agent = 0;
+        if($self->_is_no_agent($scheduled_by_addr)){
+            foreach my $addr(@addrs){
+                if(!$self->_is_no_agent($addr)){
+                    $scheduled_by_addr = $addr;
+                    $has_agent = 1;
+                    last;
+                }
+            }
+        }else{
+            $has_agent = 1;
+        }
+        
+        #if the address responsible for scheduling matches us, exit loop, otherwise keep looking
+        if($has_agent && $self->_is_matching_address($scheduled_by_addr->address())){
+            $matched = 1;
+            last;
+        }  
+    }
+    
+    #if no match, then exit
+    unless($matched){
+        return;
+    }
+    
+    #set addresses
+    $self->_set_addresses(\@addrs);
+    
+    #init template so we can start explanding variables
+    my $template = new perfSONAR_PS::Client::PSConfig::Parsers::Template(
+        groups => \@addrs,
+        scheduled_by_address => $scheduled_by_addr
+    );
+    
+    #set scheduled_by_address for this iteration
+    $self->_set_scheduled_by_address($scheduled_by_addr);
+    
+    #expand test spec
+    my $test = $template->expand($self->test()->data());
+    if($test){
+        $self->_set_expanded_test($test);
+    }else{
+        return $self->_handle_next_error(\@addrs, "Error expanding test specification: " . $template->error());
+    }
+    
+    #expand archivers
+    my $archives = $self->_get_archives($scheduled_by_addr, $template);
+    if($archives){
+        $self->_set_expanded_archives($archives);
+    }else{
+        return $self->_handle_next_error(\@addrs, "Error expanding archives: " . $self->error());
+    }
+    
+    #expand contexts
+    #Note: Assumes first address is first participant, second is second participant, etc.
+    my $contexts = [];
+    foreach my $addr(@addrs){
+        my $addr_contexts = $self->_get_contexts($addr, $template);
+        if($addr_contexts){
+            push @{$contexts}, $addr_contexts;
+        }else{
+            return $self->_handle_next_error(\@addrs, "Error expanding contexts: " . $self->error());
+        }
+    }
+    $self->_set_expanded_contexts($contexts);
+    
+    #expand reference
+    my $reference;
+    if($self->task()->reference()){
+        $reference = $template->expand($self->task()->reference()->data());
+        if($reference){
+            $self->_set_expanded_reference($reference);
+        }else{
+            return $self->_handle_next_error(\@addrs, "Error expanding reference: " . $self->error());
+        }
+    }
+    
+    #return the matching address set
+    return @addrs;
+}
+
+sub stop {
+    my ($self) = @_;
+    
+    $self->_reset_next();
+    $self->_set_started(0);
+    $self->group()->stop();
+    $self->_set_task(undef);
+    $self->_set_group(undef);
+}
+
+sub pscheduler_task {
+    my ($self) = @_;
+    
+    #make sure we are started
+    unless($self->started()){
+        return;
+    }
+    
+    #create hash to be used as data
+    my $task_data = {};
+    
+    #set test
+    if($self->expanded_test()){
+        $task_data->{"test"} = $self->_pscheduler_prep($self->expanded_test());
+    }else{
+        $self->_set_error("No expanded test found, can't create ");
+        return;
+    }
+    
+    #set archives
+    if($self->expanded_archives()){
+        foreach my $archive(@{$self->expanded_archives()}){
+            $self->_pscheduler_prep($archive);
+        }
+        $task_data->{"archives"} = $self->expanded_archives();
+    }
+    
+    #set contexts
+    if($self->expanded_contexts()){
+        my $has_context = 0;
+        foreach my $participant(@{$self->expanded_contexts()}){
+            foreach my $context(@{$participant}){
+                $self->_pscheduler_prep($context);
+                $has_context = 1;
+            }
+        }
+        $task_data->{"contexts"} = $self->expanded_contexts() if($has_context);
+    }
+    
+    #set reference
+    if($self->expanded_reference()){
+        $task_data->{"reference"} = $self->expanded_reference();
+    }
+    
+    #time to create pscheduler task
+    my $psched_task = new perfSONAR_PS::Client::PScheduler::Task(
+        url => $self->pscheduler_url(),
+        data => $task_data
+    );
+    
+    #set bind address
+    if($self->scheduled_by_address()->agent_bind_address()){
+        $psched_task->add_local_bind_map($self->scheduled_by_address()->agent_bind_address());
+    }
+    
+    #set lead bind address and pscheduler address
+    foreach my $addr(@{$self->addresses()}){
+        if($addr->lead_bind_address()){
+            $psched_task->add_lead_bind_map($addr->address(), $addr->lead_bind_address());
+        }
+        if($addr->pscheduler_address()){
+            $psched_task->add_pscheduler_address($addr->address(), $addr->pscheduler_address());
+        }
+    }    
+    
+    return $psched_task;
+}
+
+sub _pscheduler_prep{
+    my ($self, $obj) = @_;
+    
+    #this is a pass by reference, so _meta will be gone in any uses after this
+    #if this becomes a problem we can copy, but for efficiency purposes just removing for now
+    if(exists $obj->{'_meta'}){
+        delete $obj->{'_meta'};
+    }
+    return $obj;
+}
+
+sub _is_matching_address{
     my ($self, $address) = @_;
     
     #if undefined matching addresses then everything matches 
@@ -130,7 +338,7 @@ sub is_matching_address{
     return 0;
 }
 
-sub is_no_agent{
+sub _is_no_agent{
     ##
     # Checks if address or host has no-agent set. If either has it set then it 
     # will be no-agent.
@@ -161,7 +369,7 @@ sub is_no_agent{
     return 0;
 }
 
-sub is_disabled{
+sub _is_disabled{
     ##
     # Checks if address or host has disabled set. If either has it set then it 
     # will be disabled.
@@ -192,7 +400,7 @@ sub is_disabled{
     return 0;
 }
 
-sub get_archives{
+sub _get_archives{
     my ($self, $address, $template) = @_;
     
     my @archives = ();
@@ -239,7 +447,7 @@ sub get_archives{
     
 }
 
-sub get_contexts{
+sub _get_contexts{
     my ($self, $address, $template) = @_;
     
     my @contexts = ();
@@ -266,118 +474,22 @@ sub get_contexts{
     return \@contexts;
 }
 
-sub next {
-    my ($self) = @_;
+sub _handle_next_error {
+    my ($self, $addrs, $error) = @_;
     
-    #make sure we are started
-    unless($self->started()){
-        return;
-    }
-    
-    #clear out stuff set each next iteration
-    $self->_reset_next();
-    
-    #find the next test we have to run
-    my $scheduled_by = $self->task()->scheduled_by() ?  ($self->task()->scheduled_by() - 1) : 0;
-    my @addrs;
-    my $matched = 0;
-    my $scheduled_by_addr;
-    while(@addrs = $self->group()->next()){
-        #validate scheduled by
-        if($scheduled_by >= @addrs){
-            $self->_set_error("The scheduled-by property for task  " . $self->task_name() . " is too big. It is set to $scheduled_by but must not be bigger than " . @addrs);
-            return;
-        }
-        
-        #check if disabled
-        my $disabled = 0;
-        foreach my $addr(@addrs){
-            if($self->is_disabled($addr)){
-                $disabled = 1;
-                last;
-            }
-        }
-        next if($disabled);
-        
-        #get the scheduled-by address
-        $scheduled_by_addr = $addrs[$scheduled_by];
-        #if the default scheduled-by address is no-agent, pick first address that is not no-agent
-        my $has_agent = 0;
-        if($self->is_no_agent($scheduled_by_addr)){
-            foreach my $addr(@addrs){
-                if(!$self->is_no_agent($addr)){
-                    $scheduled_by_addr = $addr;
-                    $has_agent = 1;
-                    last;
-                }
-            }
+    my $addr_string = "";
+    foreach my $addr(@{$addrs}){
+        $addr_string .= '->' if($addr_string);
+        if($addr && $addr->address()){
+            $addr_string .= $addr->address();
         }else{
-            $has_agent = 1;
-        }
-        
-        #if the address responsible for scheduling matches us, exit loop, otherwise keep looking
-        if($has_agent && $self->is_matching_address($scheduled_by_addr->address())){
-            $matched = 1;
-            last;
-        }  
+            $addr_string .= "undefined";
+        }   
     }
     
-    #if no match, then exit
-    unless($matched){
-        return;
-    }
+    $self->_set_error("task=" . $self->task_name . ",addresses=" . $addr_string . ",error=" . $error);
     
-    #init template so we can start explanding variables
-    my $template = new perfSONAR_PS::Client::PSConfig::Parsers::Template(
-        groups => \@addrs,
-        scheduled_by_address => $scheduled_by_addr
-    );
-    
-    #set scheduled_by_address for this iteration
-    $self->_set_scheduled_by_address($scheduled_by_addr);
-    
-    #expand test spec
-    my $test_spec = $template->expand($self->test()->spec());
-    if($test_spec){
-        $self->_set_expanded_test($test_spec);
-    }else{
-        return $self->handle_next_error(\@addrs, "Error expanding test specification: " . $template->error());
-    }
-    
-    #expand archivers
-    my $archives = $self->get_archives($scheduled_by_addr, $template);
-    if($archives){
-        $self->_set_expanded_archives($archives);
-    }else{
-        return $self->handle_next_error(\@addrs, "Error expanding archives: " . $self->error());
-    }
-    
-    #expand contexts
-    #Note: Assumes first address is first participant, second is second participant, etc.
-    my $contexts = [];
-    foreach my $addr(@addrs){
-        my $addr_contexts = $self->get_contexts($addr, $template);
-        if($addr_contexts){
-            push @{$contexts}, $addr_contexts;
-        }else{
-            return $self->handle_next_error(\@addrs, "Error expanding contexts: " . $self->error());
-        }
-    }
-    $self->_set_expanded_contexts($contexts);
-    
-    #expand reference
-    my $reference;
-    if($self->task()->reference()){
-        $reference = $template->expand($self->task()->reference()->data());
-        if($reference){
-            $self->_set_expanded_reference($reference);
-        }else{
-            return $self->handle_next_error(\@addrs, "Error expanding reference: " . $self->error());
-        }
-    }
-    
-    #return the matching address set
-    return @addrs;
+    return @{$addrs};
 }
 
 sub _reset_next {
@@ -389,34 +501,7 @@ sub _reset_next {
     $self->_set_expanded_contexts(undef);
     $self->_set_expanded_reference(undef);
     $self->_set_scheduled_by_address(undef);
-}
-
-sub stop {
-    my ($self) = @_;
-    
-    $self->_reset_next();
-    $self->_set_started(0);
-    $self->group()->stop();
-    $self->_set_task(undef);
-    $self->_set_group(undef);
-}
-
-sub handle_next_error {
-    my ($self, $addrs, $error) = @_;
-    
-    my $addr_string = "";
-    foreach my $addr(@{$addrs}){
-        $addr_string .= '->' if($addr_string);
-        if($addr && $addr->address()){
-            $addr_string .= $addr->address();
-        }else{
-            print "undefined";
-        }   
-    }
-    
-    $self->_set_error("task=" . $self->task_name . ",addresses=" . $addr_string . ",error=" . $error);
-    
-    return @{$addrs};
+    $self->_set_addresses(undef);
 }
  
 
