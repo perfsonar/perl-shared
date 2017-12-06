@@ -42,6 +42,7 @@ has 'error' => (is => 'ro', isa => 'Str|Undef', writer => '_set_error');
 has 'started' => (is => 'ro', isa => 'Bool', writer => '_set_started');
 has 'task' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Task|Undef', writer => '_set_task');
 has 'group' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Groups::BaseGroup|Undef', writer => '_set_group');
+has 'schedule' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Schedule|Undef', writer => '_set_schedule');
 has 'test' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Test|Undef', writer => '_set_test');
 ##Updated each call to next()
 has 'expanded_test' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_expanded_test');
@@ -92,6 +93,12 @@ sub start {
     }else{
         $self->_set_error("Unable to find a test with name " . $task->test_ref());
         return;
+    }
+    
+    #find schedule (optional)
+    my $schedule = $self->psconfig()->schedule($task->schedule_ref());
+    if($schedule){
+        $self->_set_schedule($schedule);
     }
     
     #set match addresses if any
@@ -240,6 +247,7 @@ sub stop {
     $self->group()->stop();
     $self->_set_task(undef);
     $self->_set_group(undef);
+    $self->_set_schedule(undef);
 }
 
 sub pscheduler_task {
@@ -279,6 +287,11 @@ sub pscheduler_task {
             }
         }
         $task_data->{"contexts"} = $self->expanded_contexts() if($has_context);
+    }
+    
+    #set schedule
+    if($self->schedule()){
+        $task_data->{"schedule"} = $self->_pscheduler_prep($self->schedule()->data());
     }
     
     #set reference
