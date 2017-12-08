@@ -1,7 +1,6 @@
 package perfSONAR_PS::Client::PSConfig::Config;
 
 use Mouse;
-use JSON qw(to_json);
 use JSON::Validator;
 use perfSONAR_PS::Client::PSConfig::Archive;
 use perfSONAR_PS::Client::PSConfig::Host;

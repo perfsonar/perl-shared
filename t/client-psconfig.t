@@ -275,13 +275,6 @@ isa_ok($psaddrclass->match_filter(), 'perfSONAR_PS::Client::PSConfig::AddressCla
 is($psaddrclass->exclude_filter(), undef);
 is($psaddrclass->exclude_filter($psaddrclass_filter_not)->checksum(), $psaddrclass_filter_not->checksum());
 isa_ok($psaddrclass->exclude_filter(), 'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Not');
-##set archives
-ok($psaddrclass->add_archive_ref('lbl-pt1.es.net'));
-is($psaddrclass->add_archive_ref(), undef);
-is($psaddrclass->archive_refs()->[0], 'lbl-pt1.es.net');
-ok($psaddrclass->add_archive_ref('newy-pt1.es.net'));
-is($psaddrclass->archive_refs()->[1], 'newy-pt1.es.net');
-is($psaddrclass->archive_refs(['sacr-pt1.es.net'])->[0], 'sacr-pt1.es.net');
 ##add to config
 is($psconfig->address_class("blah"), undef);#fail - map does not exist
 is(keys %{$psconfig->address_classes()}, 0); 
@@ -672,7 +665,14 @@ is($excl_ap->_add_field_class("foo",
 #######
 is($excl_ap->_validate_class("blah"), 0);
 is($excl_ap->_validate_name(), 0);
-    
+is($excl_ap->_validate_host(), 0);
+is($excl_ap->_validate_urlhostport(), 0);
+is($excl_ap->_add_field_ref(), undef);
+is($excl_ap->_field_host_list_item(), undef);
+is($excl_ap->_field_host_list_item('blah'), undef);
+is($excl_ap->_field_host_list_item('local-address'), undef);
+is($excl_ap->_field_url('foo', 'bar', {'http' => 1}), undef);
+
 is(@{$psaddr->label_names()}, 1);
 ok($psaddr->remove_label("ipv6"));
 is($psaddr->remove_label("blah"), undef);#fail - no label

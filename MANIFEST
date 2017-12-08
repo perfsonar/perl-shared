@@ -61,6 +61,7 @@ lib/perfSONAR_PS/Client/PSConfig/Addresses/RemoteAddress.pm
 lib/perfSONAR_PS/Client/PSConfig/ApiConnect.pm
 lib/perfSONAR_PS/Client/PSConfig/ApiFilters.pm
 lib/perfSONAR_PS/Client/PSConfig/Archive.pm
+lib/perfSONAR_PS/Client/PSConfig/BaseConnect.pm
 lib/perfSONAR_PS/Client/PSConfig/BaseMetaNode.pm
 lib/perfSONAR_PS/Client/PSConfig/BaseNode.pm
 lib/perfSONAR_PS/Client/PSConfig/Config.pm
@@ -111,7 +112,7 @@ lib/perfSONAR_PS/Client/LS/PSRecords/PSRecordFactory.pm
 lib/perfSONAR_PS/Client/LS/PSRecords/PSService.pm
 lib/perfSONAR_PS/Client/LS/PSRecords/PSTest.pm
 lib/perfSONAR_PS/Common.pm
-lib/perfsonar_PS/Graphs/Functions.pm
+lib/perfSONAR_PS/Graphs/Functions.pm
 lib/perfSONAR_PS/NPToolkit/Config/AdministrativeInfo.pm
 lib/perfSONAR_PS/NPToolkit/Config/BWCTL.pm
 lib/perfSONAR_PS/NPToolkit/Config/Base.pm

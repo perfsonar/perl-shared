@@ -7,6 +7,7 @@ use Data::Validate::IP qw(is_ipv4 is_ipv6);
 use Data::Validate::Domain qw(is_hostname);
 use perfSONAR_PS::Client::PSConfig::Addresses::Address;
 use perfSONAR_PS::Client::PSConfig::Addresses::RemoteAddress;
+use URI;
 
 has 'data' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'validation_error' => (is => 'ro', isa => 'Str', writer => '_set_validation_error');
@@ -493,7 +494,7 @@ sub _field_ipcidr{
 sub _field_host{
     my ($self, $field, $val) = @_;
     if(defined $val){
-        if(is_ipv4($val) || is_ipv6($val) || is_hostname($val)){
+        if($self->_validate_host($val)){
             $self->data->{$field} = $val;
         }else{
             $self->_set_validation_error("$field cannot be set to $val. Must be valid IPv4, IPv6 or hostname.");
@@ -503,6 +504,66 @@ sub _field_host{
     return $self->data->{$field};
 }
 
+sub _field_host_list{
+    my ($self, $field, $val) = @_;
+    
+    if(defined $val){
+        if(ref $val ne 'ARRAY'){
+            $self->_set_validation_error("$field must be an arrayref");
+            return;
+        }
+        foreach my $v(@{$val}){
+           unless($self->_validate_host($v)){
+                $self->_set_validation_error("$field cannot be set to $v. Must be valid IPv4, IPv6 or hostname.");
+                return;
+            }
+        }
+        $self->data->{$field} = $val;
+    }
+    
+    return $self->data->{$field};
+}
+
+sub _field_host_list_item{
+    my ($self, $field, $index, $val) = @_;
+    
+    unless($field && exists $self->data->{$field} && 
+            ref $self->data->{$field} eq 'ARRAY' &&
+            defined $index &&
+            @{$self->data->{$field}} > $index){
+        return;
+    }
+    
+    if(defined $val){
+        if($self->_validate_host($val)){
+            $self->data->{$field}->[$index] = $val;
+        }else{
+            return;
+        }
+    }
+    
+    return $self->data->{$field}->[$index];
+}
+
+sub _add_field_host{
+    my ($self, $field, $val) = @_;
+    
+    unless(defined $val){
+        return;
+    }
+    
+    unless($self->_validate_host($val)){
+        $self->_set_validation_error("$field cannot be set to $val. Must be valid IPv4, IPv6 or hostname.");
+        return;
+    }
+    
+    unless($self->data->{$field}){
+        $self->data->{$field} = [];
+    }
+    
+    push @{$self->data->{$field}}, $val;
+}
+
 sub _field_cardinal{
     my ($self, $field, $val) = @_;
     if(defined $val){
@@ -510,6 +571,19 @@ sub _field_cardinal{
             $self->data->{$field} = int($val);
         }else{
             $self->_set_validation_error("$field cannot be set to $val. Must be integer greater than 0");
+            return;
+        }
+    }
+    return $self->data->{$field};
+}
+
+sub _field_probability{
+    my ($self, $field, $val) = @_;
+    if(defined $val){
+        if($val >= 0.0 && $val <= 1.0){
+            $self->data->{$field} = $val + 0.0;
+        }else{
+            $self->_set_validation_error("$field cannot be set to $val. Must be number between 0 and 1 (inclusive)");
             return;
         }
     }
@@ -529,15 +603,35 @@ sub _field_duration{
     return $self->data->{$field};
 }
 
+sub _field_url{
+    my ($self, $field, $val, $allowed_scheme_map) = @_;
+    
+    $allowed_scheme_map = $allowed_scheme_map ? $allowed_scheme_map : {'http'=>1, 'https' => 1, "file" => 1};
+    
+    if(defined $val){
+        my $uri = new URI($val);
+        unless($uri->scheme() && $allowed_scheme_map->{$uri->scheme()}){
+            my $prefixes = join ",", keys %{ $allowed_scheme_map};
+            $self->_set_validation_error("$field cannot be set to $val. URL must start with " . $prefixes);
+            return;
+        }
+        if($uri->can('host_port')){
+            #file:// does not do host-port, so need to make sure it can
+            unless($self->_validate_urlhostport($uri->host_port())){
+                $self->_set_validation_error("$field cannot be set to $val. Cannot determine valid URL host and port.");
+                return;
+            }
+        }
+        $self->data->{$field} = $uri->canonical . ""; #normalize URL
+    }
+    return $self->data->{$field};
+}
+
 sub _field_urlhostport{
     my ($self, $field, $val) = @_;
     if(defined $val){
-        if($val =~ /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])(:[0-9]+)?$/){
-            #hostname and port
+        if($self->_validate_urlhostport($val)){
             $self->data->{$field} = $val;
-        }elsif($val =~ /^\[(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))\](:[0-9]+)?$/){
-             #ipv6 bracketed with port (RFC2732)
-             $self->data->{$field} = $val;
         }else{
             $self->_set_validation_error("$field cannot be set to $val. Must be valid host/port combo or RFC2732 value.");
             return;
@@ -603,6 +697,30 @@ sub _validate_name{
     if(defined $val){
         if($val =~ /^[a-zA-Z0-9:._\-]+$/){
             return 1;
+        }
+    }
+    return 0;
+}
+
+sub _validate_host{
+    my ($self, $val) = @_;
+    if(defined $val){
+        if(is_ipv4($val) || is_ipv6($val) || is_hostname($val)){
+            return 1;
+        }
+    }
+    return 0;
+}
+
+sub _validate_urlhostport{
+    my ($self, $val) = @_;
+    if(defined $val){
+        if($val =~ /^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])(:[0-9]+)?$/){
+            #hostname and port
+            return 1;
+        }elsif($val =~ /^\[(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))\](:[0-9]+)?$/){
+             #ipv6 bracketed with port (RFC2732)
+             return 1;
         }
     }
     return 0;

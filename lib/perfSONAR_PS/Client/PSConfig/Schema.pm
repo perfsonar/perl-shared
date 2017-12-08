@@ -18,6 +18,7 @@ sub psconfig_json_schema() {
     "title": "pSConfig Schema",
     "description": "Schema for pSConfig test configuration files",
     "type": "object",
+    "additionalProperties": false,
     "required": [ "addresses", "groups", "tests", "tasks" ],
     "properties": {
         
@@ -107,7 +108,6 @@ sub psconfig_json_schema() {
                 "data-source": { "$ref": "#/pSConfig/AddressClassDataSourceSpecification" },
                 "match-filter": { "$ref": "#/pSConfig/AddressClassFilterSpecification" },
                 "exclude-filter": { "$ref": "#/pSConfig/AddressClassFilterSpecification" },
-                "archives": { "type": "array", "items": { "$ref": "#/pSConfig/NameType" } },
                 "_meta": { "$ref": "#/pSConfig/AnyJSON" }
             },
             "additionalProperties": false,

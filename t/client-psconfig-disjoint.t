@@ -194,7 +194,7 @@ is($tg->next(), undef);
 ##
 # Edge cases for various methods
 ##
-is($tg->is_disabled(),undef);
+is($tg->_is_disabled(),undef);
 is($group->a_address(0)->name(), "host-a.perfsonar.net");
 is($group->b_address(2)->name(), "host-c.perfsonar.net");
 is($group->dimension_size(),undef);
