@@ -17,6 +17,7 @@ use JSON qw(from_json to_json decode_json);
 use perfSONAR_PS::Client::PScheduler::ApiConnect;
 use perfSONAR_PS::Client::PScheduler::ApiFilters;
 use perfSONAR_PS::Client::PScheduler::Task;
+use Data::UUID;
 use DateTime::Format::ISO8601;
 use DateTime;
 
