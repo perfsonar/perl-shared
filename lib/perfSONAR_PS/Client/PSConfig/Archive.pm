@@ -1,7 +1,9 @@
 package perfSONAR_PS::Client::PSConfig::Archive;
 
 use Mouse;
+use JSON::Validator;
 use perfSONAR_PS::Client::PSConfig::JQTransform;
+use perfSONAR_PS::Client::PSConfig::Schema qw(psconfig_json_schema);
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
@@ -29,6 +31,19 @@ sub ttl{
     my ($self, $val) = @_;
     return $self->_field_duration('ttl', $val);
 }
+
+sub validate {
+    my $self = shift;
+    my $validator = new JSON::Validator();
+    my $schema = psconfig_json_schema();
+    #tweak it so we just look at ArchiveSpecification
+    $schema->{'required'} = [ 'archives' ];
+    $validator->schema($schema);
+    
+    #plug-in archive in a way that will validate
+    return $validator->validate({'archives' => {"archive" => $self->data()}});
+}
+
 
 
 

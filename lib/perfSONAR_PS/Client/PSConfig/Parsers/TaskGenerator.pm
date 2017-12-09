@@ -34,6 +34,9 @@ has 'task_name' => (is => 'rw', isa => 'Str');
 has 'psconfig' => (is => 'rw', isa => 'perfSONAR_PS::Client::PSConfig::Config', default => sub { new perfSONAR_PS::Client::PSConfig::Config(); });
 has 'match_addresses' => (is => 'rw', isa => 'ArrayRef[Str]', default => sub {[]});
 has 'pscheduler_url' => (is => 'rw', isa => 'Str');
+has 'default_archives' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PSConfig::Archive]', default => sub { [] });
+has 'use_psconfig_archives' => (is => 'rw', isa => 'Bool', default => sub { 1 });
+
 
 #read-only
 ##Updated whenever an error occurs
@@ -425,30 +428,50 @@ sub _get_archives{
     my $task = $self->task();
     my $psconfig = $self->psconfig();
     my %archive_tracker = ();
-    my $host;
-    if($address->can('host_ref') && $address->host_ref()){
-        $host = $self->psconfig()->host($address->host_ref());
-    }elsif($address->_parent_host_ref()){
-        $host = $self->psconfig()->host($address->_parent_host_ref());
-    }
-    my @archive_refs = ();
-    push @archive_refs, @{$task->archive_refs()} if($task->archive_refs());
-    push @archive_refs, @{$host->archive_refs()} if($host && $host->archive_refs());
-    #iterate through archives skipping duplicates
-    foreach my $archive_ref(@archive_refs){
-        #get archive obj
-        my $archive = $psconfig->archive($archive_ref);
-        unless($archive){
-            $self->_set_error("Unable to find archive defined in task: $archive_ref");
-            return;
+    
+    #configuring archives from psconfig if allowed
+    if($self->use_psconfig_archives()){
+        my $host;
+        if($address->can('host_ref') && $address->host_ref()){
+            $host = $self->psconfig()->host($address->host_ref());
+        }elsif($address->_parent_host_ref()){
+            $host = $self->psconfig()->host($address->_parent_host_ref());
         }
+        my @archive_refs = ();
+        push @archive_refs, @{$task->archive_refs()} if($task->archive_refs());
+        push @archive_refs, @{$host->archive_refs()} if($host && $host->archive_refs());
+        #iterate through archives skipping duplicates
+        foreach my $archive_ref(@archive_refs){
+            #get archive obj
+            my $archive = $psconfig->archive($archive_ref);
+            unless($archive){
+                $self->_set_error("Unable to find archive defined in task: $archive_ref");
+                return;
+            }
+            #check if duplicate
+            my $checksum = $archive->checksum();
+            next if($archive_tracker{$checksum}); #skip duplicates
+            #expand template vars
+            my $expanded = $template->expand($archive->data());
+            unless($expanded){
+                self->_set_error("Error expanding archive template variables: " . $template->error());
+                return;
+            }
+            #if made it here, add to the list
+            $archive_tracker{$checksum} = 1;
+            push @archives, $expanded;
+        }
+    }
+    
+    #configure default archives
+    foreach my $archive(@{$self->default_archives()}){
         #check if duplicate
         my $checksum = $archive->checksum();
         next if($archive_tracker{$checksum}); #skip duplicates
         #expand template vars
         my $expanded = $template->expand($archive->data());
         unless($expanded){
-            self->_set_error("Error expanding archive template variables: " . $template->error());
+            self->_set_error("Error expanding default archive template variables: " . $template->error());
             return;
         }
         #if made it here, add to the list
