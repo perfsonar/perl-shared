@@ -224,6 +224,7 @@ lib/perfSONAR_PS/Utils/GeoLookup.pm
 lib/perfSONAR_PS/Utils/HTTPS.pm
 lib/perfSONAR_PS/Utils/Host.pm
 lib/perfSONAR_PS/Utils/ISO8601.pm
+lib/perfSONAR_PS/Utils/JQ.pm
 lib/perfSONAR_PS/Utils/LookupService.pm
 lib/perfSONAR_PS/Utils/NTP.pm
 lib/perfSONAR_PS/Utils/NetLogger.pm
