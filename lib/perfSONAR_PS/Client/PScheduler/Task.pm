@@ -867,9 +867,16 @@ sub to_str() {
 
     my $str = $self->test_type();
     $str .= "/" . $self->tool() if $self->tool();
-    $str .= "(" . ($self->test_spec_param("source") ? $self->test_spec_param("source") : 'self');
-    $str .= "->" . ($self->test_spec_param("dest") ?  $self->test_spec_param("dest") : $self->test_spec_param("destination"));
-    $str .= ")";
+    if($self->test_spec_param("source") || $self->test_spec_param("dest") || $self->test_spec_param("destination")){
+        $str .= "(";
+        $str .= ($self->test_spec_param("source") ? $self->test_spec_param("source") : 'self');
+        if($self->test_spec_param("dest")){
+            $str .= "->" . $self->test_spec_param("dest");
+        }elsif($self->test_spec_param("destination")){
+            $str .= "->" . $self->test_spec_param("destination");
+        }
+        $str .= ")";
+    }
 
     return $str;
 }
