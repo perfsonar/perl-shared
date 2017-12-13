@@ -857,6 +857,12 @@ sub checksum() {
             }
         }
     }
+    foreach my $tparam(keys %{$data_copy->{'test'}->{'spec'}}){
+        if($tparam =~ /^_/){
+            $data_copy->{'test'}->{'spec'}->{$tparam} = '';
+        }
+    }
+    
     
     #canonical should keep it consistent by sorting keys
     return md5_base64(to_json($data_copy, {canonical => 1, utf8 => 1}));
