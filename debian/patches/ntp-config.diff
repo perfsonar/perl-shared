@@ -1,7 +1,7 @@
 Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Config/NTP.pm
 ===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Config/NTP.pm	2017-11-08 15:33:49.000000000 +0000
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Config/NTP.pm	2017-11-08 15:35:20.000000000 +0000
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Config/NTP.pm	2017-12-19 14:52:18.000000000 +0000
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Config/NTP.pm	2017-12-19 14:56:08.000000000 +0000
 @@ -37,7 +37,6 @@
      ntp_conf          => "/etc/ntp.conf",
      known_servers     => "/etc/perfsonar/toolkit/ntp_known_servers",
