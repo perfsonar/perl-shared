@@ -23,7 +23,6 @@ use Log::Log4perl qw( get_logger );
 use Params::Validate qw( :all );
 use English qw( -no_match_vars );
 use LWP::Simple;
-use Net::Ping;
 use XML::LibXML;
 use Digest::MD5 qw(md5_hex);
 
