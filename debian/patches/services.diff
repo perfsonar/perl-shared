@@ -1,5 +1,7 @@
---- a/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
+Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
+===================================================================
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm	2017-12-18 17:09:47.000000000 +0000
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm	2017-12-19 14:52:17.000000000 +0000
 @@ -9,8 +9,8 @@
      my ( $self, %conf ) = @_;
  
@@ -11,8 +13,10 @@
      $conf{pid_files} = [ "/var/run/mysqld/mysqld.pid" ] unless $conf{pid_files};
      $conf{regular_restart} = 1;
      $conf{package_names} = [ "mysql-server" ] unless $conf{package_names};
---- a/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
+Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
+===================================================================
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2017-12-18 17:09:47.000000000 +0000
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2017-12-19 14:52:17.000000000 +0000
 @@ -11,10 +11,10 @@
      my ( $self, %conf ) = @_;
  
@@ -28,8 +32,10 @@
  
      $self->SUPER::init( %conf );
  
---- a/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
+Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
+===================================================================
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2017-12-18 17:09:47.000000000 +0000
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2017-12-19 14:52:17.000000000 +0000
 @@ -15,7 +15,7 @@
      #Cassandra does not properly create /var/run/cassandra directory on boot, only creates
      #  on install which then gets removed on reboot. Removing this for now.
@@ -39,8 +45,10 @@
  
      $self->SUPER::init( %conf );
  
---- a/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
+Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
+===================================================================
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2017-12-19 14:52:17.000000000 +0000
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2017-12-19 14:52:17.000000000 +0000
 @@ -8,6 +8,7 @@
  use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES';
  use Dpkg::Control;
@@ -147,8 +155,10 @@
  
      $self->{LOGGER}->debug($shell_cmd);
  
---- a/lib/perfSONAR_PS/Utils/Host.pm
-+++ b/lib/perfSONAR_PS/Utils/Host.pm
+Index: perl-shared/lib/perfSONAR_PS/Utils/Host.pm
+===================================================================
+--- perl-shared.orig/lib/perfSONAR_PS/Utils/Host.pm	2017-12-18 17:09:47.000000000 +0000
++++ perl-shared/lib/perfSONAR_PS/Utils/Host.pm	2017-12-19 14:52:17.000000000 +0000
 @@ -503,7 +503,7 @@
  sub get_ntp_info {
      my $ntp;
@@ -195,8 +205,10 @@
      if($?){
          return;
      }
---- a/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
+Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
+===================================================================
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2017-12-18 17:09:47.000000000 +0000
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2017-12-19 14:52:17.000000000 +0000
 @@ -8,40 +8,38 @@
  sub init {
      my ( $self, %conf ) = @_;
@@ -259,9 +271,11 @@
  }
  
  1;
---- a/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
-@@ -81,7 +81,7 @@
+Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
+===================================================================
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2017-12-19 14:45:39.000000000 +0000
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2017-12-19 14:52:17.000000000 +0000
+@@ -47,7 +47,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
  
@@ -270,8 +284,10 @@
  
      $self->{LOGGER}->debug($shell_cmd);
  
---- a/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm
+Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm
+===================================================================
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2017-12-18 17:09:47.000000000 +0000
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2017-12-19 14:52:17.000000000 +0000
 @@ -9,7 +9,7 @@
  sub init {
      my ( $self, %conf ) = @_;

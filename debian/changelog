@@ -1,3 +1,9 @@
+libperfsonar-perl (4.0.2.2-1) perfsonar-jessie-release; urgency=low
+
+  * New upstream version.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 19 Dec 2017 14:52:17 +0000
+
 libperfsonar-perl (4.0.2.1-1) perfsonar-jessie-release; urgency=low
 
   * New upstream version.
