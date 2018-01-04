@@ -18,6 +18,7 @@ our $VERSION = 4.1;
 
 has 'groups' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PSConfig::Addresses::BaseAddress]', default => sub {[]});
 has 'scheduled_by_address' => (is => 'rw', isa => 'perfSONAR_PS::Client::PSConfig::Addresses::BaseAddress');
+has 'flip' => (is => 'rw', isa => 'Bool', default => sub {0});
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 
 sub expand {
@@ -33,7 +34,7 @@ sub expand {
         next if($template_var_map{$template_var});
         chomp $template_var;
         my $expanded_val = $self->expand_var($template_var);
-        unless($expanded_val){
+        unless(defined $expanded_val){
             return;
         }
         $template_var_map{$template_var} = $expanded_val;
@@ -111,10 +112,8 @@ sub _parse_scheduled_by_address {
 
 sub _parse_flip {
     my ($self, $index) = @_;
-    
-    #todo: implement
-    $self->_set_error("flip not yet implemented");
-    return;
+
+    return ($self->flip() ? JSON::true : JSON::false);
 }
 
 __PACKAGE__->meta->make_immutable;

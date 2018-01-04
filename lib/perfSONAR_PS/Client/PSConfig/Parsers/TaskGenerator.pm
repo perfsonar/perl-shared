@@ -137,9 +137,10 @@ sub next {
     $self->_reset_next();
     
     #find the next test we have to run
-    my $scheduled_by = $self->task()->scheduled_by() ?  ($self->task()->scheduled_by() - 1) : 0;
+    my $scheduled_by = $self->task()->scheduled_by() ?  $self->task()->scheduled_by() : 0;
     my @addrs;
     my $matched = 0;
+    my $flip = 0;
     my $scheduled_by_addr;
     while(@addrs = $self->group()->next()){
         #validate scheduled by
@@ -163,6 +164,7 @@ sub next {
         #if the default scheduled-by address is no-agent, pick first address that is not no-agent
         my $has_agent = 0;
         if($self->_is_no_agent($scheduled_by_addr)){
+            $flip = 1;
             foreach my $addr(@addrs){
                 if(!$self->_is_no_agent($addr)){
                     $scheduled_by_addr = $addr;
@@ -192,7 +194,8 @@ sub next {
     #init template so we can start explanding variables
     my $template = new perfSONAR_PS::Client::PSConfig::Parsers::Template(
         groups => \@addrs,
-        scheduled_by_address => $scheduled_by_addr
+        scheduled_by_address => $scheduled_by_addr,
+        flip => $flip
     );
     
     #set scheduled_by_address for this iteration
