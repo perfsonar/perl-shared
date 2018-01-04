@@ -419,11 +419,13 @@ is($psarchive->archiver_data({'_api_key' => 'ABC123'})->{'_api_key'}, 'ABC123');
 is($psarchive->archiver_data_param('url', 'https://foo.bar/esmond/perfsonar/archive/'), 'https://foo.bar/esmond/perfsonar/archive/');
 is($psarchive->archiver_data_param('_api_key'), 'ABC123');
 is($psarchive->archiver_data_param(), undef); # fail - null key
+is($psarchive->validate(), 0); #no validation errors
 
 ##Test transform
 my $psarchive_jq;
 ok($psarchive_jq = new perfSONAR_PS::Client::PSConfig::JQTransform());
-is($psarchive_jq->script('.'), '.');
+is($psarchive_jq->script('.')->[0], '.');
+is($psarchive_jq->script(['.'])->[0], '.');
 is($psarchive_jq->output_raw(0), 0);
 is($psarchive->transform($psarchive_jq)->checksum(), $psarchive_jq->checksum());
 is($psarchive->transform()->checksum(), $psarchive_jq->checksum());

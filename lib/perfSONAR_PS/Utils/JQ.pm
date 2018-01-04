@@ -41,7 +41,12 @@ sub jq {
         #a lot of JQ is not grabbing objects, so use this as default
         $formatting_params->{'allow_nonref'} = 1;
     }
-
+    
+    #join jq script
+    if(ref($jq) eq 'ARRAY'){
+        $jq = join ' ', @{$jq};
+    }
+    
     #initialize command  variables
     my @cmd = ('jq', "$jq");
     my $cmd_string = join ' ', @cmd;

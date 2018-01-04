@@ -530,8 +530,14 @@ sub psconfig_json_schema() {
         "JQTransformSpecification": {
             "type": "object",
             "properties": {
-                "script":    { "type": "string" },
-                "output-raw": { "type": "boolean" }
+                "script":   {
+                    "anyOf": [
+                        { "type": "string" },
+                        { "type": "array", "items": { "type": "string" } }
+                    ]
+                },
+                "output-raw": { "type": "boolean" },
+                "args": { "$ref": "#/pSConfig/AnyJSON" }
             },
             "additionalProperties": false,
             "required": [ "script" ]

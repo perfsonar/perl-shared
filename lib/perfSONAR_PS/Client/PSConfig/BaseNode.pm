@@ -81,6 +81,25 @@ sub _field{
     return $self->data->{$field};
 }
 
+sub _field_list{
+    my ($self, $field, $val) = @_;
+    
+    #handle case where scalar provided
+    if(defined $val){
+        if(ref($val) eq 'ARRAY'){
+            $self->data->{$field} = $val;
+        }else{
+            $self->data->{$field} = [$val];
+        }
+    }
+    
+    if(ref($self->data->{$field}) ne 'ARRAY'){
+        return [$self->data->{$field}];
+    }
+    
+    return $self->data->{$field};
+}
+
 sub _field_class{
     my ($self, $field, $class, $val) = @_;
     
