@@ -191,11 +191,33 @@ sub next {
     #set addresses
     $self->_set_addresses(\@addrs);
     
+    ##
+    #create object to be queried by jq template vars
+    my $archives = $self->_get_archives($scheduled_by_addr);
+    if($self->error()){
+         return $self->_handle_next_error(\@addrs, $self->error());
+    }
+    my $hosts = $self->_get_hosts();
+    if($self->error()){
+         return $self->_handle_next_error(\@addrs, $self->error());
+    }
+    my $contexts = [];
+    foreach my $addr(@addrs){
+        my $addr_contexts = $self->_get_contexts($addr);
+        if($self->error()){
+            return $self->_handle_next_error(\@addrs, $self->error());
+        }
+        push @{$contexts}, $addr_contexts;
+    }
+    my $jq_obj = $self->_jq_obj($archives, $hosts, $contexts);
+    ## end jq obj
+    
     #init template so we can start explanding variables
     my $template = new perfSONAR_PS::Client::PSConfig::Parsers::Template(
         groups => \@addrs,
         scheduled_by_address => $scheduled_by_addr,
-        flip => $flip
+        flip => $flip,
+        jq_obj => $jq_obj
     );
     
     #set scheduled_by_address for this iteration
@@ -210,34 +232,36 @@ sub next {
     }
     
     #expand archivers
-    my $archives = $self->_get_archives($scheduled_by_addr, $template);
-    if($archives){
-        $self->_set_expanded_archives($archives);
-    }else{
-        return $self->_handle_next_error(\@addrs, "Error expanding archives: " . $self->error());
+    my $expanded_archives = [];
+    foreach my $archive(@{$archives}){
+        my $expanded_archive = $template->expand($archive);
+        unless($expanded_archive){
+            return $self->_handle_next_error(\@addrs, "Error expanding archives: " . $template->error());
+        }
+        push @{$expanded_archives}, $expanded_archive;
     }
+    $self->_set_expanded_archives($expanded_archives);
     
     #expand contexts
     #Note: Assumes first address is first participant, second is second participant, etc.
-    my $contexts = [];
-    foreach my $addr(@addrs){
-        my $addr_contexts = $self->_get_contexts($addr, $template);
-        if($addr_contexts){
-            push @{$contexts}, $addr_contexts;
-        }else{
-            return $self->_handle_next_error(\@addrs, "Error expanding contexts: " . $self->error());
+    my $expanded_contexts = [];
+    foreach my $context(@{$contexts}){
+        my $expanded_context = $template->expand($context);
+        unless($expanded_context){
+            return $self->_handle_next_error(\@addrs, "Error expanding context: " . $template->error());
         }
+        push @{$expanded_contexts}, $expanded_context;
     }
-    $self->_set_expanded_contexts($contexts);
+    $self->_set_expanded_contexts($expanded_contexts);
     
     #expand reference
     my $reference;
     if($self->task()->reference()){
-        $reference = $template->expand($self->task()->reference()->data());
+        $reference = $template->expand($self->task()->reference());
         if($reference){
             $self->_set_expanded_reference($reference);
         }else{
-            return $self->_handle_next_error(\@addrs, "Error expanding reference: " . $self->error());
+            return $self->_handle_next_error(\@addrs, "Error expanding reference: " . $template->error());
         }
     }
     
@@ -292,7 +316,11 @@ sub pscheduler_task {
                 $has_context = 1;
             }
         }
-        $task_data->{"contexts"} = $self->expanded_contexts() if($has_context);
+        if($has_context){
+            $task_data->{"contexts"} = {
+                'contexts' => $self->expanded_contexts()
+            };
+        }
     }
     
     #set schedule
@@ -327,6 +355,29 @@ sub pscheduler_task {
     }    
     
     return $psched_task;
+}
+
+sub _jq_obj{
+    my ($self, $archives, $hosts, $contexts) = @_;
+    
+    #convert addresses
+    my $addresses = [];
+    foreach my $address(@{$self->addresses()}){
+        push @{$addresses}, $address->data();
+    }
+    
+    #return object
+    my $jq_obj = {
+        "addresses" => $addresses,
+        "archives" => $archives,
+        "contexts" => $contexts,
+        "hosts" => $hosts,
+        "task" => $self->task()->data(),
+        "test" => $self->test()->data()
+    };
+    $jq_obj->{"schedule"} = $self->schedule()->data() if($self->schedule());
+    
+    return $jq_obj;
 }
 
 sub _pscheduler_prep{
@@ -454,15 +505,9 @@ sub _get_archives{
             #check if duplicate
             my $checksum = $archive->checksum();
             next if($archive_tracker{$checksum}); #skip duplicates
-            #expand template vars
-            my $expanded = $template->expand($archive->data());
-            unless($expanded){
-                self->_set_error("Error expanding archive template variables: " . $template->error());
-                return;
-            }
             #if made it here, add to the list
             $archive_tracker{$checksum} = 1;
-            push @archives, $expanded;
+            push @archives, $archive->data();
         }
     }
     
@@ -471,23 +516,42 @@ sub _get_archives{
         #check if duplicate
         my $checksum = $archive->checksum();
         next if($archive_tracker{$checksum}); #skip duplicates
-        #expand template vars
-        my $expanded = $template->expand($archive->data());
-        unless($expanded){
-            self->_set_error("Error expanding default archive template variables: " . $template->error());
-            return;
-        }
         #if made it here, add to the list
         $archive_tracker{$checksum} = 1;
-        push @archives, $expanded;
+        push @archives, $archive->data();
     }
     
     return \@archives;
     
 }
 
+sub _get_hosts{
+    ##
+    # Get hosts for each address.
+    my ($self) = @_;
+    
+    #iterate addresses
+    my $hosts = [];
+    foreach my $address(@{$self->addresses()}){
+        #check host no_agent
+        my $host;
+        if($address->can('host_ref') && $address->host_ref()){
+            $host = $self->psconfig()->host($address->host_ref());
+        }elsif($address->_parent_host_ref()){
+            $host = $self->psconfig()->host($address->_parent_host_ref());
+        }
+        if($host){
+            push @{$hosts}, $host->data();
+        }else{
+            push @{$hosts}, {}; #push empty object to keep indices consistent
+        }
+    }
+        
+    return $hosts;
+}
+
 sub _get_contexts{
-    my ($self, $address, $template) = @_;
+    my ($self, $address) = @_;
     
     my @contexts = ();
     unless($address && $address->context_refs()){
@@ -502,12 +566,7 @@ sub _get_contexts{
             $self->_set_error("Unable to find context '$context_ref' defined for address ". $address->address());
             return;
         }
-        my $expanded = $template->expand($context->data());
-        unless($expanded){
-            self->_set_error("Error expanding context template variables: " . $template->error());
-            return;
-        }
-        push @contexts, $expanded;
+        push @contexts, $context->data();
     }
     
     return \@contexts;
