@@ -28,6 +28,7 @@ use Data::Dumper;
 our $VERSION = 4.0;
 
 has 'pscheduler_url'      => (is => 'rw', isa => 'Str');
+has 'reference_label'      => (is => 'rw', isa => 'Str');
 has 'tracker_file'        => (is => 'rw', isa => 'Str');
 has 'client_uuid_file'    => (is => 'rw', isa => 'Str');
 has 'user_agent'          => (is => 'rw', isa => 'Str');
@@ -56,6 +57,7 @@ sub init {
                                             pscheduler_url => 1,
                                             tracker_file => 1,
                                             client_uuid_file => 1,
+                                            reference_label => 1,
                                             user_agent => 1,
                                             new_task_min_ttl => 1,
                                             new_task_min_runs => 1,
@@ -68,6 +70,7 @@ sub init {
     #init this object
     $self->errors([]);
     $self->pscheduler_url($parameters->{'pscheduler_url'});
+    $self->reference_label($parameters->{'reference_label'});
     $self->tracker_file($parameters->{'tracker_file'});
     $self->client_uuid_file($parameters->{'client_uuid_file'});
     $self->user_agent($parameters->{'user_agent'});
@@ -102,7 +105,7 @@ sub init {
         my $psc_filters = new perfSONAR_PS::Client::PScheduler::ApiFilters();
         #TODO: filter on enabled field (not yet supported in pscheduler
         $psc_filters->detail_enabled(1);
-        $psc_filters->reference_param("created-by", $self->created_by());
+        $psc_filters->reference_param($self->reference_label(), { "created-by" => $self->created_by() });
         my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters, bind_map => $bind_map, lead_address_map => $lead_address_map);
         
         #get hostname to see if this is a server we already visited using a different address
@@ -180,7 +183,7 @@ sub add_task {
     foreach my $cp(keys %{$self->created_by()}){
         $tmp_created_by->{$cp} = $self->created_by()->{$cp};
     }
-    $new_task->reference_param('created-by', $tmp_created_by);
+    $new_task->reference_param($self->reference_label(), { "created-by" => $tmp_created_by });
     
     #determine if we need new task and create
     my($need_new_task, $new_task_start) = $self->_need_new_task($new_task);
