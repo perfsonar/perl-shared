@@ -103,7 +103,6 @@ sub init {
         my $psc_lead = $self->leads()->{$psc_url};
         my $existing_task_map = {};
         my $psc_filters = new perfSONAR_PS::Client::PScheduler::ApiFilters();
-        #TODO: filter on enabled field (not yet supported in pscheduler
         $psc_filters->detail_enabled(1);
         $psc_filters->reference_param($self->reference_label(), { "created-by" => $self->created_by() });
         my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters, bind_map => $bind_map, lead_address_map => $lead_address_map);

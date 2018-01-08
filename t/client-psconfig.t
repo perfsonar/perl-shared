@@ -62,7 +62,6 @@ is($psaddr->address("lbl-pt1.es.net"), "lbl-pt1.es.net");
 is($psaddr->host_ref("lbl-pt1\@es.net"), undef);
 ####
 is($psaddr->host_ref("lbl-pt1.es.net"), "lbl-pt1.es.net");
-is($psaddr->agent_bind_address("lbl-pt1.es.net"), "lbl-pt1.es.net");
 is($psaddr->lead_bind_address("lbl-pt1.es.net"), "lbl-pt1.es.net");
 ##test _field_urlhostport edge cases
 is($psaddr->pscheduler_address("foo#bar"), undef);

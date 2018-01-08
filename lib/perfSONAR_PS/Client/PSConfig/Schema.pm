@@ -272,7 +272,6 @@ sub psconfig_json_schema() {
                 "host": { "$ref": "#/pSConfig/NameType" },
                 "labels": { "$ref": "#/pSConfig/AddressSpecificationLabelMap" },
                 "remote-addresses": { "$ref": "#/pSConfig/AddressSpecificationRemoteMap" },
-                "agent-bind-address": { "$ref": "#/pSConfig/Host" },
                 "lead-bind-address": { "$ref": "#/pSConfig/Host" },
                 "pscheduler-address": { "$ref": "#/pSConfig/URLHostPort" },
                 "contexts": { "type": "array", "items": { "$ref": "#/pSConfig/NameType" } },
@@ -297,7 +296,6 @@ sub psconfig_json_schema() {
             "type": "object",
             "properties": {
                 "address": { "$ref": "#/pSConfig/Host" },
-                "agent-bind-address": { "$ref": "#/pSConfig/Host" },
                 "lead-bind-address": { "$ref": "#/pSConfig/Host" },
                 "pscheduler-address": { "$ref": "#/pSConfig/URLHostPort" },
                 "contexts": { "type": "array", "items": { "$ref": "#/pSConfig/NameType" } },
@@ -322,7 +320,6 @@ sub psconfig_json_schema() {
             "properties": {
                 "address": { "$ref": "#/pSConfig/Host" },
                 "labels": { "$ref": "#/pSConfig/AddressSpecificationLabelMap" },
-                "agent-bind-address": { "$ref": "#/pSConfig/Host" },
                 "lead-bind-address": { "$ref": "#/pSConfig/Host" },
                 "pscheduler-address": { "$ref": "#/pSConfig/URLHostPort" },
                 "contexts": { "type": "array", "items": { "$ref": "#/pSConfig/NameType" } },

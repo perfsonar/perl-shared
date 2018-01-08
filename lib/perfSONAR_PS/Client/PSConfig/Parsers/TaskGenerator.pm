@@ -339,11 +339,6 @@ sub pscheduler_task {
         data => $task_data
     );
     
-    #set bind address
-    if($self->scheduled_by_address()->agent_bind_address()){
-        $psched_task->add_local_bind_map($self->scheduled_by_address()->agent_bind_address());
-    }
-    
     #set lead bind address and pscheduler address
     foreach my $addr(@{$self->addresses()}){
         if($addr->lead_bind_address()){

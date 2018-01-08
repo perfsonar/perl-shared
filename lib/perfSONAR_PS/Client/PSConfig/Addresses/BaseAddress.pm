@@ -18,11 +18,6 @@ sub address{
     return $self->_field_host('address', $val);
 }
 
-sub agent_bind_address{
-    my ($self, $val) = @_;
-    return $self->_field_host('agent-bind-address', $val);
-}
-
 sub lead_bind_address{
     my ($self, $val) = @_;
     return $self->_field_host('lead-bind-address', $val);
