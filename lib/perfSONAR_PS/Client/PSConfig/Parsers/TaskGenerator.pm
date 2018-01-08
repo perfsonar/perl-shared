@@ -36,7 +36,7 @@ has 'match_addresses' => (is => 'rw', isa => 'ArrayRef[Str]', default => sub {[]
 has 'pscheduler_url' => (is => 'rw', isa => 'Str');
 has 'default_archives' => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PSConfig::Archive]', default => sub { [] });
 has 'use_psconfig_archives' => (is => 'rw', isa => 'Bool', default => sub { 1 });
-
+has 'bind_map' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 
 #read-only
 ##Updated whenever an error occurs
@@ -339,6 +339,11 @@ sub pscheduler_task {
         data => $task_data
     );
     
+    #set bind map
+    if($self->bind_map()){
+        $psched_task->bind_map($self->bind_map());
+    }
+        
     #set lead bind address and pscheduler address
     foreach my $addr(@{$self->addresses()}){
         if($addr->lead_bind_address()){
