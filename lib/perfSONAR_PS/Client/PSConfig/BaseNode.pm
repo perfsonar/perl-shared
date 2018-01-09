@@ -596,6 +596,19 @@ sub _field_cardinal{
     return $self->data->{$field};
 }
 
+sub _field_intzero{
+    my ($self, $field, $val) = @_;
+    if(defined $val){
+        if(int($val) >= 0){
+            $self->data->{$field} = int($val);
+        }else{
+            $self->_set_validation_error("$field cannot be set to $val. Must be integer greater than or equal to 0");
+            return;
+        }
+    }
+    return $self->data->{$field};
+}
+
 sub _field_probability{
     my ($self, $field, $val) = @_;
     if(defined $val){

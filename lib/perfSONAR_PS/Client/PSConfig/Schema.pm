@@ -485,6 +485,12 @@ sub psconfig_json_schema() {
             },
             "additionalProperties": false
         },
+        
+        "IntegerZero": {
+            "type": "integer",
+            "minimum": 0
+        },
+        
 
         "IPAddress": {
             "oneOf": [
@@ -593,7 +599,7 @@ sub psconfig_json_schema() {
         "TaskSpecification": {
             "type": "object",
             "properties": {
-                "scheduled-by": { "$ref": "#/pSConfig/Cardinal" },
+                "scheduled-by": { "$ref": "#/pSConfig/IntegerZero" },
                 "group": { "$ref": "#/pSConfig/NameType" },
                 "test": { "$ref": "#/pSConfig/NameType" },
                 "schedule": { "$ref": "#/pSConfig/NameType" },

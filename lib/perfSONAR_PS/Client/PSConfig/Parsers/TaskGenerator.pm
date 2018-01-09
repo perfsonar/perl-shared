@@ -58,14 +58,16 @@ has 'addresses' => (is => 'ro', isa => 'ArrayRef[perfSONAR_PS::Client::PSConfig:
 #private
 has '_match_addresses_map' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_match_addresses_map');
 
+=item start()
+
+Prepares generator to begin iterating through tasks. Must be run before any call to next()
+
+=cut
+
 sub start {
     my ($self) = @_;
     
-    #handle required properties
-    unless($self->psconfig()){
-        $self->_set_error("TaskGenerator must be given a psconfig property");
-        return;
-    }
+    #handle required properties without defaults
     unless($self->task_name()){
         $self->_set_error("TaskGenerator must be given a task_name property");
         return;
@@ -124,6 +126,13 @@ sub start {
     return 1;
     
 }
+
+=item next()
+
+Finds the next matching task. Returns the addresses and remaining values can be pulled
+from class properties
+
+=cut
 
 sub next {
     my ($self) = @_;
@@ -269,6 +278,13 @@ sub next {
     return @addrs;
 }
 
+
+=item stop()
+
+Stops the iteration and resets variables
+
+=cut
+
 sub stop {
     my ($self) = @_;
     
@@ -279,6 +295,12 @@ sub stop {
     $self->_set_group(undef);
     $self->_set_schedule(undef);
 }
+
+=item pscheduler_task()
+
+Converts current task to a pScheduler Task object
+
+=cut
 
 sub pscheduler_task {
     my ($self) = @_;
@@ -339,10 +361,8 @@ sub pscheduler_task {
         data => $task_data
     );
     
-    #set bind map
-    if($self->bind_map()){
-        $psched_task->bind_map($self->bind_map());
-    }
+    #set bind map - defaults to empty object
+    $psched_task->bind_map($self->bind_map());
         
     #set lead bind address
     foreach my $addr(@{$self->addresses()}){
@@ -581,6 +601,7 @@ sub _handle_next_error {
             $addr_string .= "undefined";
         }   
     }
+    $error = "Unspecified" unless($error);
     
     $self->_set_error("task=" . $self->task_name . ",addresses=" . $addr_string . ",error=" . $error);
     

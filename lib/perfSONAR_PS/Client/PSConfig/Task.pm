@@ -6,7 +6,7 @@ extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
 sub scheduled_by{
     my ($self, $val) = @_;
-    return $self->_field_cardinal('scheduled-by', $val);
+    return $self->_field_intzero('scheduled-by', $val);
 }
 
 sub group_ref{
