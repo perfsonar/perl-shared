@@ -94,7 +94,12 @@ sub init {
     #build list of existing tasks
     $self->logf()->global_context({"action" => "list"});
     my $bind_map = $parameters->{'bind_map'};
+    
+    ##
+    # NOTE: I don't think we need lead_address_map here anymore, but may be wrong. Keep code for now
+    # but may want to remove this to ease confusion in future.
     my $lead_address_map = $parameters->{'lead_address_map'};
+    
     my %visited_leads = ();
     foreach my $psc_url(keys %{$self->leads()}){
         my $log_ctx = {'url' => $psc_url};

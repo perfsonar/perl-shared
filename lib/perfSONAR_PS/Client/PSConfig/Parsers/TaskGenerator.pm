@@ -344,13 +344,10 @@ sub pscheduler_task {
         $psched_task->bind_map($self->bind_map());
     }
         
-    #set lead bind address and pscheduler address
+    #set lead bind address
     foreach my $addr(@{$self->addresses()}){
         if($addr->lead_bind_address()){
             $psched_task->add_lead_bind_map($addr->address(), $addr->lead_bind_address());
-        }
-        if($addr->pscheduler_address()){
-            $psched_task->add_pscheduler_address($addr->address(), $addr->pscheduler_address());
         }
     }    
     

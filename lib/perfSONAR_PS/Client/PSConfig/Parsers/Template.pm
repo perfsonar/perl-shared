@@ -65,8 +65,12 @@ sub expand_var {
     my ($self, $template_var) = @_;
     my $val;
     
-    if($template_var =~ /address\[(\d+)\]/){
+    if($template_var =~ /^address\[(\d+)\]$/){
         $val = $self->_parse_group_address($1);
+    }elsif($template_var =~ /^pscheduler_address\[(\d+)\]$/){
+        $val = $self->_parse_pscheduler_address($1);
+    }elsif($template_var =~ /^lead_bind_address\[(\d+)\]$/){
+        $val = $self->_parse_lead_bind_address($1);
     }elsif($template_var eq 'scheduled_by_address'){
         $val = $self->_parse_scheduled_by_address();
     }elsif($template_var eq 'flip'){
@@ -84,7 +88,7 @@ sub _parse_group_address {
     my ($self, $index) = @_;
     
     if($index > @{$self->groups()}){
-        $self->_set_error("Invalid index is too big in group[$index] template variable");
+        $self->_set_error("Index is too big in group[$index] template variable");
         return;
     }
     
@@ -95,6 +99,46 @@ sub _parse_group_address {
     }
     
     return '"' . $self->groups()->[$index]->address() . '"';
+}
+
+sub _parse_pscheduler_address {
+    my ($self, $index) = @_;
+    
+    if($index > @{$self->groups()}){
+        $self->_set_error("Index is too big in group[$index] template variable");
+        return;
+    }
+    
+    #this should not happen, but here for completeness
+    my $address = $self->groups()->[$index]->pscheduler_address();
+    #fallback to address
+    $address = $self->groups()->[$index]->address() unless($address);
+    unless($address){
+        $self->_set_error("Template variable group[$index] does not have a pscheduler-address nor address");
+        return;
+    }
+    
+    return '"' . $address . '"';
+}
+
+sub _parse_lead_bind_address {
+    my ($self, $index) = @_;
+    
+    if($index > @{$self->groups()}){
+        $self->_set_error("Index is too big in group[$index] template variable");
+        return;
+    }
+    
+    #this should not happen, but here for completeness
+    my $address = $self->groups()->[$index]->lead_bind_address();
+    #fallback to address
+    $address = $self->groups()->[$index]->address() unless($address);
+    unless($address){
+        $self->_set_error("Template variable group[$index] does not have a lead-bind-address or address");
+        return;
+    }
+    
+    return '"' . $address . '"';
 }
 
 sub _parse_scheduled_by_address {
