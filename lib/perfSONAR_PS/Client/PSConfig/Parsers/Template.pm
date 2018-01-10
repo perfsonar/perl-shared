@@ -23,8 +23,23 @@ has 'jq_obj' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'flip' => (is => 'rw', isa => 'Bool', default => sub {0});
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 
+=item expand()
+
+Parse the given perl object replace template variables with appropriate values. Returns copy
+of object with expanded values.
+
+=cut
+
 sub expand {
     my ($self, $obj) = @_;
+    
+    #make sure we have an object, otherwise return what was given
+    unless($obj){
+        return $obj;
+    }
+    
+    #reset error 
+    $self->_set_error("");
     
     #convert to string so we get copy and can do replace
     my $json = to_json($obj);
@@ -35,7 +50,7 @@ sub expand {
         my $template_var = $1;
         next if($template_var_map{$template_var});
         chomp $template_var;
-        my $expanded_val = $self->expand_var($template_var);
+        my $expanded_val = $self->_expand_var($template_var);
         unless(defined $expanded_val){
             return;
         }
@@ -59,12 +74,12 @@ sub expand {
     
 }
 
-sub expand_var {
+sub _expand_var {
     ##
     # There is probably a more generic way to do this, but starting here
     my ($self, $template_var) = @_;
     my $val;
-    
+
     if($template_var =~ /^address\[(\d+)\]$/){
         $val = $self->_parse_group_address($1);
     }elsif($template_var =~ /^pscheduler_address\[(\d+)\]$/){
@@ -87,7 +102,7 @@ sub expand_var {
 sub _parse_group_address {
     my ($self, $index) = @_;
     
-    if($index > @{$self->groups()}){
+    if($index >= @{$self->groups()}){
         $self->_set_error("Index is too big in group[$index] template variable");
         return;
     }
@@ -104,7 +119,7 @@ sub _parse_group_address {
 sub _parse_pscheduler_address {
     my ($self, $index) = @_;
     
-    if($index > @{$self->groups()}){
+    if($index >= @{$self->groups()}){
         $self->_set_error("Index is too big in group[$index] template variable");
         return;
     }
@@ -124,7 +139,7 @@ sub _parse_pscheduler_address {
 sub _parse_lead_bind_address {
     my ($self, $index) = @_;
     
-    if($index > @{$self->groups()}){
+    if($index >= @{$self->groups()}){
         $self->_set_error("Index is too big in group[$index] template variable");
         return;
     }
@@ -167,6 +182,9 @@ sub _parse_flip {
 
 sub _parse_jq {
     my ($self, $jq) = @_;
+    
+    #in conversions to and from json in expand(), quotes get escaped, so revert that here
+    $jq =~ s/\\"/"/g;
     
     my $result;
     eval{

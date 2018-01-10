@@ -9,6 +9,12 @@ use base 'Exporter';
 
 our @EXPORT_OK = qw( psconfig_json_schema );
 
+=item psconfig_json_schema()
+
+Returns the JSON schema
+
+=cut
+
 sub psconfig_json_schema() {
 
     my $raw_json = <<'EOF';

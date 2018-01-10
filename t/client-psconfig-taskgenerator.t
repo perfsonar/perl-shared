@@ -186,7 +186,7 @@ ok($tg->next());
 # Test pscheduler conversion
 my $psched_task;
 ok($psched_task = $tg->pscheduler_task());
-is($psched_task->checksum(), 'QBNMDnJZOfxP3ei9ZpFrcg'); #verify we got the JSON we expected
+is($psched_task->checksum(), 'qWC5b7x0212uHxD1z5LTtg'); #verify we got the JSON we expected
 
 ####################
 # These mess with JSON - put new tests after these with caution
@@ -210,8 +210,8 @@ ok($tg = new perfSONAR_PS::Client::PSConfig::Parsers::TaskGenerator(
 ok($tg->start());
 ok($tg->next());
 is(@{$tg->expanded_archives()}, 1);
-ok($tg->expanded_archives()->[0]->{'archiver'}, 'esmond');
-ok($tg->expanded_archives()->[0]->{'data'}->{'url'}, "http://127.0.0.1/");
+is($tg->expanded_archives()->[0]->{'archiver'}, 'esmond');
+is($tg->expanded_archives()->[0]->{'data'}->{'url'}, "http://127.0.0.1/");
 
 ##
 # test invalid archive ref
@@ -234,7 +234,7 @@ ok($task->archive_refs(["example-archive-central", "example-archive-central"]));
                                                         ));
 ok($tg->start());
 ok($tg->next());
-ok($tg->error());
+is(@{$tg->expanded_archives()}, 1);
 
 ####
 # test private funtions required params

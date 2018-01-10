@@ -12,6 +12,12 @@ use URI;
 has 'data' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'validation_error' => (is => 'ro', isa => 'Str', writer => '_set_validation_error');
 
+=item checksum()
+
+Calculates checksum for object that can be used in comparisons
+
+=cut
+
 sub checksum{
     #calculates checksum for comparing tasks, ignoring stuff like UUID and lead url
     my ($self) = @_;
@@ -22,6 +28,13 @@ sub checksum{
     #canonical should keep it consistent by sorting keys
     return md5_base64(to_json($data_copy, {canonical => 1, utf8 => 1}));
 }
+
+=item json()
+
+Converts object to JSON. Accepts option HashRef with JSON formatting options. See perl 
+JSON module for information on accepted parameters.
+
+=cut
 
 sub json {
      my ($self, $formatting_params) = @_;
@@ -37,10 +50,22 @@ sub json {
      return to_json($self->data, $formatting_params);
 }
 
+=item remove()
+
+Removes item from data HashRef with given key
+
+=cut
+
 sub remove {
     my ($self, $field) = @_;
     $self->_remove_map($self->_normalize_key($field));
 }
+
+=item remove_list_item()
+
+Removes item from list in data HashRef with given key and index
+
+=cut
 
 sub remove_list_item{
     my ($self, $field, $index) = @_;

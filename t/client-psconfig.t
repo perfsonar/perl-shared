@@ -423,9 +423,13 @@ is($psarchive->validate(), 0); #no validation errors
 ##Test transform
 my $psarchive_jq;
 ok($psarchive_jq = new perfSONAR_PS::Client::PSConfig::JQTransform());
+$psarchive_jq->data()->{'script'} = '.';
+is($psarchive_jq->script()->[0], '.');
 is($psarchive_jq->script('.')->[0], '.');
 is($psarchive_jq->script(['.'])->[0], '.');
+is($psarchive_jq->script()->[0], '.');
 is($psarchive_jq->output_raw(0), 0);
+is($psarchive_jq->args({"foo" => "bar"})->{"foo"}, "bar");
 is($psarchive->transform($psarchive_jq)->checksum(), $psarchive_jq->checksum());
 is($psarchive->transform()->checksum(), $psarchive_jq->checksum());
 
@@ -524,6 +528,9 @@ ok($pstask->add_archive_ref('lbl-pt1.es.net'));
 is($pstask->archive_refs()->[0], 'lbl-pt1.es.net');
 is($pstask->disabled(1), 1);
 is($pstask->disabled(0), 0);
+is($pstask->scheduled_by(0), 0);
+is($pstask->scheduled_by(), 0);
+is($pstask->scheduled_by(-1), undef);
 is($pstask->reference({'foo' => 'bar'})->{'foo'}, 'bar');
 is($pstask->reference_param('stuff', 'foobar'), 'foobar');
 is($pstask->reference_param('stuff'), 'foobar');
