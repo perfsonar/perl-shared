@@ -13,6 +13,12 @@ use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Tag;
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseNode';
 
+=item build()
+
+Creates a filter based on the 'type' field of the given HashRef
+
+=cut
+
 sub build {
     my ($self, $data) = @_;
     

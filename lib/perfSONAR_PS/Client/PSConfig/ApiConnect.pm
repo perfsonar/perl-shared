@@ -18,8 +18,13 @@ extends 'perfSONAR_PS::Client::PSConfig::BaseConnect';
 
 our $VERSION = 4.1;
 
+=item config_obj()
+
+Return a perfSONAR_PS::Client::PSConfig::Config object
+
+=cut
+
 sub config_obj {
-    #return a perfSONAR_PS::Client::PSConfig::Config object
     return new perfSONAR_PS::Client::PSConfig::Config();
 }
 

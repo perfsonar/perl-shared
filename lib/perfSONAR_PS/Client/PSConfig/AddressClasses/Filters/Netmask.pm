@@ -16,10 +16,22 @@ has 'type' => (
       },
   );
 
+=item netmask()
+
+Gets/sets netmask
+
+=cut
+
 sub netmask{
     my ($self, $val) = @_;
     return $self->_field_ipcidr('netmask', $val);
 }
+
+=item matches()
+
+Return 0 or 1 depending on if given address and Config object match the provided netmask
+
+=cut
 
 sub matches{
     my ($self, $address_obj, $psconfig) = @_;

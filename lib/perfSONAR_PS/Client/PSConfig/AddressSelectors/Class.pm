@@ -12,10 +12,23 @@ has 'type' => (
       },
   );
 
+=item class()
+
+Gets/sets class
+
+=cut
+
 sub class{
     my ($self, $val) = @_;
     return $self->_field_name('class', $val);
 }
+
+=item select()
+
+Selects addresses that belong to given class and returns as list of name/label/address
+HashRefs.
+
+=cut
 
 sub select{
     my ($self, $psconfig) = @_;

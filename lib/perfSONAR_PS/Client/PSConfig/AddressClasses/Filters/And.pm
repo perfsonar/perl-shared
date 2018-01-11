@@ -12,7 +12,14 @@ has 'type' => (
           return $self->data->{'type'};
       },
   );
-  
+
+
+=item matches()
+
+Return 0 or 1 if all filters evaluate to true
+
+=cut
+
 sub matches{
     my ($self, $address, $psconfig) = @_;
     

@@ -13,10 +13,22 @@ has 'type' => (
       },
   );
 
+=item class()
+
+Returns class
+
+=cut
+
 sub class{
     my ($self, $val) = @_;
     return $self->_field_name('class', $val);
 }
+
+=item matches()
+
+Return 0 or 1 depending on if given address and Config object match this class
+
+=cut
 
 sub matches{
     my ($self, $address, $psconfig) = @_;

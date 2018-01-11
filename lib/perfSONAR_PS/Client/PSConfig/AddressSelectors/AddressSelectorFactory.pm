@@ -6,6 +6,12 @@ use perfSONAR_PS::Client::PSConfig::AddressSelectors::Class;
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseNode';
 
+=item build()
+
+Creates an address selector based on the 'type' field of the given HashRef
+
+=cut
+
 sub build {
     my ($self, $data) = @_;
     

@@ -20,10 +20,22 @@ has '_a_address_map' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_a_a
 has '_b_address_map' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_b_address_map', default => sub{{}});
 has '_checked_pairs' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_checked_pairs', default => sub{{}});
 
+=item unidirectional()
+
+Gets/sets unidirectional
+
+=cut
+
 sub unidirectional{
     my ($self, $val) = @_;
     return $self->_field_bool('unidirectional', $val);
 }
+
+=item a_addresses()
+
+Gets/sets a-addresses
+
+=cut
 
 sub a_addresses{
     my ($self, $val) = @_;
@@ -33,6 +45,12 @@ sub a_addresses{
         $val);
 }
 
+=item a_address()
+
+Gets/sets a-address at specified index
+
+=cut
+
 sub a_address{
     my ($self, $index, $val) = @_;
     return $self->_field_class_factory_list_item('a-addresses', $index,
@@ -41,10 +59,22 @@ sub a_address{
         $val);
 }
 
+=item add_a_address()
+
+Adds a-address to list
+
+=cut
+
 sub add_a_address{
     my ($self, $val) = @_;
     $self->_add_field_class('a-addresses', 'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', $val);
 }
+
+=item b_addresses()
+
+Gets/sets b-addresses
+
+=cut
 
 sub b_addresses{
     my ($self, $val) = @_;
@@ -54,6 +84,13 @@ sub b_addresses{
         $val);
 }
 
+=item b_address()
+
+Gets/sets b-address at specified index
+
+=cut
+
+
 sub b_address{
     my ($self, $index, $val) = @_;
     return $self->_field_class_factory_list_item('b-addresses', $index,
@@ -62,17 +99,26 @@ sub b_address{
         $val);
 }
 
+=item add_b_address()
+
+Adds b-address to list
+
+=cut
+
 sub add_b_address{
     my ($self, $val) = @_;
     $self->_add_field_class('b-addresses', 'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', $val);
 }
 
+=item dimension_size()
+
+This is primarily used by next() and won't have much utility outide that. It merges 
+a_addresses and b_addresses and returnes the total size as needed by the next() algorithm 
+genealized for n dimensions. Tests are then excluded using the is_excluded_selectors below.
+
+=cut
+
 sub dimension_size{
-    ##
-    # This is primarily used by next and won't have much utility outide that.
-    # It merges a_addresses and b_addresses and returnes the total size as needed
-    # by the next() algorithm genealized for n dimensions. Tests are then excluded
-    # using the is_excluded_selectors below.
     my ($self, $dimension) = @_;
     
     unless(defined $dimension && $dimension < $self->dimension_count()){
@@ -84,10 +130,14 @@ sub dimension_size{
     return $size;
 }
 
+=item dimension()
+
+Similar to dimension size, not very useful outside of next() context. See  
+dimension_size() comment.
+
+=cut
+
 sub dimension{
-    ##
-    # Similar to dimension size, not very useful outside of next() context. See 
-    # dimension_size() comment
     my ($self, $dimension, $index) = @_;
     
     unless(defined $dimension && $dimension < $self->dimension_count()){
@@ -128,6 +178,12 @@ sub _stop {
     $self->_set_checked_pairs(undef);
     $self->_set_exclude_checksum_map(undef);
 }
+
+=item is_excluded_selectors()
+
+Given two selectors, return 1 if should be excluded and false otherwise
+
+=cut
 
 sub is_excluded_selectors {
     my ($self, $addr_sels) = @_;

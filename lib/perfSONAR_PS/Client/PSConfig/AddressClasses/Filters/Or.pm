@@ -13,6 +13,12 @@ has 'type' => (
       },
   );
 
+=item matches()
+
+Return 0 or 1 depending on if given address and Config object matches any of the filters
+
+=cut
+
 sub matches{
     my ($self, $address, $psconfig) = @_;
     

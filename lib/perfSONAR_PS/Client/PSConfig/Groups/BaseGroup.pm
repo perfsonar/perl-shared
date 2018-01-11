@@ -19,16 +19,34 @@ has '_address_queue' => (is => 'ro', isa => 'ArrayRef', default => sub{[]});
 has '_psconfig' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Config|Undef', writer => '_set_psconfig');
 
 
+=item default_address_label()
+
+Gets/sets default-address-label
+
+=cut
+
 sub default_address_label{
     my ($self, $val) = @_;
     return $self->_field('default-address-label', $val);
 }
+
+=item dimension_count()
+
+Function to override that returns number of dimensions
+
+=cut
 
 sub dimension_count{
     my $self = shift;
     #returns number of dimensions. made sub so can be dynamic
     die("Override this");
 }
+
+=item dimension()
+
+Function to override that returns dimension at given coordinates
+
+=cut
 
 sub dimension{
     my $self = shift;
@@ -37,19 +55,39 @@ sub dimension{
     die("Override this");
 }
 
+=item dimension_size()
+
+Returns size of dimension at given index
+
+=cut
+
 sub dimension_size{
     my ($self, $index) = @_;
     #accepts dimension for which you want the size and return int
     die("Override this");
 }
 
+=item select_addresses()
+
+Given an array of HashRefs containing {name=> '..', label=> '..', address=> Address }
+find all the combose an return and array of arrays of BaseAddress objects where things
+like remote address and labelled address have been worked-out.
+
+=cut
+
 sub select_addresses{
     my ($self, $addr_nlas) = @_;
-    #given an array of HashRefs containing {name=> '..', label=> '..', address=> Address }
-    # find all the combose an return and array of arrarys of BaseAddress objects where things
-    # like remote address and labelled address have been worked-out.
+
     die("Override this");
 }
+
+=item is_excluded_selectors()
+
+Subroutine that indicates if given address combination should be excluded. This
+implementation always returns false (never exclude), should be overridden if you 
+need different behavior.
+
+=cut
 
 sub is_excluded_selectors {
     my ($self, $addr_sels) = @_;
@@ -57,6 +95,12 @@ sub is_excluded_selectors {
     #override this if group has ways to exclude address selector combinations
     return 0;
 }
+
+=item start()
+
+Initializes variables used to iterate through group
+
+=cut
 
 sub start{
     #Gets the next group of address selectors
@@ -78,6 +122,12 @@ sub _start {
     #override this if you have local state to set on start
     return;
 }
+
+=item next()
+
+Grabs the next address combination, or returns empty list if none. Must call start first.
+
+=cut
 
 sub next{
     #Gets the next group of address selectors
@@ -135,6 +185,12 @@ sub next{
     return @{$addresses};
 }
 
+=item stop()
+
+Ends iteration and resets iteration variables
+
+=cut
+
 sub stop {
     my ($self) = @_;
     
@@ -150,6 +206,12 @@ sub _stop {
     return;
 }
 
+=item max_iter()
+
+Returns maximum possible number of combinations to iterate over
+
+=cut
+
 sub max_iter{
     my ($self) = @_;
     
@@ -160,6 +222,12 @@ sub max_iter{
     
     return $max_size -1;
 }
+
+=item select_address()
+
+Selects address given a address obj, label and remote address key. 
+
+=cut
 
 sub select_address {
     ##
@@ -209,6 +277,12 @@ sub select_address {
     #finally, if none of the above work, just use the address obj as is
     return $local_addr;
 }
+
+=item merge_parents()
+
+Merges inherited values into addresses from parent addresses if any
+
+=cut
 
 sub merge_parents {
     my ($self, $addr, $parents) = @_;

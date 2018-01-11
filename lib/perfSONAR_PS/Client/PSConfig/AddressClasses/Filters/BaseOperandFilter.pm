@@ -5,6 +5,12 @@ use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::FilterFactory;
 
 extends 'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::BaseFilter';
 
+=item filters()
+
+Gets/sets filters as ArrayRef
+
+=cut
+
 sub filters{
     my ($self, $val) = @_;
     return $self->_field_class_factory_list('filters', 
@@ -13,6 +19,12 @@ sub filters{
         $val);
 }
 
+=item filter()
+
+Gets/sets filter at given index. Returns filter object.
+
+=cut
+
 sub filter{
     my ($self, $index, $val) = @_;
     return $self->_field_class_factory_list_item('filters', $index,
@@ -20,6 +32,12 @@ sub filter{
         'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::FilterFactory', 
         $val);
 }
+
+=item add_filter()
+
+Adds filter to list
+
+=cut
 
 sub add_filter{
     my ($self, $val) = @_;

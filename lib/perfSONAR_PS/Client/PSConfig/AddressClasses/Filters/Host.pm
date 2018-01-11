@@ -13,20 +13,46 @@ has 'type' => (
       },
   );
 
+
+=item site()
+
+Gets/sets sites
+
+=cut
+
 sub site{
     my ($self, $val) = @_;
     return $self->_field('site', $val);
 }
+
+=item tag()
+
+Gets/sets tag
+
+=cut
 
 sub tag{
     my ($self, $val) = @_;
     return $self->_field('tag', $val);
 }
 
+=item no_agent()
+
+Gets/sets no-agent
+
+=cut
+
 sub no_agent{
     my ($self, $val) = @_;
     return $self->_field_bool('no-agent', $val);
 }
+
+=item matches()
+
+Return 0 or 1 depending on if given address and Config object match this host definition.
+Must match all given parameters.
+
+=cut
 
 sub matches{
     my ($self, $address, $psconfig) = @_;

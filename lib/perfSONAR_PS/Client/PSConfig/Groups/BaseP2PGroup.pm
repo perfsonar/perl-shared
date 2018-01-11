@@ -13,9 +13,21 @@ has '_exclude_checksum_map' => (
       writer => '_set_exclude_checksum_map'
   );
 
+=item dimension_count()
+
+Returns 2 since there are two dimensions (src, dst) in point-to-point test
+
+=cut
+
 sub dimension_count{
     return 2;
 }
+
+=item excludes_self()
+
+Gets/sets excludes-self
+
+=cut
 
 sub excludes_self{
     my ($self, $val) = @_;
@@ -30,20 +42,44 @@ sub excludes_self{
     return $self->data->{'excludes-self'};
 }
 
+=item excludes()
+
+Gets/sets excludes as ArrayRef
+
+=cut
+
 sub excludes{
     my ($self, $val) = @_;
     return $self->_field_class_list('excludes', 'perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair', $val);
 }
+
+=item exclude()
+
+Gets/sets exclude as specified index
+
+=cut
 
 sub exclude{
     my ($self, $index, $val) = @_;
     return $self->_field_class_list_item('excludes', $index, 'perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair', $val);
 }
 
+=item add_exclude()
+
+Adds exclude to list
+
+=cut
+
 sub add_exclude{
     my ($self, $val) = @_;
     $self->_add_field_class('excludes', 'perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair', $val);
 }
+
+=item is_excluded_selectors()
+
+Given list of two address selectors, returns 1 if should be excluded, 0 otherwise
+
+=cut
 
 sub is_excluded_selectors {
     my ($self, $addr_sels) = @_;
@@ -82,6 +118,12 @@ sub is_excluded_selectors {
     return $exclude_this;
 }
 
+=item is_excluded_addresses()
+
+Given two addresses and two hosts, returns 1 if should be excluded and 0 otehrwise
+
+=cut
+
 sub is_excluded_addresses {
     my ($self, $a_addr, $b_addr, $a_host, $b_host) = @_;
     
@@ -115,6 +157,13 @@ sub is_excluded_addresses {
     #don't exclude
     return 0;
 }
+
+=item select_addresses()
+
+Given two name/label/address HashRefs, returns the a tuple of Address objects. If excluded
+return and empty list 
+
+=cut
 
 sub select_addresses{
     my ($self, $addr_nlas) = @_;

@@ -14,6 +14,12 @@ has 'type' => (
       },
   );
 
+=item filter()
+
+Gets/set filter
+
+=cut
+
 sub filter{
     my ($self, $val) = @_;
     return $self->_field_class_factory('filter', 
@@ -21,6 +27,12 @@ sub filter{
         'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::FilterFactory', 
         $val);
 }
+
+=item matches()
+
+Return 0 or 1 depending on if given address and Config object does NOT match given filter
+
+=cut
 
 sub matches{
     my ($self, $address, $psconfig) = @_;

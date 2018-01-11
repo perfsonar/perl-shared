@@ -6,6 +6,11 @@ use perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::DataSourceFacto
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
 
+=item data_source()
+
+Gets/sets data-source 
+
+=cut
 
 sub data_source{
     my ($self, $val) = @_;
@@ -15,6 +20,12 @@ sub data_source{
         $val);
 }
 
+=item match_filter()
+
+Gets/sets match-filter 
+
+=cut
+
 sub match_filter{
     my ($self, $val) = @_;
     return $self->_field_class_factory('match-filter', 
@@ -23,6 +34,12 @@ sub match_filter{
         $val);
 }
 
+=item exclude_filter()
+
+Gets/sets exclude-filter 
+
+=cut
+
 sub exclude_filter{
     my ($self, $val) = @_;
     return $self->_field_class_factory('exclude-filter', 
@@ -30,6 +47,13 @@ sub exclude_filter{
         'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::FilterFactory', 
         $val);
 }
+
+=item select()
+
+Selects all addresses in a given Config objects that match this class. Returns an 
+ArrayRef of HashRefs with fields 'name', 'label' and 'address'.
+
+=cut
 
 sub select{
     my ($self, $psconfig) = @_;
@@ -59,6 +83,12 @@ sub select{
 
     return \@matching_nlas;
 }
+
+=item matches()
+
+Return 0 or 1 depending on if given address and Config object match this class
+
+=cut
 
 sub matches{
     my ($self, $address, $psconfig) = @_;

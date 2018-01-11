@@ -13,10 +13,22 @@ has 'type' => (
       },
   );
 
+=item tag()
+
+Gets/sets tag
+
+=cut
+
 sub tag{
     my ($self, $val) = @_;
     return $self->_field('tag', $val);
 }
+
+=item matches()
+
+Return 0 or 1 depending on if given address and Config object has the given tag
+
+=cut
 
 sub matches{
     my ($self, $address, $psconfig) = @_;

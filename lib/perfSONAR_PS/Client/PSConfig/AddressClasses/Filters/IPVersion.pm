@@ -15,10 +15,22 @@ has 'type' => (
       },
   );
 
+=item ip_version()
+
+Gets/set ip-version
+
+=cut
+
 sub ip_version{
     my ($self, $val) = @_;
     return $self->_field_ipversion('ip-version', $val);
 }
+
+=item matches()
+
+Return 0 or 1 depending on if given address and Config object match ip version.
+
+=cut
 
 sub matches{
     my ($self, $address_obj, $psconfig) = @_;

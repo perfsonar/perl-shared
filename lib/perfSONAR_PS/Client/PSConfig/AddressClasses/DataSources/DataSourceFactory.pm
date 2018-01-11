@@ -7,6 +7,12 @@ use perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::RequestingAgent
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseNode';
 
+=item build()
+
+Creates a data source based on the 'type' field of the given HshRef
+
+=cut
+
 sub build {
     my ($self, $data) = @_;
     

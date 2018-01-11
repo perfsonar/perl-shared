@@ -25,6 +25,13 @@ use IPC::Run qw(run timeout start pump);
 
 our @EXPORT_OK = qw( jq );
 
+=item jq()
+
+Executes a jq query against the given HashRef and then returns the resulting JSON. The 
+resulting JSON can optionally be formatted using the given formatting parameters.
+
+=cut
+
 sub jq {
     my ($jq, $json_obj, $formatting_params) = @_;
     

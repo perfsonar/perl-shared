@@ -8,6 +8,12 @@ use perfSONAR_PS::Client::PSConfig::Groups::List;
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseNode';
 
+=item build()
+
+Creates a group based on the 'type' field of the given HashRef
+
+=cut
+
 sub build {
     my ($self, $data) = @_;
     

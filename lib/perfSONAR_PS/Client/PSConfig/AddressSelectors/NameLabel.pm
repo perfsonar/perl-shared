@@ -12,15 +12,35 @@ has 'type' => (
       },
   );
 
+=item name()
+
+Gets/sets name
+
+=cut
+
 sub name{
     my ($self, $val) = @_;
     return $self->_field_name('name', $val);
 }
- 
+
+=item label()
+
+Gets/sets label
+
+=cut
+
 sub label{
     my ($self, $val) = @_;
     return $self->_field_name('label', $val);
 }
+
+
+=item select()
+
+Selects addresses with given name and label then returns as list of name/label/address
+HashRefs.
+
+=cut
 
 sub select{
     my ($self, $psconfig) = @_;

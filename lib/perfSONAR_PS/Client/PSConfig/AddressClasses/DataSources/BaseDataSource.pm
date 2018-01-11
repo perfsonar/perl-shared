@@ -12,10 +12,15 @@ has 'type' => (
       },
   );
 
+=item fetch()
+
+A function for accepting a config object and returning a HashRef of Address objects
+
+=cut
+
 sub fetch{
     my ($self, $config) = @_;
     
-    #a function for accepting a config and returning an array of Address objects
     die("Override this");
 }
 

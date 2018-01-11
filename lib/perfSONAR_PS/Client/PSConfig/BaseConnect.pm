@@ -36,6 +36,12 @@ has 'bind_address' => (is => 'rw', isa => 'Str|Undef');
 has 'filters' => (is => 'rw', isa => 'perfSONAR_PS::Client::PSConfig::ApiFilters', default => sub { new perfSONAR_PS::Client::PSConfig::ApiFilters(); });
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 
+=item config_obj()
+
+Abstract method to return a Config object to be used by this object
+
+=cut
+
 sub config_obj {
     ##
     # Override this with the type of config object you want returned
@@ -142,6 +148,12 @@ sub _config_from_http() {
     return $psconfig;
 }
 
+=item get_config()
+
+Loads configuration from file or URL and returns config object
+
+=cut
+
 sub get_config() {
     my $self = shift;
     
@@ -165,6 +177,12 @@ sub get_config() {
     }
 }
 
+=item save_config()
+
+Saves configuration file to disk
+
+=cut
+
 sub save_config() {
     my ($self, $psconfig, $formatting_params) = @_;
     $formatting_params = {} unless $formatting_params;
@@ -186,6 +204,12 @@ sub save_config() {
     }
 }
 
+=item expand_config()
+
+Expands includes in config
+
+=cut
+
 sub expand_config() {
     my ($self, $psconfig1) = @_;
     
@@ -202,7 +226,7 @@ sub expand_config() {
     }
     
     #iterate through includes and expand
-    $self->clear_error();#clear out errors
+    $self->_clear_error();#clear out errors
     my @errors = ();
     foreach my $include_url(@{$includes}){
         my $psconfig2_client = $self->blessed()->new(url=>$include_url);
@@ -220,7 +244,7 @@ sub expand_config() {
     }
 }
 
-sub clear_error(){
+sub _clear_error(){
     my ($self) = @_;
     $self->_set_error('');
 }

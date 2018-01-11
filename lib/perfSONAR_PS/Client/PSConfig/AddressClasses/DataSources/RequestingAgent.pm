@@ -14,6 +14,12 @@ has 'type' => (
   );
 
 
+=item fetch()
+
+Accepts a config object and return HashRef of Address objects from requesting agent
+
+=cut
+
 sub fetch{
     my ($self, $psconfig) = @_;
     

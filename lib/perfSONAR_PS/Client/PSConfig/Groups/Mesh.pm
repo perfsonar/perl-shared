@@ -15,6 +15,11 @@ has 'type' => (
       },
   );
 
+=item addresses()
+
+Gets/sets addresses as ArrayRef
+
+=cut
 
 sub addresses{
     my ($self, $val) = @_;
@@ -24,6 +29,12 @@ sub addresses{
         $val);
 }
 
+=item address()
+
+Gets/sets address at specified index
+
+=cut
+
 sub address{
     my ($self, $index, $val) = @_;
     return $self->_field_class_factory_list_item('addresses', $index,
@@ -32,10 +43,23 @@ sub address{
         $val);
 }
 
+=item add_address()
+
+Adds address to list
+
+=cut
+
 sub add_address{
     my ($self, $val) = @_;
     $self->_add_field_class('addresses', 'perfSONAR_PS::Client::PSConfig::AddressSelectors::BaseAddressSelector', $val);
 }
+
+=item dimension_size()
+
+This is primarily used by next() and won't have much utility outide that. Returns the
+length of the addresses list since both dimensions are the same in a mesh.
+
+=cut
 
 sub dimension_size{
     my ($self, $dimension) = @_;
@@ -47,6 +71,14 @@ sub dimension_size{
     my $size = @{$self->data->{'addresses'}};
     return $size;
 }
+
+=item dimension()
+
+This is primarily used by next() and won't have much utility outide that. Given a dimension
+and optional index, return item. If no index given returns addresses, otherwise returns 
+item at index index in addresses.
+
+=cut
 
 sub dimension{
     my ($self, $dimension, $index) = @_;

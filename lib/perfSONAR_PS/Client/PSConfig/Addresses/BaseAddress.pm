@@ -12,36 +12,77 @@ has '_parent_no_agent' => (is => 'ro', isa => 'Bool|Undef', writer => '_set_pare
 has '_parent_host_ref' => (is => 'ro', isa => 'Str|Undef', writer => '_set_parent_host_ref');
 has '_parent_address' => (is => 'ro', isa => 'Str|Undef', writer => '_set_parent_address');
 
+=item address()
+
+Gets/sets address
+
+=cut
 
 sub address{
     my ($self, $val) = @_;
     return $self->_field_host('address', $val);
 }
 
+=item lead_bind_address()
+
+Gets/sets lead-bind-address
+
+=cut
+
 sub lead_bind_address{
     my ($self, $val) = @_;
     return $self->_field_host('lead-bind-address', $val);
 }
+
+=item pscheduler_address()
+
+Gets/sets pscheduler-address
+
+=cut
 
 sub pscheduler_address{
     my ($self, $val) = @_;
     return $self->_field_urlhostport('pscheduler-address', $val);
 }
 
+=item disabled()
+
+Gets/sets disabled
+
+=cut
+
 sub disabled{
     my ($self, $val) = @_;
     return $self->_field_bool('disabled', $val);
 }
+
+=item no_agent()
+
+Gets/sets no-agent
+
+=cut
 
 sub no_agent{
     my ($self, $val) = @_;
     return $self->_field_bool('no-agent', $val);
 }
 
+=item context_refs()
+
+Gets/sets contexts as an ArrayRef
+
+=cut
+
 sub context_refs{
     my ($self, $val) = @_;
     return $self->_field_refs('contexts', $val);
 }
+
+=item add_context_ref()
+
+Adds a context to the array. 
+
+=cut
 
 sub add_context_ref{
     my ($self, $val) = @_;
