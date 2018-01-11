@@ -90,6 +90,8 @@ sub _expand_var {
         $val = $self->_parse_scheduled_by_address();
     }elsif($template_var eq 'flip'){
         $val = $self->_parse_flip();
+    }elsif($template_var eq 'localhost'){
+        $val = $self->_parse_localhost();
     }elsif($template_var =~ '^jq (.+)$'){
         $val = $self->_parse_jq($1);
     }else{
@@ -178,6 +180,18 @@ sub _parse_flip {
     my ($self, $index) = @_;
 
     return ($self->flip() ? JSON::true : JSON::false);
+}
+
+sub _parse_localhost {
+    my ($self) = @_;
+    
+    #if flipped, use scheduled_by_address
+    if($self->flip()){
+        return $self->_parse_scheduled_by_address();
+    }
+    
+    #otherwise use localhost
+    return '"localhost"';
 }
 
 sub _parse_jq {

@@ -182,6 +182,16 @@ is($template->expand({ "var" => "{% flip %}" })->{'var'}, JSON::true);
 $template->flip(0); #restore
 
 ########
+# localhost variables
+########
+#test not flipped
+is($template->expand({ "var" => "{% localhost %}" })->{'var'}, 'localhost');
+#test flipped
+$template->flip(1);
+is($template->expand({ "var" => "{% localhost %}" })->{'var'}, $addr1->address());
+$template->flip(0); #restore
+
+########
 # jq variables
 ########
 #valid
