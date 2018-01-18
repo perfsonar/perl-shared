@@ -83,7 +83,7 @@ sub dimension_size{
     return $size;
 }
 
-=item dimension()
+=item dimension_step()
 
 This is primarily used by next() and won't have much utility outide that. Given a dimension
 and optional index, return item. If no index given returns addresses, otherwise returns 
@@ -91,7 +91,7 @@ item at index index in addresses.
 
 =cut
 
-sub dimension{
+sub dimension_step{
     my ($self, $dimension, $index) = @_;
     
     unless(defined $dimension && $dimension < $self->dimension_count()){
@@ -99,6 +99,22 @@ sub dimension{
     }
 
     return defined $index ? $self->address($index) : $self->addresses();
+}
+
+=item dimension()
+
+Return addresses unless dimension count >0, then return undefined
+
+=cut
+
+sub dimension{
+    my ($self, $dimension) = @_;
+    
+    unless(defined $dimension && $dimension < $self->dimension_count()){
+        return;
+    }
+
+    return $self->addresses();
 }
 
 =item select_addresses()

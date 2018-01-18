@@ -11,6 +11,7 @@ has '_parent_disabled' => (is => 'ro', isa => 'Bool|Undef', writer => '_set_pare
 has '_parent_no_agent' => (is => 'ro', isa => 'Bool|Undef', writer => '_set_parent_no_agent');
 has '_parent_host_ref' => (is => 'ro', isa => 'Str|Undef', writer => '_set_parent_host_ref');
 has '_parent_address' => (is => 'ro', isa => 'Str|Undef', writer => '_set_parent_address');
+has '_parent_name' => (is => 'ro', isa => 'Str|Undef', writer => '_set_parent_name');
 
 =item address()
 

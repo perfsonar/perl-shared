@@ -153,10 +153,22 @@ is($tg->stop(), undef);
 # Edge cases for various methods
 ##
 is($group->dimension_size(),undef);
-is($group->dimension_size(3),undef);
+is($group->dimension_size(2),undef);
+is($group->dimension_step(),undef);
+is($group->dimension_step(2),undef);
 is($group->dimension(),undef);
-is($group->dimension(3),undef);
+is($group->dimension(2),undef);
 my @dimension;
+ok(@dimension = @{$group->dimension_step(0)});
+is(@dimension,3);
+is($dimension[0]->name(),"host-a.perfsonar.net");
+is($dimension[1]->name(),"host-b.perfsonar.net");
+is($dimension[2]->name(),"host-c.perfsonar.net");
+ok(@dimension = @{$group->dimension_step(1)});
+is(@dimension,3);
+is($dimension[0]->name(),"host-a.perfsonar.net");
+is($dimension[1]->name(),"host-b.perfsonar.net");
+is($dimension[2]->name(),"host-c.perfsonar.net");
 ok(@dimension = @{$group->dimension(0)});
 is(@dimension,3);
 is($dimension[0]->name(),"host-a.perfsonar.net");

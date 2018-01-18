@@ -130,14 +130,14 @@ sub dimension_size{
     return $size;
 }
 
-=item dimension()
+=item dimension_step()
 
 Similar to dimension size, not very useful outside of next() context. See  
 dimension_size() comment.
 
 =cut
 
-sub dimension{
+sub dimension_step{
     my ($self, $dimension, $index) = @_;
     
     unless(defined $dimension && $dimension < $self->dimension_count()){
@@ -145,6 +145,22 @@ sub dimension{
     }
     
     return defined $index ? $self->_merged_addresses()->[$index] : $self->_merged_addresses();
+}
+
+=item dimension()
+
+Return a_addresses for 0 and b_addresses for 1. Undefined otherwise
+
+=cut
+
+sub dimension{
+    my ($self, $dimension) = @_;
+    
+    unless(defined $dimension && $dimension < $self->dimension_count()){
+        return;
+    }
+
+    return $dimension == 0 ? $self->a_addresses() : $self->b_addresses();
 }
 
 sub _start {

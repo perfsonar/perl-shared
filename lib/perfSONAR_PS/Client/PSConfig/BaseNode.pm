@@ -11,6 +11,7 @@ use URI;
 
 has 'data' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'validation_error' => (is => 'ro', isa => 'Str', writer => '_set_validation_error');
+has 'map_name' => (is => 'ro', isa => 'Str', writer => '_set_map_name');
 
 =item checksum()
 
@@ -245,7 +246,9 @@ sub _field_class_map_item{
         return undef;
     }
     
-    return $class->new(data => $self->data->{$field}->{$param});
+    my $o = $class->new(data => $self->data->{$field}->{$param});
+    $o->_set_map_name($param);
+    return $o;
 } 
 
 

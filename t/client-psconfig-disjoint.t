@@ -199,21 +199,35 @@ is($group->a_address(0)->name(), "host-a.perfsonar.net");
 is($group->b_address(2)->name(), "host-c.perfsonar.net");
 is($group->dimension_size(),undef);
 is($group->dimension_size(3),undef);
+is($group->dimension_step(),undef);
+is($group->dimension_step(3),undef);
 is($group->dimension(),undef);
 is($group->dimension(3),undef);
+
 my @dimension;
+#check dimension_step
+ok(@dimension = @{$group->dimension_step(0)});
+is(@dimension,4);
+is($dimension[0]->name(),"host-a.perfsonar.net");
+is($dimension[1]->name(),"host-a.perfsonar.net");
+is($dimension[2]->name(),"host-b.perfsonar.net");
+is($dimension[3]->name(),"host-c.perfsonar.net");
+ok(@dimension = @{$group->dimension_step(1)});
+is(@dimension,4);
+is($dimension[0]->name(),"host-a.perfsonar.net");
+is($dimension[1]->name(),"host-a.perfsonar.net");
+is($dimension[2]->name(),"host-b.perfsonar.net");
+is($dimension[3]->name(),"host-c.perfsonar.net");
+#check dimension
 ok(@dimension = @{$group->dimension(0)});
-is(@dimension,4);
+is(@dimension,1);
 is($dimension[0]->name(),"host-a.perfsonar.net");
-is($dimension[1]->name(),"host-a.perfsonar.net");
-is($dimension[2]->name(),"host-b.perfsonar.net");
-is($dimension[3]->name(),"host-c.perfsonar.net");
 ok(@dimension = @{$group->dimension(1)});
-is(@dimension,4);
+is(@dimension,3);
 is($dimension[0]->name(),"host-a.perfsonar.net");
-is($dimension[1]->name(),"host-a.perfsonar.net");
-is($dimension[2]->name(),"host-b.perfsonar.net");
-is($dimension[3]->name(),"host-c.perfsonar.net");
+is($dimension[1]->name(),"host-b.perfsonar.net");
+is($dimension[2]->name(),"host-c.perfsonar.net");
+#test excludes
 is($group->is_excluded_selectors(), undef);
 is($group->is_excluded_selectors("foo"), undef);
 is($group->is_excluded_selectors(["foo"]), undef);

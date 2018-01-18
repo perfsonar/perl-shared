@@ -44,11 +44,24 @@ sub dimension_count{
 
 =item dimension()
 
-Function to override that returns dimension at given coordinates
+Function that returns dimension at given index
 
 =cut
 
 sub dimension{
+    my $self = shift;
+    die("Override this");
+}
+
+=item dimension_step()
+
+Function to override that returns dimension at given coordinates. This is only used in 
+iterating through group. For complex toplogies there may be merging and other things 
+done here. 
+
+=cut
+
+sub dimension_step{
     my $self = shift;
     my @indices = @_;
     #accepts list of indices for each dimension and returns AddressSelector
@@ -161,7 +174,7 @@ sub next{
                     $index = int($self->iter() / $working_size);
                 }
         
-                my $addr_sel = $self->dimension($i - 1, $index);
+                my $addr_sel = $self->dimension_step($i - 1, $index);
                 unshift @addr_sels, $addr_sel;
             }
 
@@ -297,6 +310,7 @@ sub merge_parents {
         if($parent->can('host_ref')){
             #only Address has host_ref,so set that as parent
             $addr->_set_parent_address($parent->address());
+            $addr->_set_parent_name($parent->map_name());
             if($parent->host_ref()){
                 $addr->_set_parent_host_ref($parent->host_ref());
             }
