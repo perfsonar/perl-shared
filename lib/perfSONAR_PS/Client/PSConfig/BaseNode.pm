@@ -126,6 +126,47 @@ sub _field_list{
     return $self->data->{$field};
 }
 
+sub _field_map{
+    my ($self, $field, $val) = @_;
+    
+    if(defined $val){
+        unless(ref $val eq 'HASH'){
+            $self->_set_validation_error("Unable to set $field. Value must be a hashref.");
+            return;
+        }
+        my $tmp_map = {};
+        foreach my $v(keys %{$val}){
+            $tmp_map->{$v} = $val->{$v};
+        }
+        $self->data->{$field} = $tmp_map;
+    }
+    
+    return $self->data->{$field};
+}
+
+sub _field_map_item{
+    my ($self, $field, $param, $val) = @_;
+    
+    unless(defined $field && defined $param){
+        return undef;
+    }
+    
+    if(defined $val){
+        $self->_init_field($self->data, $field);
+        $self->data->{$field}->{$param} = $val->data;
+    }
+    
+    unless($self->_has_field($self->data, $field)){
+        return undef;
+    }
+    
+    unless($self->_has_field($self->data->{$field}, $param)){
+        return undef;
+    }
+    
+    return $self->data->{$field}->{$param};
+} 
+
 sub _field_class{
     my ($self, $field, $class, $val) = @_;
     
