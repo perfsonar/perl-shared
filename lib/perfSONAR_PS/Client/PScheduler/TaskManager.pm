@@ -94,7 +94,7 @@ sub init {
         my $existing_task_map = {};
         my $psc_filters = new perfSONAR_PS::Client::PScheduler::ApiFilters();
         #TODO: filter on enabled field (not yet supported in pscheduler
-        #$psc_filters->detail_enabled(1);
+        $psc_filters->detail_enabled(1);
         $psc_filters->reference_param("created-by", $self->created_by());
         my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters, bind_map => $bind_map, lead_address_map => $lead_address_map);
         
@@ -128,6 +128,18 @@ sub init {
             $psc_lead->{'error_time'} = time; 
             push @{$self->errors()}, "Problem getting existing tests from pScheduler lead $psc_url: ".$psc_client->error();
             next;
+        }elsif(@{$existing_tasks} == 0){
+            #TODO: Drop this when 4.0 deprecated. fallback in case detail filter not supported (added in 4.0.2).
+            print "Trying to get task list without enabled filter\n" if($self->debug());
+            delete $psc_client->filters()->task_filters()->{"detail"};
+            $existing_tasks = $psc_client->get_tasks();
+            if($psc_client->error()){
+                #there was an error getting the entire list
+                print "Error getting task list (no enabled filter) from $psc_url: " . $psc_client->error() . "\n" if($self->debug());
+                $psc_lead->{'error_time'} = time; 
+                push @{$self->errors()}, "Problem getting existing tests from pScheduler lead $psc_url: ".$psc_client->error();
+                next;
+            }
         }
         
         #Add to existing task map
@@ -328,7 +340,21 @@ sub _evaluate_task {
         $old_task->{'keep'} = 1;
         my $until_ts = $self->_iso_to_ts($old_task->{task}->schedule_until());
         if($need_new_task){
-            if(!$until_ts || $until_ts > ($self->old_task_deadline() + ($self->new_task_min_ttl() * $self->task_renewal_fudge_factor()))){
+            #if detail has start use that, otherwise use added time
+            my $old_task_start_iso = ($old_task->{task}->detail_start() ? $old_task->{task}->detail_start() : $old_task->{task}->detail_added());
+            my $old_task_start_ts = $self->_iso_to_ts($old_task_start_iso);
+            if( (!$old_task->{task}->detail_exclusive()) && #not exclusive
+                    $old_task->{task}->detail_multiresult() && #is multi-result
+                    $old_task->{task}->detail_runs() == 1 && # just 1 run
+                    ($old_task_start_ts + 15*60) < time # started at least 15 min ago
+                ){
+                #if background-multi, one or less runs and start time is 15 minutes (arbitrary) 
+                # in the past the start time is immediately. Fixes special case where bgm 
+                # task first run is not scheduled and thus no tests run
+                print "Stuck background-multi task found (start=$old_task_start_iso: $uuid, runs=1). Will cancel and recreate.\n" if($self->debug());
+                $old_task->{'keep'} = 0;
+                $new_start_time = time;
+            }elsif(!$until_ts || $until_ts > ($self->old_task_deadline() + ($self->new_task_min_ttl() * $self->task_renewal_fudge_factor()))){
                 #if old task has no end time or will not expire before deadline, no task needed
                 $need_new_task = 0 ;
                 #continue with loop since need to mark other tasks that might be older as keep

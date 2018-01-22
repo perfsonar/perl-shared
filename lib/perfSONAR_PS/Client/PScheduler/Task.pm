@@ -222,10 +222,10 @@ sub detail{
     my ($self, $val) = @_;
     
     if(defined $val){
-        $self->data->{'schedule'} = $val;
+        $self->data->{'detail'} = $val;
     }
     
-    return $self->data->{'schedule'};
+    return $self->data->{'detail'};
 }
 
 sub detail_enabled{
@@ -843,8 +843,9 @@ sub checksum() {
     $self->data->{'schedule'} = {}  unless($self->data->{'schedule'});
     
     #disable canonical since we don't care at the moment
-    my $data_copy = from_json(to_json($self->data, {'canonical' => 0}));
+    my $data_copy = from_json(to_json($self->data, {canonical => 0, utf8 => 1}));
     $data_copy->{'tool'} = ''; #clear out tool since set by server
+    $data_copy->{'href'} = ''; #clear out href
     $data_copy->{'schedule'}->{'start'} = ''; #clear out temporal values
     $data_copy->{'schedule'}->{'until'} = ''; #clear out temporal values
     $data_copy->{'detail'} = {}; #clear out detail
@@ -858,7 +859,7 @@ sub checksum() {
     }
     
     #canonical should keep it consistent by sorting keys
-    return md5_base64(to_json($data_copy, {'canonical' => 1}));
+    return md5_base64(to_json($data_copy, {canonical => 1, utf8 => 1}));
 }
 
 sub to_str() {

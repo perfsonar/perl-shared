@@ -453,6 +453,7 @@ sub save {
 
     my $content = SaveConfigString($config);
 
+    utf8::decode($content);
     my ($status, $res) = save_file( { file => $self->{CONFIG_FILE}, content => $content } );
     if ($status == -1) {
         return -1;
@@ -512,7 +513,7 @@ sub load_config {
 
     my %config;
     eval {
-        %config = ParseConfig(-ConfigFile => $file, -AutoTrue => 1, -UTF8 => 1);
+        %config = ParseConfig(-ConfigFile => $file, -UTF8 => 1);
     };
     if ($@) {
         return undef;

@@ -1,10 +1,10 @@
 %define install_base /usr/lib/perfsonar/
 %define config_base  /etc/perfsonar
 
-%define relnum   1 
+%define relnum   1
 
 Name:			libperfsonar
-Version:		4.0.1
+Version:		4.0.2.2
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Shared Libraries
 License:		Distributable, see LICENSE
@@ -189,7 +189,6 @@ Requires:		perl(Net::CIDR)
 Requires:		perl(Net::DNS)
 Requires:		perl(Net::IP)
 Requires:		perl(Net::NTP)
-Requires:		perl(Net::Ping)
 Requires:		perl(Net::Server)
 Requires:		perl(Net::Traceroute)
 Requires:		perl(NetAddr::IP)

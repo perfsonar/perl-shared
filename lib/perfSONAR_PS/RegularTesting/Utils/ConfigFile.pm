@@ -34,7 +34,7 @@ sub parse_file {
     my $parameters = validate( @_, { file => 1 });
     my $file = $parameters->{file};
 
-    unless (open(FILE, $file)) {
+    unless (open(FILE, "<:encoding(UTF-8)", $file)) {
         my $msg = "Couldn't open $file";
         $logger->error($msg);
         return (-1, $msg);
@@ -145,7 +145,7 @@ sub save_file {
     # Generate a Config::General version
     my $str = save_string(config => $config);
 
-    unless (open(FILE, ">$file")) {
+    unless (open(FILE, ">:encoding(UTF-8)", $file)) {
         my $msg = "Couldn't open $file for writing";
         $logger->error($msg);
         return (-1, $msg);
