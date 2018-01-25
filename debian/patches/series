@@ -2,4 +2,3 @@ RPM2
 services.diff
 math-int64.diff
 ntp-config.diff
-owamp-stop.diff
