@@ -119,7 +119,7 @@ sub _field_list{
         }
     }
     
-    if(ref($self->data->{$field}) ne 'ARRAY'){
+    if($self->data->{$field} && ref($self->data->{$field}) ne 'ARRAY'){
         return [$self->data->{$field}];
     }
     
