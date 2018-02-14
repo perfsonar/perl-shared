@@ -40,20 +40,25 @@ sub get_addresses {
 
 # Try to stop gracefully, and if not, kill the owampd processes
 sub kill {
-	my ($self) = @_;
+    my ($self) = @_;
 
-	my ($status, $res) = $self->SUPER::kill();
+    my ($status, $res) = $self->SUPER::kill();
 
-	if ($status != 0) {
-		system("pkill -9 -f owampd");
-	}else{
-	    sleep(30);
-	    system("pkill -9 -f owampd");
-	}
-    
-	system('find /var/lib/owamp -type f -mtime +1 -exec rm {} \;');
-    
-	return (0, "");
+    if ($status == 0) {
+        # check if process is still alive
+        for my $i (1..30) {
+           my $code = system('pgrep owampd >/dev/null');
+           if (($code & 127) == 0 and ($code >> 8) == 1) {
+               last; # no process found
+           }
+           sleep(1);
+       }
+    }
+
+    system("pkill -9 -f owampd");
+    system('find /var/lib/owamp -type f -mtime +1 -exec rm {} \;');
+
+    return (0, "");
 }
 
 1;
