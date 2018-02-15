@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+
+if [ -z "$1" ]; then
+    echo "Usage: $0 SRPM"
+    echo ""
+    echo "Must specify the SRPM to build"
+    exit 1
+fi
+
+sudo mock -r epel-7-x86_64 --resultdir=/home/vagrant/mock-results/epel-7-x86_64/ --arch=x86_64 $1
