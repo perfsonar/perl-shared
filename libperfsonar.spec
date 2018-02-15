@@ -328,11 +328,6 @@ make ROOTPATH=%{buildroot}/%{install_base} CONFIGPATH=%{buildroot}/%{config_base
 %clean
 rm -rf %{buildroot}
 
-%post
-
-%files
-%defattr(0644,perfsonar,perfsonar,0755)
-
 %files perl
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/Net/NTP.pm
