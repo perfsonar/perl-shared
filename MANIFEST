@@ -76,6 +76,7 @@ lib/perfSONAR_PS/Client/PSConfig/Groups/List.pm
 lib/perfSONAR_PS/Client/PSConfig/Groups/Mesh.pm
 lib/perfSONAR_PS/Client/PSConfig/Host.pm
 lib/perfSONAR_PS/Client/PSConfig/JQTransform.pm
+lib/perfSONAR_PS/Client/PSConfig/Parsers/BaseTemplate.pm
 lib/perfSONAR_PS/Client/PSConfig/Parsers/TaskGenerator.pm
 lib/perfSONAR_PS/Client/PSConfig/Parsers/Template.pm
 lib/perfSONAR_PS/Client/PSConfig/Schedule.pm
