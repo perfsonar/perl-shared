@@ -1,6 +1,6 @@
 # perfSONAR RPM Build Scripts
 
-This directory contains [Vagrant](https://www.vagrantup.com) VM definitions and a set of scripts for building RPMs, in particular RPMs for the perfSONAR perl package (though the basic processes should extend to other types of packages). These scripts live in the perl-shared repo because many of the perfSONAR components import this as a git submodule. From the submodule, these scripts can be used as a base setup for that package's build infrastructure. 
+This directory contains [Vagrant](https://www.vagrantup.com) VM definitions and a set of scripts for building RPMs, in particular RPMs for the perfSONAR perl packages (though the basic processes should extend to other types of packages). These scripts live in the perl-shared repo because many of the perfSONAR components import this as a git submodule. From the submodule, these scripts can be used as a base setup for that package's build infrastructure. 
 
 ## RPM Build and Test Install Quickstart
 
