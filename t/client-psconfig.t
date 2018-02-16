@@ -36,6 +36,7 @@ use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Or;
 use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Tag;
 use perfSONAR_PS::Client::PSConfig::AddressClasses::AddressClass;
 use perfSONAR_PS::Client::PSConfig::Subtask;
+use perfSONAR_PS::Client::PSConfig::Parsers::BaseTemplate;
 
 ########
 #Create initial config
@@ -817,6 +818,11 @@ my $psconfig_addrclass = new perfSONAR_PS::Client::PSConfig::AddressClasses::Add
 is($psconfig_addrclass->select(), undef);
 is($psconfig_addrclass->select("foo"), undef);
 
+my $psconfig_basetemplate = new perfSONAR_PS::Client::PSConfig::Parsers::BaseTemplate();
+eval{$psconfig_basetemplate->_expand_var()};
+ok($@);
+is($psconfig_basetemplate->replace_quotes(0), 0);
+ok($psconfig_basetemplate->expand({}));
 
 ##################################################################
 #TODO: Delete below
