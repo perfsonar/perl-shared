@@ -52,3 +52,16 @@ git submodule update
 ```
 
 For more on submodules see the [GitHub submodule documentation](http://git-scm.com/book/en/v2/Git-Tools-Submodules).
+
+## Building RPMs
+
+You can build the RPMs with the following commands:
+
+```bash
+cd rpms
+vagrant up
+vagrant ssh
+build
+```
+
+For more information on building and testing RPMs see rpms/RPM_README.md.
