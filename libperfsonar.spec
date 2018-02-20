@@ -63,6 +63,7 @@ Requires:		perl(URI::URL)
 Requires:		perl(XML::LibXML)
 Requires:		perfsonar-common
 Requires:		iproute
+Requires:		jq
 %if 0%{?el7}
 Requires:		GeoIP-data
 %endif
