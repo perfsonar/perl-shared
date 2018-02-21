@@ -52,7 +52,7 @@ sub get_metadata() {
         $self->_set_error($msg);
         return;
     }
-    my $response_metadata = from_json($response->content);
+    my $response_metadata = from_json($response->body);
     if(! $response_metadata){
         $self->_set_error("No metadata objects returned.");
         return;

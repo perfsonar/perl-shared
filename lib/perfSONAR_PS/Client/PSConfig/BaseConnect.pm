@@ -119,8 +119,6 @@ sub _config_from_http() {
             url => $self->url, 
             timeout => $self->filters->timeout,
             ca_certificate_file => $self->filters->ca_certificate_file,
-            ca_certificate_path => $self->filters->ca_certificate_path,
-            verify_hostname => $self->filters->verify_hostname,
             local_address => $self->bind_address,
             #headers => $self->filters->headers()
         );
@@ -131,7 +129,7 @@ sub _config_from_http() {
             return;
         }
 
-        my $response_json = from_json($response->content);
+        my $response_json = from_json($response->body);
         if(!$response_json){
             $self->_set_error("No task objects returned.");
             return;

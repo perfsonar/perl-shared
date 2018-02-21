@@ -125,7 +125,7 @@ sub init {
             push @{$self->errors()}, "Empty string returned from $psc_url/hostname. It may not have its hostname configured correctly.";
             next;
         }elsif($visited_leads{$psc_hostname}){
-            $self->log_error("Already visited server at $psc_url using " . $visited_leads{$psc_hostname} . ", so skipping.", $log_ctx);
+            $self->log_debug("Already visited server at $psc_url using " . $visited_leads{$psc_hostname} . ", so skipping.", $log_ctx);
             next;
         }else{
            $visited_leads{$psc_hostname} = $psc_url;

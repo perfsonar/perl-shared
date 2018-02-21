@@ -96,14 +96,14 @@ sub register{
     
     # Check the outcome of the response
     if ($result->is_success) {
-        my $jsonResp = decode_json($result->content);
+        my $jsonResp = decode_json($result->body);
         #print $jsonResp;
         my $rType = $jsonResp->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TYPE)}->[0];
         my $resultRecord = SimpleLookupService::Records::RecordFactory->instantiate($rType);
         $resultRecord->fromHashRef($jsonResp);
 		return (0, $resultRecord);
     } else {
-        return (-1, { message => $result->status_line });
+        return (-1, { message => $result->get_start_line_chunk(0) });
     }
     
 } 

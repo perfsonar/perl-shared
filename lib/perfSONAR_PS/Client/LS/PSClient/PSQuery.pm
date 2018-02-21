@@ -24,8 +24,8 @@ sub query{
     
         # Check the outcome of the response
     if ($result->is_success) {
-    	#print $result->content;
-        my $jsonResp = decode_json($result->content);
+    	#print $result->body;
+        my $jsonResp = decode_json($result->body);
         #print $jsonResp;
         
         my @resultArray = @{$jsonResp};
@@ -43,7 +43,7 @@ sub query{
         #print scalar @resultArray;
         return(0,\@resObjArray);
     } else {
-        return (-1, { message => $result->status_line });
+        return (-1, { message => $result->get_start_line_chunk(0) });
     }
     
 } 

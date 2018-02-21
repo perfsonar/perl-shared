@@ -564,7 +564,7 @@ sub runs(){
         $self->_set_error($msg);
         return;
     }
-    my $response_json = from_json($response->content);
+    my $response_json = from_json($response->body);
     if(! $response_json){
         $self->_set_error("No run objects returned.");
         return;
@@ -618,7 +618,7 @@ sub run_uuids(){
         $self->_set_error($msg);
         return;
     }
-    my $response_json = from_json($response->content);
+    my $response_json = from_json($response->body);
     if(! $response_json){
         $self->_set_error("No run objects returned.");
         return;
@@ -665,7 +665,7 @@ sub get_run() {
         $self->_set_error($msg);
         return;
     }
-    my $run_response_json = from_json($run_response->content);
+    my $run_response_json = from_json($run_response->body);
     if(!$run_response_json){
         $self->_set_error("No run object returned from $run_url");
         return;
@@ -746,7 +746,7 @@ sub get_lead() {
         return;
     }
     my $lead_response_json;
-    eval{$lead_response_json = from_json($lead_response->content);};
+    eval{$lead_response_json = from_json($lead_response->body);};
     if($@){
         $self->_set_error("Error parsing lead object returned from $lead_url: $@");
         return;

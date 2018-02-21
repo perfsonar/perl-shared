@@ -67,7 +67,7 @@ sub init  {
     }
     
     my $result = $bootstrap_server->send(resourceLocator => '/lookup/activehosts.json');
-    my $json_server_list = decode_json($result->content);
+    my $json_server_list = decode_json($result->body);
 
     
     my @server_list = @{$json_server_list->{'hosts'}};
@@ -119,7 +119,7 @@ sub query{
     		my $result = $server->send(resourceLocator => $modifiedUrl);
     		
     		if ($result->is_success) {
-    			my $jsonResp = decode_json($result->content);
+    			my $jsonResp = decode_json($result->body);
         		my @resultArray = @{$jsonResp};
        
         		foreach my $result (@resultArray){

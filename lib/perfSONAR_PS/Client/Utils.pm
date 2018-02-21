@@ -2,12 +2,9 @@ package perfSONAR_PS::Client::Utils;
 
 use base 'Exporter';
 use Log::Log4perl qw(get_logger);
-use Net::INET6Glue::INET_is_INET6;
-use LWP::UserAgent;
-use LWP::Protocol::http;
-use LWP::Protocol::https;
-use HTTP::Request;
-use HTTP::Response;
+use Mojo::UserAgent;
+use Mojo::Transaction::HTTP;
+use Mojo::Message::Response;
 use Params::Validate qw(:all);
 use JSON qw(from_json);
 use URI::URL;
@@ -35,9 +32,9 @@ sub send_http_request{
         get_params => 0, 
         data => 0, 
         headers => 0, 
-        verify_hostname => 0, 
         ca_certificate_file => 0, 
-        ca_certificate_path => 0,
+        verify_hostname => 0, #deprecated
+        ca_certificate_path => 0, #deprecated
         local_address => 0,
         bind_map => 0,
         address_map => 0} );
@@ -60,9 +57,10 @@ sub send_http_request{
     }
     
     #init user agent
-    my $ua = LWP::UserAgent->new;
-    $ua->timeout($timeout);
-    $ua->env_proxy();
+    my $ua = Mojo::UserAgent->new;
+    $ua->connect_timeout($timeout);
+    $ua->request_timeout($timeout);
+    $ua->proxy->detect;
     
     #lookup address if map provided
     my $address_map = $parameters{address_map};
@@ -97,50 +95,37 @@ sub send_http_request{
         $bind_address = $parameters{local_address};
     }
     #apply address binding
-    if($bind_address && LWP::UserAgent->can('local_address')){
-        #local_address introduced in 5.834, CentOS 6 has 5.833
+    if($bind_address){
         $ua->local_address($bind_address);
-    }elsif($bind_address){
-        #older versions do it this way, which seems like it will break in parallel request cases
-        # and possibly some more complicated cases. Should probably drop this when we drop CentOS 6
-        @LWP::Protocol::http::EXTRA_SOCK_OPTS = ( LocalAddr => "$bind_address" );
-        @LWP::Protocol::https::EXTRA_SOCK_OPTS = ( LocalAddr => "$bind_address" );
     }
     
     #remainder of user agent config
-    unless($parameters{ca_certificate_file} || $parameters{ca_certificate_path}){
-        $ua->ssl_opts(SSL_verify_mode => 0x00);
-    }
-    if(defined $parameters{verify_hostname}){
-        $ua->ssl_opts(verify_hostname => $parameters{verify_hostname});
-    }else{
-        $ua->ssl_opts(verify_hostname => 0);
-    }
-    $ua->ssl_opts(SSL_ca_file => $parameters{ca_certificate_file}) if($parameters{ca_certificate_file});
-    $ua->ssl_opts(SSL_ca_path => $parameters{ca_certificate_path}) if($parameters{ca_certificate_path});
-    push @{ $ua->requests_redirectable }, 'POST';
-    push @{ $ua->requests_redirectable }, 'PUT';
-    push @{ $ua->requests_redirectable }, 'DELETE';
+    $ua->ca($parameters{ca_certificate_file}) if($parameters{ca_certificate_file});
     
     # Create a request
     $logger->debug("Sending HTTP " . $parameters{connection_type} . " to $url" . ($bind_address ? " with local bind address $bind_address" : "")) if($logger);
-    my $req = HTTP::Request->new($parameters{connection_type} => $url);
+    my $tx = Mojo::Transaction::HTTP->new;
+    $tx->req->method($parameters{connection_type});
+    $tx->req->url->parse($url);
     if($parameters{'headers'}){
         foreach my $h(keys %{$parameters{'headers'}}){
-           $req->header($h => $parameters{'headers'}->{$h}); 
+           $tx->req->headers->header($h => $parameters{'headers'}->{$h}); 
         }
     }
-    $req->header('Content-Type' => 'application/json; charset=utf-8'); #always set this
+    $tx->req->headers->content_type('application/json; charset=utf-8'); #always set this
     utf8::encode($parameters{data}) if($parameters{data});
-    $req->content($parameters{data});
+    $tx->req->body($parameters{data}) if($parameters{data});
     
     # Pass request to the user agent and get a response back
-    my $res = _send_request_timeout(agent=> $ua, request => $req, timeout => $timeout);
+    my $res = _send_request_timeout(agent=> $ua, request => $tx, timeout => $timeout);
+    my $status_line = $res->get_start_line_chunk(0);
     #compensate for perl's lack of IPv4 fallback. If we get unreachable check if it is 
     # dual-stacked. If it is then try the IPv4 address.
-    if($res->code == 500 && ($res->status_line =~ /unreachable/ || $res->status_line =~ /connect/)){
+    if($res->code == 500 && ($status_line =~ /unreachable/ || $status_line =~ /connect/)){
         my $url_obj = new URI::URL($url);
         my $hostname = $url_obj->host;
+        $hostname =~ s/\[//;
+        $hostname =~ s/\]//;
         #check we are working with a hostname
         if(is_hostname($hostname)){
             my $resolver = Net::DNS::Resolver->new;
@@ -153,7 +138,7 @@ sub send_http_request{
                     foreach my $dns_rec($dns_reply->answer){
                         if($dns_rec->type eq 'A'){
                             $url_obj->host($dns_rec->address);
-                            $req->uri($url_obj);
+                            $req->url->parse("$url_obj");
                             $res = _send_request_timeout(agent=> $ua, request => $req, timeout => $timeout);
                             last if($res && $res->is_success);
                         }
@@ -177,15 +162,19 @@ sub _send_request_timeout {
     my $timeout = $parameters{'timeout'};
     my $req = $parameters{'request'};
     my $res;
-    $ua->timeout($timeout);
+    $ua->connect_timeout($timeout);
+    $ua->request_timeout($timeout);
     eval{
         local $SIG{ALRM} = sub { die "timeout\n" };
         alarm $timeout;
-        $res = $ua->request($req);
+        my $res_tx = $ua->start($req);
+        $res = $res_tx->res;
         alarm 0;
     };
     if($@){
-        $res = new HTTP::Response(500, "Timeout connecting to server");
+        $res = new Mojo::Message::Response();
+        $res->code(500);
+        $res->message("Timeout connecting to server");
     }
     
     return $res;
@@ -196,17 +185,17 @@ sub build_err_msg {
     my $parameters = validate( @_, {http_response => 1});
     my $response = $parameters->{http_response};
     
-    my $errmsg = $response->status_line;
-    if($response->content){
+    my $errmsg = $response->get_start_line_chunk(0);
+    if($response->body){
         #try to parse json
         eval{
-            my $response_json = from_json($response->content);
+            my $response_json = from_json($response->body);
             if (exists $response_json->{'error'} && $response_json->{'error'}){
                 $errmsg .= ': ' . $response_json->{'error'};
             }
         };
         if($@){
-            $errmsg .= ': ' . $response->content;
+            $errmsg .= ': ' . $response->body;
         }
     }
     
