@@ -50,7 +50,7 @@ sub get_data {
         $self->_set_error($msg);
         return;
     }
-    my $response_data = from_json($response->content);
+    my $response_data = from_json($response->body);
     if(! $response_data){
         $self->_set_error("No time series objects returned.");
         return;

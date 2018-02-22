@@ -3,6 +3,7 @@ package perfSONAR_PS::Client::PScheduler::BaseNode;
 use Mouse;
 use perfSONAR_PS::Client::PScheduler::ApiFilters;
 use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg);
+use JSON qw(to_json from_json);
 
 has 'data' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'url' => (is => 'rw', isa => 'Str|Undef');
@@ -10,6 +11,20 @@ has 'bind_address' => (is => 'rw', isa => 'Str|Undef');
 has 'uuid' => (is => 'rw', isa => 'Str|Undef');
 has 'filters' => (is => 'rw', isa => 'perfSONAR_PS::Client::PScheduler::ApiFilters', default => sub { new perfSONAR_PS::Client::PScheduler::ApiFilters()  });
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
+
+sub json {
+     my ($self, $formatting_params) = @_;
+     $formatting_params = {} unless $formatting_params;
+     unless(exists $formatting_params->{'utf8'} && defined $formatting_params->{'utf8'}){
+        $formatting_params->{'utf8'} = 1;
+     }
+     unless(exists $formatting_params->{'canonical'} && defined $formatting_params->{'canonical'}){
+        #makes JSON loading faster
+        $formatting_params->{'canonical'} = 0;
+     }
+     
+     return to_json($self->data, $formatting_params);
+}
 
 sub _post_url {
     my $self = shift;
@@ -50,7 +65,7 @@ sub _post {
         return;
     }
 
-    return $response->content;
+    return $response->body;
 }
 
 sub _put {
@@ -74,7 +89,7 @@ sub _put {
         return;
     }
 
-    return $response->content;
+    return $response->body;
 }
 
 sub _delete {
@@ -97,7 +112,7 @@ sub _delete {
         return;
     }
 
-    return $response->content;
+    return $response->body;
 }
 
 sub _has_field{

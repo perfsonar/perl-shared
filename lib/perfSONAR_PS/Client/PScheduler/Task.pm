@@ -564,7 +564,7 @@ sub runs(){
         $self->_set_error($msg);
         return;
     }
-    my $response_json = from_json($response->content);
+    my $response_json = from_json($response->body);
     if(! $response_json){
         $self->_set_error("No run objects returned.");
         return;
@@ -618,7 +618,7 @@ sub run_uuids(){
         $self->_set_error($msg);
         return;
     }
-    my $response_json = from_json($response->content);
+    my $response_json = from_json($response->body);
     if(! $response_json){
         $self->_set_error("No run objects returned.");
         return;
@@ -665,7 +665,7 @@ sub get_run() {
         $self->_set_error($msg);
         return;
     }
-    my $run_response_json = from_json($run_response->content);
+    my $run_response_json = from_json($run_response->body);
     if(!$run_response_json){
         $self->_set_error("No run object returned from $run_url");
         return;
@@ -746,7 +746,7 @@ sub get_lead() {
         return;
     }
     my $lead_response_json;
-    eval{$lead_response_json = from_json($lead_response->content);};
+    eval{$lead_response_json = from_json($lead_response->body);};
     if($@){
         $self->_set_error("Error parsing lead object returned from $lead_url: $@");
         return;
@@ -857,6 +857,12 @@ sub checksum() {
             }
         }
     }
+    foreach my $tparam(keys %{$data_copy->{'test'}->{'spec'}}){
+        if($tparam =~ /^_/){
+            $data_copy->{'test'}->{'spec'}->{$tparam} = '';
+        }
+    }
+    
     
     #canonical should keep it consistent by sorting keys
     return md5_base64(to_json($data_copy, {canonical => 1, utf8 => 1}));
@@ -867,9 +873,16 @@ sub to_str() {
 
     my $str = $self->test_type();
     $str .= "/" . $self->tool() if $self->tool();
-    $str .= "(" . ($self->test_spec_param("source") ? $self->test_spec_param("source") : 'self');
-    $str .= "->" . ($self->test_spec_param("dest") ?  $self->test_spec_param("dest") : $self->test_spec_param("destination"));
-    $str .= ")";
+    if($self->test_spec_param("source") || $self->test_spec_param("dest") || $self->test_spec_param("destination")){
+        $str .= "(";
+        $str .= ($self->test_spec_param("source") ? $self->test_spec_param("source") : 'self');
+        if($self->test_spec_param("dest")){
+            $str .= "->" . $self->test_spec_param("dest");
+        }elsif($self->test_spec_param("destination")){
+            $str .= "->" . $self->test_spec_param("destination");
+        }
+        $str .= ")";
+    }
 
     return $str;
 }

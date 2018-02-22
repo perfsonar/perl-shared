@@ -62,7 +62,7 @@ sub get_tasks() {
         return;
     }
 
-    my $response_json = from_json($response->content);
+    my $response_json = from_json($response->body);
     if(! $response_json){
         $self->_set_error("No task objects returned.");
         return;
@@ -146,7 +146,7 @@ sub get_task() {
         $self->_set_error($msg);
         return;
     }
-    my $task_response_json = from_json($task_response->content);
+    my $task_response_json = from_json($task_response->body);
     if(!$task_response_json){
         $self->_set_error("No task object returned from $task_url");
         return;
@@ -191,7 +191,7 @@ sub get_tools() {
         $self->_set_error($msg);
         return;
     }
-    my $response_json = from_json($response->content);
+    my $response_json = from_json($response->body);
     if(! $response_json){
         $self->_set_error("No tool objects returned.");
         return;
@@ -245,7 +245,7 @@ sub get_tool() {
         $self->_set_error($msg);
         return;
     }
-    my $tool_response_json = from_json($tool_response->content);
+    my $tool_response_json = from_json($tool_response->body);
     if(!$tool_response_json){
         $self->_set_error("No tool object returned from $tool_url");
         return;
@@ -283,7 +283,7 @@ sub get_test_urls() {
         $self->_set_error($msg);
         return;
     }
-    my $response_json = from_json($response->content);
+    my $response_json = from_json($response->body);
     if(! $response_json){
         $self->_set_error("No test objects returned.");
         return;
@@ -325,7 +325,7 @@ sub get_tests() {
         $self->_set_error($msg);
         return;
     }
-    my $response_json = from_json($response->content);
+    my $response_json = from_json($response->body);
     if(! $response_json){
         $self->_set_error("No test objects returned.");
         return;
@@ -379,7 +379,7 @@ sub get_test() {
         $self->_set_error($msg);
         return;
     }
-    my $test_response_json = from_json($test_response->content);
+    my $test_response_json = from_json($test_response->body);
     if(!$test_response_json){
         $self->_set_error("No test object returned from $test_url");
         return;
@@ -418,7 +418,7 @@ sub get_hostname() {
         return;
     }
 
-    my $response_json = from_json($response->content, {allow_nonref => 1});
+    my $response_json = from_json($response->body, {allow_nonref => 1});
     if(! $response_json){
         $self->_set_error("No hostname returned.");
         return;

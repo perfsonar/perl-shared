@@ -232,7 +232,7 @@ override 'to_pscheduler' => sub {
             $interval = $schedule->interval;
             $self->psc_test_interval(schedule => $schedule, psc_task => $psc_task);
         }else{
-            $logger->warning("Schedule type " . $schedule->type . " not currently supported. Skipping test.");
+            $logger->warn("Schedule type " . $schedule->type . " not currently supported. Skipping test.");
             return;
         }
         

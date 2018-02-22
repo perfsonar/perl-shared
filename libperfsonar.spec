@@ -1,10 +1,10 @@
 %define install_base /usr/lib/perfsonar/
 %define config_base  /etc/perfsonar
 
-%define relnum   1
+%define relnum   0.0.a1
 
 Name:			libperfsonar
-Version:		4.0.2.2
+Version:		4.1
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Shared Libraries
 License:		Distributable, see LICENSE
@@ -24,17 +24,23 @@ Requires:		perl(Carp)
 Requires:		perl(Data::Dumper)
 Requires:		perl(Data::UUID)
 Requires:		perl(Data::Validate::IP)
+Requires:		perl(DateTime)
+Requires:		perl(DateTime::Duration)
+Requires:		perl(DateTime::Format::ISO8601)
 Requires:		perl(English)
 Requires:		perl(Exporter)
 Requires:		perl(Fcntl)
 Requires:		perl(File::Basename)
-Requires:		perl(HTTP::Response)
 Requires:		perl(IO::File)
 Requires:		perl(IO::Select)
 Requires:		perl(IO::Socket::SSL)
-Requires:               perl(IO::Socket::INET6)
+Requires:       perl(IO::Socket::INET6)
+Requires:		perl(IPC::Run)
 Requires:		perl(JSON::XS)
 Requires:		perl(Log::Log4perl)
+Requires:		perl(Mojo::Message::Response)
+Requires:		perl(Mojo::Transaction::HTTP)
+Requires:		perl(Mojo::UserAgent)
 Requires:		perl(Net::CIDR)
 Requires:		perl(Net::DNS)
 Requires:		perl(Net::IP)
@@ -47,10 +53,13 @@ Requires:		perl(Socket)
 Requires:		perl(Socket6)
 Requires:		perl(Sys::Statistics::Linux)
 Requires:		perl(Time::HiRes)
+Requires:		perl(URI)
 Requires:		perl(URI::Split)
+Requires:		perl(URI::URL)
 Requires:		perl(XML::LibXML)
 Requires:		perfsonar-common
 Requires:		iproute
+Requires:		jq
 %if 0%{?el7}
 Requires:		GeoIP-data
 %endif
@@ -76,10 +85,6 @@ Requires:		perl(Data::UUID)
 Requires:		perl(DateTime::Format::ISO8601)
 Requires:		perl(Exporter)
 Requires:		perl(JSON)
-Requires:		perl(LWP)
-%if 0%{?el7}
-Requires:		perl(LWP::Protocol::https)
-%endif
 Requires:		perl(Log::Log4perl)
 Requires:		perl(Net::Ping)
 Requires:		perl(Params::Validate)
@@ -103,14 +108,8 @@ Client libraries for perfSONAR's Simple Lookup Service (sLS)
 Summary:        perfSONAR Meaurement Archive perl clients for esmond
 Group:          Applications/Communications
 Requires:		perl(Exporter)
-Requires:		perl(HTTP::Request)
 Requires:		perl(JSON)
-Requires:		perl(LWP::UserAgent)
-%if 0%{?el7}
-Requires:		perl(LWP::Protocol::https)
-%endif
 Requires:		perl(Mouse)
-Requires:               perl(Net::INET6Glue)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
 Requires:		perl(URI::Split)
@@ -127,15 +126,10 @@ Obsoletes:      perl-perfSONAR-graphs
 perfSONAR Meaurement Archive perl clients for esmond
 
 %package pscheduler-perl
-Summary:        perfSONAR Meaurement Archive perl clients for esmond
+Summary:        perfSONAR Meaurement Archive perl clients for pScheduler
 Group:          Applications/Communications
 Requires:		perl(Exporter)
-Requires:		perl(HTTP::Request)
 Requires:		perl(JSON)
-Requires:		perl(LWP::UserAgent)
-%if 0%{?el7}
-Requires:		perl(LWP::Protocol::https)
-%endif
 Requires:		perl(Mouse)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
@@ -145,6 +139,25 @@ Requires:		libperfsonar-perl
 
 %description pscheduler-perl
 pScheduler perl client libraries
+
+%package psconfig-perl
+Summary:        perfSONAR Meaurement Archive perl clients for pSConfig
+Group:          Applications/Communications
+Requires:		perl(Data::Validate::IP)
+Requires:		perl(Data::Validate::Domain)
+Requires:		perl(Digest::MD5)
+Requires:		perl(Exporter)
+Requires:		perl(JSON)
+Requires:		perl(JSON::Validator)
+Requires:		perl(Log::Log4perl)
+Requires:		perl(Mouse)
+Requires:		perl(POSIX)
+Requires:		perl(Params::Validate)
+Requires:		perfsonar-common
+Requires:		libperfsonar-perl
+
+%description psconfig-perl
+pSConfig perl client libraries
 
 
 %package toolkit-perl
@@ -171,7 +184,6 @@ Requires:		perl(File::Basename)
 Requires:		perl(File::Path)
 Requires:		perl(File::Spec)
 Requires:		perl(File::Temp)
-Requires:		perl(HTTP::Response)
 Requires:		perl(IO::File)
 Requires:		perl(IO::Select)
 Requires:		perl(IO::Socket::SSL)
@@ -180,7 +192,6 @@ Requires:		perl(IPC::Open3)
 Requires:		perl(IPC::Run)
 Requires:		perl(JSON)
 Requires:		perl(JSON::XS)
-Requires:		perl(LWP)
 Requires:		perl(Log::Log4perl)
 Requires:		perl(Math::Int64)
 Requires:		perl(Module::Load)
@@ -244,11 +255,12 @@ Requires:		perl(Exporter)
 Requires:		perl(File::Path)
 Requires:		perl(File::Spec)
 Requires:		perl(File::Temp)
+Requires:		perl(HTTP::Request)
 Requires:		perl(HTTP::Response)
 Requires:		perl(Hash::Merge)
 Requires:		perl(IO::Select)
 Requires:		perl(IO::Socket::SSL)
-Requires:               perl(IO::Socket::INET6)
+Requires:       perl(IO::Socket::INET6)
 Requires:		perl(IPC::DirQueue)
 Requires:		perl(IPC::Open3)
 Requires:		perl(IPC::Run)
@@ -297,11 +309,6 @@ make ROOTPATH=%{buildroot}/%{install_base} CONFIGPATH=%{buildroot}/%{config_base
 %clean
 rm -rf %{buildroot}
 
-%post
-
-%files
-%defattr(0644,perfsonar,perfsonar,0755)
-
 %files perl
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/Net/NTP.pm
@@ -311,6 +318,9 @@ rm -rf %{buildroot}
 %{install_base}/lib/perfSONAR_PS/Utils/GeoLookup.pm
 %{install_base}/lib/perfSONAR_PS/Utils/HTTPS.pm
 %{install_base}/lib/perfSONAR_PS/Utils/Host.pm
+%{install_base}/lib/perfSONAR_PS/Utils/ISO8601.pm
+%{install_base}/lib/perfSONAR_PS/Utils/JQ.pm
+%{install_base}/lib/perfSONAR_PS/Utils/Logging.pm
 %{install_base}/lib/perfSONAR_PS/Utils/NTP.pm
 %{install_base}/lib/perfSONAR_PS/Utils/NetLogger.pm
 %{install_base}/lib/perfSONAR_PS/Utils/ParameterValidation.pm
@@ -329,6 +339,10 @@ rm -rf %{buildroot}
 %files pscheduler-perl
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/perfSONAR_PS/Client/PScheduler/*
+
+%files psconfig-perl
+%defattr(0644,perfsonar,perfsonar,0755)
+%{install_base}/lib/perfSONAR_PS/Client/PSConfig/*
 
 %files toolkit-perl
 %defattr(0644,perfsonar,perfsonar,0755)

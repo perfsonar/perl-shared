@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+sudo cp /home/vagrant/mock-results/epel-7-x86_64/*.rpm /var/www/html/repo
+cd /var/www/html/repo
+sudo createrepo .

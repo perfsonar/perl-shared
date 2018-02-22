@@ -42,7 +42,7 @@ sub _post {
         return;
     }
 
-    return $response->content;
+    return $response->body;
 }
 
 sub _put {
@@ -71,7 +71,7 @@ sub _put {
         return;
     }
 
-    return $response->content;
+    return $response->body;
 }
 
 __PACKAGE__->meta->make_immutable;

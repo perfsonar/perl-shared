@@ -77,15 +77,15 @@ sub renew{
 	$self->{SERVER}->setConnectionType('POST');
 	my $result = $self->{SERVER}->send(resourceLocator => $self->{RECORDURI});
 	 if ($result->is_success) {
-        my $jsonResp = decode_json($result->content);
+        my $jsonResp = decode_json($result->body);
         my $rType = $jsonResp->{'type'}->[0];
         my $resultRecord = SimpleLookupService::Records::RecordFactory->instantiate($rType);
         $resultRecord->fromHashRef($jsonResp);
 		return (0, $resultRecord);
-        #print $result->content;
+        #print $result->body;
         #return (0, $jsonResp);
     } else {
-        return (-1, { message => $result->status_line });
+        return (-1, { message => $result->get_start_line_chunk(0) });
     }
 }
 
@@ -96,13 +96,13 @@ sub delete{
 	$self->{SERVER}->setConnectionType('DELETE');
 	my $result = $self->{SERVER}->send(resourceLocator => $self->{RECORDURI});
 	 if ($result->is_success) {
-        my $jsonResp = decode_json($result->content);
+        my $jsonResp = decode_json($result->body);
         my $rType = $jsonResp->{'type'}->[0];
         my $resultRecord = SimpleLookupService::Records::RecordFactory->instantiate($rType);
         $resultRecord->fromHashRef($jsonResp);
 		return (0, $resultRecord);
     } else {
-        return (-1, { message => $result->status_line });
+        return (-1, { message => $result->get_start_line_chunk(0) });
     }
 }
 
@@ -111,13 +111,13 @@ sub getRecord{
 	$self->{SERVER}->setConnectionType('GET');
 	my $result = $self->{SERVER}->send(resourceLocator => $self->{RECORDURI});
 	 if ($result->is_success) {
-        my $jsonResp = decode_json($result->content);
+        my $jsonResp = decode_json($result->body);
         my $rType = $jsonResp->{'type'}->[0];
         my $resultRecord = SimpleLookupService::Records::RecordFactory->instantiate($rType);
         $resultRecord->fromHashRef($jsonResp);
 		return (0, $resultRecord);
     } else {
-        return (-1, { message => $result->status_line });
+        return (-1, { message => $result->get_start_line_chunk(0) });
     }
 }
 
@@ -133,7 +133,7 @@ sub getKeyInRecord{
 		my $result = $self->{SERVER}->send(resourceLocator => $modifiedUrl);
 		
 	 	if ($result->is_success) {
-        	my $jsonResp = decode_json($result->content);
+        	my $jsonResp = decode_json($result->body);
         	
         	my $returnVal = $jsonResp->{$key};
         	if(defined $returnVal){

@@ -13,10 +13,13 @@ A client for interacting with pScheduler
 use Mouse;
 use Params::Validate qw(:all);
 use JSON qw(from_json to_json decode_json);
+use Log::Log4perl::Logger;
 
 use perfSONAR_PS::Client::PScheduler::ApiConnect;
 use perfSONAR_PS::Client::PScheduler::ApiFilters;
 use perfSONAR_PS::Client::PScheduler::Task;
+use perfSONAR_PS::Utils::Logging;
+use Data::UUID;
 use DateTime::Format::ISO8601;
 use DateTime;
 
@@ -25,6 +28,7 @@ use Data::Dumper;
 our $VERSION = 4.0;
 
 has 'pscheduler_url'      => (is => 'rw', isa => 'Str');
+has 'reference_label'      => (is => 'rw', isa => 'Str');
 has 'tracker_file'        => (is => 'rw', isa => 'Str');
 has 'client_uuid_file'    => (is => 'rw', isa => 'Str');
 has 'user_agent'          => (is => 'rw', isa => 'Str');
@@ -44,6 +48,8 @@ has 'created_by'          => (is => 'rw', isa => 'HashRef', default => sub{ {} }
 has 'leads_to_keep'       => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'new_archives'        => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'debug'               => (is => 'rw', isa => 'Bool');
+has 'logger'              => (is => 'rw', isa => 'Log::Log4perl::Logger');
+has 'logf'                => (is => 'ro', isa => 'perfSONAR_PS::Utils::Logging', writer => '_set_logf', default => sub{ new perfSONAR_PS::Utils::Logging() });
 
 sub init {
     my ($self, @args) = @_;
@@ -51,6 +57,7 @@ sub init {
                                             pscheduler_url => 1,
                                             tracker_file => 1,
                                             client_uuid_file => 1,
+                                            reference_label => 1,
                                             user_agent => 1,
                                             new_task_min_ttl => 1,
                                             new_task_min_runs => 1,
@@ -63,6 +70,7 @@ sub init {
     #init this object
     $self->errors([]);
     $self->pscheduler_url($parameters->{'pscheduler_url'});
+    $self->reference_label($parameters->{'reference_label'});
     $self->tracker_file($parameters->{'tracker_file'});
     $self->client_uuid_file($parameters->{'client_uuid_file'});
     $self->user_agent($parameters->{'user_agent'});
@@ -84,34 +92,40 @@ sub init {
     $self->existing_archives($tracked_archives);
     
     #build list of existing tasks
+    $self->logf()->global_context({"action" => "list"});
     my $bind_map = $parameters->{'bind_map'};
+    
+    ##
+    # NOTE: I don't think we need lead_address_map here anymore, but may be wrong. Keep code for now
+    # but may want to remove this to ease confusion in future.
     my $lead_address_map = $parameters->{'lead_address_map'};
+    
     my %visited_leads = ();
     foreach my $psc_url(keys %{$self->leads()}){
-        print "Getting task list from $psc_url\n" if($self->debug());
+        my $log_ctx = {'url' => $psc_url};
+        $self->log_info("Getting task list from $psc_url", $log_ctx);
         #Query lead
         my $psc_lead = $self->leads()->{$psc_url};
         my $existing_task_map = {};
         my $psc_filters = new perfSONAR_PS::Client::PScheduler::ApiFilters();
-        #TODO: filter on enabled field (not yet supported in pscheduler
         $psc_filters->detail_enabled(1);
-        $psc_filters->reference_param("created-by", $self->created_by());
+        $psc_filters->reference_param($self->reference_label(), { "created-by" => $self->created_by() });
         my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url, filters => $psc_filters, bind_map => $bind_map, lead_address_map => $lead_address_map);
         
         #get hostname to see if this is a server we already visited using a different address
         my $psc_hostname = $psc_client->get_hostname();
         if($psc_client->error()){
-            print "Error getting hostname from $psc_url: " . $psc_client->error() . "\n" if($self->debug());
+            $self->log_error("Error getting hostname from $psc_url: " . $psc_client->error(), $log_ctx);
             $psc_lead->{'error_time'} = time; 
             push @{$self->errors()}, "Problem retrieving host information from pScheduler lead $psc_url: ".$psc_client->error();
             next;
         }elsif(!$psc_hostname){
-            print "Error: $psc_url returned an empty hostname\n" if($self->debug());
+            $self->log_error("Error: $psc_url returned an empty hostname", $log_ctx );
             $psc_lead->{'error_time'} = time; 
             push @{$self->errors()}, "Empty string returned from $psc_url/hostname. It may not have its hostname configured correctly.";
             next;
         }elsif($visited_leads{$psc_hostname}){
-            print "Already visited server at $psc_url using " . $visited_leads{$psc_hostname} . ", so skipping.\n" if($self->debug());
+            $self->log_debug("Already visited server at $psc_url using " . $visited_leads{$psc_hostname} . ", so skipping.", $log_ctx);
             next;
         }else{
            $visited_leads{$psc_hostname} = $psc_url;
@@ -121,21 +135,21 @@ sub init {
         my $existing_tasks = $psc_client->get_tasks();
         if($existing_tasks && @{$existing_tasks} > 0 && $psc_client->error()){
             #there was an error getting an individual task
-             print "Error fetching an individual task, but was able to get list: " .  $psc_client->error() if($self->debug());
+             $self->log_error("Error fetching an individual task, but was able to get list: " .  $psc_client->error(), $log_ctx);
         }elsif($psc_client->error()){
             #there was an error getting the entire list
-            print "Error getting task list from $psc_url: " . $psc_client->error() . "\n" if($self->debug());
+            $self->log_error("Error getting task list from $psc_url: " . $psc_client->error(), $log_ctx);
             $psc_lead->{'error_time'} = time; 
             push @{$self->errors()}, "Problem getting existing tests from pScheduler lead $psc_url: ".$psc_client->error();
             next;
         }elsif(@{$existing_tasks} == 0){
             #TODO: Drop this when 4.0 deprecated. fallback in case detail filter not supported (added in 4.0.2).
-            print "Trying to get task list without enabled filter\n" if($self->debug());
+            $self->log_debug("Trying to get task list without enabled filter", $log_ctx);
             delete $psc_client->filters()->task_filters()->{"detail"};
             $existing_tasks = $psc_client->get_tasks();
             if($psc_client->error()){
                 #there was an error getting the entire list
-                print "Error getting task list (no enabled filter) from $psc_url: " . $psc_client->error() . "\n" if($self->debug());
+                $self->log_error("Error getting task list (no enabled filter) from $psc_url: " . $psc_client->error(), $log_ctx);
                 $psc_lead->{'error_time'} = time; 
                 push @{$self->errors()}, "Problem getting existing tests from pScheduler lead $psc_url: ".$psc_client->error();
                 next;
@@ -145,7 +159,7 @@ sub init {
         #Add to existing task map
         foreach my $existing_task(@{$existing_tasks}){
             next unless($existing_task->detail_enabled()); #skip disabled tests
-            $self->_print_task($existing_task) if($self->debug());
+            $self->log_task($existing_task);
             #make an array since could have more than one test with same checksum
             $self->existing_task_map()->{$existing_task->checksum()} = {} unless($self->existing_task_map()->{$existing_task->checksum()});
             $self->existing_task_map()->{$existing_task->checksum()}->{$existing_task->tool()} = {} unless($self->existing_task_map()->{$existing_task->checksum()}->{$existing_task->tool()});
@@ -159,6 +173,8 @@ sub init {
 
 sub add_task {
     my ($self, @args) = @_;
+    
+    $self->logf()->global_context({"action" => "add_to_manager"});
     my $parameters = validate( @args, {task => 1, local_address => 0, repeat_seconds => 0 } );
     my $new_task = $parameters->{task};
     my $local_address = $parameters->{local_address};
@@ -171,7 +187,7 @@ sub add_task {
     foreach my $cp(keys %{$self->created_by()}){
         $tmp_created_by->{$cp} = $self->created_by()->{$cp};
     }
-    $new_task->reference_param('created-by', $tmp_created_by);
+    $new_task->reference_param($self->reference_label(), { "created-by" => $tmp_created_by });
     
     #determine if we need new task and create
     my($need_new_task, $new_task_start) = $self->_need_new_task($new_task);
@@ -214,11 +230,12 @@ sub commit {
 
 sub check_assist_server {
     my ($self) = @_;
+    $self->logf()->global_context({"action" => "check_assist_server", "url" =>  $self->pscheduler_url()});
     
     my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $self->pscheduler_url());
     $psc_client->get_test_urls();
     if($psc_client->error()){
-        print $psc_client->error() . "\n" if($self->debug());
+        $self->log_error("Error checking assist server: " . $psc_client->error());
         return 0;
     }
     
@@ -228,14 +245,13 @@ sub check_assist_server {
 sub _delete_tasks {
     my ($self) = @_;
     
+    $self->logf()->global_context({"action" => "delete"});
+
     #clear out previous deleted tasks
     $self->deleted_tasks([]);
     
-    if($self->debug()){
-        print "-----------------------------------\n";
-        print "DELETING TASKS\n";
-        print "-----------------------------------\n";
-    }
+    $self->log_info("Deleting tasks");
+    my $found_task_to_delete = 0;
     foreach my $checksum(keys %{$self->existing_task_map()}){
         my $cached_lead;
         my $cached_bind;
@@ -255,7 +271,9 @@ sub _delete_tasks {
                     $cached_bind = $task->bind_address();
                 }
                 if($task->error){
-                    push @{$self->errors()}, sprintf("Problem determining which pscheduler to submit test to for deletion, skipping test %s: %s", $task->to_str, $task->error);
+                    my $err = sprintf("Problem determining which pscheduler to submit test to for deletion, skipping test %s: %s", $task->to_str, $task->error);
+                    $self->log_error($err);
+                    push @{$self->errors()}, $err;
                     next;
                 }
                 
@@ -264,12 +282,15 @@ sub _delete_tasks {
                     #make sure we keep the lead around
                     $self->leads_to_keep()->{$task->url()} = 1;
                 }else{
-                    $self->_print_task($task) if($self->debug());
+                    $self->log_task($task);
+                    $found_task_to_delete = 1;
                     $task->delete_task();
                     if($task->error()){
                         $self->leads_to_keep()->{$task->url()} = 1;
                         $self->_update_lead($task->url(), {'error_time' => time});
-                        push @{$self->errors()}, sprintf("Problem deleting test %s, continuing with rest of config: %s", $task->to_str, $task->error);
+                        my $err = sprintf("Problem deleting test %s, continuing with rest of config: %s", $task->to_str, $task->error);
+                        $self->log_error($err);
+                        push @{$self->errors()}, $err;
                     }else{
                         push @{$self->deleted_tasks()}, $task;
                     }                  
@@ -277,6 +298,8 @@ sub _delete_tasks {
             }
         }
     }
+    $self->log_info("No tasks marked for deletion") unless($found_task_to_delete);
+    $self->log_info("Done deleting tasks");
 }
 
 sub _need_new_task {
@@ -351,7 +374,7 @@ sub _evaluate_task {
                 #if background-multi, one or less runs and start time is 15 minutes (arbitrary) 
                 # in the past the start time is immediately. Fixes special case where bgm 
                 # task first run is not scheduled and thus no tests run
-                print "Stuck background-multi task found (start=$old_task_start_iso: $uuid, runs=1). Will cancel and recreate.\n" if($self->debug());
+                $self->log_info("Stuck background-multi task found (start=$old_task_start_iso: $uuid, runs=1). Will cancel and recreate.");
                 $old_task->{'keep'} = 0;
                 $new_start_time = time;
             }elsif(!$until_ts || $until_ts > ($self->old_task_deadline() + ($self->new_task_min_ttl() * $self->task_renewal_fudge_factor()))){
@@ -370,32 +393,35 @@ sub _evaluate_task {
 
 sub _create_tasks {
     my ($self) = @_;
+    $self->logf()->global_context({"action" => "create"});
     
     # clear out previous added tasks
     $self->added_tasks([]); 
     
-    if($self->debug()){
-        print "+++++++++++++++++++++++++++++++++++\n";
-        print "ADDING TASKS\n";
-        print "+++++++++++++++++++++++++++++++++++\n";
-    }
+    $self->log_info("Creating tasks");
+    $self->log_info("No tasks to create") unless(@{$self->new_tasks()});
     foreach my $new_task(@{$self->new_tasks()}){
         #determine lead - do here as optimization so we only do it for tests that need to be added
         $new_task->refresh_lead();
         if($new_task->error()){
-            push @{$self->errors()}, sprintf("Problem determining which pscheduler to submit test to for creation, skipping test %s: %s", $new_task->to_str, $new_task->error);
+            my $err = sprintf("Problem determining which pscheduler to submit test to for creation, skipping test %s: %s", $new_task->to_str, $new_task->error);
+            $self->log_error($err);
+            push @{$self->errors()}, $err;
             next;
         }
         $self->leads_to_keep()->{$new_task->url()} = 1;
-        $self->_print_task($new_task) if($self->debug());
+        $self->log_task($new_task);
         $new_task->post_task();
         if($new_task->error){
-            push @{$self->errors()}, sprintf("Problem adding test %s, continuing with rest of config: %s", $new_task->to_str, $new_task->error);
+            my $err = sprintf("Problem adding test %s, continuing with rest of config: %s", $new_task->to_str, $new_task->error);
+            $self->log_error($err);
+            push @{$self->errors()}, $err;
         }else{
             push @{$self->added_tasks()}, $new_task;
             $self->_update_lead($new_task->url(), { 'success_time' => time });
         } 
     }
+    $self->log_info("Done creating tasks");
 
 }
 
@@ -498,50 +524,6 @@ sub _update_lead {
     }
 }
 
-#Useful for debugging
-sub _print_task {
-    my ($self, $task) = @_;
-    
-    print "Test Type: " . $task->test_type() . "\n";
-    print "Tool: " . ($task->tool() ? $task->tool() : 'n/a') . "\n";
-    print "Requested Tools: " . ($task->requested_tools() ? join " ", @{$task->requested_tools()} : 'n/a') . "\n";
-    print "Source: " . ($task->test_spec_param("source") ? $task->test_spec_param("source") : 'n/a') . "\n";
-    print "Destination: " . ($task->test_spec_param("dest") ?  $task->test_spec_param("dest") : $task->test_spec_param("destination")). "\n";
-    print "Enabled: " . (defined $task->detail_enabled() ? $task->detail_enabled() : "n/a"). "\n";
-    print "Added: " . (defined $task->detail_added() ? $task->detail_added() : "n/a"). "\n";
-    print "Lead URL: " . $task->url() . "\n";
-    print "Lead Bind: " . $task->lead_bind() . "\n" if($task->lead_bind());
-    print "Checksum: " . $task->checksum() . "\n";
-    print "Created By:\n";
-    my $created_by = $task->reference_param('created-by');
-    foreach my $cp(keys %{$created_by}){
-         print "    $cp: " . $created_by->{$cp} . "\n";
-    }
-    print "Test Spec:\n";
-    foreach my $tp(keys %{$task->test_spec}){
-         print "    $tp: " . $task->test_spec_param($tp) . "\n";
-    }
-    if($task->schedule()){
-        print "Schedule:\n";
-        print "    repeat: " . $task->schedule_repeat() . "\n" if(defined $task->schedule_repeat());
-        print "    max runs: " . $task->schedule_maxruns() . "\n" if(defined $task->schedule_maxruns());
-        print "    slip: " . $task->schedule_slip() . "\n" if(defined $task->schedule_slip());
-        print "    sliprand: " . $task->schedule_sliprand() . "\n" if(defined $task->schedule_sliprand());
-        print "    start: " . $task->schedule_start() . "\n" if(defined $task->schedule_start());
-        print "    until: " . $task->schedule_until() . "\n" if(defined $task->schedule_until());
-    }
-    print "Archivers:\n";
-    foreach my $a(@{$task->archives()}){
-        print "    name: " . $a->name() . "\n";
-        print "    ttl: " . $a->ttl() . "\n" if(defined $a->ttl());
-        print "    data:\n";
-        foreach my $ad(keys %{$a->data()}){
-            print "        $ad: " . (defined $a->data()->{$ad} ? $a->data()->{$ad} : 'n/a') . "\n";
-        }
-    }
-    print "\n";
-}
-
 sub _iso_to_ts {
      my ($self, $iso_str) = @_;
      
@@ -564,6 +546,57 @@ sub _ts_to_iso {
     return $date->ymd() . 'T' . $date->hms() . 'Z';
 }
 
+sub log_error {
+    my ($self, $msg, $local_context) = @_;
+    if($self->logger()){
+        $self->logger()->error($self->logf()->format($msg, $local_context));
+    }elsif($self->debug()){
+        print "$msg\n";
+    }
+}
+
+sub log_info {
+    my ($self, $msg, $local_context) = @_;
+    if($self->logger()){
+        $self->logger()->info($self->logf()->format($msg, $local_context));
+    }elsif($self->debug()){
+        print "$msg\n";
+    }
+}
+
+sub log_warn {
+    my ($self, $msg, $local_context) = @_;
+    if($self->logger()){
+        $self->logger()->warn($self->logf()->format($msg, $local_context));
+    }elsif($self->debug()){
+        print "$msg\n";
+    }
+}
+
+sub log_debug {
+    my ($self, $msg, $local_context) = @_;
+    if($self->logger()){
+        $self->logger()->debug($self->logf()->format($msg, $local_context));
+    }elsif($self->debug()){
+        print "$msg\n";
+    }
+}
+
+sub log_task {
+    my ($self, $task) = @_;
+    
+    my $local_ctx = {};
+    $local_ctx->{'checksum'} =  $task->checksum();
+    $local_ctx->{'lead_url'} =  $task->url();
+    $local_ctx->{'lead_bind'} =  $task->lead_bind() if($task->lead_bind());
+    $local_ctx->{'test_type'} =  $task->test_type();
+    
+    if($self->logger()){
+        $self->logger()->info($self->logf()->format_task($task, $local_ctx));
+    }elsif($self->debug()){
+        print $task->json({'pretty' => 1}) . "\n";
+    }
+}
 
 __PACKAGE__->meta->make_immutable;
 

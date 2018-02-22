@@ -107,7 +107,7 @@ sub discover_lookup_services {
     foreach my $url (@$locator_urls) {
         my $http_response = send_http_request(connection_type => 'GET', url => $url, timeout => 5);
         if (!$http_response->is_success) {
-            $logger->error("Problem retrieving $url: " . $http_response->status_line);
+            $logger->error("Problem retrieving $url: " . $http_response->get_start_line_chunk(0));
             next;
         }
         
@@ -115,7 +115,7 @@ sub discover_lookup_services {
         my $activehostlist;
         eval {
             my $json = JSON->new()->relaxed();
-            $activehostlist = $json->decode($http_response->content);
+            $activehostlist = $json->decode($http_response->body);
         };
         if ($@) {
             $logger->error("Problem decoding JSON from $url: " . $@);

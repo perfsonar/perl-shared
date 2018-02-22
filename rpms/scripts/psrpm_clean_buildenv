@@ -1,0 +1,6 @@
+#!/usr/bin/bash
+
+rm -rf /home/vagrant/mock-results/epel-7-x86_64/*
+rm -rf /home/vagrant/rpmbuild/*
+mkdir -m 755 -p /home/vagrant/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
