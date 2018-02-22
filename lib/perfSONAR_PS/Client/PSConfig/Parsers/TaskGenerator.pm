@@ -46,6 +46,7 @@ has 'started' => (is => 'ro', isa => 'Bool', writer => '_set_started');
 has 'task' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Task|Undef', writer => '_set_task');
 has 'group' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Groups::BaseGroup|Undef', writer => '_set_group');
 has 'schedule' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Schedule|Undef', writer => '_set_schedule');
+has 'tools' => (is => 'ro', isa => 'ArrayRef[Str]|Undef', writer => '_set_tools');
 has 'test' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Test|Undef', writer => '_set_test');
 ##Updated each call to next()
 has 'expanded_test' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_expanded_test');
@@ -104,6 +105,12 @@ sub start {
     my $schedule = $self->psconfig()->schedule($task->schedule_ref());
     if($schedule){
         $self->_set_schedule($schedule);
+    }
+    
+    #find tools (optional)
+    my $tools = $task->tools();
+    if($tools && @{$tools}){
+        $self->_set_tools($tools);
     }
     
     #set match addresses if any
@@ -353,6 +360,11 @@ sub pscheduler_task {
     #set reference
     if($self->expanded_reference()){
         $task_data->{"reference"} = $self->expanded_reference();
+    }
+    
+    #set tools
+    if($self->tools()){
+        $task_data->{"tools"} = $self->tools();
     }
     
     #time to create pscheduler task

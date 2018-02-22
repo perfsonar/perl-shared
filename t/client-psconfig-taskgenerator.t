@@ -83,6 +83,7 @@ my $config_json = <<'EOF';
             "test": "example-test-throughput",
             "schedule": "example-schedule-PT4H",
             "archives": [ "example-archive-central" ],
+            "tools": [ "nuttcp" ],
             "reference": {
                 "source-display-name": "{% jq .addresses[0]._meta.\"display-name\" %}",
                 "dest-display-name": "{% jq .addresses[1]._meta.\"display-name\" %}"
@@ -172,6 +173,14 @@ ok($tg = new perfSONAR_PS::Client::PSConfig::Parsers::TaskGenerator(
 ok($tg->start());
 ok($tg->next());
 
+###
+# Test pscheduler task and tool
+my $psched_task;
+ok($psched_task = $tg->pscheduler_task());
+is($psched_task->requested_tools()->[0], 'nuttcp');
+is($psched_task->checksum(), 'UwWSmNRYrKPw0UKuTMXGbg'); #verify we got the JSON we expected
+
+
 ####
 # Test with no schedule
 ok($psconfig = new perfSONAR_PS::Client::PSConfig::Config(data => $config_obj));
@@ -184,7 +193,6 @@ ok($tg->next());
 
 ####
 # Test pscheduler conversion
-my $psched_task;
 ok($psched_task = $tg->pscheduler_task());
 is($psched_task->checksum(), 'qWC5b7x0212uHxD1z5LTtg'); #verify we got the JSON we expected
 
