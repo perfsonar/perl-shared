@@ -15,18 +15,6 @@ has 'type' => (
       },
   );
 
-
-=item site()
-
-Gets/sets sites
-
-=cut
-
-sub site{
-    my ($self, $val) = @_;
-    return $self->_field('site', $val);
-}
-
 =item tag()
 
 Gets/sets tag
@@ -77,19 +65,6 @@ sub matches{
     my $host = $psconfig->host($address->host_ref());
     return 0 unless($host);
     
-    #check site, if defined
-    if($self->site()){
-        if($host->site()){
-            #unless sites match, fail
-            if(lc($self->site()) ne lc($host->site())){
-                return 0;
-            }
-        }else{
-            #no site so no match
-            return 0;
-        }
-    }
-    
     #check tags, if defined
     if($self->tag()){
         if($host->tags()){
@@ -106,7 +81,6 @@ sub matches{
             return 0;
         }
     }
-    
     
     #no_agent always defined (default false), so normalize booleans and compare
     my $filter_no_agent = $self->no_agent() ? 1 : 0;

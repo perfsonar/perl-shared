@@ -164,7 +164,6 @@ sub psconfig_json_schema() {
                     "type": "string",
                     "enum": [ "host" ]
                 },
-                "site": { "type": "string" },
                 "no-agent": { "type": "boolean" },
                 "tag": { "type": "string" },
                 "jq": { 
@@ -503,7 +502,6 @@ sub psconfig_json_schema() {
         "HostSpecification": {
             "type": "object",
             "properties": {
-                "site": { "type": "string" },
                 "archives": { "type": "array", "items": { "$ref": "#/pSConfig/NameType" } },
                 "tags": { "type": "array", "items": { "type": "string" } },
                 "no-agent": { "type": "boolean" },

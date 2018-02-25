@@ -41,22 +41,18 @@ my $config_json = <<'EOF';
     
     "hosts": {
         "host-a": {
-            "tags": [ "testbed" ],
-            "site": "site1"
+            "tags": [ "testbed" ]
         },
         "host-b": {
             "tags": [ "testbed" ],
-            "site": "site2", 
             "no-agent": true
         },
         "host-c": {},
         "lbl": {
-            "tags": [ "esnet", "testbed" ],
-            "site": "site1"
+            "tags": [ "esnet", "testbed" ]
         },
         "sacr": {
             "tags": [ "esnet" ],
-            "site": "site1",
             "_meta": {
                 "site-display-name": "Sacramento"
             }
@@ -905,7 +901,7 @@ foreach my $i(keys %expected_pairs){
 ##
 # Should be no more
 ##
-#is($tg->next(), undef);
+is($tg->next(), undef);
 
 ##
 # Stop
