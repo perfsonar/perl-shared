@@ -4,6 +4,8 @@ use Mouse;
 use JSON::Validator;
 use perfSONAR_PS::Client::PSConfig::Archive;
 use perfSONAR_PS::Client::PSConfig::Addresses::Address;
+use perfSONAR_PS::Client::PSConfig::Addresses::AddressLabel;
+use perfSONAR_PS::Client::PSConfig::Addresses::RemoteAddress;
 use perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel;
 use perfSONAR_PS::Client::PSConfig::Host;
 use perfSONAR_PS::Client::PSConfig::Config;
@@ -290,7 +292,42 @@ sub _convert_hosts {
                 $psconfig_address->lead_bind_address($address->{'lead_bind_address'}) if($address->{'lead_bind_address'});
                 $psconfig_address->pscheduler_address($address->{'pscheduler_address'}) if($address->{'pscheduler_address'});
                 $psconfig_address->tags($address->{'tags'}) if($address->{'tags'});
-                #TODO: Maps
+                #converts maps -> remote_addresses
+                if($address->{'maps'}){
+                    foreach my $map(@{$address->{'maps'}}){
+                        my $remote = $self->_build_remote_address($psconfig_address, $map->{'remote_address'});
+                        foreach my $field(@{$map->{'fields'}}){
+                            my $label = new perfSONAR_PS::Client::PSConfig::Addresses::AddressLabel();
+                            #not sure this is strictly required to be an address, but generally
+                            # this is how people use it. may have to tweak if run into cases
+                            # where people use it otherwise
+                            $label->address($field->{'value'});
+                            $remote->label($field->{'name'}, $label);
+                        }
+                    }
+                }
+                #converts pscheduler_address_maps -> remote_addresses
+                if($address->{'pscheduler_address_maps'}){
+                    foreach my $map(@{$address->{'pscheduler_address_maps'}}){
+                        my $remote = $self->_build_remote_address($psconfig_address, $map->{'remote_address'});
+                        $remote->pscheduler_address($map->{'service_address'});#always set top-level
+                        # Add it to all labels
+                        foreach my $label_name(@{$remote->label_names()}){
+                            $remote->label($label_name)->pscheduler_address($map->{'service_address'});
+                        }
+                    }
+                }
+                #converts bind_maps -> remote_addresses
+                if($address->{'bind_maps'}){
+                    foreach my $map(@{$address->{'bind_maps'}}){
+                        my $remote = $self->_build_remote_address($psconfig_address, $map->{'remote_address'});
+                        $remote->lead_bind_address($map->{'lead_bind_address'}) if($map->{'lead_bind_address'});#always set top-level
+                        # Add it to all labels
+                        foreach my $label_name(@{$remote->label_names()}){
+                            $remote->label($label_name)->lead_bind_address($map->{'lead_bind_address'}) if($map->{'lead_bind_address'});
+                        }
+                    }
+                }
             }else{
                 $psconfig_address->address($address);
             }
@@ -322,6 +359,19 @@ sub _convert_hosts {
             $psconfig->address($psconfig_address->address(), $psconfig_address);
         }
     }
+}
+
+sub _build_remote_address {
+    my ($self, $psconfig_address, $remote_address_str) = @_;
+    
+    my $remote = $psconfig_address->remote_address($remote_address_str);
+    unless($remote){
+        $remote = new perfSONAR_PS::Client::PSConfig::Addresses::RemoteAddress();
+        $remote->address($psconfig_address->address());
+        $psconfig_address->remote_address($remote_address_str, $remote);
+    }
+    
+    return $remote;
 }
 
 sub _convert_tests {
