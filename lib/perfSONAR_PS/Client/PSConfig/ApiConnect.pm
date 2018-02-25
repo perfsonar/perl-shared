@@ -56,7 +56,7 @@ sub translators {
     my $self = shift;
     
     return [
-        new perfSONAR_PS::Client::PSConfig::Translators::MeshConfig::Config(),
+        new perfSONAR_PS::Client::PSConfig::Translators::MeshConfig::Config('use_force_bidirectional' => 1),
     ];
 }
 

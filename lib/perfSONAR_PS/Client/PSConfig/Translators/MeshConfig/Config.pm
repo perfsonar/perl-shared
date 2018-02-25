@@ -22,6 +22,7 @@ use constant META_DISPLAY_NAME => 'display-name';
 extends 'perfSONAR_PS::Client::PSConfig::Translators::BaseTranslator';
 
 has 'skip_validation' => (is => 'rw', isa => 'Bool', default => sub { 0 });
+has 'use_force_bidirectional' => (is => 'rw', isa => 'Bool', default => sub { 0 });
 
 =item can_translate()
 
@@ -501,6 +502,19 @@ sub _convert_tests {
                 $task_count++;
             }
             $psconfig->task($task_name, $psconfig_task);
+            
+            #if force_bidirectional, set a second task
+            if($self->use_force_bidirectional() && $test->{'parameters'}->{'force_bidirectional'}){
+                #copy task
+                my $bidir_task = new perfSONAR_PS::Client::PSConfig::Task(
+                    'data' => from_json(to_json($psconfig_task->data()))
+                );
+                $bidir_task->scheduled_by(1);
+                if($test->{'description'}){
+                    $bidir_task->psconfig_meta_param(META_DISPLAY_NAME, $test->{'description'} . ' (Scheduled by Destination)');
+                }
+                $psconfig->task($task_name . '_scheduled_by_dest', $bidir_task);
+            }
         }
     }
 }
