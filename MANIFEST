@@ -61,6 +61,7 @@ lib/perfSONAR_PS/Client/PSConfig/Addresses/RemoteAddress.pm
 lib/perfSONAR_PS/Client/PSConfig/ApiConnect.pm
 lib/perfSONAR_PS/Client/PSConfig/ApiFilters.pm
 lib/perfSONAR_PS/Client/PSConfig/Archive.pm
+lib/perfSONAR_PS/Client/PSConfig/ArchiveJQTransform.pm
 lib/perfSONAR_PS/Client/PSConfig/BaseConnect.pm
 lib/perfSONAR_PS/Client/PSConfig/BaseMetaNode.pm
 lib/perfSONAR_PS/Client/PSConfig/BaseNode.pm

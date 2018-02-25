@@ -2,7 +2,7 @@ package perfSONAR_PS::Client::PSConfig::Archive;
 
 use Mouse;
 use JSON::Validator;
-use perfSONAR_PS::Client::PSConfig::JQTransform;
+use perfSONAR_PS::Client::PSConfig::ArchiveJQTransform;
 use perfSONAR_PS::Client::PSConfig::Schema qw(psconfig_json_schema);
 
 extends 'perfSONAR_PS::Client::PSConfig::BaseMetaNode';
@@ -48,7 +48,7 @@ Gets/sets transform
 
 sub transform{
     my ($self, $val) = @_;
-    return $self->_field_class('transform', 'perfSONAR_PS::Client::PSConfig::JQTransform', $val);
+    return $self->_field_class('transform', 'perfSONAR_PS::Client::PSConfig::ArchiveJQTransform', $val);
 }
 
 =item ttl()

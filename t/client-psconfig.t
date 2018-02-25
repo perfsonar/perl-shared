@@ -423,7 +423,7 @@ is($psarchive->validate(), 0); #no validation errors
 
 ##Test transform
 my $psarchive_jq;
-ok($psarchive_jq = new perfSONAR_PS::Client::PSConfig::JQTransform());
+ok($psarchive_jq = new perfSONAR_PS::Client::PSConfig::ArchiveJQTransform());
 $psarchive_jq->data()->{'script'} = '.';
 is($psarchive_jq->script()->[0], '.');
 is($psarchive_jq->script('.')->[0], '.');

@@ -166,7 +166,12 @@ sub psconfig_json_schema() {
                 },
                 "site": { "type": "string" },
                 "no-agent": { "type": "boolean" },
-                "tag": { "type": "string" }
+                "tag": { "type": "string" },
+                "jq": { 
+                    "$ref": "#/pSConfig/JQTransformSpecification",
+                    "description": "JQ script to select host properties. If result non-empty or JSON true then evaluates to false."
+                    
+                }
             },
             "additionalProperties": false,
             "required": [ "type" ]
@@ -353,12 +358,28 @@ sub psconfig_json_schema() {
             "properties": {
                 "archiver": { "type": "string" },
                 "data": { "$ref": "#/pSConfig/AnyJSON" },
-                "transform": { "$ref": "#/pSConfig/JQTransformSpecification" },
+                "transform": { "$ref": "#/pSConfig/ArchiveJQTransformSpecification" },
                 "ttl": { "$ref": "#/pSConfig/Duration" },
                 "_meta": { "$ref": "#/pSConfig/AnyJSON" }
             },
             "additionalProperties": false,
             "required": [ "archiver", "data"]
+        },
+        
+        "ArchiveJQTransformSpecification": {
+            "type": "object",
+            "properties": {
+                "script":   {
+                    "anyOf": [
+                        { "type": "string" },
+                        { "type": "array", "items": { "type": "string" } }
+                    ]
+                },
+                "output-raw": { "type": "boolean" },
+                "args": { "$ref": "#/pSConfig/AnyJSON" }
+            },
+            "additionalProperties": false,
+            "required": [ "script" ]
         },
         
         "Cardinal": {
@@ -544,9 +565,7 @@ sub psconfig_json_schema() {
                         { "type": "string" },
                         { "type": "array", "items": { "type": "string" } }
                     ]
-                },
-                "output-raw": { "type": "boolean" },
-                "args": { "$ref": "#/pSConfig/AnyJSON" }
+                }
             },
             "additionalProperties": false,
             "required": [ "script" ]

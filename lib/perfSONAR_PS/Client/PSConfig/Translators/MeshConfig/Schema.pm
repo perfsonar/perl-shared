@@ -274,9 +274,9 @@ sub meshconfig_json_schema() {
             "type": "object",
             "properties": {
                 "name": { "type": "string" },
-                "data_sources": { "$ref": "#/MeshConfig/HostClassDataSources" },
-                "match_filters": { "$ref": "#/MeshConfig/HostClassFilters" },
-                "exclude_filters": { "$ref": "#/MeshConfig/HostClassFilters" },
+                "data_sources": { "type": "array", "items": {"$ref": "#/MeshConfig/HostClassDataSources"} },
+                "match_filters": { "type": "array", "items": {"$ref": "#/MeshConfig/HostClassFilters"} },
+                "exclude_filters": { "type": "array", "items": {"$ref": "#/MeshConfig/HostClassFilters"} },
                 "host_properties": { "$ref": "#/MeshConfig/Host"}
             },
             "additionalProperties": false,
@@ -316,7 +316,7 @@ sub meshconfig_json_schema() {
                     "type": "string",
                     "enum": [ "address_type" ]
                 },
-                "address_type": { "type": "string" }
+                "address_type": { "type": "string", "enum": ["ipv4", "ipv6"] }
             },
             "additionalProperties": false,
             "required": [ "type", "address_type" ]
@@ -329,7 +329,10 @@ sub meshconfig_json_schema() {
                     "type": "string",
                     "enum": [ "and" ]
                 },
-                "filters": { "$ref": "#/MeshConfig/HostClassFilters" }
+                "filters": { 
+                    "type": "array",
+                    "items": {"$ref": "#/MeshConfig/HostClassFilters"}
+                }
             },
             "additionalProperties": false,
             "required": [ "type", "filters" ]
@@ -381,7 +384,10 @@ sub meshconfig_json_schema() {
                     "type": "string",
                     "enum": [ "or" ]
                 },
-                "filters": { "$ref": "#/MeshConfig/HostClassFilters" }
+                "filters": { 
+                    "type": "array",
+                    "items": {"$ref": "#/MeshConfig/HostClassFilters"}
+                }
             },
             "additionalProperties": false,
             "required": [ "type", "filters" ]
@@ -420,7 +426,7 @@ sub meshconfig_json_schema() {
             "properties": {
                 "type": { 
                     "type": "string",
-                    "enum": [ "site" ]
+                    "enum": [ "tag" ]
                 },
                 "tag": { "type": "string" },
                 "exact": { "$ref": "#/MeshConfig/Boolean" }

@@ -6,6 +6,17 @@ use perfSONAR_PS::Client::PSConfig::Archive;
 use perfSONAR_PS::Client::PSConfig::Addresses::Address;
 use perfSONAR_PS::Client::PSConfig::Addresses::AddressLabel;
 use perfSONAR_PS::Client::PSConfig::Addresses::RemoteAddress;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::AddressClass;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::CurrentConfig;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::RequestingAgent;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::AddressClass;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::And;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Host;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::IPVersion;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Netmask;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Not;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Or;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Tag;
 use perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel;
 use perfSONAR_PS::Client::PSConfig::Host;
 use perfSONAR_PS::Client::PSConfig::Config;
@@ -116,7 +127,7 @@ sub translate {
     $self->_convert_hosts($self->data(), $psconfig, {}, {}, $global_archive_refs);
     
     #get host classes
-    #TODO: Convert host classes
+    $self->_convert_host_classes($psconfig);
     
     #convert organizations to addresses and hosts and archives
     if($self->data()->{'organizations'}){
@@ -254,6 +265,113 @@ sub _convert_measurement_archives {
         $archive->archiver_data_param('measurement-agent', '{% scheduled_by_address %}');
         $psconfig->archive($archive_name, $archive);
     }
+}
+
+sub _convert_host_classes {
+    my ($self, $psconfig) = @_;
+    
+    if($self->data()->{'host_classes'}){
+        foreach my $host_class(@{$self->data()->{'host_classes'}}){
+            #only allow one data source in new format
+            next if(@{$host_class->{'data_sources'}} != 1);
+            my $data_source = $host_class->{'data_sources'}->[0];
+            my $class_name = $host_class->{'name'};
+            next unless($class_name);
+            my $psconfig_address_class = new perfSONAR_PS::Client::PSConfig::AddressClasses::AddressClass();
+            #create data source
+            if($data_source->{'type'} eq 'current_mesh'){
+                $psconfig_address_class->data_source(new perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::CurrentConfig());
+            }elsif($data_source->{'type'} eq 'requesting_agent'){
+                $psconfig_address_class->data_source(new perfSONAR_PS::Client::PSConfig::AddressClasses::DataSources::RequestingAgent());
+            }else{
+                #shouldn't be possible, but skip if is
+                next;
+            }
+            
+            #create match filter
+            my $match_filter = $self->_build_addr_class_filter($host_class->{'match_filters'});
+            $psconfig_address_class->match_filter($match_filter) if($match_filter);
+            
+            #create exclude filter
+            my $exclude_filter = $self->_build_addr_class_filter($host_class->{'exclude_filters'});
+            $psconfig_address_class->exclude_filter($exclude_filter) if($exclude_filter);
+            
+            #NO LONGER SUPPORTED: host_properties
+            $psconfig->address_class($class_name, $psconfig_address_class);
+        }
+    }
+}
+
+sub _build_addr_class_filter {
+    my ($self, $filters) = @_;
+    
+    return unless($filters && @{$filters});
+    
+    # The semantics of old host class filters are that it must match all the different
+    # types of filters, but may match any filter of each type. i.e. AND between
+    # different filter types, OR between different filters of the same type.
+    my $parent_filter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::And();
+    foreach my $filter(@{$filters}){
+        my $child_filter = $self->_build_addr_class_child_filter($filter);
+        #add to parent 
+        $parent_filter->add_filter($child_filter) if($child_filter);
+    }
+        
+    return @{$parent_filter->filters()} ? $parent_filter : undef;
+}
+
+sub _build_addr_class_child_filter {
+    my ($self, $filter) = @_;
+    
+    my $child_filter;
+    if($filter->{'type'} eq 'address_type'){
+        $child_filter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::IPVersion();
+        if($filter->{'address_type'} eq 'ipv4'){
+            $child_filter->ip_version(4);
+        }elsif($filter->{'address_type'} eq 'ipv6'){
+            $child_filter->ip_version(6);
+        }else{
+            return;
+        }
+    }elsif($filter->{'type'} eq 'and'){
+        $child_filter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::And();
+        foreach my $f(@{$filter->{'filters'}}){
+            my $nf = $self->_build_addr_class_child_filter($f);
+            $child_filter->add_filter($nf) if($nf);
+        }
+    }elsif($filter->{'type'} eq 'host_class'){
+        $child_filter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::AddressClass();
+        $child_filter->class($filter->{'class'});
+    }elsif($filter->{'type'} eq 'netmask'){
+        $child_filter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Netmask();
+        $child_filter->netmask($filter->{'netmask'});
+    }elsif($filter->{'type'} eq 'not'){
+        $child_filter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Not();
+        #old format supports multiple, which means we need old semantics
+        my $grandchild_filter = $self->_build_addr_class_filter($filter->{'filters'});
+        $child_filter->filter($grandchild_filter) if($grandchild_filter);
+    }elsif($filter->{'type'} eq 'or'){
+        $child_filter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Or();
+        foreach my $f(@{$filter->{'filters'}}){
+            my $nf = $self->_build_addr_class_child_filter($f);
+            $child_filter->add_filter($nf) if($nf);
+        }
+    }elsif($filter->{'type'} eq 'organization'){
+        $child_filter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Host();
+        my $jq = new perfSONAR_PS::Client::PSConfig::JQTransform();
+        $jq->script('._meta."organization-display-name"=="' . $filter->{'description'} . '"');
+        $child_filter->jq($jq);
+    }elsif($filter->{'type'} eq 'site'){
+        $child_filter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Host();
+        my $jq = new perfSONAR_PS::Client::PSConfig::JQTransform();
+        $jq->script('._meta."site-display-name"=="' . $filter->{'description'} . '"');
+        $child_filter->jq($jq);
+    }elsif($filter->{'type'} eq 'tag'){
+        $child_filter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Tag();
+        $child_filter->tag($filter->{'tag'});
+    }
+    
+    return $child_filter;
 }
 
 sub _convert_hosts {
@@ -409,22 +527,16 @@ sub _convert_tests {
                 $psconfig_group = new perfSONAR_PS::Client::PSConfig::Groups::Mesh();
                 $psconfig_group->default_address_label($test->{'members'}->{'address_map_field'}) if($test->{'members'}->{'address_map_field'});
                 foreach my $member(@{$test->{'members'}->{'members'}}){
-                    my $sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel();
-                    $sel->name($member);
-                    $psconfig_group->add_address($sel);
+                    $psconfig_group->add_address($self->_build_address_selector($member));
                 }
             }elsif($test->{'members'}->{'type'} eq 'disjoint'){
                 $psconfig_group = new perfSONAR_PS::Client::PSConfig::Groups::Disjoint();
                 $psconfig_group->default_address_label($test->{'members'}->{'address_map_field'}) if($test->{'members'}->{'address_map_field'});
-                foreach my $member(@{$test->{'members'}->{'a_members'}}){
-                    my $sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel();
-                    $sel->name($member);
-                    $psconfig_group->add_a_address($sel);
+                foreach my $a_member(@{$test->{'members'}->{'a_members'}}){
+                    $psconfig_group->add_a_address($self->_build_address_selector($a_member));
                 }
-                foreach my $member(@{$test->{'members'}->{'b_members'}}){
-                    my $sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel();
-                    $sel->name($member);
-                    $psconfig_group->add_a_address($sel);
+                foreach my $b_member(@{$test->{'members'}->{'b_members'}}){
+                    $psconfig_group->add_b_address($self->_build_address_selector($b_member));
                 }
             }else{
                 #ignore ordered mesh or anything else
@@ -518,6 +630,23 @@ sub _convert_tests {
         }
     }
 }
+
+sub _build_address_selector {
+    my ($self, $member) = @_;
+    
+    my $sel;
+    if($member =~ /^host_class::/){
+        $member =~ s/^host_class:://;
+        $sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::Class();
+        $sel->class($member);
+    }else{
+        $sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel();
+        $sel->name($member);
+    }
+    
+    return $sel;
+}
+
 
 sub convert_psb_bwctl {
     my ($self, $test_params, $psconfig_task, $psconfig_test, $psconfig_schedule) = @_;

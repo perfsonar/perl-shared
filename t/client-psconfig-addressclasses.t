@@ -56,7 +56,10 @@ my $config_json = <<'EOF';
         },
         "sacr": {
             "tags": [ "esnet" ],
-            "site": "site1"
+            "site": "site1",
+            "_meta": {
+                "site-display-name": "Sacramento"
+            }
         },
         "chic": {}
         
@@ -131,8 +134,7 @@ my $config_json = <<'EOF';
             "match-filter": {
                 "type": "host",
                 "tag": "esnet",
-                "no-agent": false,
-                "site": "site1"
+                "no-agent": false
             }
         },
         "ipversion": { 
@@ -168,6 +170,15 @@ my $config_json = <<'EOF';
             "match-filter": {
                 "type": "host",
                 "no-agent": true
+            }
+        },
+        "host-jq": { 
+            "data-source": {"type": "current-config"},
+            "match-filter": {
+                "type": "host",
+                "jq": {
+                    "script": "._meta.\"site-display-name\"==\"Sacramento\""
+                }
             }
         }
     },
@@ -241,6 +252,15 @@ my $config_json = <<'EOF';
             ],
             "b-addresses": [
                 { "class": "host-noagent" }
+            ]
+        },
+        "example-group-host-jq": {
+            "type": "disjoint",
+            "a-addresses": [
+                { "name": "host-a.perfsonar.net" }
+            ],
+            "b-addresses": [
+                { "class": "host-jq" }
             ]
         }
     },
@@ -331,7 +351,14 @@ my $config_json = <<'EOF';
             "test": "example-test-throughput",
             "schedule": "example-schedule-PT4H",
             "archives": [ "example-archive-central" ]
+        },
+        "example-task-host-jq": {
+            "group": "example-group-host-jq",
+            "test": "example-test-throughput",
+            "schedule": "example-schedule-PT4H",
+            "archives": [ "example-archive-central" ]
         }
+        
     }
 }
 EOF
@@ -848,6 +875,43 @@ foreach my $i(keys %expected_pairs){
 # Stop
 ##
 is($tg->stop(), undef);
+
+########
+# Iterate addresses with site-display-name Sacraemento as defined by host jq
+########
+ok($tg = new perfSONAR_PS::Client::PSConfig::Parsers::TaskGenerator(
+    psconfig => $psconfig,
+    task_name => 'example-task-host-jq'
+));
+ok($tg->start());
+
+###
+# Address classes do not return results in deterministic order, so need to do process
+# of elimination
+###
+%expected_pairs = (
+    "host-a.perfsonar.net=>sacr-pt1.es.net" => 1,
+    "sacr-pt1.es.net=>host-a.perfsonar.net" => 1,  
+);
+
+#loop through the number of expected pairs
+foreach my $i(keys %expected_pairs){
+    my @pair;
+    ok(@pair = $tg->next());
+    is(@pair, 2);
+    ok($expected_pairs{$pair[0]->address() . '=>' . $pair[1]->address()});
+}
+
+##
+# Should be no more
+##
+#is($tg->next(), undef);
+
+##
+# Stop
+##
+is($tg->stop(), undef);
+
 
 ########
 # Iterate through ipv4 hosts

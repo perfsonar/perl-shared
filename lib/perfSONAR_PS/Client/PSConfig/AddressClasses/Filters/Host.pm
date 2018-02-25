@@ -2,6 +2,8 @@ package perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Host;
 
 use Mouse;
 
+use perfSONAR_PS::Client::PSConfig::JQTransform;
+
 extends 'perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::BaseFilter';
 
 has 'type' => (
@@ -45,6 +47,17 @@ Gets/sets no-agent
 sub no_agent{
     my ($self, $val) = @_;
     return $self->_field_bool('no-agent', $val);
+}
+
+=item jq()
+
+Get/sets JQTransform object for matching host properties
+
+=cut
+
+sub jq {
+    my ($self, $val) = @_;
+    return $self->_field_class('jq', 'perfSONAR_PS::Client::PSConfig::JQTransform', $val);
 }
 
 =item matches()
@@ -99,6 +112,16 @@ sub matches{
     my $filter_no_agent = $self->no_agent() ? 1 : 0;
     my $host_no_agent = $host->no_agent() ? 1 : 0;
     return 0 unless($filter_no_agent == $host_no_agent);
+    
+    #check jq
+    my $jq = $self->jq();
+    if($jq){
+        #try to apply transformation
+        my $jq_result = $jq->apply($host->data());
+        if(!$jq_result){
+            return 0;
+        }
+    }
     
     
     return 1;
