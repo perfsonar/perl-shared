@@ -48,6 +48,31 @@ sub config_obj {
     die 'Override config_obj';
 }
 
+=item needs_translation()
+
+Abstract method that returns true if given JSON needs to be translated, false otherwise.
+Default behavior is to always return false, should be overridden by subclasses.
+
+=cut
+
+sub needs_translation {
+    my ($self, $json_obj) = @_;
+    return 0;
+}
+
+=item translators()
+
+Abstract method that returns list of perfSONAR_PS::Client::PSConfig::Translators::BaseTranslator
+objects that can be used to convert input JSON to format supported by implementing client.
+
+=cut
+
+sub translators {
+    my $self = shift;
+    
+    return [];
+}
+
 sub _merge_configs {
     my ($self, $psconfig1, $psconfig2) = @_;
     
@@ -92,14 +117,11 @@ sub _config_from_file() {
            <$fh>
         };
 
-        my $json_obj = from_json($json_text);
-        if(!$json_obj){
+        $psconfig = $self->_raw_config_to_psconfig($json_text);
+        if(!$psconfig){
             $self->_set_error("No config object found $filename.");
             return;
         }
-        
-        $psconfig = $self->config_obj();
-        $psconfig->data($json_obj);
     };
     if($@){
         $self->_set_error($@);
@@ -129,14 +151,11 @@ sub _config_from_http() {
             return;
         }
 
-        my $response_json = from_json($response->body);
-        if(!$response_json){
+        $psconfig = $self->_raw_config_to_psconfig($response->body);
+        if(!$psconfig){
             $self->_set_error("No task objects returned.");
             return;
         }
-        
-        $psconfig = $self->config_obj();
-        $psconfig->data($response_json);
     };
     if($@){
         $self->_set_error($@);
@@ -144,6 +163,53 @@ sub _config_from_http() {
     }
     
     return $psconfig;
+}
+
+sub _raw_config_to_psconfig {
+    my ($self, $raw_config) = @_;
+    
+    #first, try to convert to JSON
+    my $json_obj;
+    my $json_error = "";
+    eval{
+        $json_obj = from_json($raw_config);
+    };
+    if($@){
+        $json_error = $@;
+    }
+    
+    #check if needs translation
+    my $translator_error = "";
+    my $psconfig;
+    if(!$json_obj || $self->needs_translation($json_obj)){
+        #try to find a translator that works
+        foreach my $translator(@{$self->translators()}){
+            if($translator->can_translate($raw_config, $json_obj)){
+                $psconfig = $translator->translate($raw_config, $json_obj);
+                $translator_error = $translator->error();
+                last if($psconfig); #if translation fails, try others
+            }
+        }
+    }else{
+        #build psconfig directly
+        $psconfig = $self->config_obj();
+        $psconfig->data($json_obj);
+    }
+    
+    #we should have a json object now, if not its an error
+    unless($psconfig){
+        if($json_error){
+            die $json_error;
+        }elsif($translator_error){
+            die $translator_error;
+        }
+        #otherwise return undef and let caller handle
+    }
+    
+   
+    
+    return $psconfig;
+    
 }
 
 =item get_config()
