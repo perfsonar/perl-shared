@@ -5,7 +5,8 @@ Maintainer: Valentin Vidic <Valentin.Vidic@CARNet.hr>
 Build-Depends: debhelper (>= 9.0.0), perl, libdata-validate-domain-perl,
  libdata-validate-ip-perl, libipc-run-perl, libjson-perl, libjson-validator-perl,
  liblog-log4perl-perl, libmouse-perl, libnet-cidr-perl, libnet-dns-perl,
- libparams-validate-perl, libregexp-common-perl, liburi-perl
+ libparams-validate-perl, libregexp-common-perl, liburi-perl,
+ libtest-simple-perl, libhash-multivalue-perl, libev-perl
 Standards-Version: 3.9.6
 Homepage: http://www.perfsonar.net
 Vcs-Git: https://github.com/perfsonar/perl-shared.git
