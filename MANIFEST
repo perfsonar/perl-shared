@@ -45,6 +45,7 @@ lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/BaseOperandFilter.pm
 lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/FilterFactory.pm
 lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/Host.pm
 lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/IPVersion.pm
+lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/JQ.pm
 lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/Netmask.pm
 lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/Not.pm
 lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/Or.pm

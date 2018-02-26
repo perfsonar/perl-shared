@@ -137,6 +137,7 @@ sub psconfig_json_schema() {
                 { "$ref": "#/pSConfig/AddressClassFilterAddressClassSpecification" },
                 { "$ref": "#/pSConfig/AddressClassFilterHostSpecification" },
                 { "$ref": "#/pSConfig/AddressClassFilterIPVersionSpecification" },
+                { "$ref": "#/pSConfig/AddressClassFilterJQSpecification" },
                 { "$ref": "#/pSConfig/AddressClassFilterNetmaskSpecification" },
                 { "$ref": "#/pSConfig/AddressClassFilterOperandSpecification" },
                 { "$ref": "#/pSConfig/AddressClassFilterNotSpecification" },
@@ -168,12 +169,28 @@ sub psconfig_json_schema() {
                 "tag": { "type": "string" },
                 "jq": { 
                     "$ref": "#/pSConfig/JQTransformSpecification",
-                    "description": "JQ script to select host properties. If result non-empty or JSON true then evaluates to false."
+                    "description": "JQ script to select host properties. If result non-empty or JSON true then evaluates to true. JSON false or empty string is false."
                     
                 }
             },
             "additionalProperties": false,
             "required": [ "type" ]
+        },
+        
+        "AddressClassFilterJQSpecification": {
+            "type": "object",
+            "properties": {
+                "type": { 
+                    "type": "string",
+                    "enum": [ "jq" ]
+                },
+                "jq": { 
+                    "$ref": "#/pSConfig/JQTransformSpecification",
+                    "description": "JQ script to select address properties. If result non-empty or JSON true then evaluates to true. JSON false or empty string is false."
+                }
+            },
+            "additionalProperties": false,
+            "required": [ "type", "jq" ]
         },
         
         "AddressClassFilterIPVersionSpecification": {
