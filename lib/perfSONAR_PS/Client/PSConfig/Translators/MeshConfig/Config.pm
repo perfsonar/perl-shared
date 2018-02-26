@@ -311,10 +311,21 @@ sub _build_addr_class_filter {
     # types of filters, but may match any filter of each type. i.e. AND between
     # different filter types, OR between different filters of the same type.
     my $parent_filter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::And();
+    my $filters_by_type = {};
     foreach my $filter(@{$filters}){
         my $child_filter = $self->_build_addr_class_child_filter($filter);
-        #add to parent 
-        $parent_filter->add_filter($child_filter) if($child_filter);
+        next unless($child_filter);
+        $filters_by_type->{$child_filter->type()} = [] unless($filters_by_type->{$child_filter->type()});
+        push @{$filters_by_type->{$child_filter->type()}}, $child_filter;
+    }
+    
+    #build ORs
+    foreach my $filter_type(keys %{$filters_by_type}){
+        my $or_filter = new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Or();
+        foreach my $f(@{$filters_by_type->{$filter_type}}){
+            $or_filter->add_filter($f);
+        }
+        $parent_filter->add_filter($or_filter) if(@{$or_filter->filters()});
     }
         
     return @{$parent_filter->filters()} ? $parent_filter : undef;
