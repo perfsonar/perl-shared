@@ -137,6 +137,7 @@ sub psconfig_json_schema() {
                 { "$ref": "#/pSConfig/AddressClassFilterAddressClassSpecification" },
                 { "$ref": "#/pSConfig/AddressClassFilterHostSpecification" },
                 { "$ref": "#/pSConfig/AddressClassFilterIPVersionSpecification" },
+                { "$ref": "#/pSConfig/AddressClassFilterJQSpecification" },
                 { "$ref": "#/pSConfig/AddressClassFilterNetmaskSpecification" },
                 { "$ref": "#/pSConfig/AddressClassFilterOperandSpecification" },
                 { "$ref": "#/pSConfig/AddressClassFilterNotSpecification" },
@@ -164,12 +165,32 @@ sub psconfig_json_schema() {
                     "type": "string",
                     "enum": [ "host" ]
                 },
-                "site": { "type": "string" },
                 "no-agent": { "type": "boolean" },
-                "tag": { "type": "string" }
+                "tag": { "type": "string" },
+                "jq": { 
+                    "$ref": "#/pSConfig/JQTransformSpecification",
+                    "description": "JQ script to select host properties. If result non-empty or JSON true then evaluates to true. JSON false or empty string is false."
+                    
+                }
             },
             "additionalProperties": false,
             "required": [ "type" ]
+        },
+        
+        "AddressClassFilterJQSpecification": {
+            "type": "object",
+            "properties": {
+                "type": { 
+                    "type": "string",
+                    "enum": [ "jq" ]
+                },
+                "jq": { 
+                    "$ref": "#/pSConfig/JQTransformSpecification",
+                    "description": "JQ script to select address properties. If result non-empty or JSON true then evaluates to true. JSON false or empty string is false."
+                }
+            },
+            "additionalProperties": false,
+            "required": [ "type", "jq" ]
         },
         
         "AddressClassFilterIPVersionSpecification": {
@@ -353,12 +374,28 @@ sub psconfig_json_schema() {
             "properties": {
                 "archiver": { "type": "string" },
                 "data": { "$ref": "#/pSConfig/AnyJSON" },
-                "transform": { "$ref": "#/pSConfig/JQTransformSpecification" },
+                "transform": { "$ref": "#/pSConfig/ArchiveJQTransformSpecification" },
                 "ttl": { "$ref": "#/pSConfig/Duration" },
                 "_meta": { "$ref": "#/pSConfig/AnyJSON" }
             },
             "additionalProperties": false,
             "required": [ "archiver", "data"]
+        },
+        
+        "ArchiveJQTransformSpecification": {
+            "type": "object",
+            "properties": {
+                "script":   {
+                    "anyOf": [
+                        { "type": "string" },
+                        { "type": "array", "items": { "type": "string" } }
+                    ]
+                },
+                "output-raw": { "type": "boolean" },
+                "args": { "$ref": "#/pSConfig/AnyJSON" }
+            },
+            "additionalProperties": false,
+            "required": [ "script" ]
         },
         
         "Cardinal": {
@@ -482,7 +519,6 @@ sub psconfig_json_schema() {
         "HostSpecification": {
             "type": "object",
             "properties": {
-                "site": { "type": "string" },
                 "archives": { "type": "array", "items": { "$ref": "#/pSConfig/NameType" } },
                 "tags": { "type": "array", "items": { "type": "string" } },
                 "no-agent": { "type": "boolean" },
@@ -544,9 +580,7 @@ sub psconfig_json_schema() {
                         { "type": "string" },
                         { "type": "array", "items": { "type": "string" } }
                     ]
-                },
-                "output-raw": { "type": "boolean" },
-                "args": { "$ref": "#/pSConfig/AnyJSON" }
+                }
             },
             "additionalProperties": false,
             "required": [ "script" ]

@@ -6,6 +6,7 @@ use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::AddressClass;
 use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::And;
 use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Host;
 use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::IPVersion;
+use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::JQ;
 use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Netmask;
 use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Not;
 use perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Or;
@@ -31,6 +32,8 @@ sub build {
             return new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Host(data => $data);
         }elsif($data->{'type'} eq 'ip-version'){
             return new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::IPVersion(data => $data);
+        }elsif($data->{'type'} eq 'jq'){
+            return new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::JQ(data => $data);
         }elsif($data->{'type'} eq 'netmask'){
             return new perfSONAR_PS::Client::PSConfig::AddressClasses::Filters::Netmask(data => $data);
         }elsif($data->{'type'} eq 'not'){

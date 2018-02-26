@@ -135,7 +135,6 @@ is($pshost->tags()->[0], 'dev');
 ok($pshost->remove('tags'));
 ok($pshost->add_archive_ref('lbl-pt1.es.net'));
 is($pshost->archive_refs()->[0], 'lbl-pt1.es.net');
-is($pshost->site("LBL"), "LBL");
 is($pshost->disabled(1), 1);
 is($pshost->disabled(0), 0);
 is($pshost->no_agent(1), 1);
@@ -183,7 +182,6 @@ is($psaddrclass_filter_host->matches($psaddr), 0);
 is($psaddrclass_filter_host->matches($psaddr, $psconfig), 1);
 is($psaddrclass_filter_host->tag('tag1'), 'tag1');
 is($psaddrclass_filter_host->matches($psaddr, $psconfig), 0);
-is($psaddrclass_filter_host->site('site1'), 'site1');
 is($psaddrclass_filter_host->tag('tag1'), 'tag1');
 is($psaddrclass_filter_host->no_agent(1), 1);
 is($psaddrclass_filter_host->no_agent(0), 0);
@@ -423,7 +421,7 @@ is($psarchive->validate(), 0); #no validation errors
 
 ##Test transform
 my $psarchive_jq;
-ok($psarchive_jq = new perfSONAR_PS::Client::PSConfig::JQTransform());
+ok($psarchive_jq = new perfSONAR_PS::Client::PSConfig::ArchiveJQTransform());
 $psarchive_jq->data()->{'script'} = '.';
 is($psarchive_jq->script()->[0], '.');
 is($psarchive_jq->script('.')->[0], '.');

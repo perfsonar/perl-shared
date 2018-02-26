@@ -31,9 +31,27 @@ my $config_json = <<'EOF';
         "host-a.perfsonar.net": { "address": "host-a.perfsonar.net", "host": "host-a" },
         "host-b.perfsonar.net": { "address": "host-b.perfsonar.net", "host": "host-b", "tags": ["testbed"]},
         "host-c.perfsonar.net": { "address": "host-c.perfsonar.net", "tags": ["testbed"], "host": "host-c" },
-        "host-d.perfsonar.net": { "address": "host-d.perfsonar.net"},
-        "lbl-pt1.es.net": { "address": "lbl-pt1.es.net", "host": "lbl" },
-        "sacr-pt1.es.net": { "address": "sacr-pt1.es.net", "tags": [ "testbed" ], "host": "sacr" },
+        "host-d.perfsonar.net": { 
+            "address": "host-d.perfsonar.net",
+            "_meta": {
+                "ifspeed": 1
+            }
+        },
+        "lbl-pt1.es.net": { 
+            "address": "lbl-pt1.es.net", 
+            "host": "lbl",
+            "_meta": {
+                "ifspeed": 10
+            }
+        },
+        "sacr-pt1.es.net": { 
+            "address": "sacr-pt1.es.net", 
+            "tags": [ "testbed" ], 
+            "host": "sacr",
+            "_meta": {
+                "ifspeed": 10
+            }
+        },
         "chic-pt1-v6.es.net": { "address": "chic-pt1-v6.es.net", "tags": [ "esnet", "testbed" ], "host": "chic" },
         "antg-staging-v4": { "address": "198.128.151.25" },
         "antg-staging-v6": { "address": "2001:400:210:151::25" }
@@ -41,22 +59,21 @@ my $config_json = <<'EOF';
     
     "hosts": {
         "host-a": {
-            "tags": [ "testbed" ],
-            "site": "site1"
+            "tags": [ "testbed" ]
         },
         "host-b": {
             "tags": [ "testbed" ],
-            "site": "site2", 
             "no-agent": true
         },
         "host-c": {},
         "lbl": {
-            "tags": [ "esnet", "testbed" ],
-            "site": "site1"
+            "tags": [ "esnet", "testbed" ]
         },
         "sacr": {
             "tags": [ "esnet" ],
-            "site": "site1"
+            "_meta": {
+                "site-display-name": "Sacramento"
+            }
         },
         "chic": {}
         
@@ -131,8 +148,7 @@ my $config_json = <<'EOF';
             "match-filter": {
                 "type": "host",
                 "tag": "esnet",
-                "no-agent": false,
-                "site": "site1"
+                "no-agent": false
             }
         },
         "ipversion": { 
@@ -168,6 +184,24 @@ my $config_json = <<'EOF';
             "match-filter": {
                 "type": "host",
                 "no-agent": true
+            }
+        },
+        "host-jq": { 
+            "data-source": {"type": "current-config"},
+            "match-filter": {
+                "type": "host",
+                "jq": {
+                    "script": "._meta.\"site-display-name\"==\"Sacramento\""
+                }
+            }
+        },
+        "jq": { 
+            "data-source": {"type": "current-config"},
+            "match-filter": {
+                "type": "jq",
+                "jq": {
+                    "script": "._meta.ifspeed==10"
+                }
             }
         }
     },
@@ -241,6 +275,21 @@ my $config_json = <<'EOF';
             ],
             "b-addresses": [
                 { "class": "host-noagent" }
+            ]
+        },
+        "example-group-host-jq": {
+            "type": "disjoint",
+            "a-addresses": [
+                { "name": "host-a.perfsonar.net" }
+            ],
+            "b-addresses": [
+                { "class": "host-jq" }
+            ]
+        },
+        "example-group-jq": {
+            "type": "mesh",
+            "addresses": [
+                { "class": "jq" }
             ]
         }
     },
@@ -328,6 +377,18 @@ my $config_json = <<'EOF';
         },
         "example-task-host-noagent": {
             "group": "example-group-host-noagent",
+            "test": "example-test-throughput",
+            "schedule": "example-schedule-PT4H",
+            "archives": [ "example-archive-central" ]
+        },
+        "example-task-host-jq": {
+            "group": "example-group-host-jq",
+            "test": "example-test-throughput",
+            "schedule": "example-schedule-PT4H",
+            "archives": [ "example-archive-central" ]
+        },
+        "example-task-jq": {
+            "group": "example-group-jq",
             "test": "example-test-throughput",
             "schedule": "example-schedule-PT4H",
             "archives": [ "example-archive-central" ]
@@ -843,6 +904,78 @@ foreach my $i(keys %expected_pairs){
 # Should be no more
 ##
 #is($tg->next(), undef);
+
+##
+# Stop
+##
+is($tg->stop(), undef);
+
+########
+# Iterate addresses with site-display-name Sacraemento as defined by host jq
+########
+ok($tg = new perfSONAR_PS::Client::PSConfig::Parsers::TaskGenerator(
+    psconfig => $psconfig,
+    task_name => 'example-task-host-jq'
+));
+ok($tg->start());
+
+###
+# Address classes do not return results in deterministic order, so need to do process
+# of elimination
+###
+%expected_pairs = (
+    "host-a.perfsonar.net=>sacr-pt1.es.net" => 1,
+    "sacr-pt1.es.net=>host-a.perfsonar.net" => 1,  
+);
+
+#loop through the number of expected pairs
+foreach my $i(keys %expected_pairs){
+    my @pair;
+    ok(@pair = $tg->next());
+    is(@pair, 2);
+    ok($expected_pairs{$pair[0]->address() . '=>' . $pair[1]->address()});
+}
+
+##
+# Should be no more
+##
+is($tg->next(), undef);
+
+##
+# Stop
+##
+is($tg->stop(), undef);
+
+########
+# Iterate addresses that match jq looking for ifspeed 10
+########
+ok($tg = new perfSONAR_PS::Client::PSConfig::Parsers::TaskGenerator(
+    psconfig => $psconfig,
+    task_name => 'example-task-jq'
+));
+ok($tg->start());
+
+###
+# Address classes do not return results in deterministic order, so need to do process
+# of elimination
+###
+%expected_pairs = (
+    "lbl-pt1.es.net=>sacr-pt1.es.net" => 1,
+    "sacr-pt1.es.net=>lbl-pt1.es.net" => 1,  
+);
+
+#loop through the number of expected pairs
+foreach my $i(keys %expected_pairs){
+    my @pair;
+    ok(@pair = $tg->next());
+    is(@pair, 2);
+    ok($expected_pairs{$pair[0]->address() . '=>' . $pair[1]->address()});
+}
+
+##
+# Should be no more
+##
+is($tg->next(), undef);
 
 ##
 # Stop

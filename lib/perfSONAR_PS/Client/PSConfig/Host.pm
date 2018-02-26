@@ -26,17 +26,6 @@ sub add_archive_ref{
     $self->_add_field_ref('archives', $val);
 }
 
-=item site()
-
-Get/sets site
-
-=cut
-
-sub site{
-    my ($self, $val) = @_;
-    return $self->_field('site', $val);
-}
-
 =item tags()
 
 Get/sets tags as an ArrayRef

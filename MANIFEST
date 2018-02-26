@@ -45,6 +45,7 @@ lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/BaseOperandFilter.pm
 lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/FilterFactory.pm
 lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/Host.pm
 lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/IPVersion.pm
+lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/JQ.pm
 lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/Netmask.pm
 lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/Not.pm
 lib/perfSONAR_PS/Client/PSConfig/AddressClasses/Filters/Or.pm
@@ -61,6 +62,7 @@ lib/perfSONAR_PS/Client/PSConfig/Addresses/RemoteAddress.pm
 lib/perfSONAR_PS/Client/PSConfig/ApiConnect.pm
 lib/perfSONAR_PS/Client/PSConfig/ApiFilters.pm
 lib/perfSONAR_PS/Client/PSConfig/Archive.pm
+lib/perfSONAR_PS/Client/PSConfig/ArchiveJQTransform.pm
 lib/perfSONAR_PS/Client/PSConfig/BaseConnect.pm
 lib/perfSONAR_PS/Client/PSConfig/BaseMetaNode.pm
 lib/perfSONAR_PS/Client/PSConfig/BaseNode.pm
@@ -85,6 +87,10 @@ lib/perfSONAR_PS/Client/PSConfig/Schema.pm
 lib/perfSONAR_PS/Client/PSConfig/Subtask.pm
 lib/perfSONAR_PS/Client/PSConfig/Task.pm
 lib/perfSONAR_PS/Client/PSConfig/Test.pm
+lib/perfSONAR_PS/Client/PSConfig/Translators/BaseTranslator.pm
+lib/perfSONAR_PS/Client/PSConfig/Translators/MeshConfig/ApiConnect.pm
+lib/perfSONAR_PS/Client/PSConfig/Translators/MeshConfig/Config.pm
+lib/perfSONAR_PS/Client/PSConfig/Translators/MeshConfig/Schema.pm
 lib/perfSONAR_PS/Client/PScheduler/ApiConnect.pm
 lib/perfSONAR_PS/Client/PScheduler/ApiFilters.pm
 lib/perfSONAR_PS/Client/PScheduler/Archive.pm

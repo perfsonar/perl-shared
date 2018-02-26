@@ -193,7 +193,7 @@ sub next {
         }
         
         #if the address responsible for scheduling matches us, exit loop, otherwise keep looking
-        if($has_agent && $self->_is_matching_address($scheduled_by_addr->address())){
+        if($has_agent && $self->_is_matching_address($scheduled_by_addr)){
             $matched = 1;
             last;
         }  
@@ -428,8 +428,14 @@ sub _is_matching_address{
         return 1;
     }
     
-    #if in map then matches
-    if($self->_match_addresses_map()->{$address}){
+    
+    if($address->_parent_address()){
+        #if parent is set, then must match parent, otherwise no match
+        if($self->_match_addresses_map()->{$address->_parent_address()}){
+            return 1;
+        }
+    }elsif($self->_match_addresses_map()->{$address->address()}){
+        #no parent set, so match address
         return 1;
     }
     
