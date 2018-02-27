@@ -25,7 +25,7 @@ Depends: ${misc:Depends}, ${perl:Depends}, perl, liblog-log4perl-perl,
  libnet-traceroute-perl, libparams-validate-perl, libstatistics-descriptive-perl,
  liburi-perl, librpc-xml-perl, libnet-ntp-perl, libtemplate-perl, libdpkg-perl,
  libsys-statistics-linux-perl, libsocket6-perl, libnet-inet6glue-perl,
- libgeo-ip-perl (>= 1.43), geoip-database, geoip-database-extra
+ libgeo-ip-perl (>= 1.43), geoip-database, geoip-database-extra, jq
 Description: perfSONAR common perl libraries
  The perfSONAR perl library provides all common perl modules for all
  perfSONAR related services.
@@ -44,6 +44,15 @@ Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
  libjson-perl, libwww-perl, libmouse-perl, libparams-validate-perl, liburi-perl
 Description: perfSONAR perl libraries for pScheduler
  Client libraries for perfSONAR's pScheduler service
+
+Package: libperfsonar-psconfig-perl
+Architecture: all
+Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
+ libdata-validate-ip-perl, libdata-validate-domain-perl,
+ libjson-perl, libjson-validator-perl, liblog-log4perl-perl,
+ libmouse-perl, libparams-validate-perl
+Description: perfSONAR perl libraries for pSConfig
+ Client libraries for perfSONAR's pSConfig service
 
 Package: libperfsonar-regulartesting-perl
 Architecture: all
