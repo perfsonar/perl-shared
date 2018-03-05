@@ -22,11 +22,11 @@ Depends: ${misc:Depends}, ${perl:Depends}, perl, liblog-log4perl-perl,
  libipc-dirqueue-perl, libossp-uuid-perl, libdata-validate-domain-perl,
  libdatetime-perl, libdatetime-format-iso8601-perl, libhash-merge-perl,
  libhttp-message-perl, libio-socket-ssl-perl, libipc-run-perl, libjson-perl,
- libwww-perl, libmoose-perl, libnet-ip-perl, libio-socket-ip-perl,
+ libmojolicious-perl, libmoose-perl, libnet-ip-perl, libio-socket-ip-perl,
  libnet-traceroute-perl, libparams-validate-perl, libstatistics-descriptive-perl,
  liburi-perl, librpc-xml-perl, libnet-ntp-perl, libtemplate-perl, libdpkg-perl,
- libsys-statistics-linux-perl, libsocket6-perl, libnet-inet6glue-perl,
- libgeo-ip-perl (>= 1.43), geoip-database, geoip-database-extra, jq
+ libsys-statistics-linux-perl, libsocket6-perl, libgeo-ip-perl (>= 1.43),
+ geoip-database, geoip-database-extra, jq
 Description: perfSONAR common perl libraries
  The perfSONAR perl library provides all common perl modules for all
  perfSONAR related services.
@@ -35,14 +35,14 @@ Package: libperfsonar-esmond-perl
 Architecture: all
 Breaks: libperfsonar-perl (<< 3.5.1~10.rc1-1)
 Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
- libjson-perl, libwww-perl, libmouse-perl, libparams-validate-perl, liburi-perl
+ libjson-perl, libmouse-perl, libparams-validate-perl, liburi-perl
 Description: perfSONAR perl libraries for esmond
  Client libraries for perfSONAR's Meaurement Archive esmond
 
 Package: libperfsonar-pscheduler-perl
 Architecture: all
 Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
- libjson-perl, libwww-perl, libmouse-perl, libparams-validate-perl, liburi-perl
+ libjson-perl, libmouse-perl, libparams-validate-perl, liburi-perl
 Description: perfSONAR perl libraries for pScheduler
  Client libraries for perfSONAR's pScheduler service
 
@@ -82,7 +82,7 @@ Architecture: all
 Breaks: libperfsonar-perl (<< 3.5.1~10.rc1-1)
 Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
  libnet-server-perl, libcgi-ajax-perl, libcgi-session-perl,
- libxml-parser-perl, libperfsonar-sls-perl,
+ libxml-parser-perl, libperfsonar-sls-perl, libwww-perl,
  libperfsonar-regulartesting-perl, perfsonar-toolkit-library
 Description: perfSONAR perl libraries for Toolkit
  Client libraries for perfSONAR's Toolkit distributions
