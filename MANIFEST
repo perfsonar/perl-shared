@@ -87,10 +87,12 @@ lib/perfSONAR_PS/Client/PSConfig/Schema.pm
 lib/perfSONAR_PS/Client/PSConfig/Subtask.pm
 lib/perfSONAR_PS/Client/PSConfig/Task.pm
 lib/perfSONAR_PS/Client/PSConfig/Test.pm
+lib/perfSONAR_PS/Client/PSConfig/Translators/ApiConnect.pm
 lib/perfSONAR_PS/Client/PSConfig/Translators/BaseTranslator.pm
 lib/perfSONAR_PS/Client/PSConfig/Translators/MeshConfig/ApiConnect.pm
 lib/perfSONAR_PS/Client/PSConfig/Translators/MeshConfig/Config.pm
 lib/perfSONAR_PS/Client/PSConfig/Translators/MeshConfig/Schema.pm
+lib/perfSONAR_PS/Client/PSConfig/Translators/MeshConfigTasks/Config.pm
 lib/perfSONAR_PS/Client/PScheduler/ApiConnect.pm
 lib/perfSONAR_PS/Client/PScheduler/ApiFilters.pm
 lib/perfSONAR_PS/Client/PScheduler/Archive.pm
