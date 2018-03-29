@@ -175,7 +175,7 @@ sub translate {
     #build pSConfig Object and validate
     @errors = $psconfig->validate();
     if(@errors){
-        my $err = "Generate PSConfig JSON is not valid. Encountered the following validation errors:\n\n";
+        my $err = "Generated PSConfig JSON is not valid. Encountered the following validation errors:\n\n";
         foreach my $error(@errors){
             $err .= "   Node: " . $error->path . "\n";
             $err .= "   Error: " . $error->message . "\n\n";
