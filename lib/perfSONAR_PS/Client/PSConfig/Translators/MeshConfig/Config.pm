@@ -34,6 +34,17 @@ extends 'perfSONAR_PS::Client::PSConfig::Translators::BaseTranslator';
 
 has 'skip_validation' => (is => 'rw', isa => 'Bool', default => sub { 0 });
 has 'use_force_bidirectional' => (is => 'rw', isa => 'Bool', default => sub { 0 });
+has 'disable_bwctl' => (is => 'rw', isa => 'Bool', default => sub { 0 });
+
+=item name()
+
+Returns name of translator
+
+=cut
+
+sub name {
+    return 'MeshConfig JSON';
+}
 
 =item can_translate()
 
@@ -671,8 +682,14 @@ sub convert_psb_bwctl {
         foreach my $tool(@tools){
             chomp $tool;
             $tool =~ s/^bwctl\///;
+            unless($self->disable_bwctl()){
+                if($tool eq 'iperf'){
+                    $psconfig_task->add_tool('bwctliperf2');
+                }elsif($tool eq 'iperf3'){
+                    $psconfig_task->add_tool('bwctliperf3');
+                }
+            }
             $psconfig_task->add_tool($tool);
-            #note if I wanted 3.5 support i'd need to add bwctl* tools here
         }
     }
     
@@ -849,8 +866,14 @@ sub convert_trace {
         foreach my $tool(@tools){
             chomp $tool;
             $tool =~ s/^bwctl\///;
+            unless($self->disable_bwctl()){
+                if($tool eq 'traceroute'){
+                    $psconfig_task->add_tool('bwctltraceroute');
+                }elsif($tool eq 'tracepath'){
+                    $psconfig_task->add_tool('bwctltracepath');
+                }
+            }
             $psconfig_task->add_tool($tool);
-            #note if I wanted 3.5 support i'd need to add bwctl* tools here
         }
     }
     
