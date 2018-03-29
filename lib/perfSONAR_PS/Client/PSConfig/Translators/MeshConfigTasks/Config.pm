@@ -35,6 +35,7 @@ has 'use_archive_details' => (is => 'rw', isa => 'Bool', default => sub { 0 });
 has 'save_global_archives' => (is => 'rw', isa => 'Bool', default => sub { 0 });
 has 'global_archive_dir' => (is => 'rw', isa => 'Str', default => sub { '/etc/perfsonar/psconfig/archives.d/' });
 has 'disable_bwctl' => (is => 'rw', isa => 'Bool', default => sub { 0 });
+has 'include_added_by_mesh' => (is => 'rw', isa => 'Bool', default => sub { 0 });
 
 =item name()
 
@@ -131,7 +132,7 @@ sub translate {
     #iterate through tests and build psconfig tasks
     foreach my $test(@{$self->data()->{'test'}}){
         #skip tests added by mesh
-        #next if($test->{added_by_mesh});
+        next if($test->{'added_by_mesh'} && !$self->include_added_by_mesh());
         
         #inherit default parameters
         next unless($test->{'parameters'});
@@ -156,6 +157,12 @@ sub translate {
             next unless($global_archive_ref);
             $self->save_archive($global_archive, $global_archive_ref, {pretty => 1});
         }
+    }
+    
+    #check if we actually have anything we converted - if all remote mesh we may not
+    unless(@{$psconfig->task_names()}){
+        $self->_set_error("Nothing to convert. This is not an error if all tests contain added_by_mesh. Ignore any errors above about malformed JSON string.");
+        return;
     }
     
     #build pSConfig Object and validate
@@ -218,7 +225,7 @@ sub _convert_measurement_archives {
         }else{
             next;
         }
-        #next if($ma->{added_by_mesh});
+        next if($ma->{added_by_mesh} && !$self->include_added_by_mesh());
         
         # build URL
         my $url_obj = new URI($ma->{'public_url'} ? $ma->{'public_url'} : $ma->{'database'});
