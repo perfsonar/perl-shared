@@ -199,7 +199,7 @@ sub _load_config {
     }
     
     #validate
-    unless($config{'test'}){
+    unless($config{'test'} || $config{'measurement_archive'}){
         return;
     }
     
