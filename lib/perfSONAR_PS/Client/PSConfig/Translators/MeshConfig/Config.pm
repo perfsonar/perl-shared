@@ -716,14 +716,14 @@ sub convert_psb_bwctl {
     $psconfig_test->spec_param('omit', $self->_seconds_to_iso($test_params->{'omit_interval'})) if($test_params->{'omit_interval'});
     $psconfig_test->spec_param('interval', $self->_seconds_to_iso($test_params->{'report_interval'})) if($test_params->{'report_interval'});
     #test params (int)
-    $psconfig_test->spec_param('parallel', int($test_params->{'streams'})) if(defined $test_params->{'streams'});
-    $psconfig_test->spec_param('ip-tos', int($test_params->{'tos_bits'})) if(defined $test_params->{'tos_bits'});
-    $psconfig_test->spec_param('buffer-length', int($test_params->{'buffer_length'})) if(defined $test_params->{'buffer_length'});
-    $psconfig_test->spec_param('window-size', int($test_params->{'window_size'})) if(defined $test_params->{'window_size'});
+    $psconfig_test->spec_param('parallel', int($test_params->{'streams'})) if($test_params->{'streams'});
+    $psconfig_test->spec_param('ip-tos', int($test_params->{'tos_bits'})) if($test_params->{'tos_bits'});
+    $psconfig_test->spec_param('buffer-length', int($test_params->{'buffer_length'})) if($test_params->{'buffer_length'});
+    $psconfig_test->spec_param('window-size', int($test_params->{'window_size'})) if($test_params->{'window_size'});
     $psconfig_test->spec_param('client-cpu-affinity', int($test_params->{'client_cpu_affinity'})) if(defined $test_params->{'client_cpu_affinity'});
     $psconfig_test->spec_param('server-cpu-affinity', int($test_params->{'server_cpu_affinity'})) if(defined $test_params->{'server_cpu_affinity'});
-    $psconfig_test->spec_param('flow-label', int($test_params->{'flow_label'})) if(defined $test_params->{'flow_label'});
-    $psconfig_test->spec_param('mss', int($test_params->{'mss'})) if(defined $test_params->{'mss'});
+    $psconfig_test->spec_param('flow-label', int($test_params->{'flow_label'})) if($test_params->{'flow_label'});
+    $psconfig_test->spec_param('mss', int($test_params->{'mss'})) if($test_params->{'mss'});
     $psconfig_test->spec_param('dscp', int($test_params->{'dscp'})) if(defined $test_params->{'dscp'});
     #test params (boolean)
     $psconfig_test->spec_param('no-delay', JSON::true) if($test_params->{'no_delay'});
@@ -754,12 +754,12 @@ sub convert_psb_owamp {
     $psconfig_test->spec_param('dest-node', '{% pscheduler_address[1] %}');
     $psconfig_test->spec_param('flip', '{% flip %}');
     #test params (int)
-    $psconfig_test->spec_param('packet-count', int($test_params->{'sample_count'})) if(defined $test_params->{'sample_count'});
-    $psconfig_test->spec_param('ip-tos', int($test_params->{'tos_bits'})) if(defined $test_params->{'tos_bits'});
+    $psconfig_test->spec_param('packet-count', int($test_params->{'sample_count'})) if($test_params->{'sample_count'});
+    $psconfig_test->spec_param('ip-tos', int($test_params->{'tos_bits'})) if($test_params->{'tos_bits'});
     $psconfig_test->spec_param('packet-padding', int($test_params->{'packet_padding'})) if(defined $test_params->{'packet_padding'});
     #test params (numeric)
-    $psconfig_test->spec_param('packet-interval', $test_params->{'packet_interval'} * 1.0) if(defined $test_params->{'packet_interval'});
-    $psconfig_test->spec_param('bucket-width', $test_params->{'bucket_width'} * 1.0) if(defined $test_params->{'bucket_width'});
+    $psconfig_test->spec_param('packet-interval', $test_params->{'packet_interval'} * 1.0) if($test_params->{'packet_interval'});
+    $psconfig_test->spec_param('bucket-width', $test_params->{'bucket_width'} * 1.0) if($test_params->{'bucket_width'});
     #test param (ip version)
     $psconfig_test->spec_param('ip-version', 4) if($test_params->{'ipv4_only'});
     $psconfig_test->spec_param('ip-version', 6) if($test_params->{'ipv6_only'});
@@ -791,10 +791,10 @@ sub convert_pinger {
     $psconfig_test->spec_param('dest', '{% address[1] %}');
     $psconfig_test->spec_param('source-node', '{% pscheduler_address[0] %}');
     #test params (int)
-    $psconfig_test->spec_param('count', int($test_params->{'packet_count'})) if(defined $test_params->{'packet_count'});
-    $psconfig_test->spec_param('length', int($test_params->{'packet_size'})) if(defined $test_params->{'packet_size'});
-    $psconfig_test->spec_param('ttl', int($test_params->{'packet_ttl'})) if(defined $test_params->{'packet_ttl'});
-    $psconfig_test->spec_param('ip-tos', int($test_params->{'tos_bits'})) if(defined $test_params->{'tos_bits'});
+    $psconfig_test->spec_param('count', int($test_params->{'packet_count'})) if($test_params->{'packet_count'});
+    $psconfig_test->spec_param('length', int($test_params->{'packet_size'})) if($test_params->{'packet_size'});
+    $psconfig_test->spec_param('ttl', int($test_params->{'packet_ttl'})) if($test_params->{'packet_ttl'});
+    $psconfig_test->spec_param('ip-tos', int($test_params->{'tos_bits'})) if($test_params->{'tos_bits'});
     $psconfig_test->spec_param('flowlabel', int($test_params->{'flowlabel'})) if(defined $test_params->{'flowlabel'});
     $psconfig_test->spec_param('deadline', int($test_params->{'deadline'})) if(defined $test_params->{'flowlabel'});
     #test param (ip version)
@@ -896,11 +896,11 @@ sub convert_trace {
     $psconfig_test->spec_param('source-node', '{% pscheduler_address[0] %}');
     
     #test params (int)
-    $psconfig_test->spec_param('length', int($test_params->{'packet_size'})) if(defined $test_params->{'packet_size'});
-    $psconfig_test->spec_param('first-ttl', int($test_params->{'first_ttl'})) if(defined $test_params->{'first_ttl'});
-    $psconfig_test->spec_param('hops', int($test_params->{'max_ttl'})) if(defined $test_params->{'max_ttl'});
-    $psconfig_test->spec_param('queries', int($test_params->{'queries'})) if(defined $test_params->{'queries'});
-    $psconfig_test->spec_param('ip-tos', int($test_params->{'tos_bits'})) if(defined $test_params->{'tos_bits'});
+    $psconfig_test->spec_param('length', int($test_params->{'packet_size'})) if($test_params->{'packet_size'});
+    $psconfig_test->spec_param('first-ttl', int($test_params->{'first_ttl'})) if($test_params->{'first_ttl'});
+    $psconfig_test->spec_param('hops', int($test_params->{'max_ttl'})) if($test_params->{'max_ttl'});
+    $psconfig_test->spec_param('queries', int($test_params->{'queries'})) if($test_params->{'queries'});
+    $psconfig_test->spec_param('ip-tos', int($test_params->{'tos_bits'})) if($test_params->{'tos_bits'});
     #test params (boolean)
     $psconfig_test->spec_param('as', JSON::true) if($test_params->{'as'});
     $psconfig_test->spec_param('fragment', JSON::true) if($test_params->{'fragment'});
