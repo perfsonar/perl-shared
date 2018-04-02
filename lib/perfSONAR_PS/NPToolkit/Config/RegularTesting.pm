@@ -43,6 +43,8 @@ use perfSONAR_PS::RegularTesting::Schedulers::RegularInterval;
 use perfSONAR_PS::RegularTesting::Tests::Bwctl;
 use perfSONAR_PS::RegularTesting::Tests::Bwtraceroute;
 use perfSONAR_PS::RegularTesting::Tests::Bwping;
+use perfSONAR_PS::Client::PSConfig::Translators::MeshConfigTasks::Config;
+
 
 use perfSONAR_PS::Common qw(genuid);
 
@@ -52,7 +54,8 @@ use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service 
 
 # These are the defaults for the current NPToolkit
 my %defaults = (
-    regular_testing_config_file => "/etc/perfsonar/meshconfig-agent-tasks.conf",
+    regular_testing_config_file => "/var/lib/perfsonar/toolkit/gui-tasks.conf",
+    psconfig_file => "/etc/perfsonar/psconfig/pscheduler.d/toolkit-webui.json",
     traceroute_test_parameters => {
         description => "perfSONAR Toolkit Default Traceroute Test",
         test_interval => 600,
@@ -113,16 +116,21 @@ sub save {
 
     ($status, $res) = save_file( { file => $self->{REGULAR_TESTING_CONFIG_FILE}, content => $local_regular_testing_config_output } );
     if ( $status == -1 ) {
-        return ( -1, "Couldn't save Regular Testing configuration" );
+        return ( -1, "Couldn't save configuration file" );
     }
-
-    if ( $parameters->{restart_services} ) {
-        $status = restart_service( { name => "regular_testing" } );
-        if ( $status != 0 ) {
-            return ( -1, "Problem running Regular Testing Agent" );
-        }
+    
+    #translate for psconfig
+    my $meshconfig_json_translator = new perfSONAR_PS::Client::PSConfig::Translators::MeshConfigTasks::Config();
+    my $psconfig = $meshconfig_json_translator->translate($local_regular_testing_config_output);
+    if($meshconfig_json_translator->error()){
+        $self->{LOGGER}->error( "Couldn't format pSConfig template file: " . $meshconfig_json_translator->error());
+        return ( -1, "Couldn't format pSConfig template file" );
     }
-
+    ($status, $res) = save_file( { file => $defaults{psconfig_file}, content => $psconfig->json({"pretty" => 1, "canonical" => 1}) } );
+    if ( $status == -1 ) {
+        return ( -1, "Couldn't save configuration file" );
+    }
+    
     return ( 0, "" );
 }
 
@@ -230,8 +238,10 @@ sub get_tests {
     foreach my $key ( sort keys %{ $self->{TESTS} } ) {
         #$self->{LOGGER}->debug("lookup up test: ".$key.": ".Dumper($self->{TESTS}));
         my ( $status, $res ) = $self->lookup_test( { test_id => $key } );
-
-        push @tests, $res;
+        
+        #as of 4.1, skip added_by_mesh tests since they are ignored and likely
+        # just old artifacts of an upgrade
+        push @tests, $res unless($res && $res->{'added_by_mesh'});
     }
     return ( 0, \@tests );
 }
