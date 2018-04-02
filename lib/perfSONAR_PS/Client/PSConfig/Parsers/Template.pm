@@ -11,6 +11,7 @@ A library for filling in template variables in JSON
 =cut
 
 use Mouse;
+use Data::Validate::IP qw(is_ipv6);
 use JSON;
 use perfSONAR_PS::Client::PSConfig::Config;
 
@@ -80,6 +81,10 @@ sub _parse_pscheduler_address {
     unless($address){
         $self->_set_error("Template variable group[$index] does not have a pscheduler-address nor address");
         return;
+    }
+    #bracket ipv6 addresses
+    if(is_ipv6($address)){
+        $address = "[$address]";
     }
     
     return '"' . $address . '"';
