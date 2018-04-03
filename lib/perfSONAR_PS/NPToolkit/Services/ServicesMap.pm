@@ -15,7 +15,7 @@ use perfSONAR_PS::NPToolkit::Services::httpd;
 use perfSONAR_PS::NPToolkit::Services::LSCacheDaemon;
 use perfSONAR_PS::NPToolkit::Services::LSRegistrationDaemon;
 use perfSONAR_PS::NPToolkit::Services::MaDDash;
-use perfSONAR_PS::NPToolkit::Services::MeshConfigAgent;
+use perfSONAR_PS::NPToolkit::Services::PSConfigPSchedulerAgent;
 use perfSONAR_PS::NPToolkit::Services::PScheduler;
 use perfSONAR_PS::NPToolkit::Services::MySQL;
 use perfSONAR_PS::NPToolkit::Services::NTP;
@@ -37,7 +37,7 @@ my %name_to_service_map = (
     mysql => "perfSONAR_PS::NPToolkit::Services::MySQL",
     ntp => "perfSONAR_PS::NPToolkit::Services::NTP",
     owamp => "perfSONAR_PS::NPToolkit::Services::OWAMP",
-    meshconfig_agent => "perfSONAR_PS::NPToolkit::Services::MeshConfigAgent",
+    psconfig => "perfSONAR_PS::NPToolkit::Services::PSConfigPSchedulerAgent",
     pscheduler => "perfSONAR_PS::NPToolkit::Services::PScheduler",
     yum_cron => "perfSONAR_PS::NPToolkit::Services::YumCron",
     iperf3 => "perfSONAR_PS::NPToolkit::Services::iperf3",

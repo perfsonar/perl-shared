@@ -148,7 +148,7 @@ lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
 lib/perfSONAR_PS/NPToolkit/Services/NTP.pm
 lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
 lib/perfSONAR_PS/NPToolkit/Services/OWAMP.pm
-lib/perfSONAR_PS/NPToolkit/Services/MeshConfigAgent.pm
+lib/perfSONAR_PS/NPToolkit/Services/PSConfigPSchedulerAgent.pm
 lib/perfSONAR_PS/NPToolkit/Services/PScheduler.pm
 lib/perfSONAR_PS/NPToolkit/Services/ServicesMap.pm
 lib/perfSONAR_PS/NPToolkit/Services/SimpleLSBootstrap.pm

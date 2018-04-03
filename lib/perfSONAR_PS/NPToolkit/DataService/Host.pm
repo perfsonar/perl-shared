@@ -427,7 +427,7 @@ sub get_services {
         };
     }
 
-    my @service_names = qw(owamp bwctl meshconfig_agent pscheduler esmond lsregistration);
+    my @service_names = qw(owamp bwctl psconfig pscheduler esmond lsregistration);
     my %services = ();
     foreach my $service_name ( @service_names ) {
         my $service = get_service_object($service_name);
