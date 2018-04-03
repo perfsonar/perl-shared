@@ -144,7 +144,6 @@ lib/perfSONAR_PS/NPToolkit/Services/ConfigDaemon.pm
 lib/perfSONAR_PS/NPToolkit/Services/LSCacheDaemon.pm
 lib/perfSONAR_PS/NPToolkit/Services/LSRegistrationDaemon.pm
 lib/perfSONAR_PS/NPToolkit/Services/MaDDash.pm
-lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
 lib/perfSONAR_PS/NPToolkit/Services/NTP.pm
 lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
 lib/perfSONAR_PS/NPToolkit/Services/OWAMP.pm

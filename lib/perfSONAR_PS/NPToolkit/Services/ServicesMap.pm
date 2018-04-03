@@ -17,7 +17,6 @@ use perfSONAR_PS::NPToolkit::Services::LSRegistrationDaemon;
 use perfSONAR_PS::NPToolkit::Services::MaDDash;
 use perfSONAR_PS::NPToolkit::Services::PSConfigPSchedulerAgent;
 use perfSONAR_PS::NPToolkit::Services::PScheduler;
-use perfSONAR_PS::NPToolkit::Services::MySQL;
 use perfSONAR_PS::NPToolkit::Services::NTP;
 use perfSONAR_PS::NPToolkit::Services::OWAMP;
 use perfSONAR_PS::NPToolkit::Services::YumCron;
@@ -34,7 +33,6 @@ my %name_to_service_map = (
     ls_cache_daemon => "perfSONAR_PS::NPToolkit::Services::LSCacheDaemon",
     lsregistration => "perfSONAR_PS::NPToolkit::Services::LSRegistrationDaemon",
     maddash => "perfSONAR_PS::NPToolkit::Services::MaDDash",
-    mysql => "perfSONAR_PS::NPToolkit::Services::MySQL",
     ntp => "perfSONAR_PS::NPToolkit::Services::NTP",
     owamp => "perfSONAR_PS::NPToolkit::Services::OWAMP",
     psconfig => "perfSONAR_PS::NPToolkit::Services::PSConfigPSchedulerAgent",
