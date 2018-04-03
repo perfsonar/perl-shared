@@ -19,6 +19,7 @@ use perfSONAR_PS::NPToolkit::Config::BWCTL;
 use perfSONAR_PS::NPToolkit::Config::OWAMP;
 use perfSONAR_PS::NPToolkit::DataService::Communities;
 use perfSONAR_PS::Utils::GeoLookup qw(geoIPLookup);
+use perfSONAR_PS::PSConfig::PScheduler::ConfigConnect;
 
 use Data::Dumper;
 
@@ -557,40 +558,54 @@ sub get_summary {
     my $status = $self->get_details();
     my $services = $self->get_services();
     my $communities = $comm_obj->get_host_communities();
-    my $meshes = $self->get_meshes();
+    my $templates = $self->get_templates();
 
     my $ntp_info = {'ntp' => ( $self->get_ntp_information() || {} ) };
 
 
-    my $results = { %$administrative_info, %$status, %$services, %$communities, %$meshes, %$ntp_info };
+    my $results = { %$administrative_info, %$status, %$services, %$communities, %$templates, %$ntp_info };
 
     return $results;
 
 }
 
-sub get_meshes {
+sub get_templates {
     my $self = shift;
-    my @mesh_urls = ();
+    my @template_urls = ();
     eval {
-        my $mesh_config_conf = "/etc/perfsonar/meshconfig-agent.conf";
-
-        die unless ( -f $mesh_config_conf );
-
-        my %conf = Config::General->new($mesh_config_conf)->getall;
-
-        $conf{mesh} = [ ] unless $conf{mesh};
-        $conf{mesh} = [ $conf{mesh} ] unless ref($conf{mesh}) eq "ARRAY";
-
-        foreach my $mesh (@{ $conf{mesh} }) {
-            next unless $mesh->{configuration_url};
-
-            push @mesh_urls, $mesh->{configuration_url};
+        #get file
+        my $config_file = '/etc/perfsonar/psconfig/pscheduler-agent.json';
+        my $agent_conf_client = new perfSONAR_PS::PSConfig::PScheduler::ConfigConnect(
+            url => $config_file
+        );
+        if($agent_conf_client->error()){
+            die "Error opening $config_file: " . $agent_conf_client->error();
+        } 
+        #parse config
+        my $agent_conf = $agent_conf_client->get_config();
+        if($agent_conf_client->error()){
+            die "Error parsing $config_file: " . $agent_conf_client->error();
+        }
+        #validate config
+        my @agent_conf_errors = $agent_conf->validate();
+        if(@agent_conf_errors){
+            my $err = "$config_file is not valid. The following errors were encountered: \n";
+            foreach my $error(@agent_conf_errors){
+                $err .= "    JSON Path: " . $error->path . "\n";
+                $err .= "    Error: " . $error->message . "\n";
+            }
+            die $err;
+        }
+        #load urls into array
+        foreach my $remote(@{$agent_conf->remotes()}){
+            push @template_urls, $remote->url();
         }
     };
     if ($@) {
-        @mesh_urls = [];
+        $self->{LOGGER}->error("Error reading pSConfig template URLs: " . $@);
+        @template_urls = [];
     }
-    return {meshes => \@mesh_urls};
+    return {templates => \@template_urls};
 }
 
 sub get_system_health {
