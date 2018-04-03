@@ -49,7 +49,7 @@ sub expand {
     
     #find the variables used
     my %template_var_map = ();
-    while($json =~ /\Q${quote}\E\{%\s+(.+?)\s+%\}\Q${quote}\E/g){
+    while($json =~ /\{%\s+(.+?)\s+%\}/g){
         my $template_var = $1;
         next if($template_var_map{$template_var});
         chomp $template_var;
@@ -62,7 +62,15 @@ sub expand {
     
     #do the substutions 
     foreach my $template_var(keys %template_var_map){
-        $json =~ s/\Q${quote}\E\{%\s+\Q${template_var}\E\s+%\}\Q${quote}\E/$template_var_map{$template_var}/g;
+        #replace standalone quoted variables
+        if($quote){
+            $json =~ s/\Q${quote}\E\{%\s+\Q${template_var}\E\s+%\}\Q${quote}\E/$template_var_map{$template_var}/g;
+            #remove start/end quotes for next substitution
+            $template_var_map{$template_var} =~ s/^\Q${quote}\E//;
+            $template_var_map{$template_var} =~ s/\Q${quote}\E$//;
+        }
+        #replace embedded variables
+        $json =~ s/\{%\s+\Q${template_var}\E\s+%\}/$template_var_map{$template_var}/g;
     }
     
     #convert back to object
