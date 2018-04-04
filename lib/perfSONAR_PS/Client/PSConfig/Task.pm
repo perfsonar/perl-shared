@@ -115,6 +115,18 @@ sub add_subtask_ref{
     $self->_add_field_ref('subtasks', $val);
 }
 
+=item priority()
+
+Gets/sets priority
+
+=cut
+
+sub priority{
+    my ($self, $val) = @_;
+    return $self->_field_int('priority', $val);
+}
+
+
 =item reference()
 
 Gets/sets reference as HashRef

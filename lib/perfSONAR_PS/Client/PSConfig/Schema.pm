@@ -647,6 +647,7 @@ sub psconfig_json_schema() {
                 "archives": { "type": "array", "items": { "$ref": "#/pSConfig/NameType" } },
                 "tools": { "type": "array", "items": { "type": "string" } },
                 "subtasks": { "type": "array", "items": { "$ref": "#/pSConfig/NameType" } },
+                "priority": { "type": "integer" },
                 "reference": { "$ref": "#/pSConfig/AnyJSON" },
                 "_meta": { "$ref": "#/pSConfig/AnyJSON" }
             },

@@ -31,6 +31,14 @@ sub schema{
     return $self->data->{'schema'};
 }
 
+sub priority{
+    my ($self, $val) = @_;
+    if(defined $val){
+        $self->data->{'priority'} = $val;
+    }
+    return $self->data->{'priority'};
+}
+
 sub test_type{
     my ($self, $val) = @_;
     if(defined $val){
@@ -504,7 +512,17 @@ sub post_task {
     my $self = shift;
     
     #init some required fields
-    $self->schema(1) unless($self->schema());
+    if(!$self->schema()){
+        if($self->priority()){
+            #priority introduced in v3
+            $self->schema(3);
+        }elsif($self->contexts()){
+            #contexts introduced in v3
+            $self->schema(2);
+        }else{
+            $self->schema(1);
+        }
+    }
     $self->_init_field($self->data, 'schedule');
     $self->_init_field($self->data, 'test');
     $self->_init_field($self->data->{'test'}, 'spec');
