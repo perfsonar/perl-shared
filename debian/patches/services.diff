@@ -1,18 +1,3 @@
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm	2017-12-18 17:09:47.000000000 +0000
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/MySQL.pm	2017-12-19 14:52:17.000000000 +0000
-@@ -9,8 +9,8 @@
-     my ( $self, %conf ) = @_;
- 
-     $conf{description}  = "MySQL Daemon" unless $conf{description};
--    $conf{init_script} = "mysqld" unless $conf{init_script};
--    $conf{process_names} = [ "mysql" ] unless $conf{process_names};
-+    $conf{init_script} = "mysql" unless $conf{init_script};
-+    $conf{process_names} = [ "mysqld" ] unless $conf{process_names};
-     $conf{pid_files} = [ "/var/run/mysqld/mysqld.pid" ] unless $conf{pid_files};
-     $conf{regular_restart} = 1;
-     $conf{package_names} = [ "mysql-server" ] unless $conf{package_names};
 Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
 ===================================================================
 --- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2017-12-18 17:09:47.000000000 +0000
