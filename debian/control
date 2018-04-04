@@ -83,7 +83,8 @@ Breaks: libperfsonar-perl (<< 3.5.1~10.rc1-1)
 Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
  libnet-server-perl, libcgi-ajax-perl, libcgi-session-perl,
  libxml-parser-perl, libperfsonar-sls-perl, libwww-perl,
- libperfsonar-regulartesting-perl, perfsonar-toolkit-library
+ libperfsonar-regulartesting-perl, perfsonar-toolkit-library,
+ perfsonar-psconfig-pscheduler-dev
 Description: perfSONAR perl libraries for Toolkit
  Client libraries for perfSONAR's Toolkit distributions
 
