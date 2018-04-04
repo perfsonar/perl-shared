@@ -18,6 +18,13 @@ our $VERSION = 4.1;
 
 has 'error' => (is => 'ro', isa => 'Str', writer => '_set_error');
 
+sub name {
+    my ($self);
+    ##
+    # Override this with method with name of translator
+    die 'Override name';
+}
+
 sub can_translate {
     my ($self, $raw_config, $json_obj);
     ##
