@@ -47,6 +47,7 @@ has 'task' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Task|Undef', 
 has 'group' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Groups::BaseGroup|Undef', writer => '_set_group');
 has 'schedule' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Schedule|Undef', writer => '_set_schedule');
 has 'tools' => (is => 'ro', isa => 'ArrayRef[Str]|Undef', writer => '_set_tools');
+has 'priority' => (is => 'ro', isa => 'Int', writer => '_set_priority');
 has 'test' => (is => 'ro', isa => 'perfSONAR_PS::Client::PSConfig::Test|Undef', writer => '_set_test');
 ##Updated each call to next()
 has 'expanded_test' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_expanded_test');
@@ -111,6 +112,12 @@ sub start {
     my $tools = $task->tools();
     if($tools && @{$tools}){
         $self->_set_tools($tools);
+    }
+    
+    #find priority (optional)
+    my $priority = $task->priority();
+    if(defined $priority){
+        $self->_set_priority($priority);
     }
     
     #set match addresses if any
@@ -365,6 +372,11 @@ sub pscheduler_task {
     #set tools
     if($self->tools()){
         $task_data->{"tools"} = $self->tools();
+    }
+    
+    #set priority
+    if(defined $self->priority()){
+        $task_data->{"priority"} = $self->priority();
     }
     
     #time to create pscheduler task

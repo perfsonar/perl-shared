@@ -624,6 +624,14 @@ sub _field_cardinal{
     return $self->data->{$field};
 }
 
+sub _field_int{
+    my ($self, $field, $val) = @_;
+    if(defined $val){
+        $self->data->{$field} = int($val);
+    }
+    return $self->data->{$field};
+}
+
 sub _field_intzero{
     my ($self, $field, $val) = @_;
     if(defined $val){
