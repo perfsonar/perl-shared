@@ -420,9 +420,11 @@ sub _convert_hosts {
         my $host_pscheduler_address = $host->{'pscheduler_address'};
         
         #convert addresses
+        my $addr_display_name = $host_meta->{META_DISPLAY_NAME()};
         my $host_name;
         foreach my $address(@{$host->{'addresses'}}){
             my $psconfig_address = new perfSONAR_PS::Client::PSConfig::Addresses::Address();
+            $psconfig_address->psconfig_meta_param(META_DISPLAY_NAME(), $addr_display_name) if($addr_display_name);
             #set host properties to be overridden if we end up with object
             $psconfig_address->lead_bind_address($host_lead_bind_address) if($host_lead_bind_address);
             $psconfig_address->pscheduler_address($host_pscheduler_address) if($host_pscheduler_address);
