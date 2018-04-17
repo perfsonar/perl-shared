@@ -419,7 +419,7 @@ sub convert_powstream {
     $psconfig_test->spec_param('dest', '{% address[1] %}');
     $psconfig_test->spec_param('source-node', '{% pscheduler_address[0] %}');
     $psconfig_test->spec_param('dest-node', '{% pscheduler_address[1] %}');
-    $psconfig_test->spec_param('flip', '{% flip %}');
+    $psconfig_test->spec_param('flip', JSON::true) if($test_params->{'flip'});
     #test params (int)
     $psconfig_test->spec_param('packet-count', int($test_params->{'resolution'})) if($test_params->{'resolution'});
     $psconfig_test->spec_param('ip-tos', int($test_params->{'packet_tos_bits'})) if($test_params->{'packet_tos_bits'});
@@ -495,7 +495,7 @@ sub convert_bwping_owamp {
     $psconfig_test->spec_param('dest', '{% address[1] %}');
     $psconfig_test->spec_param('source-node', '{% pscheduler_address[0] %}');
     $psconfig_test->spec_param('dest-node', '{% pscheduler_address[1] %}');
-    $psconfig_test->spec_param('flip', '{% flip %}');
+    $psconfig_test->spec_param('flip', JSON::true) if($test_params->{'flip'});
     #test params (int)
     $psconfig_test->spec_param('packet-count', int($test_params->{'packet_count'})) if($test_params->{'packet_count'});
     $psconfig_test->spec_param('ip-tos', int($test_params->{'packet_tos_bits'})) if($test_params->{'packet_tos_bits'});
