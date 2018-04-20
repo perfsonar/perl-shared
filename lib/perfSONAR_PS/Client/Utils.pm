@@ -184,8 +184,8 @@ sub send_http_request{
                     foreach my $dns_rec($dns_reply->answer){
                         if($dns_rec->type eq 'A'){
                             $url_obj->host($dns_rec->address);
-                            $req->url->parse("$url_obj");
-                            $res = _send_request_timeout(agent=> $ua, request => $req, timeout => $timeout);
+                            $tx->req->url->parse("$url_obj");
+                            $res = _send_request_timeout(agent=> $ua, request => $tx->req, timeout => $timeout);
                             last if($res && $res->is_success);
                         }
                     }
