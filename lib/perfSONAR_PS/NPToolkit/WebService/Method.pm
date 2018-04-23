@@ -3,6 +3,7 @@ package perfSONAR_PS::NPToolkit::WebService::Method;
 use strict;
 use warnings;
 use JSON::XS;
+use JSON qw( encode_json );
 use Carp qw( cluck confess );
 use perfSONAR_PS::NPToolkit::WebService::Auth qw( is_authenticated  );
 use perfSONAR_PS::NPToolkit::WebService::ParameterTypes;
