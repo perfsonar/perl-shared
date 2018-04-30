@@ -1,7 +1,5 @@
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2017-12-18 17:09:47.000000000 +0000
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2017-12-19 14:52:17.000000000 +0000
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2018-04-30 11:25:52.174031006 +0200
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2018-04-30 11:25:52.166031008 +0200
 @@ -11,10 +11,10 @@
      my ( $self, %conf ) = @_;
  
@@ -17,10 +15,8 @@ Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
  
      $self->SUPER::init( %conf );
  
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2017-12-18 17:09:47.000000000 +0000
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2017-12-19 14:52:17.000000000 +0000
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2018-04-30 11:25:52.174031006 +0200
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2018-04-30 11:25:52.166031008 +0200
 @@ -15,7 +15,7 @@
      #Cassandra does not properly create /var/run/cassandra directory on boot, only creates
      #  on install which then gets removed on reboot. Removing this for now.
@@ -30,10 +26,8 @@ Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
  
      $self->SUPER::init( %conf );
  
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2017-12-19 14:52:17.000000000 +0000
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2017-12-19 14:52:17.000000000 +0000
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2018-04-30 11:25:52.174031006 +0200
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2018-04-30 11:25:52.166031008 +0200
 @@ -8,6 +8,7 @@
  use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES';
  use Dpkg::Control;
@@ -140,10 +134,8 @@ Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
  
      $self->{LOGGER}->debug($shell_cmd);
  
-Index: perl-shared/lib/perfSONAR_PS/Utils/Host.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/Utils/Host.pm	2017-12-18 17:09:47.000000000 +0000
-+++ perl-shared/lib/perfSONAR_PS/Utils/Host.pm	2017-12-19 14:52:17.000000000 +0000
+--- perl-shared.orig/lib/perfSONAR_PS/Utils/Host.pm	2018-04-30 11:25:52.174031006 +0200
++++ perl-shared/lib/perfSONAR_PS/Utils/Host.pm	2018-04-30 11:25:52.166031008 +0200
 @@ -503,7 +503,7 @@
  sub get_ntp_info {
      my $ntp;
@@ -190,11 +182,9 @@ Index: perl-shared/lib/perfSONAR_PS/Utils/Host.pm
      if($?){
          return;
      }
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2017-12-18 17:09:47.000000000 +0000
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2017-12-19 14:52:17.000000000 +0000
-@@ -8,40 +8,38 @@
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2018-04-30 11:25:52.174031006 +0200
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2018-04-30 11:27:53.489995782 +0200
+@@ -8,40 +8,42 @@
  sub init {
      my ( $self, %conf ) = @_;
  
@@ -245,9 +235,13 @@ Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
 -    open(STDOUT, ">&", $stdout);
 -
 -    return $ret;
-+    print $action_fd "APT::Periodic::Update-Package-Lists \"1\";\n";
-+    print $action_fd "APT::Periodic::Unattended-Upgrade \"1\";\n";
-+    print $action_fd "Unattended-Upgrade::Origins-Pattern:: \"origin=perfSONAR\";\n";
++    print $action_fd <<"EOF";
++APT::Periodic::Update-Package-Lists "1";
++APT::Periodic::Download-Upgradeable-Packages "1";
++APT::Periodic::Unattended-Upgrade "1";
++APT::Periodic::AutocleanInterval "31";
++Unattended-Upgrade::Origins-Pattern:: "origin=perfSONAR";
++EOF
 +
 +    unless(close($action_fd)) {
 +        $self->{LOGGER}->error("Could not close $action_file: $!");
@@ -256,10 +250,8 @@ Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
  }
  
  1;
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2017-12-19 14:45:39.000000000 +0000
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2017-12-19 14:52:17.000000000 +0000
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2018-04-30 11:25:52.174031006 +0200
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2018-04-30 11:25:52.166031008 +0200
 @@ -47,7 +47,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
@@ -269,10 +261,8 @@ Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
  
      $self->{LOGGER}->debug($shell_cmd);
  
-Index: perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm
-===================================================================
---- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2017-12-18 17:09:47.000000000 +0000
-+++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2017-12-19 14:52:17.000000000 +0000
+--- perl-shared.orig/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2018-04-30 11:25:52.174031006 +0200
++++ perl-shared/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2018-04-30 11:25:52.166031008 +0200
 @@ -9,7 +9,7 @@
  sub init {
      my ( $self, %conf ) = @_;
