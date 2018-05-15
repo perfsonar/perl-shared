@@ -83,7 +83,7 @@ my $config_json = <<'EOF';
     },
     
     "addresses": {
-        "lsvn-pt1.es.net": { 
+        "lsvn-pt1": { 
             "address": "lsvn-pt1.es.net",
             "host": "lsvn-pt1.es.net",
             "remote-addresses": {
@@ -121,7 +121,7 @@ my $config_json = <<'EOF';
             "address": "ga-pt1.es.net",
             "host": "ga-pt1.es.net",
             "remote-addresses": {
-                "lsvn-pt1.es.net": { 
+                "lsvn-pt1": { 
                     "labels": {
                         "backup-path": { 
                             "address": "192.168.14.34" 
@@ -376,7 +376,7 @@ my $config_json = <<'EOF';
             "type": "disjoint",
             "default-address-label": "backup-path",
             "a-addresses": [
-                { "name": "lsvn-pt1.es.net" },
+                { "name": "lsvn-pt1" },
                 { "name": "bost-pt1.es.net" },
                 { "name": "newy-pt1.es.net" },
                 { "name": "aofa-pt1.es.net" },

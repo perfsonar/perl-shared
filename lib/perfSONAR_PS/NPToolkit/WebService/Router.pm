@@ -3,6 +3,7 @@ package perfSONAR_PS::NPToolkit::WebService::Router;
 use strict;
 use warnings;
 use JSON::XS;
+use JSON qw( encode_json );
 use Carp qw( cluck confess );
 use CGI qw( header -utf8 );
 use Data::Dumper;

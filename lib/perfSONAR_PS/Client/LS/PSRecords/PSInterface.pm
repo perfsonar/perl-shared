@@ -53,3 +53,15 @@ sub setUrns {
     $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSINTERFACE_URNS), value=>$value  );
     
 }
+
+sub getPSchedulerTests {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSCHEDULER_TESTS)};
+}
+
+sub setPSchedulerTests {
+    my ( $self, $value ) = @_;
+    my $ret = $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_PSCHEDULER_TESTS), value=>$value  );  
+	return $ret;
+}
+

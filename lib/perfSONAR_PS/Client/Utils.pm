@@ -1,5 +1,51 @@
 package perfSONAR_PS::Client::Utils;
 
+##
+# Prior to JSON::XS version 3.0, booleans are not handled correctly which can cause issue
+# for JSON::Validator. The block below detects this, sets PERL_JSON_BACKEND environment
+# variable to JSON::PP then reloads JSON and any JSON subpackages
+BEGIN {
+    #detect version, if above 3.0 then don't do anything
+    if (eval "require JSON::XS" && $JSON::XS::VERSION < 3.0) {
+        #init list of JSON subpackages so we make sure to re-import
+        my @json_subpackages = ();
+        # list of packages JSON will re-import on its own
+        my %skip_packages = (
+            'JSON/PP.pm' => 1,
+            'JSON/XS.pm' => 1
+        );
+        #if json already loaded, then we need to reload it and subpackages
+        if ($INC{'JSON.pm'} && JSON::backend()->isa("JSON::XS")) {
+            # get list of JSON:: subpackages
+            foreach my $module(sort keys %INC){
+                next if($module !~ /^JSON\// || $skip_packages{$module});
+                push @json_subpackages, $module;
+            }
+            #delete JSON package
+            use Symbol;
+            Symbol::delete_package('JSON');
+            #delete JSON and sub-packages from $INC
+            delete $INC{'JSON.pm'};
+            foreach my $json_subpackage(@json_subpackages){
+                delete $INC{$json_subpackage};
+            }
+        }
+
+        #set environment variable
+        $ENV{PERL_JSON_BACKEND} = 'JSON::PP';
+        #load JSON module
+        require JSON;
+        JSON->import;
+        #load JSON subpackages
+        foreach my $json_subpackage(@json_subpackages){
+            require $json_subpackage;
+            $json_subpackage =~ s/\.pm$//;
+            $json_subpackage =~ s/\//::/g;
+            $json_subpackage->import;
+        }
+    }
+}
+
 use base 'Exporter';
 use Log::Log4perl qw(get_logger);
 use Mojo::UserAgent;
@@ -138,8 +184,8 @@ sub send_http_request{
                     foreach my $dns_rec($dns_reply->answer){
                         if($dns_rec->type eq 'A'){
                             $url_obj->host($dns_rec->address);
-                            $req->url->parse("$url_obj");
-                            $res = _send_request_timeout(agent=> $ua, request => $req, timeout => $timeout);
+                            $tx->req->url->parse("$url_obj");
+                            $res = _send_request_timeout(agent=> $ua, request => $tx->req, timeout => $timeout);
                             last if($res && $res->is_success);
                         }
                     }

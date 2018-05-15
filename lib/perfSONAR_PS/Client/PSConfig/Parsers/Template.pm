@@ -131,7 +131,7 @@ sub _parse_scheduled_by_address {
 sub _parse_flip {
     my ($self, $index) = @_;
 
-    return ($self->flip() ? JSON::true : JSON::false);
+    return ($self->flip() ? 'true' : 'false');
 }
 
 sub _parse_localhost {

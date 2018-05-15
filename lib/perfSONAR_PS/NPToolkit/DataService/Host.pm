@@ -184,8 +184,6 @@ sub get_details {
     my $version_conf = perfSONAR_PS::NPToolkit::Config::Version->new();
     $version_conf->init();
 
-    $status->{toolkit_version} = $version_conf->get_version();
-
     ## this function now gets all interfaces, not just ethernet
     my @interfaces = get_ethernet_interfaces();
 
@@ -308,7 +306,7 @@ sub get_details {
     if ($config_daemon) {
         $toolkit_rpm_version = $config_daemon->package_version;
     }
-    $status->{toolkit_rpm_version} = $toolkit_rpm_version;
+    $status->{toolkit_version} = $toolkit_rpm_version;
     
     # round to nearest GB (LS rounds to MB)
     # Note: Make sure this is before NTP call because the NTP call breaks sleep

@@ -34,7 +34,13 @@ use Sys::Statistics::Linux;
 
 use perfSONAR_PS::Utils::DNS qw(reverse_dns_multi);
 
-my $logger = get_logger(__PACKAGE__);
+my $logger;
+if(Log::Log4perl->initialized()) {
+    #this is intended to be a lib reliant on someone else initializing env
+    #detect if they did but quietly move on if not
+    #anything using $logger will need to check if defined
+    $logger = get_logger(__PACKAGE__);
+}
 
 our @EXPORT_OK = qw(
     get_ips
@@ -342,11 +348,11 @@ sub discover_primary_address {
                 my @private_list = ( '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16' );
 
                 next unless (is_ipv4($ip));
-                $logger->debug("$ip is IPv4");
+                $logger->debug("$ip is IPv4") if($logger);
                 next unless (defined $reverse_dns_mapping->{$ip} and $reverse_dns_mapping->{$ip}->[0]);
-                $logger->debug("$ip has a DNS name: ". $reverse_dns_mapping->{$ip}->[0]);
+                $logger->debug("$ip has a DNS name: ". $reverse_dns_mapping->{$ip}->[0]) if($logger);
                 next unless ($allow_rfc1918 or not Net::CIDR::cidrlookup($ip, @private_list));
-                $logger->debug("$ip isn't private or we're okay with private addresses");
+                $logger->debug("$ip isn't private or we're okay with private addresses") if($logger);
 
                 my $dns_name = $reverse_dns_mapping->{$ip}->[0];
 
@@ -371,11 +377,11 @@ sub discover_primary_address {
     unless ( $disable_ipv6_reverse_lookup or ( $chosen_address and $ipv6_address )) {
         foreach my $iface ( keys %$ips_by_iface ) {
             foreach my $ip ( @{ $ips_by_iface->{$iface } } ) {
-                $logger->debug("iface is $iface");
+                $logger->debug("iface is $iface") if($logger);
                 next unless (Net::IP::ip_is_ipv6( $ip ));
-                $logger->debug("$ip is IPv6");
+                $logger->debug("$ip is IPv6") if($logger);
                 next unless (defined $reverse_dns_mapping->{$ip} and $reverse_dns_mapping->{$ip}->[0]);
-                $logger->debug("$ip has a DNS name: ". $reverse_dns_mapping->{$ip}->[0]);
+                $logger->debug("$ip has a DNS name: ". $reverse_dns_mapping->{$ip}->[0]) if($logger);
 
                 my $dns_name = $reverse_dns_mapping->{$ip}->[0];
 
@@ -407,9 +413,9 @@ sub discover_primary_address {
                 next unless (is_ipv4( $ip ));
                 #never want a loopback address.
                 next if (Net::CIDR::cidrlookup( $ip, @localhost_list ));
-                $logger->debug("$ip is IPv4");
+                $logger->debug("$ip is IPv4") if($logger);
                 next unless ($allow_rfc1918 or not Net::CIDR::cidrlookup( $ip, @private_list ));
-                $logger->debug("$ip isn't private or we're okay with private addresses");
+                $logger->debug("$ip isn't private or we're okay with private addresses") if($logger);
 
                 unless ( $chosen_address ) { 
                     $chosen_dns_name = "";
@@ -436,7 +442,7 @@ sub discover_primary_address {
                 #never want a loopback address.
                 my $ip_obj = new  Net::IP::( $ip );
                 next if ($ip_obj->iptype() eq 'LOOPBACK');
-                $logger->debug("$ip is IPv6");
+                $logger->debug("$ip is IPv6") if($logger);
 
                 unless ( $chosen_address ) { 
                     $chosen_dns_name = "";
@@ -463,24 +469,24 @@ sub discover_primary_address {
     }
 
     if ($chosen_address) {
-        $logger->debug("Selected $chosen_interface/$chosen_address as the primary address");
+        $logger->debug("Selected $chosen_interface/$chosen_address as the primary address") if($logger);
     }
     else {
-        $logger->debug("No primary address found");
+        $logger->debug("No primary address found") if($logger);
     }
 
     if ($ipv4_address) {
-        $logger->debug("Selected $ipv4_interface/$ipv4_address as the primary ipv4 address");
+        $logger->debug("Selected $ipv4_interface/$ipv4_address as the primary ipv4 address") if($logger);
     }
     else {
-        $logger->debug("No primary ipv4 address found");
+        $logger->debug("No primary ipv4 address found") if($logger);
     }
 
     if ($ipv6_address) {
-        $logger->debug("Selected $ipv6_interface/$ipv6_address as the primary ipv6 address");
+        $logger->debug("Selected $ipv6_interface/$ipv6_address as the primary ipv6 address") if($logger);
     }
     else {
-        $logger->debug("No primary ipv6 address found");
+        $logger->debug("No primary ipv6 address found") if($logger);
     }
 
     return {
