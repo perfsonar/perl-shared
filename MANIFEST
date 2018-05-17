@@ -122,7 +122,6 @@ lib/perfSONAR_PS/Client/LS/PSRecords/PSService.pm
 lib/perfSONAR_PS/Client/LS/PSRecords/PSTest.pm
 lib/perfSONAR_PS/Common.pm
 lib/perfSONAR_PS/NPToolkit/Config/AdministrativeInfo.pm
-lib/perfSONAR_PS/NPToolkit/Config/BWCTL.pm
 lib/perfSONAR_PS/NPToolkit/Config/Base.pm
 lib/perfSONAR_PS/NPToolkit/Config/LSRegistrationDaemon.pm
 lib/perfSONAR_PS/NPToolkit/Config/NTP.pm
@@ -137,7 +136,6 @@ lib/perfSONAR_PS/NPToolkit/DataService/Communities.pm
 lib/perfSONAR_PS/NPToolkit/DataService/Host.pm
 lib/perfSONAR_PS/NPToolkit/DataService/NTP.pm
 lib/perfSONAR_PS/NPToolkit/DataService/RegularTesting.pm
-lib/perfSONAR_PS/NPToolkit/Services/BWCTL.pm
 lib/perfSONAR_PS/NPToolkit/Services/Base.pm
 lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
 lib/perfSONAR_PS/NPToolkit/Services/ConfigDaemon.pm

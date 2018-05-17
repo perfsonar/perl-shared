@@ -7,7 +7,6 @@ use base 'Exporter';
 
 use Params::Validate qw(:all);
 
-use perfSONAR_PS::NPToolkit::Services::BWCTL;
 use perfSONAR_PS::NPToolkit::Services::Cassandra;
 use perfSONAR_PS::NPToolkit::Services::ConfigDaemon;
 use perfSONAR_PS::NPToolkit::Services::esmond;
@@ -25,7 +24,6 @@ use perfSONAR_PS::NPToolkit::Services::iperf3;
 our @EXPORT_OK = qw( get_service_object get_service_name get_all_service_names );
 
 my %name_to_service_map = (
-    bwctl => "perfSONAR_PS::NPToolkit::Services::BWCTL",
     cassandra => "perfSONAR_PS::NPToolkit::Services::Cassandra",
     config_daemon => "perfSONAR_PS::NPToolkit::Services::ConfigDaemon",
     esmond => "perfSONAR_PS::NPToolkit::Services::esmond",

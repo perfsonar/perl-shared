@@ -15,7 +15,6 @@ use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
-use perfSONAR_PS::NPToolkit::Config::BWCTL;
 use perfSONAR_PS::NPToolkit::Config::OWAMP;
 use perfSONAR_PS::NPToolkit::DataService::Communities;
 use perfSONAR_PS::Utils::GeoLookup qw(geoIPLookup);
@@ -366,43 +365,9 @@ sub get_services {
     my $caller = shift;
     my $params = $caller->{'input_params'};
 
-    my @bwctl_test_ports = ();
     my %conf = %{$self->{config}};
-    my $bwctl_config = $conf{'bwctl_config'};
-    my $bwctl_limits = $conf{'bwctl_limits'};
     my $owamp_config = $conf{'owamp_config'};
     my $owamp_limits = $conf{'owamp_limits'};
-
-    my $bwctld_cfg = perfSONAR_PS::NPToolkit::Config::BWCTL->new();
-    $bwctld_cfg->init( { bwctld_limits => $bwctl_limits, bwctld_conf => $bwctl_config } ) ;
-
-    foreach my $port_type ("peer", "iperf", "iperf3", "nuttcp", "thrulay", "owamp", "test") {
-        my ($status, $res) = $bwctld_cfg->get_port_range(port_type => $port_type);
-        if ($status == 0) {
-            push @bwctl_test_ports, {
-                type => $port_type,
-                min_port => $res->{min_port},
-                max_port => $res->{max_port},
-            };
-        }
-
-        if ($port_type eq "test" and $status != 0) {
-            # BWCTL's test range defaults to 5001-5900
-            push @bwctl_test_ports, {
-                type => $port_type,
-                min_port => 5001,
-                max_port => 5900,
-            };
-        }
-        elsif ($port_type eq "peer" and $status != 0) {
-            # BWCTL's peer range defaults to "any port"
-            push @bwctl_test_ports, {
-                type => $port_type,
-                min_port => 1,
-                max_port => 65535,
-            };
-        }
-    }
 
     my @owamp_test_ports = ();
     my $owampd_cfg = perfSONAR_PS::NPToolkit::Config::OWAMP->new( );
@@ -425,12 +390,10 @@ sub get_services {
         };
     }
 
-    my @service_names = qw(owamp bwctl psconfig pscheduler esmond lsregistration);
+    my @service_names = qw(owamp psconfig pscheduler esmond lsregistration);
     my %services = ();
     foreach my $service_name ( @service_names ) {
         my $service = get_service_object($service_name);
-
-
 
         $self->{LOGGER}->debug("Checking ".$service_name);
         my $is_running = $service->check_running();
@@ -473,10 +436,7 @@ sub get_services {
         $service_info{"addresses"}     = \@addr_list;
         $service_info{"version"}       = $service->package_version;
 
-        if ($service_name eq "bwctl") {
-            $service_info{"testing_ports"} = \@bwctl_test_ports;
-        }
-        elsif ($service_name eq "owamp") {
+        if ($service_name eq "owamp") {
             $service_info{"testing_ports"} = \@owamp_test_ports;
         }
 
