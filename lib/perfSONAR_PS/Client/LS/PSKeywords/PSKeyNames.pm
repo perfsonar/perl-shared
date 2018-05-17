@@ -50,13 +50,6 @@ use constant {
     LS_KEY_PSTEST_EVENTTYPES => "pstest-eventtypes"
 };
 
-#pspserson keys
-#
-#bwctl keys
-use constant {
-    LS_KEY_BWCTL_TOOLS => "bwctl-tools"
-};
-
 #pScheduler keys
 use constant {
     LS_KEY_PSCHEDULER_TOOLS => "pscheduler-tools",
