@@ -111,36 +111,36 @@ cmp_deeply($query->getTopologyDomain(), undef, "getTopologyDomain - undef" );
 
 
 #setMAType
-$var = 'bwctl';
+$var = 'pscheduler';
 $query = perfSONAR_PS::Client::LS::PSQueryObjects::PSServiceQueryObject->new();
 $query->init();
 is($query->setMAType($var), 0, "setMAType string");
 
-$var = ['bwctl'];
+$var = ['pscheduler'];
 $query = perfSONAR_PS::Client::LS::PSQueryObjects::PSServiceQueryObject->new();
 $query->init();
 is($query->setMAType($var), 0, "setMAType array");
 
-$var = ['bwctl', 'iperf'];
+$var = ['pscheduler', 'iperf'];
 $query = perfSONAR_PS::Client::LS::PSQueryObjects::PSServiceQueryObject->new();
 $query->init();
 is($query->setMAType($var), 0, "setMAType - array >1");
 
 
 #getMAType
-$var = 'bwctl';
+$var = 'pscheduler';
 $query = perfSONAR_PS::Client::LS::PSQueryObjects::PSServiceQueryObject->new();
 $query->init();
 $query->setMAType($var);
-cmp_deeply($query->getMAType(),['bwctl'], "getMAType - string" );
+cmp_deeply($query->getMAType(),['pscheduler'], "getMAType - string" );
 
-$var = ['bwctl'];
+$var = ['pscheduler'];
 $query = perfSONAR_PS::Client::LS::PSQueryObjects::PSServiceQueryObject->new();
 $query->init();
 $query->setMAType($var);
 cmp_deeply($query->getMAType(),$var, "getMAType - array" );
 
-$var = ['bwctl', 'iperf'];
+$var = ['pscheduler', 'iperf'];
 $query = perfSONAR_PS::Client::LS::PSQueryObjects::PSServiceQueryObject->new();
 $query->init();
 $query->setMAType($var);
