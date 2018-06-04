@@ -26,7 +26,6 @@ use Storable qw(store retrieve freeze thaw dclone);
 use perfSONAR_PS::Utils::DNS qw( reverse_dns resolve_address reverse_dns_multi resolve_address_multi );
 use perfSONAR_PS::Utils::Host qw( get_ethernet_interfaces get_interface_addresses discover_primary_address );
 use perfSONAR_PS::Client::gLS::Keywords;
-#use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 use perfSONAR_PS::NPToolkit::Config::RegularTesting;
 use perfSONAR_PS::Common qw(find findvalue extract genuid);
 use perfSONAR_PS::Web::Sidebar qw(set_sidebar_vars);
@@ -59,7 +58,6 @@ sub new {
     $regular_testing_conf->init( $test_params );
     $self->{test_config_defaults_file} = $parameters->{test_config_defaults_file};
     $self->{regular_testing_conf} = $regular_testing_conf;
-    #warn "params: " . Dumper @params;
 
     return $self;
 
@@ -104,7 +102,6 @@ sub update_test_configuration{
 
     utf8::encode($json_text) if utf8::is_utf8($json_text);
     my $data = from_json($json_text, {utf8 => 1});
-
 
     my $response = $self->delete_all_tests();
 
@@ -338,8 +335,6 @@ sub _add_test_configuration{
 sub get_default_test_parameters {
     my $self = shift;
     my $config_file = $self->{test_config_defaults_file}; # $basedir . '/etc/test_config_defaults.conf';
-    #warn "config file: $config_file";
-    #warn "self: " . Dumper $self;
     my $conf_obj = Config::General->new( -ConfigFile => $config_file );
     my %conf = $conf_obj->getall;
     return \%conf;

@@ -28,6 +28,7 @@ has 'buffer_length' => (is => 'rw', isa => 'Int');
 has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
 has 'window_size'   => (is => 'rw', isa => 'Int');
 has 'zero_copy' => (is => 'rw', isa => 'Bool', default => 0);
+has 'single_ended' => (is => 'rw', isa => 'Bool', default => 0);
 #new pscheduler parameters
 has 'tcp_bandwidth' => (is => 'rw', isa => 'Int');
 has 'mss' => (is => 'rw', isa => 'Int');
@@ -76,6 +77,7 @@ override 'build_cmd' => sub {
     push @cmd, ( '-l', $test_parameters->buffer_length ) if $test_parameters->buffer_length;
     push @cmd, ( '-w', $test_parameters->window_size ) if $test_parameters->window_size;
     push @cmd, ( '-Z', $test_parameters->zero_copy ) if $test_parameters->zero_copy;
+    push @cmd, ( '--single-ended', $test_parameters->single_ended ) if $test_parameters->single_ended;
 
     # Set a default reporting interval
     push @cmd, ( '-i', '1' );
@@ -118,6 +120,7 @@ override 'build_results' => sub {
     $results->protocol($protocol);
     $results->streams($test_parameters->streams);
     $results->zero_copy($test_parameters->zero_copy);
+    $results->single_ended($test_parameters->single_ended);
     $results->time_duration($test_parameters->duration);
     $results->bandwidth_limit($test_parameters->udp_bandwidth) if $test_parameters->udp_bandwidth;
     $results->buffer_length($test_parameters->buffer_length) if $test_parameters->buffer_length;
@@ -221,6 +224,7 @@ override 'build_pscheduler_task' => sub {
     $psc_test_spec->{'parallel'} = int($test_parameters->streams) if $test_parameters->streams;
     $psc_test_spec->{'window-size'} = int($test_parameters->window_size) if $test_parameters->window_size;
     $psc_test_spec->{'zero-copy'} = int($test_parameters->zero_copy) if $test_parameters->zero_copy;
+    $psc_test_spec->{'single-ended'} = int($test_parameters->single_ended) if $test_parameters->single_ended;
     $psc_test_spec->{'mss'} = int($test_parameters->mss) if $test_parameters->mss;
     $psc_test_spec->{'dscp'} = int($test_parameters->dscp) if $test_parameters->dscp;
     $psc_test_spec->{'no-delay'} = JSON::true if($test_parameters->{no_delay});
