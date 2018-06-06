@@ -83,17 +83,17 @@ cmp_deeply($query->getServiceVersion(), undef, "getServiceVersion - returns null
 
 
 #setServiceType
-my $var = 'bwctl';
+my $var = 'pscheduler';
 $query = SimpleLookupService::QueryObjects::Network::ServiceQueryObject->new();
 $query->init();
 is($query->setServiceType($var), 0, "setServiceType - string");
 
-$var = ['bwctl'];
+$var = ['pscheduler'];
 $query = SimpleLookupService::QueryObjects::Network::ServiceQueryObject->new();
 $query->init();
 is($query->setServiceType($var), 0, "setServiceType - array");
 
-$var = ['bwctl', 'owamp'];
+$var = ['pscheduler', 'owamp'];
 $query = SimpleLookupService::QueryObjects::Network::ServiceQueryObject->new();
 $query->init();
 is($query->setServiceType($var), 0, "setServiceType - array > 1");

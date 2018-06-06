@@ -7,7 +7,7 @@ Name:			libperfsonar
 Version:		4.1
 Release:		%{relnum}%{?dist}
 Summary:		perfSONAR Shared Libraries
-License:		Distributable, see LICENSE
+License:		ASL 2.0
 Group:			Development/Libraries
 URL:			http://www.perfsonar.net
 Source0:		libperfsonar-%{version}.%{relnum}.tar.gz
@@ -311,6 +311,7 @@ make ROOTPATH=%{buildroot}/%{install_base} CONFIGPATH=%{buildroot}/%{config_base
 rm -rf %{buildroot}
 
 %files perl
+%license LICENSE
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/Net/NTP.pm
 %{install_base}/lib/perfSONAR_PS/Common.pm
@@ -328,30 +329,36 @@ rm -rf %{buildroot}
 %{install_base}/lib/perfSONAR_PS/Client/Utils.pm
 
 %files sls-perl
+%license LICENSE
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/SimpleLookupService/*
 %{install_base}/lib/perfSONAR_PS/Client/LS/*
 %{install_base}/lib/perfSONAR_PS/Utils/LookupService.pm
 
 %files esmond-perl
+%license LICENSE
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/perfSONAR_PS/Client/Esmond/*
 
 %files pscheduler-perl
+%license LICENSE
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/perfSONAR_PS/Client/PScheduler/*
 
 %files psconfig-perl
+%license LICENSE
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/perfSONAR_PS/Client/PSConfig/*
 
 %files toolkit-perl
+%license LICENSE
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/perfSONAR_PS/NPToolkit/*
 %{install_base}/lib/perfSONAR_PS/Web/Sidebar.pm
 %{install_base}/lib/perfSONAR_PS/Client/gLS/Keywords.pm
 
 %files regulartesting-perl
+%license LICENSE
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/perfSONAR_PS/RegularTesting/*
 

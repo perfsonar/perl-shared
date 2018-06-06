@@ -86,17 +86,17 @@ cmp_deeply($service->getServiceVersion(), undef, "getServiceVersion - returns nu
 
 
 #setServiceType
-my $var = 'bwctl';
+my $var = 'pscheduler';
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
 $service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'});
 is($service->setServiceType($var), 0, "setServiceType - string");
 
-$var = ['bwctl'];
+$var = ['pscheduler'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
 $service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'});
 is($service->setServiceType($var), 0, "setServiceType - array");
 
-$var = ['bwctl', 'owamp'];
+$var = ['pscheduler', 'owamp'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
 $service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'});
 is($service->setServiceType($var), -1, "setServiceType - array > 1");
@@ -467,42 +467,42 @@ cmp_deeply($service->getLongitude(), undef, "getLongitude - returns null");
 #setServiceEventType
 $var = 'http://ggf.org/ns/nmwg/tools/iperf/2.0';
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 is($service->setServiceEventType($var), 0, "setServiceEventType string");
 
 $var = ['http://ggf.org/ns/nmwg/tools/iperf/2.0'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 is($service->setServiceEventType($var), 0, "setServiceEventType array");
 
 $var = ['http://ggf.org/ns/nmwg/tools/iperf/2.0', 'http://ggf.org/ns/nmwg/characteristics/bandwidth/achieveable/2.0'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 is($service->setServiceEventType($var), 0, "setServiceEventType - array >1");
 
 
 #getServiceEventType
 $var = 'http://ggf.org/ns/nmwg/tools/iperf/2.0';
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 $service->setServiceEventType($var);
 cmp_deeply($service->getServiceEventType(),['http://ggf.org/ns/nmwg/tools/iperf/2.0'], "getServiceEventType - string" );
 
 $var = ['http://ggf.org/ns/nmwg/tools/iperf/2.0'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 $service->setServiceEventType($var);
 cmp_deeply($service->getServiceEventType(),$var, "getServiceEventType - array" );
 
 $var = ['http://ggf.org/ns/nmwg/tools/iperf/2.0', 'http://ggf.org/ns/nmwg/characteristics/bandwidth/achieveable/2.0'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 $service->setServiceEventType($var);
 cmp_deeply($service->getServiceEventType(),$var, "getServiceEventType - array > 1" );
 
 #$var = ['http://ggf.org/ns/nmwg/tools/iperf/2.0', 'http://ggf.org/ns/nmwg/characteristics/bandwidth/achieveable/2.0'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 #$service->setServiceEventType($var);
 cmp_deeply($service->getServiceEventType(), undef, "getServiceEventType - undef" );
 
@@ -510,124 +510,124 @@ cmp_deeply($service->getServiceEventType(), undef, "getServiceEventType - undef"
 #setTopologyDomain
 $var = 'es.net';
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 is($service->setTopologyDomain($var), 0, "setTopologyDomain string");
 
 $var = ['es.net'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 is($service->setTopologyDomain($var), 0, "setTopologyDomain array");
 
 $var = ['es.net', 'lbl.gov'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 is($service->setTopologyDomain($var), 0, "setTopologyDomain - array >1");
 
 
 #getTopologyDomain
 $var = 'es.net';
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 $service->setTopologyDomain($var);
 cmp_deeply($service->getTopologyDomain(),['es.net'], "getTopologyDomain - string" );
 
 $var = ['es.net'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 $service->setTopologyDomain($var);
 cmp_deeply($service->getTopologyDomain(),$var, "getTopologyDomain - array" );
 
 $var = ['es.net', 'lbl.gov'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 $service->setTopologyDomain($var);
 cmp_deeply($service->getTopologyDomain(),$var, "getTopologyDomain - array > 1" );
 
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 cmp_deeply($service->getTopologyDomain(), undef, "getTopologyDomain - undef" );
 
 
 #setMAType
-$var = 'bwctl';
+$var = 'pscheduler';
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 is($service->setMAType($var), 0, "setMAType string");
 
-$var = ['bwctl'];
+$var = ['pscheduler'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 is($service->setMAType($var), 0, "setMAType array");
 
-$var = ['bwctl', 'iperf'];
+$var = ['pscheduler', 'iperf'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 is($service->setMAType($var), 0, "setMAType - array >1");
 
 
 #getMAType
-$var = 'bwctl';
+$var = 'pscheduler';
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 $service->setMAType($var);
-cmp_deeply($service->getMAType(),['bwctl'], "getMAType - string" );
+cmp_deeply($service->getMAType(),['pscheduler'], "getMAType - string" );
 
-$var = ['bwctl'];
+$var = ['pscheduler'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 $service->setMAType($var);
 cmp_deeply($service->getMAType(),$var, "getMAType - array" );
 
-$var = ['bwctl', 'iperf'];
+$var = ['pscheduler', 'iperf'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 $service->setMAType($var);
 cmp_deeply($service->getMAType(),$var, "getMAType - array > 1" );
 
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 cmp_deeply($service->getMAType(), undef, "getMAType - undef" );
 
 
 #setMATests
 $var = 'http://localhost:8080/lookup/pstest/abcd-e45-5466777';
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 is($service->setMATests($var), 0, "setMATests string");
 
 $var = ['http://localhost:8080/lookup/pstest/abcd-e45-5466777'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 is($service->setMATests($var), 0, "setMATests array");
 
 $var = ['http://localhost:8080/lookup/pstest/abcd-e45-5466777', 'http://localhost:8080/lookup/pstest/abcd-e45-54667234'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 is($service->setMATests($var), 0, "setMATests - array >1");
 
 
 #getMATests
 $var = 'http://localhost:8080/lookup/pstest/abcd-e45-5466777';
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 $service->setMATests($var);
 cmp_deeply($service->getMATests(),['http://localhost:8080/lookup/pstest/abcd-e45-5466777'], "getMATests - string" );
 
 $var = ['http://localhost:8080/lookup/pstest/abcd-e45-5466777'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 $service->setMATests($var);
 cmp_deeply($service->getMATests(),$var, "getMATests - array" );
 
 $var = ['http://localhost:8080/lookup/pstest/abcd-e45-5466777', 'http://localhost:8080/lookup/pstest/abcd-e45-54667234'];
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 $service->setMATests($var);
 cmp_deeply($service->getMATests(),$var, "getMATests - array > 1" );
 
 
 $service = perfSONAR_PS::Client::LS::PSRecords::PSService->new();
-$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'bwctl'});
+$service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'pscheduler'});
 cmp_deeply($service->getMATests(), undef, "getMATests - undef" );
 
 

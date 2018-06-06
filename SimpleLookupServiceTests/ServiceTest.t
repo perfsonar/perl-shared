@@ -86,17 +86,17 @@ cmp_deeply($service->getServiceVersion(), undef, "getServiceVersion - returns nu
 
 
 #setServiceType
-my $var = 'bwctl';
+my $var = 'pscheduler';
 $service = SimpleLookupService::Records::Network::Service->new();
 $service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'});
 is($service->setServiceType($var), 0, "setServiceType - string");
 
-$var = ['bwctl'];
+$var = ['pscheduler'];
 $service = SimpleLookupService::Records::Network::Service->new();
 $service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'});
 is($service->setServiceType($var), 0, "setServiceType - array");
 
-$var = ['bwctl', 'owamp'];
+$var = ['pscheduler', 'owamp'];
 $service = SimpleLookupService::Records::Network::Service->new();
 $service->init({serviceLocator=>'wash-pt1.es.net', serviceType => 'ping'});
 is($service->setServiceType($var), -1, "setServiceType - array > 1");

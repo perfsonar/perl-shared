@@ -39,9 +39,7 @@ sub new {
             load_regular_testing => 0,
             load_ls_registration => 0,
             owamp_config => 0,
-            owamp_limits => 0,
-            bwctl_config => 0,
-            bwctl_limits => 0,
+            owamp_limits => 0
         }
     );
 
@@ -56,9 +54,6 @@ sub new {
 
     my $test_config_defaults_file = $parameters->{test_config_defaults_file};
     $config->{test_config_defaults_file} = $test_config_defaults_file;
-
-    $self->{config}->{bwctl_config} = $parameters->{bwctl_config};
-    $self->{config}->{bwctl_limits} = $parameters->{bwctl_limits};
     
     $self->{config}->{owamp_config} = $parameters->{owamp_config};
     $self->{config}->{owamp_limits} = $parameters->{owamp_limits};

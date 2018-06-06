@@ -26,8 +26,6 @@ use Storable qw(store retrieve freeze thaw dclone);
 use perfSONAR_PS::Utils::DNS qw( reverse_dns resolve_address reverse_dns_multi resolve_address_multi );
 use perfSONAR_PS::Utils::Host qw( get_ethernet_interfaces get_interface_addresses discover_primary_address );
 use perfSONAR_PS::Client::gLS::Keywords;
-#use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
-use perfSONAR_PS::NPToolkit::Config::BWCTL;
 use perfSONAR_PS::NPToolkit::Config::RegularTesting;
 use perfSONAR_PS::Common qw(find findvalue extract genuid);
 use perfSONAR_PS::Web::Sidebar qw(set_sidebar_vars);
@@ -60,7 +58,6 @@ sub new {
     $regular_testing_conf->init( $test_params );
     $self->{test_config_defaults_file} = $parameters->{test_config_defaults_file};
     $self->{regular_testing_conf} = $regular_testing_conf;
-    #warn "params: " . Dumper @params;
 
     return $self;
 
@@ -105,7 +102,6 @@ sub update_test_configuration{
 
     utf8::encode($json_text) if utf8::is_utf8($json_text);
     my $data = from_json($json_text, {utf8 => 1});
-
 
     my $response = $self->delete_all_tests();
 
@@ -183,13 +179,7 @@ sub get_status {
     my $psb_owamp_tests      = 0;
     my $network_usage        = 0;
     my $owamp_port_usage     = 0;
-    my $bwctl_port_usage     = 0;
     my $traceroute_tests     = 0;
-
-    my $bwctl_conf = perfSONAR_PS::NPToolkit::Config::BWCTL->new();
-    # TODO: make bwctld config file paths configurable
-    ( $status, $res ) = $bwctl_conf->init(  );
-    #( $status, $res ) = $bwctl_conf->init( { bwctld_limits => $conf{bwctld_limits}, bwctld_conf => $conf{bwctld_conf}, bwctld_keys => $conf{bwctld_keys} } );
 
         foreach my $test ( @{$tests} ) {
             if ( $test->{type} eq "bwctl/throughput" ) {
@@ -223,11 +213,9 @@ sub get_status {
                 my $num_tests = 0;
                 foreach my $member ( @{ $test->{members} } ) {
                     if ( $member->{sender} ) {
-                        $bwctl_port_usage += 2;
                         $num_tests++;
                     }
                     if ( $member->{receiver} ) {
-                        $bwctl_port_usage += 2;
                         $num_tests++;
                     }
                 }
@@ -238,30 +226,6 @@ sub get_status {
                 $network_usage += ( $num_tests * $test_duration ) / $test_interval if ($test_interval > 0);
             }
         }
-
-    # "merge" the two bwctl port ranges
-    my %bwctl_ports = ();
-    my $bwctl_port_range;
-
-    ($status, $res) = $bwctl_conf->get_port_range({ port_type => "peer" });
-    if ($status == 0) {
-        if ($res->{min_port} and $res->{max_port}) {
-            $bwctl_ports{min_port} = $res->{min_port};
-            $bwctl_ports{max_port} = $res->{max_port};
-        }
-    }
-
-    ($status, $res) = $bwctl_conf->get_port_range({ port_type => "iperf" });
-    if ($status == 0) {
-        if ($res->{min_port} and $res->{max_port}) {
-            $bwctl_ports{min_port} = ($bwctl_ports{min_port} and $bwctl_ports{min_port} < $res->{min_port})?$bwctl_ports{min_port}:$res->{min_port};
-            $bwctl_ports{max_port} = ($bwctl_ports{max_port} and $bwctl_ports{max_port} > $res->{max_port})?$bwctl_ports{max_port}:$res->{max_port};
-        }
-    }
-
-    if (defined $bwctl_ports{min_port} and defined $bwctl_ports{max_port}) {
-        $bwctl_port_range = $bwctl_ports{max_port} - $bwctl_ports{min_port} + 1;
-    }
 
     my %owamp_ports = ();
     my $owamp_port_range;
@@ -279,9 +243,6 @@ sub get_status {
     }
 
     $status_vars->{network_percent_used}    = sprintf "%.1d", $network_usage * 100;
-    $status_vars->{bwctl_ports}             = \%bwctl_ports;
-    $status_vars->{bwctl_port_range}        = $bwctl_port_range;
-    $status_vars->{bwctl_port_usage}        = $bwctl_port_usage;
     $status_vars->{hosts_file_matches_dns} = $hosts_file_matches_dns;
     $status_vars->{owamp_ports}             = \%owamp_ports;
     $status_vars->{owamp_port_range}        = $owamp_port_range;
@@ -374,8 +335,6 @@ sub _add_test_configuration{
 sub get_default_test_parameters {
     my $self = shift;
     my $config_file = $self->{test_config_defaults_file}; # $basedir . '/etc/test_config_defaults.conf';
-    #warn "config file: $config_file";
-    #warn "self: " . Dumper $self;
     my $conf_obj = Config::General->new( -ConfigFile => $config_file );
     my %conf = $conf_obj->getall;
     return \%conf;
