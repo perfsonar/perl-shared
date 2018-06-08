@@ -21,7 +21,7 @@ Much of code adapted from https://github.com/perlancar/perl-DateTime-Format-Dura
 
 use base 'Exporter';
 use JSON qw(from_json to_json);
-use IPC::Run qw(run timeout start pump);
+use IPC::Run3;
 
 our @EXPORT_OK = qw( jq );
 
@@ -33,7 +33,7 @@ resulting JSON can optionally be formatted using the given formatting parameters
 =cut
 
 sub jq {
-    my ($jq, $json_obj, $formatting_params) = @_;
+    my ($jq, $json_obj, $formatting_params, $timeout) = @_;
     
     #initialize formatting params
     $formatting_params = {} unless $formatting_params;
@@ -48,6 +48,8 @@ sub jq {
         #a lot of JQ is not grabbing objects, so use this as default
         $formatting_params->{'allow_nonref'} = 1;
     }
+    #init timeout
+    $timeout = 10 unless(defined $timeout);
     
     #join jq script
     if(ref($jq) eq 'ARRAY'){
@@ -68,18 +70,26 @@ sub jq {
     
     ##
     #run command. Actually execute JQ twice to aboid broken pipes.
-    eval{ 
+    eval{
+        ##
+        # Init timeout handling
+        local $SIG{ALRM} = sub { die "Timeout executing jq command\n" }; # NB: \n required
         ###
         #Run first command to validate jq script. If try to run this and invalid jq, will
         #get a broken pipe error via a SIGPIPE when try to write to STDIN. The SIGPIPE will 
         #kill the parent. If SIGPIPE handled/ignored the parent will survive but useful 
-        #error messages destroyed. 
-        run \@cmd, \$stdin, \$stdout, \$stderr, timeout(10) or $status=$?;
+        #error messages destroyed.
+        alarm $timeout;
+        ## Note: Using run3 from IPC::Run3 because IPC::Run has memory leak
+        run3 \@cmd, \$stdin, \$stdout, \$stderr or $status=$?;
+        alarm 0;
         unless($?){
             ##
             #if first command worked, then jq is valid, so run again but give it JSON
             #string to transform.
-            run \@cmd, \$json_str, \$stdout, \$stderr, timeout(10) or $status=$?;
+            alarm $timeout;
+            run3 \@cmd, \$json_str, \$stdout, \$stderr or $status=$?;
+            alarm 0;
         }
     };
     if($@){
