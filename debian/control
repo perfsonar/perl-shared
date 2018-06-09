@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 9.0.0), perl, libdata-validate-domain-perl,
  libdata-validate-ip-perl, libipc-run-perl, libjson-perl, libjson-validator-perl,
  liblog-log4perl-perl, libmouse-perl, libnet-cidr-perl, libnet-dns-perl,
  libparams-validate-perl, libregexp-common-perl, liburi-perl,
- libmojolicious-perl, jq
+ libmojolicious-perl, jq, libipc-run3-perl
 Standards-Version: 3.9.6
 Homepage: http://www.perfsonar.net
 Vcs-Git: https://github.com/perfsonar/perl-shared.git
@@ -18,7 +18,7 @@ Depends: ${misc:Depends}, ${perl:Depends}, perl, liblog-log4perl-perl,
  libxml-libxml-perl, libnet-cidr-perl, libnet-ip-perl, libio-interface-perl,
  libdata-validate-ip-perl, libnet-dns-perl, libnetaddr-ip-perl,
  libregexp-common-perl, libmouse-perl, libdbi-perl, libconfig-general-perl,
- ethtool, iproute2,
+ ethtool, iproute2, libipc-run3-perl, 
  libipc-dirqueue-perl, libossp-uuid-perl, libdata-validate-domain-perl,
  libdatetime-perl, libdatetime-format-iso8601-perl, libhash-merge-perl,
  libhttp-message-perl, libio-socket-ssl-perl, libipc-run-perl, libjson-perl,
