@@ -389,6 +389,7 @@ sub convert_bwctl {
     $psconfig_test->spec_param('no-delay', JSON::true) if($test_params->{'no_delay'});
     $psconfig_test->spec_param('zero-copy', JSON::true) if($test_params->{'zero_copy'});
     $psconfig_test->spec_param('reverse', JSON::true) if($test_params->{'local_firewall'});
+    $psconfig_test->spec_param('single-ended', JSON::true) if($test_params->{'single_ended'});
     #test params (string)
     $psconfig_test->spec_param('congestion', $test_params->{'congestion'}) if($test_params->{'congestion'});
     #test param (ip version)
