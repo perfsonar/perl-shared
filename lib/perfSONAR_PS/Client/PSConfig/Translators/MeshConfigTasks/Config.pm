@@ -810,6 +810,10 @@ sub _convert_tasks{
             my $a_sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel();
             $a_sel->name($local_address);
             $psconfig_group->add_a_address($a_sel);
+            #single-ended tests always need to be unidirectional
+            if($psconfig_test->type() eq 'throughput' && $psconfig_test->spec_param('single-ended')){
+                $psconfig_group->unidirectional(1);
+            }
             $psconfig->group($group_name, $psconfig_group);
             $exclude_tracker{$group_name} = {};
         }
