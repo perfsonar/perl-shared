@@ -164,7 +164,7 @@ sub parse_element_attribute {
 
         $parsed_value = \@array;
     }
-    elsif (JSON::is_bool($value)) {
+    elsif ($value eq '1' || $value eq '0') {
         if ($value) {
             $parsed_value = 1;
         }
