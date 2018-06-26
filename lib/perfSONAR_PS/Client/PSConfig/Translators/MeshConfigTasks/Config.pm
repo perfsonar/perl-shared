@@ -389,6 +389,10 @@ sub convert_bwctl {
     $psconfig_test->spec_param('no-delay', JSON::true) if($test_params->{'no_delay'});
     $psconfig_test->spec_param('zero-copy', JSON::true) if($test_params->{'zero_copy'});
     $psconfig_test->spec_param('reverse', JSON::true) if($test_params->{'local_firewall'});
+    if($test_params->{'single_ended'}){
+        $psconfig_test->spec_param('schema', 2);
+        $psconfig_test->spec_param('single-ended', JSON::true);
+    }
     #test params (string)
     $psconfig_test->spec_param('congestion', $test_params->{'congestion'}) if($test_params->{'congestion'});
     #test param (ip version)
@@ -806,6 +810,10 @@ sub _convert_tasks{
             my $a_sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel();
             $a_sel->name($local_address);
             $psconfig_group->add_a_address($a_sel);
+            #single-ended tests always need to be unidirectional
+            if($psconfig_test->type() eq 'throughput' && $psconfig_test->spec_param('single-ended')){
+                $psconfig_group->unidirectional(1);
+            }
             $psconfig->group($group_name, $psconfig_group);
             $exclude_tracker{$group_name} = {};
         }

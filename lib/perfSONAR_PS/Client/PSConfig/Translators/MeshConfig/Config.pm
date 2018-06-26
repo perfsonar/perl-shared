@@ -1,7 +1,12 @@
 package perfSONAR_PS::Client::PSConfig::Translators::MeshConfig::Config;
 
 use Mouse;
+
 use JSON::Validator;
+#Ignore warning related to re-defining host verification method used by JSON::Validator
+no warnings 'redefine';
+use Data::Validate::Domain;
+
 use perfSONAR_PS::Client::PSConfig::Archive;
 use perfSONAR_PS::Client::PSConfig::Addresses::Address;
 use perfSONAR_PS::Client::PSConfig::Addresses::AddressLabel;
@@ -197,6 +202,8 @@ lost otherwise
 sub validate {
     my ($self, $json_obj) = @_;
     my $validator = new JSON::Validator();
+    ##NOTE: Below works around the strict TLD requirements of JSON::Validator
+    local *Data::Validate::Domain::is_domain = \&Data::Validate::Domain::is_hostname;
     $validator->schema(meshconfig_json_schema());
 
     return $validator->validate($json_obj ? $json_obj : $self->data());
