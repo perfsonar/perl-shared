@@ -366,10 +366,14 @@ sub _evaluate_task {
             #if detail has start use that, otherwise use added time
             my $old_task_start_iso = ($old_task->{task}->detail_start() ? $old_task->{task}->detail_start() : $old_task->{task}->detail_added());
             my $old_task_start_ts = $self->_iso_to_ts($old_task_start_iso);
-            if( (!$old_task->{task}->detail_exclusive()) && #not exclusive
+            if(
+                    (!$old_task->{task}->detail_exclusive()) && #not exclusive
                     $old_task->{task}->detail_multiresult() && #is multi-result
-                    $old_task->{task}->detail_runs() == 1 && # just 1 run
-                    ($old_task_start_ts + 15*60) < time # started at least 15 min ago
+                    ($old_task_start_ts + 15*60) < time && # started at least 15 min ago
+                    ( 
+                        (defined $old_task->{task}->detail_runs_started() && $old_task->{task}->detail_runs_started() == 0 ) || #have at no runs started (v1.1 and later)
+                        (!defined $old_task->{task}->detail_runs_started() && $old_task->{task}->detail_runs() <= 2) #have less than two runs (not 1 because count bugged) (pre-v1.1)
+                    )
                 ){
                 #if background-multi, one or less runs and start time is 15 minutes (arbitrary) 
                 # in the past the start time is immediately. Fixes special case where bgm 
