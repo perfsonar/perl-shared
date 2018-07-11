@@ -18,6 +18,7 @@ use perfSONAR_PS::NPToolkit::Services::PSConfigPSchedulerAgent;
 use perfSONAR_PS::NPToolkit::Services::PScheduler;
 use perfSONAR_PS::NPToolkit::Services::NTP;
 use perfSONAR_PS::NPToolkit::Services::OWAMP;
+use perfSONAR_PS::NPToolkit::Services::TWAMP;
 use perfSONAR_PS::NPToolkit::Services::YumCron;
 use perfSONAR_PS::NPToolkit::Services::iperf3;
 
@@ -33,6 +34,7 @@ my %name_to_service_map = (
     maddash => "perfSONAR_PS::NPToolkit::Services::MaDDash",
     ntp => "perfSONAR_PS::NPToolkit::Services::NTP",
     owamp => "perfSONAR_PS::NPToolkit::Services::OWAMP",
+    twamp => "perfSONAR_PS::NPToolkit::Services::TWAMP",
     psconfig => "perfSONAR_PS::NPToolkit::Services::PSConfigPSchedulerAgent",
     pscheduler => "perfSONAR_PS::NPToolkit::Services::PScheduler",
     yum_cron => "perfSONAR_PS::NPToolkit::Services::YumCron",

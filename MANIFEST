@@ -128,6 +128,7 @@ lib/perfSONAR_PS/NPToolkit/Config/LSRegistrationDaemon.pm
 lib/perfSONAR_PS/NPToolkit/Config/NTP.pm
 lib/perfSONAR_PS/NPToolkit/Config/OWAMP.pm
 lib/perfSONAR_PS/NPToolkit/Config/RegularTesting.pm
+lib/perfSONAR_PS/NPToolkit/Config/TWAMP.pm
 lib/perfSONAR_PS/NPToolkit/Config/Version.pm
 lib/perfSONAR_PS/NPToolkit/ConfigManager/ConfigClient.pm
 lib/perfSONAR_PS/NPToolkit/ConfigManager/ConfigDaemon.pm
@@ -150,6 +151,7 @@ lib/perfSONAR_PS/NPToolkit/Services/PSConfigPSchedulerAgent.pm
 lib/perfSONAR_PS/NPToolkit/Services/PScheduler.pm
 lib/perfSONAR_PS/NPToolkit/Services/ServicesMap.pm
 lib/perfSONAR_PS/NPToolkit/Services/SimpleLSBootstrap.pm
+lib/perfSONAR_PS/NPToolkit/Services/TWAMP.pm
 lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
 lib/perfSONAR_PS/NPToolkit/Services/esmond.pm
 lib/perfSONAR_PS/NPToolkit/Services/httpd.pm

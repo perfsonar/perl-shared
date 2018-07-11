@@ -16,6 +16,7 @@ use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
 
 use perfSONAR_PS::NPToolkit::Config::OWAMP;
+use perfSONAR_PS::NPToolkit::Config::TWAMP;
 use perfSONAR_PS::NPToolkit::DataService::Communities;
 use perfSONAR_PS::Utils::GeoLookup qw(geoIPLookup);
 use perfSONAR_PS::PSConfig::PScheduler::ConfigConnect;
@@ -389,8 +390,32 @@ sub get_services {
             max_port => 65535,
         };
     }
+    
+    my $twamp_config = $conf{'twamp_config'};
+    my $twamp_limits = $conf{'twamp_limits'};
 
-    my @service_names = qw(owamp psconfig pscheduler esmond lsregistration);
+    my @twamp_test_ports = ();
+    my $twampd_cfg = perfSONAR_PS::NPToolkit::Config::TWAMP->new( );
+    $twampd_cfg->init( { twampd_limits => $twamp_limits, twampd_conf => $twamp_config  } ) ;
+
+    my ($status, $res) = $twampd_cfg->get_test_port_range();
+    if ($status == 0) {
+        push @twamp_test_ports, {
+            type => "test",
+            min_port => $res->{min_port},
+            max_port => $res->{max_port},
+        };
+    }
+    else {
+        # OWAMP's peer range defaults to "any port"
+        push @twamp_test_ports, {
+            type => "test",
+            min_port => 1,
+            max_port => 65535,
+        };
+    }
+
+    my @service_names = qw(owamp twamp psconfig pscheduler esmond lsregistration);
     my %services = ();
     foreach my $service_name ( @service_names ) {
         my $service = get_service_object($service_name);
@@ -438,8 +463,9 @@ sub get_services {
 
         if ($service_name eq "owamp") {
             $service_info{"testing_ports"} = \@owamp_test_ports;
+        }elsif ($service_name eq "twamp") {
+            $service_info{"testing_ports"} = \@twamp_test_ports;
         }
-
 
         $services{$service_name} = \%service_info;
     }
