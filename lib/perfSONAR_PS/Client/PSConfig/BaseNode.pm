@@ -718,9 +718,14 @@ sub _field_url{
     
     if(defined $val){
         my $uri = new URI($val);
+        #allows URLs or absolute file paths
         if($uri->scheme() && !$allowed_scheme_map->{$uri->scheme()}){
             my $prefixes = join ",", keys %{ $allowed_scheme_map};
             $self->_set_validation_error("$field cannot be set to $val. URL must start with " . $prefixes);
+            return;
+        }elsif(!$uri->scheme() && $val !~ /^\//){
+            #not an absolute file, then error
+            $self->_set_validation_error("$field cannot be set to $val. Must be valid URL or absolute filename.");
             return;
         }
         if($uri->can('host_port')){
