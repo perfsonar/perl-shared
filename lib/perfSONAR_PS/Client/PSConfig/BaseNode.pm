@@ -718,7 +718,7 @@ sub _field_url{
     
     if(defined $val){
         my $uri = new URI($val);
-        unless($uri->scheme() && $allowed_scheme_map->{$uri->scheme()}){
+        if($uri->scheme() && !$allowed_scheme_map->{$uri->scheme()}){
             my $prefixes = join ",", keys %{ $allowed_scheme_map};
             $self->_set_validation_error("$field cannot be set to $val. URL must start with " . $prefixes);
             return;
