@@ -39,7 +39,9 @@ sub new {
             load_regular_testing => 0,
             load_ls_registration => 0,
             owamp_config => 0,
-            owamp_limits => 0
+            owamp_limits => 0,
+            twamp_config => 0,
+            twamp_limits => 0
         }
     );
 
@@ -57,7 +59,10 @@ sub new {
     
     $self->{config}->{owamp_config} = $parameters->{owamp_config};
     $self->{config}->{owamp_limits} = $parameters->{owamp_limits};
-
+    
+    $self->{config}->{twamp_config} = $parameters->{twamp_config};
+    $self->{config}->{twamp_limits} = $parameters->{twamp_limits};
+    
     if ( $load_regular_testing ) {
         my $testing_conf = perfSONAR_PS::NPToolkit::Config::RegularTesting->new();
         my ( $status, $res ) = $testing_conf->init( { regular_testing_config_file => $regular_testing_config_file, test_config_defaults_file => $test_config_defaults_file } );
