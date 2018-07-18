@@ -398,7 +398,7 @@ sub get_services {
     my $twampd_cfg = perfSONAR_PS::NPToolkit::Config::TWAMP->new( );
     $twampd_cfg->init( { twampd_limits => $twamp_limits, twampd_conf => $twamp_config  } ) ;
 
-    my ($status, $res) = $twampd_cfg->get_test_port_range();
+    ($status, $res) = $twampd_cfg->get_test_port_range();
     if ($status == 0) {
         push @twamp_test_ports, {
             type => "test",
