@@ -281,6 +281,21 @@ sub detail_runs{
     return $self->data->{'detail'}->{'runs'};
 }
 
+sub detail_runs_started{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->_init_field($self->data, 'detail');
+        $self->data->{'detail'}->{'runs-started'} = $val;
+    }
+    
+    unless($self->_has_field($self->data, "detail")){
+        return undef;
+    }
+    
+    return $self->data->{'detail'}->{'runs-started'};
+}
+
 sub detail_added{
     my ($self, $val) = @_;
     
