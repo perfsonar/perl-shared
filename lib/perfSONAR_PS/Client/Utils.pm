@@ -77,6 +77,7 @@ sub send_http_request{
         timeout => 1, 
         get_params => 0, 
         data => 0, 
+        max_redirects => 0,
         headers => 0, 
         ca_certificate_file => 0, 
         verify_hostname => 0, #deprecated
@@ -102,10 +103,17 @@ sub send_http_request{
         $timeout = $parameters{timeout};
     }
     
+    #set default redirects to something greater than 0
+    my $max_redirects = 3;
+    if(exists $parameters{max_redirects} && defined $parameters{max_redirects}){
+        $max_redirects = $parameters{max_redirects};
+    }
+    
     #init user agent
     my $ua = Mojo::UserAgent->new;
     $ua->connect_timeout($timeout);
     $ua->request_timeout($timeout);
+    $ua->max_redirects($max_redirects);
     $ua->proxy->detect;
     
     #lookup address if map provided
