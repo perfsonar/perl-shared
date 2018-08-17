@@ -93,6 +93,7 @@ sub jq {
         }
     };
     if($@){
+        alarm 0;
         die "Unable to run jq command($cmd_string): " . $@;
     }elsif($status){
         die "jq returned error($status): " . $stderr;
