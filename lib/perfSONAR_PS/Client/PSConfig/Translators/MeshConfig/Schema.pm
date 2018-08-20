@@ -129,8 +129,7 @@ sub meshconfig_json_schema() {
                 "email": { "type": "string" },
                 "name": { "type": "string" }
             },
-            "additionalProperties": false,
-            "required": [ "name", "email" ]
+            "additionalProperties": false
         },
         
         "BindMapSpecification": {
