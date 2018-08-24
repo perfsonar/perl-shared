@@ -226,6 +226,7 @@ sub _send_request_timeout {
         alarm 0;
     };
     if($@){
+        alarm 0;
         $res = new Mojo::Message::Response();
         $res->code(500);
         $res->message("Timeout connecting to server");

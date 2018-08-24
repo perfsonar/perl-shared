@@ -751,7 +751,9 @@ sub _convert_tasks{
             $destination_port = $local_port;
         }else{
             #always set source so we don't end up with 127.0.0.1
-            $local_address = discover_source_address(address => $parsed_target->{address}) unless($local_address);
+            $local_address = discover_source_address(address => $parsed_target->{address}, 
+                                                            force_ipv4 => $force_ipv4,
+                                                            force_ipv6 => $force_ipv6) unless($local_address);
             $source = $local_address;
             $destination = $parsed_target->{address};
             $remote_address = $destination;
