@@ -310,7 +310,7 @@ sub _convert_schedule {
     $psconfig_schedule->repeat($self->_seconds_to_iso($schedule_params->{'interval'})) if($schedule_params->{'interval'});
     if($schedule_params->{'slip'}){
         $psconfig_schedule->slip($self->_seconds_to_iso($schedule_params->{'slip'}));
-    }elsif($schedule_params->{'random_start_percentage'} && $schedule_params->{'interval'}){
+    }elsif($schedule_params->{'interval'}){
         if($schedule_params->{'interval'} > 43200){
             $psconfig_schedule->slip($self->_seconds_to_iso(43200));
         }else{
