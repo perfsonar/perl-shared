@@ -1,7 +1,7 @@
 PACKAGE=libperfsonar
 ROOTPATH=/usr/lib/perfsonar
 CONFIGPATH=/etc/perfsonar
-VERSION=4.1.1
+VERSION=4.1.2
 RELEASE=1
 
 default:
