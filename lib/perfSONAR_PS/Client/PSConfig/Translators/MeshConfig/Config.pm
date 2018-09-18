@@ -706,7 +706,7 @@ sub convert_psb_bwctl {
     $psconfig_schedule->repeat($self->_seconds_to_iso($test_params->{'interval'})) if($test_params->{'interval'});
     if($test_params->{'slip'}){
         $psconfig_schedule->slip($self->_seconds_to_iso($test_params->{'slip'}));
-    }elsif($test_params->{'random_start_percentage'} && $test_params->{'interval'}){
+    }elsif($test_params->{'interval'}){
         if($test_params->{'interval'} > 43200){
             $psconfig_schedule->slip($self->_seconds_to_iso(43200));
         }else{
@@ -786,7 +786,7 @@ sub convert_pinger {
     $psconfig_schedule->repeat($self->_seconds_to_iso($test_params->{'test_interval'})) if($test_params->{'test_interval'});
     if($test_params->{'slip'}){
         $psconfig_schedule->slip($self->_seconds_to_iso($test_params->{'slip'}));
-    }elsif($test_params->{'random_start_percentage'} && $test_params->{'test_interval'}){
+    }elsif($test_params->{'test_interval'}){
         if($test_params->{'test_interval'} > 43200){
             $psconfig_schedule->slip($self->_seconds_to_iso(43200));
         }else{
@@ -837,7 +837,7 @@ sub convert_simplestream {
     $psconfig_schedule->repeat($self->_seconds_to_iso($test_params->{'interval'})) if($test_params->{'interval'});
     if($test_params->{'slip'}){
         $psconfig_schedule->slip($self->_seconds_to_iso($test_params->{'slip'}));
-    }elsif($test_params->{'random_start_percentage'} && $test_params->{'interval'}){
+    }elsif($test_params->{'interval'}){
         if($test_params->{'interval'} > 43200){
             $psconfig_schedule->slip($self->_seconds_to_iso(43200));
         }else{
@@ -890,7 +890,7 @@ sub convert_trace {
     $psconfig_schedule->repeat($self->_seconds_to_iso($test_params->{'test_interval'})) if($test_params->{'test_interval'});
     if($test_params->{'slip'}){
         $psconfig_schedule->slip($self->_seconds_to_iso($test_params->{'slip'}));
-    }elsif($test_params->{'random_start_percentage'} && $test_params->{'test_interval'}){
+    }elsif($test_params->{'test_interval'}){
         if($test_params->{'test_interval'} > 43200){
             $psconfig_schedule->slip($self->_seconds_to_iso(43200));
         }else{
