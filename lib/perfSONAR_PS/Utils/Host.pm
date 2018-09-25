@@ -683,9 +683,20 @@ sub get_dmi_info {
     }
     if (!$dmiinfo{'is_virtual_machine'}) {
         # Check if we're on a Xen guest
-        my $dmesg_path = "/var/log/dmesg";
-        my $xenboot = system('grep -q "Booting paravirtualized kernel on Xen" ' . $dmesg_path) if -f $dmesg_path;
-        if ($xenboot eq 0) {
+        my $xen_found = 0;
+
+        my $proc_dir = "/proc/xen";
+        if (-d $proc_dir) {
+            $xen_found = 1;
+        }
+
+        my $hypervisor_type = "/sys/hypervisor/type";
+        if (!$xen_found and -f $hypervisor_type) {
+            my $res = system('grep -q xen ' . $hypervisor_type);
+            $xen_found = 1 if $res == 0;
+        }
+
+        if ($xen_found) {
             # We're on a Xen guest
             $dmiinfo{'is_virtual_machine'} = 1;
             $dmiinfo{'product_name'} = "Xen";
