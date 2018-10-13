@@ -162,13 +162,13 @@ ok($tg->error());
 is($task->scheduled_by(0), 0); #valid scheduled_by 
 
 ####
-# Test setting match address
+# Test setting match address - including when case may not match
 ok($psconfig = new perfSONAR_PS::Client::PSConfig::Config(data => $config_obj));
 ok($task = $psconfig->task("example-task-throughput"));
 ok($tg = new perfSONAR_PS::Client::PSConfig::Parsers::TaskGenerator(
                                                             psconfig => $psconfig, 
                                                             task_name => "example-task-throughput", 
-                                                            match_addresses => [ "host-c.perfsonar.net" ]
+                                                            match_addresses => [ "HOST-C.perfsonar.net" ]
                                                         ));
 ok($tg->start());
 ok($tg->next());
