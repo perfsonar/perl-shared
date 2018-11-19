@@ -100,5 +100,12 @@ use constant {
     LS_KEY_PERSON_ORGANIZATION => "person-organization",  
 };
 
+#signature keys
+use constant {
+	LS_KEY_SIGNATURE_ENCODING    => "signature-encoding",
+	LS_KEY_SIGNATURE_DIGEST      => "digest",
+	LS_KEY_SIGNATURE_CERTIFICATE => => "x509certificate"
+};
+
 
 1;
