@@ -463,7 +463,13 @@ sub _isoToUnix {
     return $dt->epoch();
 }
 
-#creates hash of the user defined fields
+=head2 normalizedJson($self)
+
+# Creates canonicalized json of user-defined fields.
+
+=cut
+
+
 sub normalizedJson {
 
     my ($self) = @_;
@@ -492,7 +498,11 @@ sub normalizedJson {
 
 }
 
-#sign records
+=head2 normalizedJson($self)
+
+# Adds signature to the record using the provided private key
+
+=cut
 
 sub addsign {
     my ($self, $private_key) = @_;
@@ -507,6 +517,12 @@ sub addsign {
     $self->addField({ "key" => (SimpleLookupService::Keywords::KeyNames::LS_KEY_SIGNATURE), "value" => $encodedSignature });
     return 0;
 }
+
+=head2 normalizedJson($self)
+
+# Verifies signature
+
+=cut
 
 sub verify {
     my ($self, $public_key) = @_;
@@ -523,10 +539,8 @@ sub verify {
         if ($rsa_pub->verify($message, $signature)) {
             return 0;
         }
-        else {
-            print "\n\nCould not verify signature";
-        }
     }
+    cluck "Signature could not be verified";
     return -1;
 }
 

@@ -9,6 +9,7 @@ use constant {
     LS_VALUE_TYPE_HOST => "host",
     LS_VALUE_TYPE_INTERFACE => "interface",
     LS_VALUE_TYPE_PERSON => "person",
+    LS_VALUE_TYPE_SIGNATURE => "signature",
 };
 
 1;

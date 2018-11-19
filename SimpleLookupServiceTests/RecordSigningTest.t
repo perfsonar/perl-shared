@@ -40,7 +40,7 @@ my $x509 = Crypt::OpenSSL::X509->new_from_file($certificate);
 
 my $public_key = $x509->pubkey();
 #
-is($record->verify($public_key), 0, "verify signing of records");
+is($record->verify($public_key), 0, "verify signature in records");
 
 sub _get_key_string {
 	my ($key_file) = @_;
@@ -51,5 +51,6 @@ sub _get_key_string {
 	}
 	return $key_string;
 }
+
 
 
