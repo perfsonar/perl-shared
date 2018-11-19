@@ -15,6 +15,10 @@ use warnings;
 
 our $VERSION = 3.3;
 
+use Carp qw(cluck);
+use SimpleLookupService::Keywords::Values;
+use Params::Validate qw( :all );
+
 use base 'SimpleLookupService::Records::Record';
 
 my $DIGEST = "sha256";
