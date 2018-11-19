@@ -122,7 +122,7 @@ sub start {
     
     #set match addresses if any
     if(@{$self->match_addresses()} > 0){
-        my %match_addresses_map = map { $_ => 1 } @{$self->match_addresses()};
+        my %match_addresses_map = map { lc($_) => 1 } @{$self->match_addresses()};
         $self->_set_match_addresses_map(\%match_addresses_map);
     }else{
         $self->_set_match_addresses_map(undef);
@@ -445,10 +445,10 @@ sub _is_matching_address{
     
     if($address->_parent_address()){
         #if parent is set, then must match parent, otherwise no match
-        if($self->_match_addresses_map()->{$address->_parent_address()}){
+        if($self->_match_addresses_map()->{lc($address->_parent_address())}){
             return 1;
         }
-    }elsif($self->_match_addresses_map()->{$address->address()}){
+    }elsif($self->_match_addresses_map()->{lc($address->address())}){
         #no parent set, so match address
         return 1;
     }
