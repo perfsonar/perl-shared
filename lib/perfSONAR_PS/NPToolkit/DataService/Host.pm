@@ -270,11 +270,11 @@ sub get_details {
             alarm(0);
         };
         if($@){
-            $logger->error("Unable to find host record in LS using $external_address: $@");
+            $logger->warn("Unable to find host record in LS using $external_address: $@");
         }elsif($is_registered){
-            $logger->error("Found host record in LS using $external_address");
+            $logger->info("Found host record in LS using $external_address");
         }else{
-            $logger->error("Unable to find host record in LS using $external_address");
+            $logger->warn("Unable to find host record in LS using $external_address");
         }
     }
 
@@ -289,11 +289,11 @@ sub get_details {
             alarm(0);
         };
         if($@){
-            $logger->error("Unable to find host record in LS using hostname " . ( $hostname ? $hostname : "hostname" ) . ": $@");
+            $logger->warn("Unable to find host record in LS using hostname " . ( $hostname ? $hostname : "hostname" ) . ": $@");
         }elsif($is_registered){
-            $logger->error("Found host record in LS using $hostname");
+            $logger->info("Found host record in LS using $hostname");
         }else{
-            $logger->error("Unable to find host record in LS using hostname " . ( $hostname ? $hostname : "hostname" ));
+            $logger->warn("Unable to find host record in LS using hostname " . ( $hostname ? $hostname : "hostname" ));
         }
     }
 
