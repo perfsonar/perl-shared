@@ -38,9 +38,6 @@ Requires:       perl(IO::Socket::INET6)
 Requires:		perl(IPC::Run3)
 Requires:		perl(JSON::XS)
 Requires:		perl(Log::Log4perl)
-Requires:		perl(Mojo::Message::Response)
-Requires:		perl(Mojo::Transaction::HTTP)
-Requires:		perl(Mojo::UserAgent)
 Requires:		perl(Net::CIDR)
 Requires:		perl(Net::DNS)
 Requires:		perl(Net::IP)
@@ -57,6 +54,7 @@ Requires:		perl(URI)
 Requires:		perl(URI::Split)
 Requires:		perl(URI::URL)
 Requires:		perl(XML::LibXML)
+Requires:		perl-Mojolicious >= 7.80
 Requires:		perfsonar-common
 Requires:		iproute
 Requires:		jq
