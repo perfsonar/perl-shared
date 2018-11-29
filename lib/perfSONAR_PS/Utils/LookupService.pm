@@ -2,6 +2,10 @@ package perfSONAR_PS::Utils::LookupService;
 
 use strict;
 use warnings;
+use FindBin qw($RealBin);
+
+
+#use lib "$RealBin/../../../lib";
 
 our $VERSION = 3.3;
 
@@ -30,8 +34,14 @@ use SimpleLookupService::Client::Query;
 use perfSONAR_PS::Client::Utils qw(send_http_request);
 use URI;
 use Data::UUID;
+use Config::General;
 
 our @EXPORT_OK = qw( lookup_services_latency_diff discover_lookup_services discover_primary_lookup_service lookup_service_is_active is_host_registered get_client_uuid set_client_uuid);
+my $basedir = "$RealBin/../../../../";
+
+my $config_file = $basedir . '/web-ng/etc/web_admin.conf';
+my $conf_obj = Config::General->new( -ConfigFile => $config_file );
+our %conf = $conf_obj->getall;
 
 my $logger = get_logger(__PACKAGE__);
 
@@ -100,7 +110,7 @@ sub lookup_services_latency_diff {
 sub discover_lookup_services {
     my $parameters = validate( @_, { locator_urls => 0} );
     my $locator_urls = $parameters->{locator_urls};
-    $locator_urls = [ "http://ps1.es.net:8096/lookup/activehosts.json" ] unless ($locator_urls);
+    $locator_urls = [ $conf{active_hosts} ] unless ($locator_urls);
 
     my @active_hosts = ();
 
