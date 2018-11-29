@@ -1,12 +1,15 @@
-package SimpleLookupService::Records::Security::Signature;
+package SimpleLookupService::QueryObjects::Security::SignatureQueryObject;
+
+use strict;
+use warnings FATAL => 'all';
+
 =head1 NAME
 
-SimpleLookupService::Records::Security::Signature - Class that deals with signature details
+SimpleLookupService::QueryObjects::Security::SignatureQueryObject - Query Object for signature
 
 =head1 DESCRIPTION
 
-A base class for registering signature information. Defines fields to register x509 certificate location, signature encoding, digest, etc
-another record
+Query Object for signature records.
 
 =cut
 
@@ -15,30 +18,18 @@ use warnings;
 
 our $VERSION = 3.3;
 
-use Carp qw(cluck);
-use SimpleLookupService::Keywords::Values;
+use base 'SimpleLookupService::QueryObjects::QueryObject';
+
 use Params::Validate qw( :all );
+use JSON qw( encode_json decode_json);
+use SimpleLookupService::Keywords::KeyNames;
+use SimpleLookupService::Keywords::Values;
 
-use base 'SimpleLookupService::Records::Record';
-
-my $DIGEST = "sha256";
-my $SIGNATURE_ENCODING = "base64";
 
 sub init {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, {x509certificate => 1 } );
 
     $self->SUPER::init(type=>(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_SIGNATURE));
-    $self->setDigest($DIGEST);
-    $self->setSignatureEncoding($SIGNATURE_ENCODING);
-
-    if(defined $parameters{x509certificate}){
-        my $ret = $self->setCertificate($parameters{x509certificate});
-        if($ret <0){
-            cluck "Error initializing certificate";
-            return $ret;
-        }
-    }
 
     return 0;
 }
