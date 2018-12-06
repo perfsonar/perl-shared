@@ -196,7 +196,7 @@ sub reverse_dns_multi {
     $end_time = time + $parameters->{timeout};
 
     my $res   = Net::DNS::Resolver->new;
-
+    my %results = ();
     my @socket_map = ();
 
     foreach my $addr (@{ $parameters->{addresses} }) {
@@ -206,9 +206,8 @@ sub reverse_dns_multi {
 
         my %pair = ( socket => $bgsock, address => $addr );
         push @socket_map, \%pair;
+        $results{$addr} = [];
     }
-
-    my %results = ();
 
     while(@socket_map) {
         my $sel = IO::Select->new();
