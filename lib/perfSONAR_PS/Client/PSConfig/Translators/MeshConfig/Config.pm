@@ -6,6 +6,7 @@ use JSON::Validator;
 #Ignore warning related to re-defining host verification method used by JSON::Validator
 no warnings 'redefine';
 use Data::Validate::Domain;
+use Data::Validate::IP qw(is_ipv6);
 
 use perfSONAR_PS::Client::PSConfig::Archive;
 use perfSONAR_PS::Client::PSConfig::Addresses::Address;
@@ -222,7 +223,17 @@ sub _convert_toolkit_url {
     my ($self, $obj, $meta) = @_;
     
     if($obj->{'toolkit_url'}){
-        $meta->{'ps-toolkit-url'} = $obj->{'toolkit_url'};
+        if(lc($obj->{'toolkit_url'}) eq 'auto' && 
+                $obj->{'addresses'} &&
+                ref($obj->{'addresses'}) eq 'ARRAY' &&
+                @{$obj->{'addresses'}} > 0 
+        ){
+            my $url_address = $obj->{'addresses'}->[0];
+            $url_address = '[' . $url_address . ']' if(is_ipv6($url_address));
+            $meta->{'ps-toolkit-url'} = "https://$url_address/toolkit" if($url_address);
+        }else{
+            $meta->{'ps-toolkit-url'} = $obj->{'toolkit_url'};
+        }
     }
 }
 
