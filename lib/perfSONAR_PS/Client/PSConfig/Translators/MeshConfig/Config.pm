@@ -6,6 +6,7 @@ use JSON::Validator;
 #Ignore warning related to re-defining host verification method used by JSON::Validator
 no warnings 'redefine';
 use Data::Validate::Domain;
+use Data::Validate::IP qw(is_ipv6);
 
 use perfSONAR_PS::Client::PSConfig::Archive;
 use perfSONAR_PS::Client::PSConfig::Addresses::Address;
@@ -222,7 +223,17 @@ sub _convert_toolkit_url {
     my ($self, $obj, $meta) = @_;
     
     if($obj->{'toolkit_url'}){
-        $meta->{'ps-toolkit-url'} = $obj->{'toolkit_url'};
+        if(lc($obj->{'toolkit_url'}) eq 'auto' && 
+                $obj->{'addresses'} &&
+                ref($obj->{'addresses'}) eq 'ARRAY' &&
+                @{$obj->{'addresses'}} > 0 
+        ){
+            my $url_address = $obj->{'addresses'}->[0];
+            $url_address = '[' . $url_address . ']' if(is_ipv6($url_address));
+            $meta->{'ps-toolkit-url'} = "https://$url_address/toolkit" if($url_address);
+        }else{
+            $meta->{'ps-toolkit-url'} = $obj->{'toolkit_url'};
+        }
     }
 }
 
@@ -706,7 +717,7 @@ sub convert_psb_bwctl {
     $psconfig_schedule->repeat($self->_seconds_to_iso($test_params->{'interval'})) if($test_params->{'interval'});
     if($test_params->{'slip'}){
         $psconfig_schedule->slip($self->_seconds_to_iso($test_params->{'slip'}));
-    }elsif($test_params->{'interval'}){
+    }elsif($test_params->{'random_start_percentage'} && $test_params->{'interval'}){
         if($test_params->{'interval'} > 43200){
             $psconfig_schedule->slip($self->_seconds_to_iso(43200));
         }else{
@@ -786,7 +797,7 @@ sub convert_pinger {
     $psconfig_schedule->repeat($self->_seconds_to_iso($test_params->{'test_interval'})) if($test_params->{'test_interval'});
     if($test_params->{'slip'}){
         $psconfig_schedule->slip($self->_seconds_to_iso($test_params->{'slip'}));
-    }elsif($test_params->{'test_interval'}){
+    }elsif($test_params->{'random_start_percentage'} && $test_params->{'test_interval'}){
         if($test_params->{'test_interval'} > 43200){
             $psconfig_schedule->slip($self->_seconds_to_iso(43200));
         }else{
@@ -837,7 +848,7 @@ sub convert_simplestream {
     $psconfig_schedule->repeat($self->_seconds_to_iso($test_params->{'interval'})) if($test_params->{'interval'});
     if($test_params->{'slip'}){
         $psconfig_schedule->slip($self->_seconds_to_iso($test_params->{'slip'}));
-    }elsif($test_params->{'interval'}){
+    }elsif($test_params->{'random_start_percentage'} && $test_params->{'interval'}){
         if($test_params->{'interval'} > 43200){
             $psconfig_schedule->slip($self->_seconds_to_iso(43200));
         }else{
@@ -890,7 +901,7 @@ sub convert_trace {
     $psconfig_schedule->repeat($self->_seconds_to_iso($test_params->{'test_interval'})) if($test_params->{'test_interval'});
     if($test_params->{'slip'}){
         $psconfig_schedule->slip($self->_seconds_to_iso($test_params->{'slip'}));
-    }elsif($test_params->{'test_interval'}){
+    }elsif($test_params->{'random_start_percentage'} && $test_params->{'test_interval'}){
         if($test_params->{'test_interval'} > 43200){
             $psconfig_schedule->slip($self->_seconds_to_iso(43200));
         }else{
