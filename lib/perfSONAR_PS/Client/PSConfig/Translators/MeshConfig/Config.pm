@@ -580,6 +580,15 @@ sub _convert_tests {
                 foreach my $b_member(@{$test->{'members'}->{'b_members'}}){
                     $psconfig_group->add_b_address($self->_build_address_selector($b_member));
                 }
+            }elsif($test->{'members'}->{'type'} eq 'star'){
+                $psconfig_group = new perfSONAR_PS::Client::PSConfig::Groups::Disjoint();
+                $psconfig_group->default_address_label($test->{'members'}->{'address_map_field'}) if($test->{'members'}->{'address_map_field'});
+                if($test->{'members'}->{'center_address'}){
+                    $psconfig_group->add_a_address($self->_build_address_selector($test->{'members'}->{'center_address'}));
+                }
+                foreach my $b_member(@{$test->{'members'}->{'members'}}){
+                    $psconfig_group->add_b_address($self->_build_address_selector($b_member));
+                }
             }else{
                 #ignore ordered mesh or anything else
                 next;
