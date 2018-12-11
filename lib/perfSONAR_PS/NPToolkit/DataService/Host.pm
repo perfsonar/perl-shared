@@ -379,7 +379,7 @@ sub get_details {
 
     # get more Host info
     my $host_info = get_dmi_info();
-    $status->{is_vm} = $host_info->{is_virtual_machine}? "true":"false";
+    $status->{is_vm} = $host_info->{is_virtual_machine}? JSON::true : JSON::false;
     $status->{product_name} = $host_info->{product_name};
     $status->{sys_vendor} = $host_info->{sys_vendor};
 
@@ -413,7 +413,7 @@ sub get_ntp_information{
     my $response = get_ntp_info();
     my $ntp = get_service_object("ntp");
     if($sum_version == 2){
-       $response->{synchronized} = $ntp->is_synced()? "true":"false";
+       $response->{synchronized} = $ntp->is_synced()? JSON::true : JSON::false;
        $response->{when} = int($response->{when});
        $response->{reach} = int($response->{reach});
        $response->{polling_interval} = int($response->{polling_interval});
@@ -507,7 +507,7 @@ sub get_services {
         }
         my $is_running_output;
         if($sum_version == 2){
-           $is_running_output = ($is_running)?"true":"false";
+           $is_running_output = ($is_running)? JSON::true : JSON::false;
         }
         else{
            $is_running_output = ($is_running)?"yes":"no";
@@ -521,7 +521,7 @@ sub get_services {
         }
         my $enabled;
         if($sum_version == 2){
-           $enabled = (not $service->disabled)?"true":"false";
+           $enabled = (not $service->disabled)? JSON::true : JSON::false;
         }
         else{
            $enabled = (not $service->disabled) || 0;
