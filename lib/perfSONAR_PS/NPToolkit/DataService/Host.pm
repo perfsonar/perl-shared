@@ -259,6 +259,7 @@ sub get_details {
     
     $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/lsregistrationdaemon/client_uuid');
 
+    
     my $logger = $self->{LOGGER};
     my $disable_ls_lookup = int($conf{disable_ls_lookups}); 
     # Check whether globally registered
@@ -269,7 +270,12 @@ sub get_details {
             local $SIG{ALRM} = sub { die "Timeout" };
             alarm(5);
             if($disable_ls_lookup != 1){
-                $is_registered = is_host_registered($external_address);
+                if($conf{active_hosts}){
+                    $is_registered = is_host_registered($external_address, $conf{active_hosts}); 
+                }
+                else{
+                    $is_registered = is_host_registered($external_address);
+                }
             }
             
             alarm(0);
@@ -283,6 +289,7 @@ sub get_details {
         }
     }
 
+    
     #try hostname if not registered
     unless($is_registered){
         my $hostname = ""; 
@@ -291,7 +298,13 @@ sub get_details {
             alarm(5);
             $hostname = hostname;
             if($disable_ls_lookup != 1){
-                $is_registered = is_host_registered(hostname);
+                
+                if($conf{active_hosts}){
+                    $is_registered = is_host_registered(hostname, $conf{active_hosts});
+                }
+                else{
+                    $is_registered = is_host_registered(hostname);
+                }
             }
             alarm(0);
         };

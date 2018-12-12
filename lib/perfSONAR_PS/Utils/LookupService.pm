@@ -37,20 +37,22 @@ use Data::UUID;
 use Config::General;
 
 our @EXPORT_OK = qw( lookup_services_latency_diff discover_lookup_services discover_primary_lookup_service lookup_service_is_active is_host_registered get_client_uuid set_client_uuid);
-my $basedir = "$RealBin/../../../../";
 
-my $config_file = $basedir . '/web-ng/etc/web_admin.conf';
-my $conf_obj = Config::General->new( -ConfigFile => $config_file );
-our %conf = $conf_obj->getall;
 
 my $logger = get_logger(__PACKAGE__);
 
 sub discover_primary_lookup_service {
+    #ls url
+    my $conf_url = $_[0] if $_[0];
     my $parameters = validate( @_, { locator_urls => 0, lookup_services => 0 } );
     my $locator_urls = $parameters->{locator_urls};
     my $lookup_services =  $parameters->{lookup_services};
-    $lookup_services = discover_lookup_services(locator_urls => $locator_urls) unless($lookup_services);
-
+    if(defined $conf_url){
+        $lookup_services = discover_lookup_services($conf_url, locator_urls => $locator_urls) unless($lookup_services);
+    }
+    else{
+        $lookup_services = discover_lookup_services(locator_urls => $locator_urls) unless($lookup_services);
+    }
     my ($primary_ls, $primary_ls_latency, $primary_ls_priority);
 
     foreach my $ls_info (@$lookup_services) {
@@ -108,10 +110,16 @@ sub lookup_services_latency_diff {
 }
 
 sub discover_lookup_services {
+    #ls url
+    my $conf_url = $_[0] if (scalar(@_) > 1); 
     my $parameters = validate( @_, { locator_urls => 0} );
     my $locator_urls = $parameters->{locator_urls};
-    $locator_urls = [ $conf{active_hosts} ] unless ($locator_urls);
-
+    if(defined $conf_url){
+        $locator_urls = [ $conf_url ] unless ($locator_urls);
+    }
+    else{
+        $locator_urls = [ "http://ps1.es.net:8096/lookup/activehosts.json" ] unless ($locator_urls);
+    }
     my @active_hosts = ();
 
     foreach my $url (@$locator_urls) {
@@ -161,9 +169,14 @@ sub discover_lookup_services {
 
 sub is_host_registered{
     my ($address) = @_;
-     
-    my $ls_url = discover_primary_lookup_service();
-
+    my $ls_url;
+    #configurable url from web_admin.conf
+    if(scalar(@_) > 1){
+        $ls_url = discover_primary_lookup_service($_[1]);
+    }
+    else{ 
+        $ls_url = discover_primary_lookup_service();
+    }
     if (! $ls_url){
 	$logger->error("Unable to determine ls_url");
 	return;
