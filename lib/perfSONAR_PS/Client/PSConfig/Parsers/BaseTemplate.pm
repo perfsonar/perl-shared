@@ -73,6 +73,10 @@ sub expand {
         $json =~ s/\{%\s+\Q${template_var}\E\s+%\}/$template_var_map{$template_var}/g;
     }
     
+    # post processing
+    ##bracket IPv6 URLs
+    $json = $self->_bracket_ipv6_url($json);
+    
     #convert back to object
     my $expanded_obj;
     eval{$expanded_obj = from_json($json)};
@@ -109,6 +113,31 @@ sub _parse_jq {
     }
     
     return $result;
+}
+
+sub _bracket_ipv6_url {
+    my ($self, $json) = @_;
+    
+    my $IPv4 = "((25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2})[.](25[0-5]|2[0-4][0-9]|[0-1]?[0-9]{1,2}))";
+    my $G = "[0-9a-fA-F]{1,4}";
+
+    my @tail = ( ":",
+	     "(:($G)?|$IPv4)",
+             ":($IPv4|$G(:$G)?|)",
+             "(:$IPv4|:$G(:$IPv4|(:$G){0,2})|:)",
+	     "((:$G){0,2}(:$IPv4|(:$G){1,2})|:)",
+	     "((:$G){0,3}(:$IPv4|(:$G){1,2})|:)",
+	     "((:$G){0,4}(:$IPv4|(:$G){1,2})|:)" );
+
+
+    my $IPv6_re = $G;
+    $IPv6_re = "$G:($IPv6_re|$_)" for @tail;
+    $IPv6_re = qq/:(:$G){0,5}((:$G){1,2}|:$IPv4)|$IPv6_re/;
+    $IPv6_re =~ s/\(/(?:/g;
+    $IPv6_re = qr/$IPv6_re/;
+    $json =~ s/(https?)\:\/\/($IPv6_re)/$1:\/\/[$2]/gm;
+    
+    return $json;
 }
 
 
