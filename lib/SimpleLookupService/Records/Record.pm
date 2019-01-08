@@ -20,12 +20,14 @@ use warnings;
 our $VERSION = 3.3;
 
 use Params::Validate qw( :all );
-use JSON qw( encode_json decode_json);
+
 use SimpleLookupService::Keywords::KeyNames;
 use DateTime::Format::ISO8601;
 use Carp qw(cluck);
 
-use fields 'RECORD_HASH';
+use SimpleLookupService::Utils::Time qw(minutes_to_iso iso_to_minutes is_iso iso_to_unix);
+
+use base 'SimpleLookupService::Message';
 
 sub new {
     my $package = shift;
@@ -91,7 +93,7 @@ sub init {
     		$tmp = $parameters{ttl};
     	}
     	
-    	if($self->_is_iso($tmp)){
+    	if(is_iso($tmp)){
     		$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [$tmp];
     	}else{
     		cluck "Record TTL should be iso";
@@ -140,10 +142,7 @@ sub getValue {
     
 }
 
-sub getRecordHash {
-    my $self = shift;
-    return $self->{RECORD_HASH};
-}
+
 
 sub getRecordType {
     my $self = shift;
@@ -170,11 +169,11 @@ sub getRecordTtlAsIso {
     my $value = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)}->[0];
     
     if(defined $value){
-	    if($self->_is_iso($value)){
+	    if(is_iso($value)){
 	    	return [$value];
 	    	
 	    }else{
-	    	my $tmp = $self->_minutes_to_iso($value);
+	    	my $tmp = minutes_to_iso($value);
 	
 	    	return [$tmp];
 	    }
@@ -199,7 +198,7 @@ sub setRecordTtlAsIso {
     	$ttl = $value;
     }
     
-    if($self->_is_iso($ttl)){
+    if(is_iso($ttl)){
     	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [$ttl];
     }else{
     	cluck "Record Ttl not in ISO 8601 format";
@@ -214,8 +213,8 @@ sub getRecordTtlInMinutes {
     my $value = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)}->[0];
     
     if(defined $value){
-	    if($self->_is_iso($value)){
-	    	my $tmp = $self->_iso_to_minutes($value);
+	    if(is_iso($value)){
+	    	my $tmp = iso_to_minutes($value);
 	
 	    	return [$tmp];
 	    }else{
@@ -243,12 +242,12 @@ sub setRecordTtlInMinutes {
     	$ttl = $value;
     }
     
-    if($self->_is_iso($ttl)){
+    if(is_iso($ttl)){
     	cluck "Record Ttl should be in minutes (integer)";
     	return -1;
     }else{
     	
-    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [$self->_minutes_to_iso($ttl)];
+    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [minutes_to_iso($ttl)];
     }  
     
     return 0;
@@ -260,7 +259,7 @@ sub getRecordExpiresAsUnixTS {
     my $expires = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)};
     
     if (defined $expires){
-    	my $unixts = $self->_isoToUnix($expires);
+    	my $unixts = iso_to_unix($expires->[0]);
     	return [$unixts];
     }else{
     	return undef;
@@ -322,126 +321,6 @@ sub setRecordClientUUID {
 	}
     $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_CLIENT_UUID)} = $value;
     return 0;
-}
-
-sub toJson(){
-	my $self = shift;
-	
-	if(defined $self->getRecordHash()){
-		return encode_json($self->getRecordHash());
-	}else{
-		return undef;
-	}
-	
-}
-
-#creates record object from json
-sub fromJson(){
-	my ($self, $jsonData) = @_;
-	
-	if(defined $jsonData && $jsonData ne ''){
-		my $perlDS = decode_json($jsonData);
-		$self->fromHashRef($perlDS);
-		return 0;
-	}else{
-		cluck "Error creating record. empty data";
-		return -1;
-	}
-	
-}
-
-#creates record object from perl data structure
-sub fromHashRef(){
-	my ($self, $perlDS) = @_;
-	
-	if(defined $perlDS){
-		foreach my $key (keys %{$perlDS}){
-			$self->{RECORD_HASH}->{$key} = ${perlDS}->{$key};
-		}
-	}else{
-		cluck "Error creating record. Empty hash";
-		return -1;
-	}
-	
-	
-	return 0;
-}
-
-
-sub _is_iso{
-	my ($self, $value) = @_;
-	
-	($value =~ m/P\w*T/)?return 1: return 0;
-}
-
-sub _minutes_to_iso{
-	my ($self, $ttl) = @_;
-    
-    if(defined $ttl && $ttl eq ''){
-    	cluck "Empty ttl";
-    	return undef;
-    }
-    
-    my $isottl;
-   
-    if($ttl =~ m/P\w*T/){
-    	cluck "Found iso format";
-    	return undef;
-    }
-    $isottl = "PT". $ttl ."M";
-    
-    return $isottl;
-}
-
-sub _iso_to_minutes{
-	my ($self, $value) = @_;
-	
-	if(!defined $value){
-		return undef;
-	}
-	my @splitDuration = split(/T/, $value);
-	
-	my %dHash = (
-		   "Y" => 525600,
-			"M" => 43200,
-			"W"  => 10080,
-			"D" => 1440);
-			
-	my %tHash = (
-		   "H" => 60,
-			"M" => 1,
-			"S"  => 0.0167 );
-			
-	$splitDuration[0] =~ tr/P//d;
-	
-	my $minutes = 0;
-	foreach my $key (keys %dHash){
-			$splitDuration[0] =~ m/(\d+)$key/;
-			 $minutes += $dHash{$key}*$1 if $1;
-	}
-	
-	if(scalar @splitDuration ==2){
-		
-		foreach my $key (keys %tHash){
-			$splitDuration[1] =~ m/(\d+)$key/;
-			$minutes += $tHash{$key}*$1 if $1;
-		}
-	}
-	
-	($minutes>0)?return int($minutes+0.5):return undef;	
-	
-}
-
-
-=head2 _isoToUnix($self { uri, base})
-
-Converts a given ISO 8601 date string to a unix timestamp
-
-=cut
-sub _isoToUnix {
-    my ($self, $str) = @_;
-    my $dt = DateTime::Format::ISO8601->parse_datetime($str);
-    return $dt->epoch();
 }
 
 
