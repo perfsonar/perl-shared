@@ -98,4 +98,10 @@ use constant {
     LS_KEY_PERSON_ORGANIZATION => "person-organization",  
 };
 
+
+#bulk renew
+use constant {
+	LS_KEY_BULKRENEW_RECORDSURIS => "record-uris",
+};
+
 1;
