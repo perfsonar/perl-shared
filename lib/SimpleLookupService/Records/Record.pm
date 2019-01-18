@@ -256,10 +256,18 @@ sub setRecordTtlInMinutes {
 
 sub getRecordExpiresAsUnixTS {
     my $self = shift;
-    my $expires = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)};
-    
+    my $expires = '';
+
+    my $value = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)};
+    if(ref($value) eq 'ARRAY'){
+        $expires = $value->[0];
+    }else{
+        $expires = $value;
+    }
+
+
     if (defined $expires){
-    	my $unixts = iso_to_unix($expires->[0]);
+        my $unixts = iso_to_unix($expires);
     	return [$unixts];
     }else{
     	return undef;
