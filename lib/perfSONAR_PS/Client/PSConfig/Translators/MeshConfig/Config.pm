@@ -6,6 +6,7 @@ use JSON::Validator;
 #Ignore warning related to re-defining host verification method used by JSON::Validator
 no warnings 'redefine';
 use Data::Validate::Domain;
+use Data::Validate::IP qw(is_ipv6);
 
 use perfSONAR_PS::Client::PSConfig::Archive;
 use perfSONAR_PS::Client::PSConfig::Addresses::Address;
@@ -222,7 +223,17 @@ sub _convert_toolkit_url {
     my ($self, $obj, $meta) = @_;
     
     if($obj->{'toolkit_url'}){
-        $meta->{'ps-toolkit-url'} = $obj->{'toolkit_url'};
+        if(lc($obj->{'toolkit_url'}) eq 'auto' && 
+                $obj->{'addresses'} &&
+                ref($obj->{'addresses'}) eq 'ARRAY' &&
+                @{$obj->{'addresses'}} > 0 
+        ){
+            my $url_address = $obj->{'addresses'}->[0];
+            $url_address = '[' . $url_address . ']' if(is_ipv6($url_address));
+            $meta->{'ps-toolkit-url'} = "https://$url_address/toolkit" if($url_address);
+        }else{
+            $meta->{'ps-toolkit-url'} = $obj->{'toolkit_url'};
+        }
     }
 }
 
@@ -567,6 +578,15 @@ sub _convert_tests {
                     $psconfig_group->add_a_address($self->_build_address_selector($a_member));
                 }
                 foreach my $b_member(@{$test->{'members'}->{'b_members'}}){
+                    $psconfig_group->add_b_address($self->_build_address_selector($b_member));
+                }
+            }elsif($test->{'members'}->{'type'} eq 'star'){
+                $psconfig_group = new perfSONAR_PS::Client::PSConfig::Groups::Disjoint();
+                $psconfig_group->default_address_label($test->{'members'}->{'address_map_field'}) if($test->{'members'}->{'address_map_field'});
+                if($test->{'members'}->{'center_address'}){
+                    $psconfig_group->add_a_address($self->_build_address_selector($test->{'members'}->{'center_address'}));
+                }
+                foreach my $b_member(@{$test->{'members'}->{'members'}}){
                     $psconfig_group->add_b_address($self->_build_address_selector($b_member));
                 }
             }else{
