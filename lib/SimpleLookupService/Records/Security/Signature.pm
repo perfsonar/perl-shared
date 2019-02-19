@@ -26,14 +26,14 @@ my $SIGNATURE_ENCODING = "base64";
 
 sub init {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, {x509certificate => 1 } );
+    my %parameters = validate( @args, {certificate => 1 } );
 
     $self->SUPER::init(type=>(SimpleLookupService::Keywords::Values::LS_VALUE_TYPE_SIGNATURE));
     $self->setDigest($DIGEST);
     $self->setSignatureEncoding($SIGNATURE_ENCODING);
 
-    if(defined $parameters{x509certificate}){
-        my $ret = $self->setCertificate($parameters{x509certificate});
+    if(defined $parameters{certificate}){
+        my $ret = $self->setCertificate($parameters{certificate});
         if($ret <0){
             cluck "Error initializing certificate";
             return $ret;

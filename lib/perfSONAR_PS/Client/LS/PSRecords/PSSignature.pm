@@ -22,9 +22,9 @@ use JSON qw( encode_json decode_json);
 
 sub init {
     my ( $self, @args ) = @_;
-    my %parameters = validate( @args, {x509certificate => 1 } );
-    
-    $self->SUPER::init(%parameters); 
-    
+    my %parameters = validate( @args, {certificate => 1 } );
+
+    $self->SUPER::init(%parameters);
+
     return 0;
 }
