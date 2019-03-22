@@ -112,6 +112,9 @@ Requires:		perl(Mouse)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
 Requires:		perl(URI::Split)
+Requires:   perl(Crypt::OpenSSL::RSA)
+Requires:   perl(Crypt::OpenSSL::X509)
+Requires:   perl(MIME::Base64)
 Requires:		perfsonar-common
 Requires:		libperfsonar-perl
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library

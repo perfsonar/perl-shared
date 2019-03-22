@@ -169,7 +169,7 @@ $record = SimpleLookupService::Records::Record->new();
 is($record->setRecordTtlAsIso(['PT60M']), 0,"setRecordTtlAsIso() - pass ISO string array");
 
 
-#setRecordTtlAsIso() - pass minutes 
+#setRecordTtlAsIso() - pass minutes
 $record = SimpleLookupService::Records::Record->new();
 is($record->setRecordTtlAsIso(60), -1, "setRecordTtlAsIso() - pass minutes");
 
@@ -196,7 +196,7 @@ cmp_deeply($record->getRecordTtlAsIso(), undef, "getRecordTtlAsIso - empty recor
 
 
 #setRecordTtlInMinutes tests
-#setRecordTtlInMinutes() - pass minutes 
+#setRecordTtlInMinutes() - pass minutes
 $record = SimpleLookupService::Records::Record->new();
 is($record->setRecordTtlInMinutes(60), 0, "setRecordTtlInMinutes() - pass minutes");
 
@@ -232,7 +232,7 @@ cmp_deeply($record->getRecordTtlInMinutes(), undef, "getRecordTtlInMinutes - emp
 #check toJson - if test fails, check result manually and comment out test
 $record = SimpleLookupService::Records::Record->new();
 $record->init({type=>'sometype', uri=>'lookup/service/aadbce-12345-adf34', expires=>'2012-12-12:23-33-23Z', ttl=>'PT30M'});
-is($record->toJson(), '{"ttl":["PT30M"],"type":["sometype"],"uri":["lookup/service/aadbce-12345-adf34"],"expires":["2012-12-12:23-33-23Z"]}', "toJson() - converts record object to Json");
+is($record->toJson(), '{"expires":["2012-12-12:23-33-23Z"],"ttl":["PT30M"],"type":["sometype"],"uri":["lookup/service/aadbce-12345-adf34"]}', "toJson() - converts record object to Json");
 
 ##check toJson - null value
 $record = SimpleLookupService::Records::Record->new();
@@ -243,7 +243,7 @@ is($record->toJson(), undef, "toJson() - converts record object to Json");
 my $json = '{"ttl":["PT30M"],"type":["sometype"],"uri":["lookup/service/aadbce-12345-adf34"],"expires":["2012-12-12:23-33-23Z"]}';
 $record = SimpleLookupService::Records::Record->new();
 is($record->fromJson($json), 0, "fromJson() - creates record object from Json");
-is($record->toJson(), '{"ttl":["PT30M"],"type":["sometype"],"uri":["lookup/service/aadbce-12345-adf34"],"expires":["2012-12-12:23-33-23Z"]}', "toJson() - converts record object to Json");
+is($record->toJson(), '{"expires":["2012-12-12:23-33-23Z"],"ttl":["PT30M"],"type":["sometype"],"uri":["lookup/service/aadbce-12345-adf34"]}', "toJson() - converts record object to Json");
 
 $json = '';
 $record = SimpleLookupService::Records::Record->new();
@@ -256,12 +256,12 @@ my $perlDS = {
 	"ttl"=>["PT30M"],
 	"type"=>["sometype1"],
 	"uri"=>["lookup/service/aadbce-12345-adf34"],
-	"expires"=>["2012-12-12:23-33-23Z"]	
+	"expires"=>["2012-12-12:23-33-23Z"]
 };
 
 $record = SimpleLookupService::Records::Record->new();
 is($record->fromHashRef($perlDS), 0, "fromHashRef() - creates record object from Hash");
-is($record->toJson(), '{"ttl":["PT30M"],"type":["sometype1"],"uri":["lookup/service/aadbce-12345-adf34"],"expires":["2012-12-12:23-33-23Z"]}', "toJson() - converts record object to Json");
+is($record->toJson(), '{"expires":["2012-12-12:23-33-23Z"],"ttl":["PT30M"],"type":["sometype1"],"uri":["lookup/service/aadbce-12345-adf34"]}', "toJson() - converts record object to Json");
 
 
 #_is_iso
@@ -308,3 +308,7 @@ is($record->_minutes_to_iso($ts), undef, "_minutes_to_iso() - returns undef");
 $record = SimpleLookupService::Records::Record->new();
 $ts = "2012-12-17T10:14:03.208Z";
 is($record->_isoToUnix($ts), '1355739243', "_isToUnix() - returns 1355739243");
+
+
+
+
