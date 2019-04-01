@@ -1,7 +1,9 @@
 Source: libperfsonar-perl
 Section: perl
 Priority: extra
-Maintainer: Valentin Vidic <Valentin.Vidic@CARNet.hr>
+Maintainer: perfSONAR developers <debian@perfsonar.net>
+Uploaders: Antoine Delvaux <antoine.delvaux@man.poznan.pl>,
+ Valentin Vidic <Valentin.Vidic@CARNet.hr>
 Build-Depends: debhelper (>= 9.0.0), perl, libdata-validate-domain-perl,
  libdata-validate-ip-perl, libipc-run-perl, libjson-perl, libjson-validator-perl,
  liblog-log4perl-perl, libmouse-perl, libnet-cidr-perl, libnet-dns-perl,
