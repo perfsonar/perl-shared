@@ -1,16 +1,17 @@
 %define install_base /usr/lib/perfsonar/
 %define config_base  /etc/perfsonar
 
-%define relnum  1 
+%define perfsonar_auto_version 4.1.6
+%define perfsonar_auto_relnum 1
 
 Name:			libperfsonar
-Version:		4.1.3
-Release:		%{relnum}%{?dist}
+Version:		%{perfsonar_auto_version}
+Release:		%{perfsonar_auto_relnum}%{?dist}
 Summary:		perfSONAR Shared Libraries
 License:		ASL 2.0
 Group:			Development/Libraries
 URL:			http://www.perfsonar.net
-Source0:		libperfsonar-%{version}.%{relnum}.tar.gz
+Source0:		libperfsonar-%{version}.%{perfsonar_auto_relnum}.tar.gz
 BuildRoot:		%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:		noarch
 
@@ -38,9 +39,6 @@ Requires:       perl(IO::Socket::INET6)
 Requires:		perl(IPC::Run3)
 Requires:		perl(JSON::XS)
 Requires:		perl(Log::Log4perl)
-Requires:		perl(Mojo::Message::Response)
-Requires:		perl(Mojo::Transaction::HTTP)
-Requires:		perl(Mojo::UserAgent)
 Requires:		perl(Net::CIDR)
 Requires:		perl(Net::DNS)
 Requires:		perl(Net::IP)
@@ -57,6 +55,7 @@ Requires:		perl(URI)
 Requires:		perl(URI::Split)
 Requires:		perl(URI::URL)
 Requires:		perl(XML::LibXML)
+Requires:		perl-Mojolicious >= 7.80
 Requires:		perfsonar-common
 Requires:		iproute
 Requires:		jq
@@ -299,7 +298,7 @@ Shared libaries for perfSONAR regular testing
 /usr/sbin/useradd -g perfsonar -r -s /sbin/nologin -c "perfSONAR User" -d /tmp perfsonar 2> /dev/null || :
 
 %prep
-%setup -q -n libperfsonar-%{version}.%{relnum}
+%setup -q -n libperfsonar-%{version}.%{perfsonar_auto_relnum}
 
 %build
 
