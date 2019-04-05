@@ -37,8 +37,7 @@ Package: libperfsonar-esmond-perl
 Architecture: all
 Breaks: libperfsonar-perl (<< 3.5.1~10.rc1-1)
 Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
- libjson-perl, libmouse-perl, libparams-validate-perl, liburi-perl,
- libcrypt-openssl-rsa-perl, libcrypt-openssl-x509-perl
+ libjson-perl, libmouse-perl, libparams-validate-perl, liburi-perl
 Description: perfSONAR perl libraries for esmond
  Client libraries for perfSONAR's Meaurement Archive esmond
 
@@ -76,7 +75,8 @@ Architecture: all
 Breaks: libperfsonar-perl (<< 3.5.1~10.rc1-1)
 Depends: ${misc:Depends}, ${perl:Depends}, libossp-uuid-perl,
  libdatetime-format-iso8601-perl, libjson-perl, liblog-log4perl-perl,
- libwww-perl, libparams-validate-perl, liburi-perl, libyaml-syck-perl
+ libwww-perl, libparams-validate-perl, liburi-perl, libyaml-syck-perl,
+ libcrypt-openssl-rsa-perl, libcrypt-openssl-x509-perl
 Description: perfSONAR perl libraries for Simple Lookup Service
  Client libraries for perfSONAR's Simple Lookup Service (sLS)
 
