@@ -29,6 +29,9 @@ use Crypt::OpenSSL::RSA;
 use MIME::Base64 qw(encode_base64 decode_base64);
 
 use fields 'RECORD_HASH';
+use SimpleLookupService::Utils::Time qw(minutes_to_iso iso_to_minutes is_iso iso_to_unix);
+
+use base 'SimpleLookupService::Message';
 
 sub new {
     my $package = shift;
@@ -52,67 +55,65 @@ sub init {
     }
 
     $self->{RECORD_HASH} = {
-        (SimpleLookupService::Keywords::KeyNames::LS_KEY_TYPE) => $parameters{type}
-    };
-
-    if (defined $parameters{expires}) {
-        if (ref($parameters{expires}) eq 'ARRAY' && scalar @{$parameters{expires}} > 1) {
-            cluck "Expires array size cannot be > 1";
-            return -1;
-        }
-
-        unless (ref($parameters{expires}) eq 'ARRAY') {
-            $parameters{expires} = [ $parameters{expires} ];
-        }
-
-        $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)} = $parameters{expires};
+            (SimpleLookupService::Keywords::KeyNames::LS_KEY_TYPE) => $parameters{type}
+    }; 
+    
+    if(defined $parameters{expires}){
+    	if(ref($parameters{expires}) eq 'ARRAY' && scalar @{$parameters{expires}} > 1){
+    		cluck "Expires array size cannot be > 1";
+    		return -1;
+    	}
+    	
+    	unless(ref($parameters{expires}) eq 'ARRAY'){
+    		$parameters{expires} = [$parameters{expires}];
+    	}
+    	
+    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)} = $parameters{expires};
+    } 
+    
+    if(defined $parameters{uri} ){
+    	if(ref($parameters{uri}) eq 'ARRAY' && scalar @{$parameters{uri}} > 1){
+    		cluck "Record URI size cannot be > 1";
+    		return -1;                                           
+    	}
+    	
+    	unless(ref($parameters{uri}) eq 'ARRAY'){
+    		$parameters{uri} = [$parameters{uri}];
+    	}
+    	
+    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_URI)} = $parameters{uri};
     }
-
-    if (defined $parameters{uri}) {
-        if (ref($parameters{uri}) eq 'ARRAY' && scalar @{$parameters{uri}} > 1) {
-            cluck "Record URI size cannot be > 1";
-            return -1;
-        }
-
-        unless (ref($parameters{uri}) eq 'ARRAY') {
-            $parameters{uri} = [ $parameters{uri} ];
-        }
-
-        $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_URI)} = $parameters{uri};
+    
+    if(defined $parameters{ttl}){
+    	
+    	if(ref($parameters{ttl}) eq 'ARRAY' && scalar @{$parameters{ttl}} > 1){
+    		cluck "Record TTL size cannot be > 1";
+    		return -1;
+    	}
+    	my $tmp;
+    	if(ref($parameters{ttl}) eq 'ARRAY'){
+    		$tmp = $parameters{ttl}->[0];
+    	}else{
+    		$tmp = $parameters{ttl};
+    	}
+    	
+    	if(is_iso($tmp)){
+    		$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [$tmp];
+    	}else{
+    		cluck "Record TTL should be iso";
+    		return -1;
+    	}
+    	
+    } 
+    
+    if(defined $parameters{client_uuid} ){
+    	unless(ref($parameters{client_uuid}) eq 'ARRAY'){
+    		$parameters{client_uuid} = [$parameters{client_uuid}];
+    	}
+    	
+    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_CLIENT_UUID)} = $parameters{client_uuid};
     }
-
-    if (defined $parameters{ttl}) {
-
-        if (ref($parameters{ttl}) eq 'ARRAY' && scalar @{$parameters{ttl}} > 1) {
-            cluck "Record TTL size cannot be > 1";
-            return -1;
-        }
-        my $tmp;
-        if (ref($parameters{ttl}) eq 'ARRAY') {
-            $tmp = $parameters{ttl}->[0];
-        }
-        else {
-            $tmp = $parameters{ttl};
-        }
-
-        if ($self->_is_iso($tmp)) {
-            $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [ $tmp ];
-        }
-        else {
-            cluck "Record TTL should be iso";
-            return -1;
-        }
-
-    }
-
-    if (defined $parameters{client_uuid}) {
-        unless (ref($parameters{client_uuid}) eq 'ARRAY') {
-            $parameters{client_uuid} = [ $parameters{client_uuid} ];
-        }
-
-        $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_CLIENT_UUID)} = $parameters{client_uuid};
-    }
-
+     
     return 0;
 }
 
@@ -146,10 +147,7 @@ sub getValue {
 
 }
 
-sub getRecordHash {
-    my $self = shift;
-    return $self->{RECORD_HASH};
-}
+
 
 sub getRecordType {
     my $self = shift;
@@ -174,19 +172,18 @@ sub setRecordType {
 sub getRecordTtlAsIso {
     my $self = shift;
     my $value = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)}->[0];
-
-    if (defined $value) {
-        if ($self->_is_iso($value)) {
-            return [ $value ];
-
-        }
-        else {
-            my $tmp = $self->_minutes_to_iso($value);
-
-            return [ $tmp ];
-        }
+    
+    if(defined $value){
+	    if(is_iso($value)){
+	    	return [$value];
+	    	
+	    }else{
+	    	my $tmp = minutes_to_iso($value);
+	
+	    	return [$tmp];
+	    }
     }
-
+    
     return undef;
 
 }
@@ -200,39 +197,36 @@ sub setRecordTtlAsIso {
     }
 
     my $ttl = 0;
-    if (ref($value) eq 'ARRAY') {
-        $ttl = $value->[0];
+    if(ref($value) eq 'ARRAY'){
+    	$ttl = $value->[0];
+    }else{
+    	$ttl = $value;
     }
-    else {
-        $ttl = $value;
-    }
-
-    if ($self->_is_iso($ttl)) {
-        $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [ $ttl ];
-    }
-    else {
-        cluck "Record Ttl not in ISO 8601 format";
-        return -1;
-    }
-
+    
+    if(is_iso($ttl)){
+    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [$ttl];
+    }else{
+    	cluck "Record Ttl not in ISO 8601 format";
+    	return -1;
+    }  
+    
     return 0;
 }
 
 sub getRecordTtlInMinutes {
     my $self = shift;
     my $value = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)}->[0];
-
-    if (defined $value) {
-        if ($self->_is_iso($value)) {
-            my $tmp = $self->_iso_to_minutes($value);
-
-            return [ $tmp ];
-        }
-        else {
-            return [ $value ];
-        }
+    
+    if(defined $value){
+	    if(is_iso($value)){
+	    	my $tmp = iso_to_minutes($value);
+	
+	    	return [$tmp];
+	    }else{
+	    	return [$value];
+	    }
     }
-
+    
     return undef;
 
 }
@@ -247,39 +241,43 @@ sub setRecordTtlInMinutes {
     }
 
     my $ttl = 0;
-    if (ref($value) eq 'ARRAY') {
-        $ttl = $value->[0];
+    if(ref($value) eq 'ARRAY'){
+    	$ttl = $value->[0];
+    }else{
+    	$ttl = $value;
     }
-    else {
-        $ttl = $value;
-    }
-
-    if ($self->_is_iso($ttl)) {
-        cluck "Record Ttl should be in minutes (integer)";
-        return -1;
-    }
-    else {
-
-        $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [ $self->_minutes_to_iso($ttl) ];
-    }
-
+    
+    if(is_iso($ttl)){
+    	cluck "Record Ttl should be in minutes (integer)";
+    	return -1;
+    }else{
+    	
+    	$self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_TTL)} = [minutes_to_iso($ttl)];
+    }  
+    
     return 0;
 }
 
 
 sub getRecordExpiresAsUnixTS {
     my $self = shift;
-    my $expires = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)};
+    my $expires = '';
 
-    if (defined $expires) {
-        my @expiresArray = @{$expires};
-        my $unixts = $self->_isoToUnix($expiresArray[0]);
-        return [ $unixts ];
-    }
-    else {
-        return undef;
+    my $value = $self->{RECORD_HASH}->{(SimpleLookupService::Keywords::KeyNames::LS_KEY_EXPIRES)};
+    if(ref($value) eq 'ARRAY'){
+        $expires = $value->[0];
+    }else{
+        $expires = $value;
     }
 
+
+    if (defined $expires){
+        my $unixts = iso_to_unix($expires);
+    	return [$unixts];
+    }else{
+    	return undef;
+    }
+   
 }
 
 sub getRecordExpires {

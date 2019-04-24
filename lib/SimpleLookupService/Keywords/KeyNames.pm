@@ -100,6 +100,18 @@ use constant {
     LS_KEY_PERSON_ORGANIZATION => "person-organization",  
 };
 
+
+#bulk renew
+use constant {
+	LS_KEY_BULKRENEW_RECORDSURIS  => "record-uris",
+	LS_RESPONSE_BULKRENEW_TOTAL   => "total",
+	LS_RESPONSE_BULKRENEW_RENEWED  => "renewed",
+	LS_RESPONSE_BULKRENEW_FAILURE => "failure",
+	LS_RESPONSE_BULKRENEW_FAILED_URIS => "failed-uris",
+	LS_RESPONSE_BULKRENEW_ERROR_MESSAGE => "error-message",
+	LS_RESPONSE_BULKRENEW_ERROR_CODE => "error-code"
+};
+
 #signature keys
 use constant {
 	LS_KEY_SIGNATURE_ENCODING    => "signature-encoding",
