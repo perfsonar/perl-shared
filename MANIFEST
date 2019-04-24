@@ -2,6 +2,8 @@ LICENSE
 MANIFEST
 Makefile
 lib/Net/NTP.pm
+lib/SimpleLookupService/QueryObjects/Security/SignatureQueryObject.pm
+lib/SimpleLookupService/Records/Security/Signature.pm
 lib/SimpleLookupService/Client/Bootstrap.pm
 lib/SimpleLookupService/Client/Query.pm
 lib/SimpleLookupService/Client/QueryMultiple.pm
@@ -115,12 +117,14 @@ lib/perfSONAR_PS/Client/LS/PSQueryObjects/PSInterfaceQueryObject.pm
 lib/perfSONAR_PS/Client/LS/PSQueryObjects/PSPersonQueryObject.pm
 lib/perfSONAR_PS/Client/LS/PSQueryObjects/PSServiceQueryObject.pm
 lib/perfSONAR_PS/Client/LS/PSQueryObjects/PSTestQueryObject.pm
+lib/perfSONAR_PS/Client/LS/PSQueryObjects/PSSignatureQueryObject.pm
 lib/perfSONAR_PS/Client/LS/PSRecords/PSHost.pm
 lib/perfSONAR_PS/Client/LS/PSRecords/PSInterface.pm
 lib/perfSONAR_PS/Client/LS/PSRecords/PSPerson.pm
 lib/perfSONAR_PS/Client/LS/PSRecords/PSRecordFactory.pm
 lib/perfSONAR_PS/Client/LS/PSRecords/PSService.pm
 lib/perfSONAR_PS/Client/LS/PSRecords/PSTest.pm
+lib/perfSONAR_PS/Client/LS/PSRecords/PSSignature.pm
 lib/perfSONAR_PS/Common.pm
 lib/perfSONAR_PS/NPToolkit/Config/AdministrativeInfo.pm
 lib/perfSONAR_PS/NPToolkit/Config/Base.pm

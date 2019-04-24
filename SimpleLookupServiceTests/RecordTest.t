@@ -169,7 +169,7 @@ $record = SimpleLookupService::Records::Record->new();
 is($record->setRecordTtlAsIso(['PT60M']), 0,"setRecordTtlAsIso() - pass ISO string array");
 
 
-#setRecordTtlAsIso() - pass minutes 
+#setRecordTtlAsIso() - pass minutes
 $record = SimpleLookupService::Records::Record->new();
 is($record->setRecordTtlAsIso(60), -1, "setRecordTtlAsIso() - pass minutes");
 
@@ -196,7 +196,7 @@ cmp_deeply($record->getRecordTtlAsIso(), undef, "getRecordTtlAsIso - empty recor
 
 
 #setRecordTtlInMinutes tests
-#setRecordTtlInMinutes() - pass minutes 
+#setRecordTtlInMinutes() - pass minutes
 $record = SimpleLookupService::Records::Record->new();
 is($record->setRecordTtlInMinutes(60), 0, "setRecordTtlInMinutes() - pass minutes");
 
@@ -256,11 +256,59 @@ my $perlDS = {
 	"ttl"=>["PT30M"],
 	"type"=>["sometype1"],
 	"uri"=>["lookup/service/aadbce-12345-adf34"],
-	"expires"=>["2012-12-12:23-33-23Z"]	
+	"expires"=>["2012-12-12:23-33-23Z"]
 };
 
 $record = SimpleLookupService::Records::Record->new();
 is($record->fromHashRef($perlDS), 0, "fromHashRef() - creates record object from Hash");
 is($record->toJson(), '{"expires":["2012-12-12:23-33-23Z"],"ttl":["PT30M"],"type":["sometype1"],"uri":["lookup/service/aadbce-12345-adf34"]}', "toJson() - converts record object to Json");
+
+
+#_is_iso
+$record = SimpleLookupService::Records::Record->new();
+my $ts = "PT30M";
+is($record->_is_iso($ts), 1, "_is_iso() - returns true");
+
+$record = SimpleLookupService::Records::Record->new();
+$ts = "60";
+is($record->_is_iso($ts), 0, "_is_iso() - returns true");
+
+
+#_iso_to_minutes
+$record = SimpleLookupService::Records::Record->new();
+$ts = "PT30M";
+is($record->_iso_to_minutes($ts), 30, "_iso_to_minutes() - returns 30");
+
+
+$record = SimpleLookupService::Records::Record->new();
+$ts = "PT30W";
+is($record->_iso_to_minutes($ts), undef, "_iso_to_minutes() - returns undef");
+
+$record = SimpleLookupService::Records::Record->new();
+$ts = " ";
+is($record->_iso_to_minutes($ts), undef, "_iso_to_minutes() - returns undef");
+
+
+#_minutes_to_iso
+$record = SimpleLookupService::Records::Record->new();
+$ts = "30";
+is($record->_minutes_to_iso($ts), 'PT30M', "_minutes_to_iso() - returns PT30M");
+
+
+$record = SimpleLookupService::Records::Record->new();
+$ts = "PT30M";
+is($record->_minutes_to_iso($ts), undef, "_minutes_to_iso() - returns undef");
+
+$record = SimpleLookupService::Records::Record->new();
+$ts = '';
+is($record->_minutes_to_iso($ts), undef, "_minutes_to_iso() - returns undef");
+
+
+#_isoToUnix
+$record = SimpleLookupService::Records::Record->new();
+$ts = "2012-12-17T10:14:03.208Z";
+is($record->_isoToUnix($ts), '1355739243', "_isToUnix() - returns 1355739243");
+
+
 
 

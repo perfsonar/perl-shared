@@ -1,8 +1,8 @@
 %define install_base /usr/lib/perfsonar/
 %define config_base  /etc/perfsonar
 
-%define perfsonar_auto_version 4.1.6
-%define perfsonar_auto_relnum 1
+%define perfsonar_auto_version 4.2.0
+%define perfsonar_auto_relnum 0.0.a1
 
 Name:			libperfsonar
 Version:		%{perfsonar_auto_version}
@@ -86,6 +86,9 @@ Requires:		perl(Exporter)
 Requires:		perl(JSON)
 Requires:		perl(Log::Log4perl)
 Requires:		perl(Net::Ping)
+Requires:   perl(Crypt::OpenSSL::RSA)
+Requires:   perl(Crypt::OpenSSL::X509)
+Requires:   perl(MIME::Base64)
 Requires:		perl(Params::Validate)
 Requires:		perl(Scalar::Util)
 Requires:		perl(Time::HiRes)

@@ -10,6 +10,8 @@ use constant {
     LS_KEY_TTL => "ttl",
     LS_KEY_URI => "uri",
     LS_KEY_CLIENT_UUID => "client-uuid",
+    LS_KEY_SIGNATURE => "signature",
+    LS_KEY_RECORD_STATE => "state",
 };
 
 #General keys
@@ -109,5 +111,13 @@ use constant {
 	LS_RESPONSE_BULKRENEW_ERROR_MESSAGE => "error-message",
 	LS_RESPONSE_BULKRENEW_ERROR_CODE => "error-code"
 };
+
+#signature keys
+use constant {
+	LS_KEY_SIGNATURE_ENCODING    => "signature-encoding",
+	LS_KEY_SIGNATURE_DIGEST      => "digest",
+	LS_KEY_SIGNATURE_CERTIFICATE => => "x509certificate"
+};
+
 
 1;
