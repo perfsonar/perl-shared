@@ -25,6 +25,11 @@ lib/SimpleLookupService/Records/Network/Interface.pm
 lib/SimpleLookupService/Records/Network/Service.pm
 lib/SimpleLookupService/Records/Record.pm
 lib/SimpleLookupService/Records/RecordFactory.pm
+lib/SimpleLookupService/BulkRenewMessage.pm
+lib/SimpleLookupService/BulkRenewResponse.pm
+lib/SimpleLookupService/Client/BulkRenewManager.pm
+lib/SimpleLookupService/Message.pm
+lib/SimpleLookupService/Utils/Time.pm
 lib/perfSONAR_PS/Client/Esmond/ApiConnect.pm
 lib/perfSONAR_PS/Client/Esmond/ApiFilters.pm
 lib/perfSONAR_PS/Client/Esmond/BaseDataNode.pm
