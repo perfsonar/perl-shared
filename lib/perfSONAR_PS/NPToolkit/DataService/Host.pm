@@ -68,6 +68,9 @@ sub get_metadata {
     $config->{'role'} = $config_full->{'role'};
     $config->{'access_policy'} = $config_full->{'access_policy'};
     $config->{'access_policy_notes'} = $config_full->{'access_policy_notes'};
+    
+    $config->{'site_name'} = $config_full->{'site_name'};
+    $config->{'domain'} = $config_full->{'domain'};
 
     $meta->{'config'} = $config;
 
@@ -96,6 +99,8 @@ sub update_metadata {
         'role',
         'access_policy',
         'access_policy_notes',
+        'site_name',
+        'domain',
         'communities',
         'organization_name',
         'admin_name',
@@ -117,6 +122,10 @@ sub update_metadata {
     my $role = $config_args{'role'};
     my $access_policy = $config_args{'access_policy'};
     my $access_policy_notes = $config_args{'access_policy_notes'};
+    
+    my $site_name = $config_args{'site_name'};
+    my $domain = $config_args{'domain'};
+    
     my $communities = $config_args{'communities'};
 
     my $organization_name = $config_args{organization_name}; #  if (exists $args{organization_name});
@@ -147,8 +156,12 @@ sub update_metadata {
     $ls_conf->set_role( { role => $role } ) if defined $role && @$role >= 0;
     $ls_conf->set_access_policy( { access_policy => $access_policy } ) if defined $access_policy;
     $ls_conf->set_access_policy_notes( { access_policy_notes => $access_policy_notes } ) if defined $access_policy_notes;
-    $ls_conf->set_projects( { projects => $communities } ) if defined $communities;
+    
+    $ls_conf->set_site_name( { site_name => $site_name } ) if defined $site_name;
+    $ls_conf->set_domain( { domain => $domain } ) if defined $domain;
 
+    $ls_conf->set_projects( { projects => $communities } ) if defined $communities;
+    
 
     return $self->save_ls_config();
 }

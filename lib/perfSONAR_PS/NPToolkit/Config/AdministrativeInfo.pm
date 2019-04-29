@@ -19,7 +19,7 @@ name and email.
 
 use base 'perfSONAR_PS::NPToolkit::Config::Base';
 
-use fields 'SITE_INFO_FILE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL', 'ORGANIZATION_NAME', 'LOCATION', 'KEYWORDS', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ROLE', 'ACCESS_POLICY', 'ACCESS_POLICY_NOTES';
+use fields 'SITE_INFO_FILE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL', 'ORGANIZATION_NAME', 'LOCATION', 'KEYWORDS', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ROLE', 'ACCESS_POLICY', 'ACCESS_POLICY_NOTES', 'SITE_NAME', 'DOMAIN';
 
 use Params::Validate qw(:all);
 use Storable qw(store retrieve freeze thaw dclone);
@@ -613,7 +613,8 @@ sub generate_administrative_info_file {
     my $output = "";
 
     $output .= "full_name=" . $self->{ADMINISTRATOR_NAME} . "\n";
-    $output .= "site_name=" . $self->{ORGANIZATION_NAME} . "\n";
+    #$output .= "site_name=" . $self->{ORGANIZATION_NAME} . "\n";
+    $output .= "organization_name=" . $self->{ORGANIZATION_NAME} . "\n";
     $output .= "site_location=" . $self->{LOCATION} . "\n";
     foreach my $keyword ( keys %{ $self->{KEYWORDS} } ) {
         $output .= "site_project=" . $keyword . "\n";

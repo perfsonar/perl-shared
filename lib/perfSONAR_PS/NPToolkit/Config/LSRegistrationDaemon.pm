@@ -21,7 +21,7 @@ use Template;
 
 use base 'perfSONAR_PS::NPToolkit::Config::Base';
 
-use fields 'CONFIG_FILE', 'ORGANIZATION_NAME', 'PROJECTS', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL', 'ROLE', 'ACCESS_POLICY', 'ACCESS_POLICY_NOTES';
+use fields 'CONFIG_FILE', 'ORGANIZATION_NAME', 'PROJECTS', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL', 'ROLE', 'ACCESS_POLICY', 'ACCESS_POLICY_NOTES', 'SITE_NAME', 'DOMAIN';
 
 use Params::Validate qw(:all);
 use Storable qw(store retrieve freeze thaw dclone);
@@ -197,6 +197,28 @@ sub get_access_policy_notes {
     my $parameters = validate( @params, { } );
 
     return $self->{ACCESS_POLICY_NOTES};
+}
+
+=head2 get_site_name()
+Returns the node's site name field to advertise in the gLS
+=cut
+
+sub get_site_name {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { } );
+
+    return $self->{SITE_NAME};
+}
+
+=head2 get_domain()
+Returns the node's domain field to advertise in the gLS
+=cut
+
+sub get_domain {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { } );
+
+    return $self->{DOMAIN};
 }
 
 =head2 set_organization_name({ organization_name => 1 })
@@ -385,6 +407,34 @@ sub set_access_policy_notes {
     return 0;
 }
 
+=head2 set_site_name({ site_name => 1 })
+Sets the node site name to advertise in the LS
+=cut
+sub set_site_name {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { site_name => 1, } );
+
+    my $site_name = $parameters->{site_name};
+
+    $self->{SITE_NAME} = $site_name;
+
+    return 0;
+}
+
+=head2 set_domain({ domain => 1 })
+Sets the node domain to advertise in the LS
+=cut
+sub set_domain {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { domain => 1, } );
+
+    my $domain = $parameters->{domain};
+
+    $self->{DOMAIN} = $domain;
+
+    return 0;
+}
+
 =head2 last_modified()
     Returns when the site information was last saved.
 =cut
@@ -418,8 +468,8 @@ sub save {
         $config->{administrator}->{email} = $self->{ADMINISTRATOR_EMAIL};
     }
 
-    delete($config->{site_name});
-    $config->{site_name} = $self->{ORGANIZATION_NAME} if $self->{ORGANIZATION_NAME};
+    delete($config->{organization});
+    $config->{organization} = $self->{ORGANIZATION_NAME} if $self->{ORGANIZATION_NAME};
 
     delete($config->{city});
     $config->{city} = $self->{CITY} if $self->{CITY};
@@ -450,6 +500,12 @@ sub save {
 
     delete($config->{access_policy_notes});
     $config->{access_policy_notes} = $self->{ACCESS_POLICY_NOTES} if $self->{ACCESS_POLICY_NOTES};
+
+    delete($config->{site_name});
+    $config->{site_name} = $self->{SITE_NAME} if $self->{SITE_NAME};
+
+    delete($config->{domain});
+    $config->{domain} = $self->{DOMAIN} if $self->{DOMAIN};
 
     my $content = SaveConfigString($config);
 
@@ -482,7 +538,7 @@ sub reset_state {
         return -1;
     }
 
-    $self->{ORGANIZATION_NAME} = $config->{site_name};
+    $self->{ORGANIZATION_NAME} = $config->{organization};
     $self->{CITY}              = $config->{city};
     $self->{REGION}            = $config->{region};
     $self->{COUNTRY}           = $config->{country};
@@ -498,7 +554,8 @@ sub reset_state {
     $self->{ROLE}                   = $config->{role};
     $self->{ACCESS_POLICY}          = $config->{access_policy};
     $self->{ACCESS_POLICY_NOTES}    = $config->{access_policy_notes};
-
+    $self->{SITE_NAME}              = $config->{site_name};
+    $self->{DOMAIN}                 = $config->{domain};
     return 0;
 }
 
@@ -547,6 +604,8 @@ sub save_state {
         role                        => $self->{ROLE},
         access_policy               => $self->{ACCESS_POLICY},
         access_policy_notes         => $self->{ACCESS_POLICY_NOTES},
+        site_name                   => $self->{SITE_NAME},
+        domain                      => $self->{DOMAIN},
     );
 
     my $str = freeze( \%state );
@@ -580,7 +639,9 @@ sub restore_state {
     $self->{ROLE}                        = $state->{role};
     $self->{ACCESS_POLICY}               = $state->{access_policy};
     $self->{ACCESS_POLICY_NOTES}         = $state->{access_policy_notes};
-    
+    $self->{SITE_NAME}                   = $state->{site_name};
+    $self->{DOMAIN}                      = $state->{domain};
+     
     return;
 }
 
