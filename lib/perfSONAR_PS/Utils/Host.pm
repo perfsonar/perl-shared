@@ -602,6 +602,7 @@ sub get_processor_info {
         'CPU(s)' => 'cores',
     );
      my %cpuinfo_parse_map = (
+        'clock' => 'speed',
         'model name' => 'model_name',
     );
     my %cpuinfo = ();
@@ -629,7 +630,9 @@ sub get_processor_info {
             my @cols = split /\s*:\s*/, $line;
             next if(@cols != 2);
             if($cpuinfo_parse_map{$cols[0]}){
-                $cpuinfo{_sanitize($cpuinfo_parse_map{$cols[0]})} = _sanitize($cols[1]);
+                my $val = _sanitize($cols[1]);
+                $val =~ s/MHz$//;
+                $cpuinfo{_sanitize($cpuinfo_parse_map{$cols[0]})} = $val;
             }
         }
     }
