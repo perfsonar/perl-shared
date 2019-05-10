@@ -413,7 +413,7 @@ sub get_test_spec_is_valid() {
         bind_map => $self->bind_map,
         address_map => $self->lead_address_map,
     );
-    if($test_response->code == 404){
+    if($test_response->code && $test_response->code == 404){
         $self->_set_error("pScheduler server does not recognize test of type '$test_name'");
         return;
     }elsif(!$test_response->is_success){
