@@ -178,7 +178,7 @@ ok($tg->next());
 my $psched_task;
 ok($psched_task = $tg->pscheduler_task());
 is($psched_task->requested_tools()->[0], 'nuttcp');
-is($psched_task->checksum(), 'UwWSmNRYrKPw0UKuTMXGbg'); #verify we got the JSON we expected
+is($psched_task->checksum(), 's+EUR1rska59/heKpxs1Kw'); #verify we got the JSON we expected
 
 
 ####
@@ -194,7 +194,7 @@ ok($tg->next());
 ####
 # Test pscheduler conversion
 ok($psched_task = $tg->pscheduler_task());
-is($psched_task->checksum(), 'qWC5b7x0212uHxD1z5LTtg'); #verify we got the JSON we expected
+is($psched_task->checksum(), 'k9sS9NwyA9vqGXIpK0o2dQ'); #verify we got the JSON we expected
 
 ####################
 # These mess with JSON - put new tests after these with caution
