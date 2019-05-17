@@ -18,6 +18,7 @@ use Log::Log4perl::Logger;
 use perfSONAR_PS::Client::PScheduler::ApiConnect;
 use perfSONAR_PS::Client::PScheduler::ApiFilters;
 use perfSONAR_PS::Client::PScheduler::Task;
+use perfSONAR_PS::Utils::ISO8601 qw/ duration_to_seconds /;
 use perfSONAR_PS::Utils::Logging;
 use Data::UUID;
 use DateTime::Format::ISO8601;
@@ -179,7 +180,16 @@ sub add_task {
     my $parameters = validate( @args, {task => 1, local_address => 0, repeat_seconds => 0 } );
     my $new_task = $parameters->{task};
     my $local_address = $parameters->{local_address};
+    #Note: we can get rid of this as a parameter when we drop MeshConfig libs from toolkit GUI
     my $repeat_seconds = $parameters->{repeat_seconds};
+    
+    #set repeat seconds if not provided
+    if(!defined $repeat_seconds && $new_task->schedule_repeat()){
+        eval{
+            #ignore if can't convert
+            $repeat_seconds = duration_to_seconds($new_task->schedule_repeat());
+        };
+    }
     
     #set reference params
     ##need to copy this so different addresses don't break checksum
