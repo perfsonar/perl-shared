@@ -28,7 +28,6 @@ use Carp qw(cluck);
 use Crypt::OpenSSL::RSA;
 use MIME::Base64 qw(encode_base64 decode_base64);
 
-use fields 'RECORD_HASH';
 use SimpleLookupService::Utils::Time qw(minutes_to_iso iso_to_minutes is_iso iso_to_unix);
 
 use base 'SimpleLookupService::Message';
