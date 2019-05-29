@@ -3,6 +3,10 @@ package perfSONAR_PS::Utils::LookupService;
 use strict;
 use warnings;
 
+use FindBin qw($RealBin);
+
+
+#use lib "$RealBin/../../../lib";
 our $VERSION = 3.3;
 
 =head1 NAME
@@ -30,17 +34,25 @@ use SimpleLookupService::Client::Query;
 use perfSONAR_PS::Client::Utils qw(send_http_request);
 use URI;
 use Data::UUID;
-
+use Config::General;
 our @EXPORT_OK = qw( lookup_services_latency_diff discover_lookup_services discover_primary_lookup_service lookup_service_is_active is_host_registered get_client_uuid set_client_uuid);
 
 my $logger = get_logger(__PACKAGE__);
 
 sub discover_primary_lookup_service {
-    my $parameters = validate( @_, { locator_urls => 0, lookup_services => 0 } );
+    
+    my $parameters = validate( @_, { locator_urls => 0, lookup_services => 0, conf_url => 0 } );
     my $locator_urls = $parameters->{locator_urls};
     my $lookup_services =  $parameters->{lookup_services};
-    $lookup_services = discover_lookup_services(locator_urls => $locator_urls) unless($lookup_services);
+    my $conf_url = $parameters->{conf_url};
+    if(defined $conf_url){
 
+         $lookup_services = discover_lookup_services(conf_url => $conf_url, locator_urls => $locator_urls) unless($lookup_services);
+    }
+    else{
+        $lookup_services = discover_lookup_services(locator_urls => $locator_urls) unless($lookup_services);
+    }
+    
     my ($primary_ls, $primary_ls_latency, $primary_ls_priority);
 
     foreach my $ls_info (@$lookup_services) {
@@ -98,9 +110,17 @@ sub lookup_services_latency_diff {
 }
 
 sub discover_lookup_services {
-    my $parameters = validate( @_, { locator_urls => 0} );
+    
+    my $parameters = validate( @_, { locator_urls => 0, conf_url => 0} );
     my $locator_urls = $parameters->{locator_urls};
-    $locator_urls = [ "http://ps1.es.net:8096/lookup/activehosts.json" ] unless ($locator_urls);
+    my $conf_url = $parameters->{conf_url};
+    if(defined $conf_url){
+
+         $locator_urls = [ $conf_url ] unless ($locator_urls);
+    }
+    else{
+        $locator_urls = [ "http://ps1.es.net:8096/lookup/activehosts.json" ] unless ($locator_urls);
+    }
 
     my @active_hosts = ();
 
@@ -151,8 +171,16 @@ sub discover_lookup_services {
 
 sub is_host_registered{
     my ($address) = @_;
-     
-    my $ls_url = discover_primary_lookup_service();
+    my $ls_url;
+    my $conf_url;
+    #configurable url from web_admin.conf 
+    if(scalar(@_) > 1){
+        $conf_url = $_[1]; 
+        $ls_url = discover_primary_lookup_service(conf_url => $conf_url);
+    }
+    else{ 
+        $ls_url = discover_primary_lookup_service();
+    }
 
     if (! $ls_url){
 	$logger->error("Unable to determine ls_url");
