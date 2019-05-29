@@ -344,9 +344,8 @@ sub get_details {
 
 
     # get TCP info
-    # We don't need the TCP details at the moment but leaving this here to easily add
-    # my $tcp_info = get_tcp_configuration(); 
-
+    my $tcp_info = get_tcp_configuration(); 
+    $status->{tcp_info} = $tcp_info;
     return $status;
 
 }
