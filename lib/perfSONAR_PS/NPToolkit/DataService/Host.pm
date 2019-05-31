@@ -258,7 +258,8 @@ sub get_details {
     $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/lsregistrationdaemon/client_uuid');
 
     my $logger = $self->{LOGGER};
-    my $disable_ls_lookup = int($conf{disable_ls_lookups});
+    my $disable_ls_lookup = 0;
+    $disable_ls_lookup = int($conf{disable_ls_lookups}) if $conf{disable_ls_lookups};
     # Check whether globally registered
     if ($external_address) {
         eval {
