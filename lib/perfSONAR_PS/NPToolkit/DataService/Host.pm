@@ -253,7 +253,7 @@ sub get_details {
 
     }
 
-    $status->{force_toolkit_name}=int($conf{force_toolkit_name});
+    $status->{force_toolkit_name} = int($conf{force_toolkit_name}) if $conf{force_toolkit_name};
     $status->{toolkit_name}=$conf{toolkit_name};
 
     $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/lsregistrationdaemon/client_uuid');
