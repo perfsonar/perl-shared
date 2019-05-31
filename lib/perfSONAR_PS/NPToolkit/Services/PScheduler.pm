@@ -10,10 +10,10 @@ sub init {
 
     $conf{description}  = "pScheduler" unless $conf{description};
     $conf{pid_files} = [ 
-                            "/var/run/pscheduler-archiver.pid",
-                            "/var/run/pscheduler-runner.pid",
-                            "/var/run/pscheduler-scheduler.pid",
-                            "/var/run/pscheduler-ticker.pid"
+                            "/var/run/pscheduler-server/pscheduler-archiver.pid",
+                            "/var/run/pscheduler-server/pscheduler-runner.pid",
+                            "/var/run/pscheduler-server/pscheduler-scheduler.pid",
+                            "/var/run/pscheduler-server/pscheduler-ticker.pid"
                         ] unless $conf{pid_files};
     #one for each pid
     $conf{process_names} = [ "python", "python", "python", "python" ] unless $conf{process_names};

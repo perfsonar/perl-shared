@@ -388,6 +388,141 @@ sub get_test() {
     return new perfSONAR_PS::Client::PScheduler::Test(data => $test_response_json, url => $test_url, filters => $self->filters, uuid => $test_name);
 }
 
+sub get_test_spec_is_valid() {
+    my ($self, $test_name, $spec) = @_;
+    
+    #build url
+    my $test_url = $self->url;
+    chomp($test_url);
+    $test_url .= "/" if($self->url !~ /\/$/);
+    $test_url .= "tests/$test_name/spec/is-valid";
+    
+    #convert spec to string
+    my $spec_str = to_json($spec);
+    
+    #fetch test
+    my $test_response = send_http_request(
+        connection_type => 'GET', 
+        url => $test_url, 
+        get_params => {'spec'=>$spec_str},
+        timeout => $self->filters->timeout,
+        ca_certificate_file => $self->filters->ca_certificate_file,
+        ca_certificate_path => $self->filters->ca_certificate_path,
+        verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
+        bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
+    );
+    if($test_response->code && $test_response->code == 404){
+        $self->_set_error("pScheduler server does not recognize test of type '$test_name'");
+        return;
+    }elsif(!$test_response->is_success){
+        my $msg = build_err_msg(http_response => $test_response);
+        $self->_set_error($msg);
+        return;
+    }
+    my $test_response_json = from_json($test_response->body);
+    if(!$test_response_json){
+        $self->_set_error("No validation object returned from $test_url");
+        return;
+    }elsif(!exists $test_response_json->{'valid'}){
+        $self->_set_error("Returned validation object missing 'valid' field");
+        return;
+    }
+    
+    return $test_response_json;
+}
+
+sub get_archiver_is_valid() {
+    my ($self, $archiver_name, $data) = @_;
+    
+    #build url
+    my $test_url = $self->url;
+    chomp($test_url);
+    $test_url .= "/" if($self->url !~ /\/$/);
+    $test_url .= "archivers/$archiver_name/data-is-valid";
+    
+    #convert spec to string
+    my $data_str = to_json($data);
+    
+    #fetch test
+    my $test_response = send_http_request(
+        connection_type => 'GET', 
+        url => $test_url, 
+        get_params => {'data'=>$data_str},
+        timeout => $self->filters->timeout,
+        ca_certificate_file => $self->filters->ca_certificate_file,
+        ca_certificate_path => $self->filters->ca_certificate_path,
+        verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
+        bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
+    );
+    if($test_response->code == 404){
+        $self->_set_error("pScheduler server does not recognize archiver of type '$archiver_name'");
+        return;
+    }elsif(!$test_response->is_success){
+        my $msg = build_err_msg(http_response => $test_response);
+        $self->_set_error($msg);
+        return;
+    }
+    my $test_response_json = from_json($test_response->body);
+    if(!$test_response_json){
+        $self->_set_error("No validation object returned from $test_url");
+        return;
+    }elsif(!exists $test_response_json->{'valid'}){
+        $self->_set_error("Returned validation object missing 'valid' field");
+        return;
+    }
+    
+    return $test_response_json;
+}
+
+sub get_context_is_valid() {
+    my ($self, $context_name, $data) = @_;
+    
+    #build url
+    my $test_url = $self->url;
+    chomp($test_url);
+    $test_url .= "/" if($self->url !~ /\/$/);
+    $test_url .= "contexts/$context_name/data-is-valid";
+    
+    #convert spec to string
+    my $data_str = to_json($data);
+    
+    #fetch test
+    my $test_response = send_http_request(
+        connection_type => 'GET', 
+        url => $test_url, 
+        get_params => {'data'=>$data_str},
+        timeout => $self->filters->timeout,
+        ca_certificate_file => $self->filters->ca_certificate_file,
+        ca_certificate_path => $self->filters->ca_certificate_path,
+        verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
+        bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
+    );
+    if($test_response->code == 404){
+        $self->_set_error("pScheduler server does not recognize context of type '$context_name'");
+        return;
+    }elsif(!$test_response->is_success){
+        my $msg = build_err_msg(http_response => $test_response);
+        $self->_set_error($msg);
+        return;
+    }
+    my $test_response_json = from_json($test_response->body);
+    if(!$test_response_json){
+        $self->_set_error("No validation object returned from $test_url");
+        return;
+    }elsif(!exists $test_response_json->{'valid'}){
+        $self->_set_error("Returned validation object missing 'valid' field");
+        return;
+    }
+    
+    return $test_response_json;
+}
+
 sub get_hostname() {
     my $self = shift;
     

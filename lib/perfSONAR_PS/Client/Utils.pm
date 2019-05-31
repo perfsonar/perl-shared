@@ -114,6 +114,7 @@ sub send_http_request{
     $ua->connect_timeout($timeout);
     $ua->request_timeout($timeout);
     $ua->max_redirects($max_redirects);
+    $ua->insecure(1); #default behavior is to verify certs, override
     $ua->proxy->detect;
     
     #lookup address if map provided
@@ -154,7 +155,10 @@ sub send_http_request{
     }
     
     #remainder of user agent config
-    $ua->ca($parameters{ca_certificate_file}) if($parameters{ca_certificate_file});
+    if($parameters{ca_certificate_file}){
+        $ua->ca($parameters{ca_certificate_file});
+        $ua->insecure(0);
+    }
     
     # Create a request
     $logger->debug("Sending HTTP " . $parameters{connection_type} . " to $url" . ($bind_address ? " with local bind address $bind_address" : "")) if($logger);
@@ -241,7 +245,9 @@ sub build_err_msg {
     my $response = $parameters->{http_response};
     
     my $errmsg = $response->get_start_line_chunk(0);
-    if($response->body){
+    if($response->error && $response->error->{'message'}){
+        $errmsg = $response->error->{'message'};
+    }elsif($response->body){
         #try to parse json
         eval{
             my $response_json = from_json($response->body);

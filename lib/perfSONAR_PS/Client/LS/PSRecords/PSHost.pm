@@ -121,3 +121,13 @@ sub setCommunities {
     $self->SUPER::addField(key=>(perfSONAR_PS::Client::LS::PSKeywords::PSKeyNames::LS_KEY_GROUP_COMMUNITIES), value=>$value  );
     
 }
+
+sub getCertificate {
+    my $self = shift;
+    return $self->{RECORD_HASH}->{'certificate'};
+}
+
+sub setCertificate {
+    my ($self, $value) = @_;
+    $self->SUPER::addField(key => ('certificate'), value => $value);
+}

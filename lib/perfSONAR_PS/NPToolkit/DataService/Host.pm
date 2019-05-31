@@ -22,7 +22,7 @@ use perfSONAR_PS::Utils::GeoLookup qw(geoIPLookup);
 use perfSONAR_PS::PSConfig::PScheduler::ConfigConnect;
 
 use Data::Dumper;
-
+use Scalar::Util qw(looks_like_number);
 
 use Time::HiRes qw(gettimeofday tv_interval);
 
@@ -35,6 +35,8 @@ sub get_admin_information {
     my $self = shift;
     my $ls_conf = $self->{ls_conf};
 
+    my $lat = $ls_conf->get_latitude() if (looks_like_number($ls_conf->get_latitude()));
+    my $long = $ls_conf->get_longitude() if (looks_like_number($ls_conf->get_longitude()));
     my $info = {
         administrator => {
             name => $ls_conf->get_administrator_name(),
@@ -46,8 +48,8 @@ sub get_admin_information {
             state => $ls_conf->get_state(),
             country => $ls_conf->get_country(),
             zipcode => $ls_conf->get_zipcode(),
-            latitude => $ls_conf->get_latitude(),
-            longitude => $ls_conf->get_longitude(),
+            latitude => $lat,
+            longitude => $long,
         },
     };
 
@@ -137,8 +139,8 @@ sub update_metadata {
     $ls_conf->set_state( { state => $state } ) if defined $state;
     $ls_conf->set_country( { country => $country } ) if defined $country;
     $ls_conf->set_zipcode( { zipcode => $zipcode } ) if defined $zipcode;
-    $ls_conf->set_latitude( { latitude => $latitude } ) if defined $latitude;
-    $ls_conf->set_longitude( { longitude => $longitude } ) if defined $longitude;
+    $ls_conf->set_latitude( { latitude => $latitude } ) if defined $latitude && (looks_like_number($latitude));
+    $ls_conf->set_longitude( { longitude => $longitude } ) if defined $longitude && (looks_like_number($longitude));
 
     if($administrator_email && defined ($subscribe) && $subscribe == 1){
         subscribe($administrator_email);
@@ -170,6 +172,7 @@ sub get_calculated_lat_lon {
 }
 
 sub get_details {
+    my @from_summary = @_;
     my $self = shift;
     # get addresses, mtu, counters, ntp status, globally registered, toolkit version, toolkit rpm version
     # external address, total RAM, interface details, etc
@@ -180,7 +183,10 @@ sub get_details {
     $self->{authenticated} = $caller->{authenticated};
 
     my $status = {};
-
+    
+    #variable used to change the fields if version is set to 2
+    my $sum_version = $from_summary[-1]; 
+        
     my $version_conf = perfSONAR_PS::NPToolkit::Config::Version->new();
     $version_conf->init();
 
@@ -188,25 +194,61 @@ sub get_details {
     my @interfaces = get_ethernet_interfaces();
 
     my @interfaceDetails;
-    foreach my $interface (@interfaces){
-        my $iface;
-        my $addresses = get_interface_addresses_by_type({interface=>$interface});
-        $iface = $addresses;    # sets $iface->{ipv4_address} and $iface->{ipv6_address}
-        # function get_interface_hostnames() returns a hash (hash-ref) with keys=ip's, values = arrays of hostnames
-        my $ipv4_addresses = $addresses->{ipv4_address};  # array-ref
-        my $ipv4_hostnames = get_interface_hostnames({interface_addresses=>$ipv4_addresses}); 
-        my $ipv6_addresses = $addresses->{ipv6_address};
-        my $ipv6_hostnames = get_interface_hostnames({interface_addresses=>$ipv6_addresses}); 
-        $iface->{hostnames} = {%$ipv4_hostnames, %$ipv6_hostnames};
-        $iface->{mtu} = get_interface_mtu({interface_name=>$interface});
-        $iface->{counters} = get_interface_counters({interface_name=>$interface});
-        $iface->{speed} = get_interface_speed({interface_name=>$interface});
-        $iface->{mac} = get_interface_mac({interface_name=>$interface});
-        $iface->{iface} = $interface;
-
-        push @interfaceDetails, $iface;
+    
+    if($sum_version == 2){
+        foreach my $interface (@interfaces){
+            my $iface;
+            my $addresses = get_interface_addresses_by_type({interface=>$interface});
+            $iface = $addresses;    # sets $iface->{ipv4_address} and $iface->{ipv6_address}
+            # function get_interface_hostnames() returns a hash (hash-ref) with keys=ip's, values = arrays of hostnames
+            my $ipv4_addresses = $addresses->{ipv4_address};  # array-ref
+            my $ipv4_hostnames = get_interface_hostnames({interface_addresses=>$ipv4_addresses}); 
+            my $ipv6_addresses = $addresses->{ipv6_address};
+            my $ipv6_hostnames = get_interface_hostnames({interface_addresses=>$ipv6_addresses}); 
+            
+            if(@$ipv4_addresses && ($ipv4_hostnames->{@$ipv4_addresses[0]})){           
+                $iface->{hostname} = $ipv4_hostnames->{@$ipv4_addresses[0]};
+            }
+            elsif(@$ipv6_addresses && !($ipv6_hostnames->{@$ipv6_addresses[0]})){
+                $iface->{hostname} = $ipv6_hostnames->{@$ipv6_addresses[0]};
+            }
+            $iface->{mtu} = get_interface_mtu({interface_name=>$interface}) if (get_interface_mtu({interface_name=>$interface})) ne "unknown";
+            $iface->{counters} = get_interface_counters({interface_name=>$interface});
+            $iface->{speed} = get_interface_speed({interface_name=>$interface}) if (get_interface_speed({interface_name=>$interface})) ne "unknown";
+            $iface->{mac} = get_interface_mac({interface_name=>$interface});
+            $iface->{iface} = $interface;
+            
+            if (!@$ipv4_addresses){
+                delete $iface->{ipv4_address};
+            }
+        
+            if (!@$ipv6_addresses){ 
+                delete $iface->{ipv6_address};
+            }
+            push @interfaceDetails, $iface;
+        }
     }
 
+    else{
+        foreach my $interface (@interfaces){
+            my $iface;
+            my $addresses = get_interface_addresses_by_type({interface=>$interface});
+            $iface = $addresses;    # sets $iface->{ipv4_address} and $iface->{ipv6_address}
+            # function get_interface_hostnames() returns a hash (hash-ref) with keys=ip's, values = arrays of hostnames
+            my $ipv4_addresses = $addresses->{ipv4_address};  # array-ref
+            my $ipv4_hostnames = get_interface_hostnames({interface_addresses=>$ipv4_addresses});
+            my $ipv6_addresses = $addresses->{ipv6_address};
+            my $ipv6_hostnames = get_interface_hostnames({interface_addresses=>$ipv6_addresses});
+            $iface->{hostnames} = {%$ipv4_hostnames, %$ipv6_hostnames};
+            $iface->{mtu} = get_interface_mtu({interface_name=>$interface});
+            $iface->{counters} = get_interface_counters({interface_name=>$interface});
+            $iface->{speed} = get_interface_speed({interface_name=>$interface});
+            $iface->{mac} = get_interface_mac({interface_name=>$interface});
+            $iface->{iface} = $interface;
+
+            push @interfaceDetails, $iface; 
+        }
+    }
     $status->{interfaces} = \@interfaceDetails;
 
 
@@ -240,25 +282,39 @@ sub get_details {
         $external_address_ipv6 = $external_addresses->{primary_ipv6};
         $external_dns_name = $external_addresses->{primary_dns_name}; 
 
-        $status->{external_address} = {
+        $status->{external_address}->{dns_name} = $external_dns_name;
+        if($sum_version == 2){
+            $status->{external_address}->{ipv4_address} = $external_address_ipv4 if $external_address_ipv4;
+            $status->{external_address}->{address} = $external_address if $external_address;
+            $status->{external_address}->{ipv6_address} = $external_address_ipv6 if $external_address_ipv6;
+            
+        
+            $status->{external_address}->{iface} = $external_address_iface if (($external_address_iface) && ($external_address_iface ne "unknown"));
+            $status->{external_address}->{speed} = (($external_address_speed) * 1) if (($external_address_speed) && ($external_address_speed ne "unknown"));
+            $status->{external_address}->{mtu} = int($external_address_mtu) if (($external_address_mtu) && ($external_address_mtu ne "unkown"));
+            $status->{external_address}->{counters} = $external_address_counters if $external_address_counters;
+        }
+        else{
+            $status->{external_address} = {
             address => $external_address,
             ipv4_address => $external_address_ipv4,
             ipv6_address => $external_address_ipv6,
         };
-        $status->{external_address}->{dns_name} = $external_dns_name;
-        $status->{external_address}->{iface} = $external_address_iface if $external_address_iface;
-        $status->{external_address}->{speed} = $external_address_speed if $external_address_speed;
-        $status->{external_address}->{mtu} = $external_address_mtu if $external_address_mtu;
-        $status->{external_address}->{counters} = $external_address_counters if $external_address_counters;
-
+            $status->{external_address}->{iface} = $external_address_iface if $external_address_iface;
+            $status->{external_address}->{speed} = $external_address_speed if $external_address_speed; 
+            $status->{external_address}->{mtu} = $external_address_mtu if $external_address_mtu;
+            $status->{external_address}->{counters} = $external_address_counters if $external_address_counters;
+        }
     }
 
+    $status->{force_toolkit_name} = int($conf{force_toolkit_name}) if $conf{force_toolkit_name};
     $status->{toolkit_name}=$conf{toolkit_name};
 
     $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/lsregistrationdaemon/client_uuid');
 
     my $logger = $self->{LOGGER};
-    my $disable_ls_lookup = int($conf{disable_ls_lookups});
+    my $disable_ls_lookup = 0;
+    $disable_ls_lookup = int($conf{disable_ls_lookups}) if $conf{disable_ls_lookups};
     # Check whether globally registered
     if ($external_address) {
         eval {
@@ -277,11 +333,11 @@ sub get_details {
             alarm(0);
         };
         if($@){
-            $logger->error("Unable to find host record in LS using $external_address: $@");
+            $logger->warn("Unable to find host record in LS using $external_address: $@");
         }elsif($is_registered){
-            $logger->error("Found host record in LS using $external_address");
+            $logger->info("Found host record in LS using $external_address");
         }else{
-            $logger->error("Unable to find host record in LS using $external_address");
+            $logger->warn("Unable to find host record in LS using $external_address");
         }
     }
 
@@ -303,16 +359,17 @@ sub get_details {
             alarm(0);
         };
         if($@){
-            $logger->error("Unable to find host record in LS using hostname " . ( $hostname ? $hostname : "hostname" ) . ": $@");
+            $logger->warn("Unable to find host record in LS using hostname " . ( $hostname ? $hostname : "hostname" ) . ": $@");
         }elsif($is_registered){
-            $logger->error("Found host record in LS using $hostname");
+            $logger->info("Found host record in LS using $hostname");
         }else{
-            $logger->error("Unable to find host record in LS using hostname " . ( $hostname ? $hostname : "hostname" ));
+            $logger->warn("Unable to find host record in LS using hostname " . ( $hostname ? $hostname : "hostname" ));
         }
     }
 
     $status->{globally_registered} = $is_registered;
     $status->{disable_ls_lookups} = $disable_ls_lookup;
+
     my $toolkit_rpm_version;
 
     # Make use of the fact that the config daemon is contained in the Toolkit RPM.
@@ -335,13 +392,13 @@ sub get_details {
 
     # get CPU info
     my $cpu_info = get_processor_info();
-    $status->{cpus} = $cpu_info->{count};
-    $status->{cpu_cores} = $cpu_info->{cores};
-    $status->{cpu_speed} = $cpu_info->{speed};
+    $status->{cpus} = int($cpu_info->{count});
+    $status->{cpu_cores} = int($cpu_info->{cores});
+    $status->{cpu_speed} = ($cpu_info->{speed}) * 1;
 
     # get more Host info
     my $host_info = get_dmi_info();
-    $status->{is_vm} = $host_info->{is_virtual_machine};
+    $status->{is_vm} = $host_info->{is_virtual_machine}? JSON::true : JSON::false;
     $status->{product_name} = $host_info->{product_name};
     $status->{sys_vendor} = $host_info->{sys_vendor};
 
@@ -358,27 +415,43 @@ sub get_details {
 
 
     # get TCP info
-    # We don't need the TCP details at the moment but leaving this here to easily add
-    # my $tcp_info = get_tcp_configuration(); 
-
+    my $tcp_info = get_tcp_configuration(); 
+    $status->{tcp_info} = $tcp_info;
     return $status;
 
 }
 
 sub get_ntp_information{
 
+    #getting the version from summary, restructure the data if equal to 2
+    my @from_summary = @_;
+    my $sum_version = $from_summary[-1];
+        
     my $self = shift;
     my $response = get_ntp_info();
     my $ntp = get_service_object("ntp");
-    $response->{synchronized} = $ntp->is_synced() || 0;
+    if($sum_version == 2){
+       $response->{synchronized} = $ntp->is_synced()? JSON::true : JSON::false;
+       $response->{when} = int($response->{when});
+       $response->{reach} = int($response->{reach});
+       $response->{polling_interval} = int($response->{polling_interval});
+    }
+    else{
+       $response->{synchronized} = $ntp->is_synced() || 0;
+    }
     return $response;
 
 }
 
 sub get_services {
+   
+    #getting the version from summary, restructure the data if equal to 2
+    my @from_summary = @_;
+    my $sum_version = $from_summary[-1];    
+    
     my $self = shift;
     my $caller = shift;
-    my $params = $caller->{'input_params'};
+    #my $params = $caller->{'input_params'};
 
     my %conf = %{$self->{config}};
     my $owamp_config = $conf{'owamp_config'};
@@ -392,8 +465,8 @@ sub get_services {
     if ($status == 0) {
         push @owamp_test_ports, {
             type => "test",
-            min_port => $res->{min_port},
-            max_port => $res->{max_port},
+            min_port => int($res->{min_port}),
+            max_port => int($res->{max_port}),
         };
     }
     else {
@@ -416,8 +489,8 @@ sub get_services {
     if ($status == 0) {
         push @twamp_test_ports, {
             type => "test",
-            min_port => $res->{min_port},
-            max_port => $res->{max_port},
+            min_port => int($res->{min_port}),
+            max_port => int($res->{max_port}),
         };
     }
     else {
@@ -450,9 +523,13 @@ sub get_services {
                 }
             }
         }
-
-        my $is_running_output = ($is_running)?"yes":"no";
-
+        my $is_running_output;
+        if($sum_version == 2){
+           $is_running_output = ($is_running)? JSON::true : JSON::false;
+        }
+        else{
+           $is_running_output = ($is_running)?"yes":"no";
+        }
         if ($service->disabled) {
             $is_running_output = "disabled" unless $is_running;
         }
@@ -460,8 +537,14 @@ sub get_services {
         if ( $service->can('is_installed') ) {
             $is_installed = $service->is_installed();
         }
-
-        my $enabled = (not $service->disabled) || 0;
+        my $enabled;
+        if($sum_version == 2){
+           $enabled = (not $service->disabled)? JSON::true : JSON::false;
+        }
+        else{
+           $enabled = (not $service->disabled) || 0;
+        }
+       
 
         my $display_name = $service_name;
         $display_name =~ s/_/-/g;
@@ -471,8 +554,13 @@ sub get_services {
         $service_info{"enabled"}       = $enabled;
         $service_info{"is_running"}    = $is_running_output;
         $service_info{"is_installed"}  = $is_installed if (defined $is_installed);
-        $service_info{"daemon_port"}   = $daemon_port if ($daemon_port != -1);
-        $service_info{"addresses"}     = \@addr_list;
+        $service_info{"daemon_port"}   = int($daemon_port) if ($daemon_port != -1);
+        if($sum_version == 2){
+            $service_info{"addresses"}     = \@addr_list if (@addr_list != 0);
+        }
+        else{
+            $service_info{"addresses"}     = \@addr_list;
+        }
         $service_info{"version"}       = $service->package_version;
 
         if ($service_name eq "owamp") {
@@ -509,7 +597,7 @@ sub update_auto_updates {
         return { error => "Error configuring auto updates" };
     }
 
-    if ($enabled == 1) {
+    if ($enabled) {
         $res = start_service( { name => $name, enable => 1 });
         $message = "Auto updates succesfully enabled";
     } else {
@@ -544,25 +632,38 @@ sub _get_port_from_url {
 }
 
 sub get_summary {
+    
+    #array to append version obtained from url parameter
+    my @with_version = @_;
+    
     my $self = shift;
-
+    my $caller = shift;
+    my $args = $caller->{'input_params'};
+    my $sum_version = int($args->{version}->{value});
     my $start_time = gettimeofday();
     my $end_time;
-
 
     my $comm_obj = perfSONAR_PS::NPToolkit::DataService::Communities->new( {config_file => $self->{config_file}, load_ls_registration => 1 } );
 
     my $administrative_info = $self->get_admin_information();
-    my $status = $self->get_details();
-    my $services = $self->get_services();
+    push @with_version, $sum_version;
+    my $status = $self->get_details(@with_version);
+    my $services = $self->get_services(@with_version);
     my $communities = $comm_obj->get_host_communities();
     my $templates = $self->get_templates();
+    #my %template_hash = $templates;
+    my $ntp_info = {'ntp' => ( $self->get_ntp_information(@with_version) || {} ) };
+    $ntp_info->{ntp}->{when} = ($ntp_info->{ntp}->{when}); 
 
-    my $ntp_info = {'ntp' => ( $self->get_ntp_information() || {} ) };
-
-
-    my $results = { %$administrative_info, %$status, %$services, %$communities, %$templates, %$ntp_info };
-
+    my $results;
+    my $template_array = $templates->{templates}; 
+    if(($sum_version == 2) && !(@$template_array)){
+        $results = { %$administrative_info, %$status, %$services, %$communities, %$ntp_info };
+    }
+    else{
+        $results = { %$administrative_info, %$status, %$services, %$communities, %$templates, %$ntp_info };
+    }
+    $results->{sum_version} = $sum_version if $sum_version == 2;
     return $results;
 
 }
