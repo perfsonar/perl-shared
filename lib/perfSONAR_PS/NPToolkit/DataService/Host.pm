@@ -22,7 +22,7 @@ use perfSONAR_PS::Utils::GeoLookup qw(geoIPLookup);
 use perfSONAR_PS::PSConfig::PScheduler::ConfigConnect;
 
 use Data::Dumper;
-
+use Scalar::Util qw(looks_like_number);
 
 use Time::HiRes qw(gettimeofday tv_interval);
 
@@ -35,6 +35,8 @@ sub get_admin_information {
     my $self = shift;
     my $ls_conf = $self->{ls_conf};
 
+    my $lat = $ls_conf->get_latitude() if (looks_like_number($ls_conf->get_latitude()));
+    my $long = $ls_conf->get_longitude() if (looks_like_number($ls_conf->get_longitude()));
     my $info = {
         administrator => {
             name => $ls_conf->get_administrator_name(),
@@ -46,8 +48,8 @@ sub get_admin_information {
             state => $ls_conf->get_state(),
             country => $ls_conf->get_country(),
             zipcode => $ls_conf->get_zipcode(),
-            latitude => $ls_conf->get_latitude(),
-            longitude => $ls_conf->get_longitude(),
+            latitude => $lat,
+            longitude => $long,
         },
     };
 
@@ -137,8 +139,8 @@ sub update_metadata {
     $ls_conf->set_state( { state => $state } ) if defined $state;
     $ls_conf->set_country( { country => $country } ) if defined $country;
     $ls_conf->set_zipcode( { zipcode => $zipcode } ) if defined $zipcode;
-    $ls_conf->set_latitude( { latitude => $latitude } ) if defined $latitude;
-    $ls_conf->set_longitude( { longitude => $longitude } ) if defined $longitude;
+    $ls_conf->set_latitude( { latitude => $latitude } ) if defined $latitude && (looks_like_number($latitude));
+    $ls_conf->set_longitude( { longitude => $longitude } ) if defined $longitude && (looks_like_number($longitude));
 
     if($administrator_email && defined ($subscribe) && $subscribe == 1){
         subscribe($administrator_email);
