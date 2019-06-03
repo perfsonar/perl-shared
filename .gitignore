@@ -6,3 +6,5 @@
 .*.swo
 .*.swp
 cover_db/
+# Ignore vagrant files
+.vagrant
