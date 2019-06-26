@@ -255,6 +255,9 @@ sub get_details {
 
     $status->{toolkit_name}=$conf{toolkit_name};
 
+    $status->{privacy_link}=$conf{privacy_link};
+    $status->{privacy_text}=$conf{privacy_text};
+     
     $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/lsregistrationdaemon/client_uuid');
 
     my $logger = $self->{LOGGER};
