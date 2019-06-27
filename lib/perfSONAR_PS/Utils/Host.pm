@@ -602,6 +602,7 @@ sub get_processor_info {
         'CPU(s)' => 'cores',
     );
      my %cpuinfo_parse_map = (
+        'clock' => 'speed',
         'model name' => 'model_name',
     );
     my %cpuinfo = ();
@@ -629,7 +630,9 @@ sub get_processor_info {
             my @cols = split /\s*:\s*/, $line;
             next if(@cols != 2);
             if($cpuinfo_parse_map{$cols[0]}){
-                $cpuinfo{_sanitize($cpuinfo_parse_map{$cols[0]})} = _sanitize($cols[1]);
+                my $val = _sanitize($cols[1]);
+                $val =~ s/MHz$//;
+                $cpuinfo{_sanitize($cpuinfo_parse_map{$cols[0]})} = $val;
             }
         }
     }
@@ -733,11 +736,11 @@ sub get_tcp_configuration {
 
     return {
         tcp_cc_algorithm => _call_sysctl("net.ipv4.tcp_congestion_control"),
-        tcp_max_buffer_send => _call_sysctl("net.core.wmem_max"),
-        tcp_max_buffer_recv => _call_sysctl("net.core.rmem_max"),
-        tcp_autotune_max_buffer_send => _max_buffer_auto("net.ipv4.tcp_wmem"),
-        tcp_autotune_max_buffer_recv => _max_buffer_auto("net.ipv4.tcp_rmem"),
-        tcp_max_backlog => _call_sysctl("net.core.netdev_max_backlog"),
+        tcp_max_buffer_send => int(_call_sysctl("net.core.wmem_max")),
+        tcp_max_buffer_recv => int(_call_sysctl("net.core.rmem_max")),
+        tcp_autotune_max_buffer_send => int(_max_buffer_auto("net.ipv4.tcp_wmem")),
+        tcp_autotune_max_buffer_recv => int(_max_buffer_auto("net.ipv4.tcp_rmem")),
+        tcp_max_backlog => int(_call_sysctl("net.core.netdev_max_backlog")),
     };
 }
 

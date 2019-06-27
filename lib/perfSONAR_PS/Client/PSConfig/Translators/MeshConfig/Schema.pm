@@ -192,7 +192,8 @@ sub meshconfig_json_schema() {
                 "anyOf": [
                     { "$ref": "#/MeshConfig/GroupDisjointSpecification" },
                     { "$ref": "#/MeshConfig/GroupMeshSpecification" },
-                    { "$ref": "#/MeshConfig/GroupOrderedMeshSpecification" }
+                    { "$ref": "#/MeshConfig/GroupOrderedMeshSpecification" },
+                    { "$ref": "#/MeshConfig/GroupStarSpecification" }
                 ]
             },
             
@@ -254,6 +255,29 @@ sub meshconfig_json_schema() {
                     "address_map_field": { "type": "string" },
                     "exclude_unmapped": { "$ref": "#/MeshConfig/Boolean" },
                     "members": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                    }
+                },
+                "additionalProperties": false,
+                "required": [ "type", "members" ]
+            },
+            
+            "GroupStarSpecification": {
+                "type": "object",
+                "properties": {
+                    "type": { 
+                        "type": "string",
+                        "enum": [ "star" ]
+                    },
+                    "address_map_field": { "type": "string" },
+                    "exclude_unmapped": { "$ref": "#/MeshConfig/Boolean" },
+                    "center_address": { "type": "string" },
+                    "members": {
+                        "type": "array",
+                        "items": { "type": "string" }
+                    },
+                    "no_agents": {
                         "type": "array",
                         "items": { "type": "string" }
                     }

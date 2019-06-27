@@ -107,6 +107,16 @@ sub reference{
     return $self->data->{'reference'};
 }
 
+sub contexts{
+    my ($self, $val) = @_;
+    
+    if(defined $val){
+        $self->data->{'contexts'} = $val;
+    }
+    
+    return $self->data->{'contexts'};
+}
+
 sub reference_param{
     my ($self, $field, $val) = @_;
     
@@ -532,12 +542,13 @@ sub post_task {
             #priority introduced in v3
             $self->schema(3);
         }elsif($self->contexts()){
-            #contexts introduced in v3
+            #contexts introduced in v2
             $self->schema(2);
         }else{
             $self->schema(1);
         }
     }
+    
     $self->_init_field($self->data, 'schedule');
     $self->_init_field($self->data, 'test');
     $self->_init_field($self->data->{'test'}, 'spec');
@@ -870,13 +881,13 @@ sub checksum() {
     my ($self) = @_;
     
     #make sure these fields are consistent
-    $self->schema(1) unless($self->schema());
-    $self->data->{'test'}->{'spec'}->{'schema'} = 1 unless($self->data->{'test'}->{'spec'}->{'schema'}); 
     $self->data->{'archives'} = []  unless($self->data->{'archives'});
     $self->data->{'schedule'} = {}  unless($self->data->{'schedule'});
     
     #disable canonical since we don't care at the moment
     my $data_copy = from_json(to_json($self->data, {canonical => 0, utf8 => 1}));
+    $data_copy->{'schema'} = ''; #clear out this since if other params same then should be equal
+    $data_copy->{'test'}->{'spec'}->{'schema'} = ''; #clear out this since if other params same then should be equal
     $data_copy->{'tool'} = ''; #clear out tool since set by server
     $data_copy->{'href'} = ''; #clear out href
     $data_copy->{'schedule'}->{'start'} = ''; #clear out temporal values

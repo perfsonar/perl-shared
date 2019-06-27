@@ -28,7 +28,7 @@ use Storable qw(store retrieve freeze thaw dclone);
 use Data::Dumper;
 use File::Basename qw(dirname basename);
 
-use Config::General qw(ParseConfig SaveConfigString);
+use Config::General qw(ParseConfig);
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service );
 
 my %defaults = (
@@ -507,7 +507,7 @@ sub save {
     delete($config->{domain});
     $config->{domain} = $self->{DOMAIN} if $self->{DOMAIN};
 
-    my $content = SaveConfigString($config);
+    my $content = Config::General->new(-ConfigHash => $config, -SaveSorted => 1)->save_string();
 
     utf8::decode($content);
     my ($status, $res) = save_file( { file => $self->{CONFIG_FILE}, content => $content } );
