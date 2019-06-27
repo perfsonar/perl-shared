@@ -21,7 +21,7 @@ use Template;
 
 use base 'perfSONAR_PS::NPToolkit::Config::Base';
 
-use fields 'CONFIG_FILE', 'ORGANIZATION_NAME', 'PROJECTS', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL', 'ROLE', 'ACCESS_POLICY', 'ACCESS_POLICY_NOTES', 'PN_TEXT', 'PN_LINK';
+use fields 'CONFIG_FILE', 'ORGANIZATION_NAME', 'PROJECTS', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL', 'ROLE', 'ACCESS_POLICY', 'ACCESS_POLICY_NOTES';
 
 use Params::Validate qw(:all);
 use Storable qw(store retrieve freeze thaw dclone);
@@ -186,28 +186,6 @@ sub get_access_policy {
     my $parameters = validate( @params, { } );
 
     return $self->{ACCESS_POLICY};
-}
-
-=head2 get_pn_text()
-Returns the node's privacy text
-=cut
-
-sub get_pn_text {
-    my ( $self, @params ) = @_;
-    my $parameters = validate( @params, { } );
-
-    return $self->{PN_TEXT};
-}
-
-=head2 get_pn_link()
-Returns the node's privacy link
-=cut
-
-sub get_pn_link {
-    my ( $self, @params ) = @_;
-    my $parameters = validate( @params, { } );
-
-    return $self->{PN_LINK};
 }
 
 =head2 get_access_policy_notes()
@@ -393,35 +371,6 @@ sub set_access_policy {
     return 0;
 }
 
-=head2 set_pn_text({ pn_text => 1 })
-Sets the node privacy text to advertise in the LS
-=cut
-sub set_pn_text {
-    my ( $self, @params ) = @_;
-    my $parameters = validate( @params, { pn_text => 1, } );
-
-    my $pn_text = $parameters->{pn_text};
-
-    $self->{PN_TEXT} = $pn_text;
-
-    return 0;
-}
-
-=head2 set_pn_link({ pn_link => 1 })
-Sets the node privacy link to advertise in the LS
-=cut
-sub set_pn_link {
-    my ( $self, @params ) = @_;
-    my $parameters = validate( @params, { pn_link => 1, } );
-
-    my $pn_link = $parameters->{pn_link};
-
-    $self->{PN_LINK} = $pn_link;
-
-    return 0;
-}
-
-
 =head2 set_access_policy_notes({ access_policy_notes => 1 })
 Sets the node access policy notes to advertise in the LS
 =cut
@@ -499,12 +448,6 @@ sub save {
     delete($config->{access_policy});
     $config->{access_policy} = $self->{ACCESS_POLICY} if $self->{ACCESS_POLICY};
 
-    delete($config->{pn_text});
-    $config->{pn_text} = $self->{PN_TEXT} if $self->{PN_TEXT};
-
-    delete($config->{pn_link});
-    $config->{pn_link} = $self->{PN_LINK} if $self->{PN_LINK};
-    
     delete($config->{access_policy_notes});
     $config->{access_policy_notes} = $self->{ACCESS_POLICY_NOTES} if $self->{ACCESS_POLICY_NOTES};
 
@@ -554,8 +497,6 @@ sub reset_state {
     }
     $self->{ROLE}                   = $config->{role};
     $self->{ACCESS_POLICY}          = $config->{access_policy};
-    $self->{PN_TEXT}                = $config->{pn_text};
-    $self->{PN_LINK}                = $config->{pn_link};
     $self->{ACCESS_POLICY_NOTES}    = $config->{access_policy_notes};
 
     return 0;
@@ -605,8 +546,6 @@ sub save_state {
         administrator_email         => $self->{ADMINISTRATOR_EMAIL},
         role                        => $self->{ROLE},
         access_policy               => $self->{ACCESS_POLICY},
-        pn_text                     => $self->{PN_TEXT}.
-        pn_link                     => $self->{PN_LINK},
         access_policy_notes         => $self->{ACCESS_POLICY_NOTES},
     );
 
@@ -640,8 +579,6 @@ sub restore_state {
     $self->{ADMINISTRATOR_EMAIL}         = $state->{administrator_email};
     $self->{ROLE}                        = $state->{role};
     $self->{ACCESS_POLICY}               = $state->{access_policy};
-    $self->{PN_TEXT}                     = $state->{pn_text};
-    $self->{PN_LINK}                     = $state->{pn_link};
     $self->{ACCESS_POLICY_NOTES}         = $state->{access_policy_notes};
     
     return;

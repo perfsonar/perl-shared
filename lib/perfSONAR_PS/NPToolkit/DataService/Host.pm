@@ -70,8 +70,7 @@ sub get_metadata {
     $config->{'role'} = $config_full->{'role'};
     $config->{'access_policy'} = $config_full->{'access_policy'};
     $config->{'access_policy_notes'} = $config_full->{'access_policy_notes'};
-    $config->{'pn_text'} = $config_full->{'pn_text'};
-    $config->{'pn_link'} = $config_full->{'pn_link'};
+
     $meta->{'config'} = $config;
 
 
@@ -99,8 +98,6 @@ sub update_metadata {
         'role',
         'access_policy',
         'access_policy_notes',
-        'pn_text',
-        'pn_link',
         'communities',
         'organization_name',
         'admin_name',
@@ -123,8 +120,7 @@ sub update_metadata {
     my $access_policy = $config_args{'access_policy'};
     my $access_policy_notes = $config_args{'access_policy_notes'};
     my $communities = $config_args{'communities'};
-    my $pn_text = $config_args{'pn_text'};
-    my $pn_link = $config_args{'pn_link'};
+
     my $organization_name = $config_args{organization_name}; #  if (exists $args{organization_name});
     my $administrator_name = $config_args{admin_name}; # if (exists $args{administrator_name});
     my $administrator_email = $config_args{admin_email}; # if (exists $args{administrator_email});
@@ -152,8 +148,6 @@ sub update_metadata {
 
     $ls_conf->set_role( { role => $role } ) if defined $role && @$role >= 0;
     $ls_conf->set_access_policy( { access_policy => $access_policy } ) if defined $access_policy;
-    $ls_conf->set_pn_text( { pn_text => $pn_text } ) if defined $pn_text;
-    $ls_conf->set_pn_link( { pn_link => $pn_link } ) if defined $pn_link;
     $ls_conf->set_access_policy_notes( { access_policy_notes => $access_policy_notes } ) if defined $access_policy_notes;
     $ls_conf->set_projects( { projects => $communities } ) if defined $communities;
 
