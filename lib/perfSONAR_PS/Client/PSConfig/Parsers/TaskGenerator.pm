@@ -186,8 +186,9 @@ sub next {
         $scheduled_by_addr = $addrs[$scheduled_by];
         #if the default scheduled-by address is no-agent, pick first address that is not no-agent
         my $has_agent = 0;
+        my $needs_flip = 0; #local var so don't leak non-matching address flip value to matching address
         if($self->_is_no_agent($scheduled_by_addr)){
-            $flip = 1;
+            $needs_flip = 1;
             foreach my $addr(@addrs){
                 if(!$self->_is_no_agent($addr)){
                     $scheduled_by_addr = $addr;
@@ -202,6 +203,7 @@ sub next {
         #if the address responsible for scheduling matches us, exit loop, otherwise keep looking
         if($has_agent && $self->_is_matching_address($scheduled_by_addr)){
             $matched = 1;
+            $flip = $needs_flip;
             last;
         }  
     }

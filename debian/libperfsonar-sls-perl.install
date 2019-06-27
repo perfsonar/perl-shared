@@ -1,0 +1,3 @@
+lib/SimpleLookupService/* /usr/share/perl5/SimpleLookupService/
+lib/perfSONAR_PS/Client/LS/* /usr/share/perl5/perfSONAR_PS/Client/LS/
+lib/perfSONAR_PS/Utils/LookupService.pm /usr/share/perl5/perfSONAR_PS/Utils/

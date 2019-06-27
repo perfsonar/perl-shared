@@ -18,6 +18,7 @@ use Log::Log4perl::Logger;
 use perfSONAR_PS::Client::PScheduler::ApiConnect;
 use perfSONAR_PS::Client::PScheduler::ApiFilters;
 use perfSONAR_PS::Client::PScheduler::Task;
+use perfSONAR_PS::Utils::ISO8601 qw/ duration_to_seconds /;
 use perfSONAR_PS::Utils::Logging;
 use Data::UUID;
 use DateTime::Format::ISO8601;
@@ -39,6 +40,7 @@ has 'task_renewal_fudge_factor'  => (is => 'rw', isa => 'Num', default => 0.0);
 
 has 'new_tasks'           => (is => 'rw', isa => 'ArrayRef[perfSONAR_PS::Client::PScheduler::Task]', default => sub{ [] });
 has 'existing_task_map'   => (is => 'rw', isa => 'HashRef', default => sub{ {} });
+has 'duplicate_new_task_map'   => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'existing_archives' => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'leads'               => (is => 'rw', isa => 'HashRef', default => sub{ {} });
 has 'errors'              => (is => 'rw', isa => 'ArrayRef', default => sub{ [] });
@@ -178,7 +180,16 @@ sub add_task {
     my $parameters = validate( @args, {task => 1, local_address => 0, repeat_seconds => 0 } );
     my $new_task = $parameters->{task};
     my $local_address = $parameters->{local_address};
+    #Note: we can get rid of this as a parameter when we drop MeshConfig libs from toolkit GUI
     my $repeat_seconds = $parameters->{repeat_seconds};
+    
+    #set repeat seconds if not provided
+    if(!defined $repeat_seconds && $new_task->schedule_repeat()){
+        eval{
+            #ignore if can't convert
+            $repeat_seconds = duration_to_seconds($new_task->schedule_repeat());
+        };
+    }
     
     #set reference params
     ##need to copy this so different addresses don't break checksum
@@ -192,6 +203,7 @@ sub add_task {
     #determine if we need new task and create
     my($need_new_task, $new_task_start) = $self->_need_new_task($new_task);
     if($need_new_task){
+        $self->duplicate_new_task_map()->{$new_task->checksum()} = 1;
         #task does not exist, we need to create it
         $new_task->schedule_start($self->_ts_to_iso($new_task_start));
         #set end time to greater of min repeats and expiration time
@@ -312,6 +324,12 @@ sub _need_new_task {
     #performance hit
     if($new_task->needs_bind_addresses()){
         $new_task->refresh_lead();
+    }
+    
+    #if we already have this task in the queue to be created, such as when it
+    #is specified in multiple meshes, then we don't want to add it again
+    if($self->duplicate_new_task_map()->{$new_task->checksum()}){
+        return (0, undef);
     }
     
     #if private ma params change, then need new task
