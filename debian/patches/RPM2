@@ -1,5 +1,5 @@
---- a/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2019-02-21 19:21:28.563137000 +0000
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2019-07-18 21:17:17.150661000 +0000
+--- a/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2019-08-08 19:08:04.794563572 +0000
++++ b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2019-08-08 19:08:05.734574666 +0000
 @@ -6,7 +6,8 @@
  use Log::Log4perl qw(:easy);
  use File::Spec;
@@ -50,8 +50,8 @@
      }
  
      return $version;
---- a/lib/perfSONAR_PS/Web/Sidebar.pm	2019-02-21 19:21:28.572680000 +0000
-+++ b/lib/perfSONAR_PS/Web/Sidebar.pm	2019-07-18 21:17:17.155663000 +0000
+--- a/lib/perfSONAR_PS/Web/Sidebar.pm	2019-08-08 19:08:04.794563572 +0000
++++ b/lib/perfSONAR_PS/Web/Sidebar.pm	2019-08-08 19:08:05.735574677 +0000
 @@ -9,7 +9,7 @@
  use Params::Validate;
  use Data::Dumper;
