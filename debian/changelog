@@ -1,7 +1,15 @@
+libperfsonar-perl (4.2.1~a1.0-1) perfsonar-4.2-snapshot; urgency=low
+
+  * New upstream version.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 27 Aug 2019 11:54:55 +0000
+
 libperfsonar-perl (4.2.0-1) perfsonar-minor-staging; urgency=low
 
   * New upstream version.
   * Adding dependencies to libcrypt-openssl-rsa-perl and libcrypt-openssl-x509-perl
+  * Removing perfsonar-toolkit-library dependency.
+  * Building on Stretch.
 
  -- Andy Lake <andy@es.net>  Thu, 15 Aug 2019 01:10:46 +0000
 
