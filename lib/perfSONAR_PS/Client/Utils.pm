@@ -247,7 +247,8 @@ sub build_err_msg {
     my $errmsg = $response->get_start_line_chunk(0);
     if($response->error && $response->error->{'message'}){
         $errmsg = $response->error->{'message'};
-    }elsif($response->body){
+    }
+    if($response->body){
         #try to parse json
         eval{
             my $response_json = from_json($response->body);
