@@ -4,10 +4,24 @@ libperfsonar-perl (4.3.0~a1.0-1) perfsonar-4.3-snapshot; urgency=low
 
  -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 27 Aug 2019 12:03:12 +0000
 
+libperfsonar-perl (4.2.3~a0.0-1) perfsonar-4.2-snapshot; urgency=low
+
+  * New upstream version.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Thu, 17 Oct 2019 15:30:46 +0200
+
+libperfsonar-perl (4.2.1-1) perfsonar-4.2; urgency=low
+
+  * New upstream version.
+
+ -- perfSONAR developers <debian@perfsonar.net>  Fri, 27 Sep 2019 13:17:02 -0400
+
 libperfsonar-perl (4.2.0-1) perfsonar-minor-staging; urgency=low
 
   * New upstream version.
   * Adding dependencies to libcrypt-openssl-rsa-perl and libcrypt-openssl-x509-perl
+  * Removing perfsonar-toolkit-library dependency.
+  * Building on Stretch.
 
  -- Andy Lake <andy@es.net>  Thu, 15 Aug 2019 01:10:46 +0000
 
