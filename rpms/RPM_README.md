@@ -91,6 +91,14 @@ You can destroy to the VM with:
 vagrant destroy ps-rpminstall-el7
 ```
 
+### Installing minor REPO packages
+
+If you want to try packages meant for a new minor release, you should install the corresponding repository first:
+
+```
+sudo yum install perfSONAR-repo-nightly-minor
+```
+
 ## Build VM Command Reference
 
 The build VM has a few convenience commands in the default path to help do common tasks such as build other rpms, publish rpms to the local repo and clean the build environment. All the commands are in the default PATH and there is no need to sudo (they will use sudo as needed). Commands are as follows:

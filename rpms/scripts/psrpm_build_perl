@@ -71,8 +71,11 @@ if [ "$?" -ne "0" ]; then
     exit 1
 fi
 
-#Build SRPM
-rpmbuild -bs ${PACKAGE}.spec
+# Build SRPM with an incremented release number
+revision=`git rev-parse HEAD`
+count=`git rev-list HEAD | wc -l`
+sed -r "s/Release:\s*(.+)/Release: \1.$count.$revision/" ${PACKAGE}.spec > /tmp/${PACKAGE}.spec
+rpmbuild -bs /tmp/${PACKAGE}.spec
 if [ "$?" -ne "0" ]; then
     echo "Error building SRPM"
     exit 1

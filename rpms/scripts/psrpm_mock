@@ -1,5 +1,8 @@
 #!/usr/bin/bash
 
+CHROOT=epel-7-x86_64
+MOCK_RESULTS=/home/vagrant/mock-results/
+
 if [ -z "$1" ]; then
     echo "Usage: $0 SRPM"
     echo ""
@@ -7,4 +10,6 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-sudo mock -r epel-7-x86_64 --resultdir=/home/vagrant/mock-results/epel-7-x86_64/ --arch=x86_64 $1
+sudo mock -r $CHROOT --clean
+sudo mock -r $CHROOT --init
+sudo mock -r $CHROOT --resultdir=${MOCK_RESULTS}${CHROOT} --arch=x86_64 $1
