@@ -13,7 +13,8 @@ A client for interacting with pScheduler
 use Mouse;
 use Params::Validate qw(:all);
 use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg extract_url_uuid);
-use JSON qw(from_json to_json);
+use JSON qw(from_json to_json encode_json decode_json);
+use URI::Encode;
 
 use perfSONAR_PS::Client::PScheduler::ApiFilters;
 use perfSONAR_PS::Client::PScheduler::Task;
@@ -560,6 +561,67 @@ sub get_hostname() {
     }
     
     return $response_json;
+}
+
+# curl -k "https://147.91.1.235/pscheduler/tests/rtt/participants?spec=%7B%22source-node%22:%22147.91.1.235%22,%22dest%22:%22147.91.27.4%22,%22source%22:%22147.91.1.235%22,%22ip-version%22:4,%22ttl%22:255,%22schema%22:1%7D"
+sub get_test_is_multiparticipant {
+    my ($self, $input_data) = @_;
+
+    unless ($input_data) {
+        # TODO: handle warning
+        print "is_miltiparticipant_test: wrong test spec";
+        return 0;
+    }
+    # $input_data: {"spec":{"ttl":255,"schema":1,"ip-version":4,"source":"147.91.1.235","source-node":"147.91.1.235","dest":"147.91.4.27"},"type":"rtt"}
+    # $input_data: {"type":"throughput","spec":{"dest":"host-a.perfsonar.net","source":"host-c.perfsonar.net","duration":"PT30S"}}
+
+    #build url
+    my $test_url = $self->url;
+    chomp($test_url);
+    $test_url .= "/" if($self->url !~ /\/$/);
+    my $test_type = decode_json($input_data)->{'type'}; # "rtt";
+    my $test_spec = encode_json(decode_json($input_data)->{'spec'}); # {"spec":{"ttl":255,"schema":1,"ip-version":4,"source":"147.91.1.235","source-node":"147.91.1.235","dest":"147.91.4.27"},"type":"rtt"};
+
+    $test_url = $test_url . $test_type ."/participants?spec=" . $test_spec;
+    my $encoder = URI::Encode->new({encode_reserved => 0});
+    my $test_spec_url = $encoder->encode($test_url);
+
+    my $response = send_http_request(
+        connection_type => 'GET',
+        url => $test_spec_url,
+        get_params => {},
+        timeout => $self->filters->timeout,
+        ca_certificate_file => $self->filters->ca_certificate_file,
+        ca_certificate_path => $self->filters->ca_certificate_path,
+        verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
+        bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
+    );
+
+    unless($response->is_success){
+        my $msg = build_err_msg(http_response => $response);
+        $self->_set_error($msg);
+        return;
+    }
+
+    my $participants_json = from_json($response->body);
+    unless ($participants_json){
+        $self->_set_error("No participants returned.");
+        return;
+    }
+
+    my $count = 0;
+    if (ref($participants_json) eq 'HASH') {
+        my $participants_array = $participants_json->{'participants'};
+        $count = @$participants_array;
+    }
+    my $return_value = ($count > 1);
+    if ($count > 1) {
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 __PACKAGE__->meta->make_immutable;
