@@ -19,6 +19,10 @@ use perfSONAR_PS::Client::PSConfig::Config;
 use perfSONAR_PS::Client::PSConfig::Parsers::Template;
 use perfSONAR_PS::Client::PScheduler::Task;
 
+use REST::Client;
+use JSON;
+use URI::Encode;
+
 our $VERSION = 4.1;
 
 my $logger;
@@ -256,6 +260,8 @@ sub next {
         return $self->_handle_next_error(\@addrs, "Error expanding test specification: " . $template->error());
     }
     
+#    my $jovana_pscheduler_url = $self->pscheduler_url();
+
     #expand archivers
     my $expanded_archives = [];
     foreach my $archive(@{$archives}){
@@ -266,16 +272,62 @@ sub next {
         push @{$expanded_archives}, $expanded_archive;
     }
     $self->_set_expanded_archives($expanded_archives);
-    
+
     #expand contexts
     #Note: Assumes first address is first participant, second is second participant, etc.
     my $expanded_contexts = [];
     foreach my $context(@{$contexts}){
-        my $expanded_context = $template->expand($context);
-        unless($expanded_context){
-            return $self->_handle_next_error(\@addrs, "Error expanding context: " . $template->error());
+        # query https://pscheduler_server/pscheduler/tests/<test_name>/participants?spec={...}
+        # e. g. https://147.91.1.235/pscheduler/tests/rtt/participants?spec=%7B%22source-node%22:%22147.91.1.235%22,%22dest%22:%22147.91.27.4%22,%22source%22:%22147.91.1.235%22,%22ip-version%22:4,%22ttl%22:255,%22schema%22:1%7D
+        # analyze reply
+        # e.g. {"participants": ["147.91.1.235"]}
+        # expand contexts only for multiparticipant tests
+
+        #!!! hardcoded pscheduler_arrress and scheme
+        my $pscheduler_address = "147.91.1.235";
+        my $pscheduler_scheme = "https";
+
+        my $test_data = $self->test()->data();
+        my $test_data_spec = $self->test()->data()->{'spec'};
+        my %test_data_hash = ();
+        my %test_data_spec_hash = ();
+        foreach my $test_data_key (keys %$test_data_spec) {
+        my $test_data_value = $test_data_spec->{$test_data_key};
+            $test_data_spec_hash{ $test_data_key } = $test_data_value;
+            # expand address
+            foreach my $address_index (0 .. @addrs) {
+                my $address_value = ($addrs[$address_index]) ? $addrs[$address_index]->address() : $test_data_value;
+                my $expanded_value = $test_data_value;
+                if ($expanded_value =~ /\{\% address\[$address_index\] \%\}/) {
+                    $expanded_value =~ s/\{\% address\[$address_index\] \%\}/$address_value/;
+                    $test_data_spec_hash{ $test_data_key } = $expanded_value;
+                }
+            }
+
         }
-        push @{$expanded_contexts}, $expanded_context;
+
+        $test_data_hash{'type'} = $test_data->{'type'};
+        $test_data_hash{'spec'} = \%test_data_spec_hash;
+
+        my $test_data_json = encode_json \%test_data_hash;
+        # remove quotes around numbers
+        # I did't find more elegant way for unquoting numbers
+        $test_data_json =~ s/\"([0-9]+)\"/$1/g;
+
+#        my $test_data_json = "{\"type\":\"rtt\",\"spec\":{\"source-node\":\"147.91.1.235\",\"dest\":\"147.91.27.4\",\"source\":\"147.91.1.235\",\"ip-version\":4,\"ttl\":255,\"schema\":1}}";
+        my $is_multi = is_miltiparticipant_test($pscheduler_scheme, $pscheduler_address, $test_data_json); # "{\"type\":\"rtt\",\"spec\":{\"source-node\":\"147.91.1.235\",\"dest\":\"147.91.27.4\",\"source\":\"147.91.1.235\",\"ip-version\":4,\"ttl\":255,\"schema\":1}}");
+        if ($is_multi) {
+            my $expanded_context = $template->expand($context);
+            unless($expanded_context){
+                return $self->_handle_next_error(\@addrs, "Error expanding context: " . $template->error());
+            }
+            push @{$expanded_contexts}, $expanded_context;
+        }
+#        my $expanded_context = $template->expand($context);
+#        unless($expanded_context){
+#            return $self->_handle_next_error(\@addrs, "Error expanding context: " . $template->error());
+#        }
+#        push @{$expanded_contexts}, $expanded_context;
     }
     $self->_set_expanded_contexts($expanded_contexts);
     
@@ -289,7 +341,7 @@ sub next {
             return $self->_handle_next_error(\@addrs, "Error expanding reference: " . $template->error());
         }
     }
-    
+
     #return the matching address set
     return @addrs;
 }
@@ -654,6 +706,51 @@ sub _reset_next {
     $self->_set_addresses(undef);
 }
  
+sub is_miltiparticipant_test {
+    my ($pscheduler_scheme, $pscheduler_address, $input_data) = @_;
+    
+    unless ($input_data) {
+        # TODO: handle warning
+    	print "is_miltiparticipant_test: wrong test spec";
+    	return 0;
+    } 
+
+    # $pscheduler_address = "147.91.1.234";
+    my $server_url = $pscheduler_scheme."://".$pscheduler_address."/pscheduler/tests/";
+#    my $test_spec = $input_data->{'spec'}; # "{\"source-node\":\"147.91.1.235\",\"dest\":\"147.91.27.4\",\"source\":\"147.91.1.235\",\"ip-version\":4,\"ttl\":255,\"schema\":1}";
+    my $test_type = decode_json($input_data)->{'type'}; # "rtt";
+    my $test_spec = encode_json(decode_json($input_data)->{'spec'}); # "spec: {...}";
+
+    my $encoder = URI::Encode->new({encode_reserved => 0});
+    my $test_spec_uri = $encoder->encode($server_url.$test_type."/participants?spec=".$test_spec);
+
+    #The basic use case
+    my $rest_client = REST::Client->new();
+    $rest_client->getUseragent()->ssl_opts(verify_hostname => 0);
+    # $rest_client->getUseragent()->ssl_opts(SSL_verify_mode => SSL_VERIFY_NONE);
+    $rest_client->getUseragent()->ssl_opts(SSL_verify_mode => 0);
+    $rest_client->GET($test_spec_uri);
+    # $rest_client->GET('https://147.91.1.235/pscheduler/tests/rtt/participants?spec=%7B%22source-node%22:%22147.91.1.235%22,%22dest%22:%22147.91.27.4%22,%22source%22:%22147.91.1.235%22,%22ip-version%22:4,%22ttl%22:255,%22schema%22:1%7D');
+
+    unless ($rest_client->responseCode() == 200) {
+    	# TODO: handle warning/error
+        print "warning/error: HTTP response code isn't 200\n";
+        return 0;
+    }
+    
+    my $count = 0;
+    my $participants = from_json($rest_client->responseContent());
+    if (ref($participants) eq 'HASH') {
+        my @participants_array = $participants->{'participants'};
+        $count = scalar @participants_array;
+    }
+    my $return_value = ($count > 1);
+    if ($count > 1) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
 
 __PACKAGE__->meta->make_immutable;
 
