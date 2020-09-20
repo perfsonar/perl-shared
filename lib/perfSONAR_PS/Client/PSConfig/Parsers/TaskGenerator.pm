@@ -258,8 +258,6 @@ sub next {
     }else{
         return $self->_handle_next_error(\@addrs, "Error expanding test specification: " . $template->error());
     }
-    
-#    my $jovana_pscheduler_url = $self->pscheduler_url();
 
     #expand archivers
     my $expanded_archives = [];
@@ -311,7 +309,8 @@ sub next {
 #        my $test_data_json = "{\"type\":\"rtt\",\"spec\":{\"source-node\":\"147.91.1.235\",\"dest\":\"147.91.27.4\",\"source\":\"147.91.1.235\",\"ip-version\":4,\"ttl\":255,\"schema\":1}}";
 
         #!!! hardcoded pscheduler_address and scheme in psc_url
-        my $psc_url = "https://147.91.1.235/pscheduler/tests";
+        # my $psc_url = "https://147.91.1.235/pscheduler/tests";
+        my $psc_url = $self->pscheduler_url() . "/pscheduler/tests";
         my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url);
         my $is_multiparticipant_test = $psc_client->get_test_is_multiparticipant($test_data_json); # "{\"type\":\"rtt\",\"spec\":{\"source-node\":\"147.91.1.235\",\"dest\":\"147.91.27.4\",\"source\":\"147.91.1.235\",\"ip-version\":4,\"ttl\":255,\"schema\":1}}");
         if ($is_multiparticipant_test) {

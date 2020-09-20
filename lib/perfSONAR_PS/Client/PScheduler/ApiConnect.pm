@@ -569,7 +569,7 @@ sub get_test_is_multiparticipant {
 
     unless ($input_data) {
         # TODO: handle warning
-        print "is_miltiparticipant_test: wrong test spec";
+        print "is_multiparticipant_test: wrong test spec";
         return 0;
     }
     # $input_data: {"spec":{"ttl":255,"schema":1,"ip-version":4,"source":"147.91.1.235","source-node":"147.91.1.235","dest":"147.91.4.27"},"type":"rtt"}
@@ -604,7 +604,7 @@ sub get_test_is_multiparticipant {
         $self->_set_error($msg);
         return;
     }
-
+    
     my $participants_json = from_json($response->body);
     unless ($participants_json){
         $self->_set_error("No participants returned.");
@@ -616,7 +616,6 @@ sub get_test_is_multiparticipant {
         my $participants_array = $participants_json->{'participants'};
         $count = @$participants_array;
     }
-    my $return_value = ($count > 1);
     if ($count > 1) {
         return 1;
     } else {
