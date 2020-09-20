@@ -604,7 +604,7 @@ sub get_test_is_multiparticipant {
         $self->_set_error($msg);
         return;
     }
-
+    
     my $participants_json = from_json($response->body);
     unless ($participants_json){
         $self->_set_error("No participants returned.");
@@ -616,7 +616,6 @@ sub get_test_is_multiparticipant {
         my $participants_array = $participants_json->{'participants'};
         $count = @$participants_array;
     }
-    my $return_value = ($count > 1);
     if ($count > 1) {
         return 1;
     } else {

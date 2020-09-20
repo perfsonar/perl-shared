@@ -258,8 +258,6 @@ sub next {
     }else{
         return $self->_handle_next_error(\@addrs, "Error expanding test specification: " . $template->error());
     }
-    
-#    my $jovana_pscheduler_url = $self->pscheduler_url();
 
     #expand archivers
     my $expanded_archives = [];
