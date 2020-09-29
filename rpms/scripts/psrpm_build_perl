@@ -50,21 +50,32 @@ else
 fi
 
 # Build tarball
-make dist
-if [ "$?" -ne "0" ]; then
-    echo "Error running make dist"
-    exit 1
+if [ "$GITREPO" == "minor-packages" ]; then
+    cd $PACKAGE
+    # .patch files might not exist for all projects
+    for f in `ls *.patch bootstrap.sh 2> /dev/null` ; do
+            cp $f /home/vagrant/rpmbuild/SOURCES/
+    done
+else
+    make dist
+    if [ "$?" -ne "0" ]; then
+        echo "Error running make dist"
+        exit 1
+    fi
 fi
 
 #Copy tarball to rpm build environment
-cp ${PACKAGE}-*.tar.gz /home/vagrant/rpmbuild/SOURCES/
+cp ${PACKAGE}-*.tar.* /home/vagrant/rpmbuild/SOURCES/
 if [ "$?" -ne "0" ]; then
     echo "Error copying source"
     exit 1
 fi
 
-#Build SRPM
-rpmbuild -bs ${PACKAGE}.spec
+# Build SRPM with an incremented release number
+revision=`git rev-parse HEAD`
+count=`git rev-list HEAD | wc -l`
+sed -r "s/Release:\s*(.+)/Release: \1.$count.$revision/" ${PACKAGE}.spec > /tmp/${PACKAGE}.spec
+rpmbuild -bs /tmp/${PACKAGE}.spec
 if [ "$?" -ne "0" ]; then
     echo "Error building SRPM"
     exit 1

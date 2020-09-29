@@ -10,13 +10,13 @@ sub init {
 
     $conf{description}  = "pScheduler" unless $conf{description};
     $conf{pid_files} = [ 
-                            "/var/run/pscheduler-server/pscheduler-archiver.pid",
-                            "/var/run/pscheduler-server/pscheduler-runner.pid",
-                            "/var/run/pscheduler-server/pscheduler-scheduler.pid",
-                            "/var/run/pscheduler-server/pscheduler-ticker.pid"
+                            "/var/run/pscheduler-server/archiver/pid",
+                            "/var/run/pscheduler-server/runner/pid",
+                            "/var/run/pscheduler-server/scheduler/pid",
+                            "/var/run/pscheduler-server/ticker/pid"
                         ] unless $conf{pid_files};
     #one for each pid
-    $conf{process_names} = [ "python", "python", "python", "python" ] unless $conf{process_names};
+    $conf{process_names} = [ "python3", "python3", "python3", "python3" ] unless $conf{process_names};
     #Note pscheduler is more than one script, but this will indicate if enabled
     $conf{init_script} = 'pscheduler-scheduler' unless $conf{init_script}; 
     $conf{package_names} = [ "pscheduler-server" ] unless $conf{package_names};
