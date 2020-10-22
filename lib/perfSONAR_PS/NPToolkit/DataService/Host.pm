@@ -34,6 +34,14 @@ use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file start_service re
 sub get_admin_information {
     my $self = shift;
     my $ls_conf = $self->{ls_conf};
+    if (keys %$ls_conf < 1) {
+        return {
+		administrator => {
+        }, 
+        location => {
+        }
+	};
+    }
 
     my $info = {
         administrator => {
