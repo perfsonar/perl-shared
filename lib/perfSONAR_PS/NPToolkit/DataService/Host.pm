@@ -65,6 +65,10 @@ sub get_metadata {
 
     my $config_full = $ls_conf->load_config( { file => $ls_conf->{'CONFIG_FILE'} } );
     my $config = {};
+    my $config_full = {};
+if ( defined $ls_conf->{'CONFIG_FILE'} ) {
+    $config_full = $ls_conf->load_config( { file => $ls_conf->{'CONFIG_FILE'} } );
+} 
     $config->{'role'} = $config_full->{'role'};
     $config->{'access_policy'} = $config_full->{'access_policy'};
     $config->{'access_policy_notes'} = $config_full->{'access_policy_notes'};
