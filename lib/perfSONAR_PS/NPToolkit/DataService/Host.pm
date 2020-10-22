@@ -254,6 +254,11 @@ sub get_details {
         $external_address_ipv6 = $external_addresses->{primary_ipv6};
         $external_dns_name = $external_addresses->{primary_dns_name}; 
 
+        if ( !$external_address && !$external_address_ipv4 && !$external_address_ipv6) {
+            $status->{all_addrs_private} = 1;
+        } else {
+            $status->{all_addrs_private} = 0;
+        }
         $status->{external_address} = {
             address => $external_address,
             ipv4_address => $external_address_ipv4,
@@ -267,9 +272,13 @@ sub get_details {
 
     }
 
+    $status->{configuration} = {} if not exists $status->{configuration}; #" in %$status);
+
     $status->{toolkit_name}=$conf{toolkit_name};
     $status->{privacy_link}=$conf{privacy_link};
     $status->{privacy_text}=$conf{privacy_text};
+    $status->{configuration}->{force_toolkit_name}=$conf{force_toolkit_name} || 0;
+    $status->{configuration}->{allow_internal_addresses}=$conf{allow_internal_addresses} || 0;
 
     $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/lsregistrationdaemon/client_uuid');
 
