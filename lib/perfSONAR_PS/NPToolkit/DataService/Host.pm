@@ -63,7 +63,6 @@ sub get_metadata {
         return { 'error' => 'LS Registration Daemon config object not found' };
     }
 
-    my $config_full = $ls_conf->load_config( { file => $ls_conf->{'CONFIG_FILE'} } );
     my $config = {};
     my $config_full = {};
 if ( defined $ls_conf->{'CONFIG_FILE'} ) {
