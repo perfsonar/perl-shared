@@ -80,7 +80,9 @@ sub new {
         my ( $status, $res ) = $ls_conf->init( { config_file => $ls_config_file  } );
 
         if ( $status != 0 ) {
-            return { error => "Problem reading LS registration daemon configuration: $res" };
+            #return { error => "Problem reading LS registration daemon configuration: " . Dumper ($res) };
+            $self->{ls_conf} = {};
+		return $self;
         }
         $self->{ls_conf} = $ls_conf;
 
