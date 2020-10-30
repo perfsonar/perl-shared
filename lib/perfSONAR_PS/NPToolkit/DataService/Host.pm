@@ -34,6 +34,14 @@ use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file start_service re
 sub get_admin_information {
     my $self = shift;
     my $ls_conf = $self->{ls_conf};
+    if (keys %$ls_conf < 1) {
+        return {
+		administrator => {
+        }, 
+        location => {
+        }
+	};
+    }
 
     my $info = {
         administrator => {
@@ -63,8 +71,11 @@ sub get_metadata {
         return { 'error' => 'LS Registration Daemon config object not found' };
     }
 
-    my $config_full = $ls_conf->load_config( { file => $ls_conf->{'CONFIG_FILE'} } );
     my $config = {};
+    my $config_full = {};
+if ( defined $ls_conf->{'CONFIG_FILE'} ) {
+    $config_full = $ls_conf->load_config( { file => $ls_conf->{'CONFIG_FILE'} } );
+} 
     $config->{'role'} = $config_full->{'role'};
     $config->{'access_policy'} = $config_full->{'access_policy'};
     $config->{'access_policy_notes'} = $config_full->{'access_policy_notes'};
@@ -254,6 +265,11 @@ sub get_details {
         $external_address_ipv6 = $external_addresses->{primary_ipv6};
         $external_dns_name = $external_addresses->{primary_dns_name}; 
 
+        if ( !$external_address && !$external_address_ipv4 && !$external_address_ipv6) {
+            $status->{all_addrs_private} = 1;
+        } else {
+            $status->{all_addrs_private} = 0;
+        }
         $status->{external_address} = {
             address => $external_address,
             ipv4_address => $external_address_ipv4,
@@ -267,9 +283,13 @@ sub get_details {
 
     }
 
+    $status->{configuration} = {} if not exists $status->{configuration}; #" in %$status);
+
     $status->{toolkit_name}=$conf{toolkit_name};
     $status->{privacy_link}=$conf{privacy_link};
     $status->{privacy_text}=$conf{privacy_text};
+    $status->{configuration}->{force_toolkit_name}=$conf{force_toolkit_name} || 0;
+    $status->{configuration}->{allow_internal_addresses}=$conf{allow_internal_addresses} || 0;
 
     $status->{ls_client_uuid} = get_client_uuid(file => '/var/lib/perfsonar/lsregistrationdaemon/client_uuid');
 
