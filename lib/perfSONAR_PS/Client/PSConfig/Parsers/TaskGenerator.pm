@@ -270,8 +270,48 @@ sub next {
     }
     $self->_set_expanded_archives($expanded_archives);
 
+    my $test_data = $self->expanded_test(); # $self->test()->data();
+
+    my $test_data_spec = $self->expanded_test()->{'spec'}; #  $self->test()->data()->{'spec'};
+    my %test_data_hash = ();
+    my %test_data_spec_hash = ();
+    foreach my $test_data_key (keys %$test_data_spec) {
+        my $test_data_value = $test_data_spec->{$test_data_key};
+        $test_data_spec_hash{ $test_data_key } = $test_data_value;
+    }
+
+    $test_data_hash{'type'} = $test_data->{'type'};
+    $test_data_hash{'spec'} = \%test_data_spec_hash;
+
+    my $test_data_json = encode_json \%test_data_hash;
+    # remove quotes around numbers
+    # I did't find more elegant way for unquoting numbers
+    $test_data_json =~ s/\"([0-9]+)\"/$1/g;
+
+    my $number_of_participants = scalar(@{$contexts});
+    if ($self->pscheduler_url()) {
+
+        my $psc_url = $self->pscheduler_url() . "/tests";
+        unless($psc_url){
+            $self->_set_error("psc_url is NULL");
+        }
+        my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url);
+        unless($psc_client){
+            $self->_set_error("psc_client is NULL");
+        }
+
+        my $retrieved_number_of_participants = $psc_client->get_number_of_participants($test_data_json); # "{\"type\":\"rtt\",\"spec\":{\"source-node\":\"147.91.1.235\",\"dest\":\"147.91.27.4\",\"source\":\"147.91.1.235\",\"ip-version\":4,\"ttl\":255,\"schema\":1}}");
+        if (($retrieved_number_of_participants == -1) || ($retrieved_number_of_participants eq "-1")) {
+            $number_of_participants = scalar(@{$contexts});
+            $self->_set_error("Invalid number of participants");
+        } else {
+            $number_of_participants = $retrieved_number_of_participants;
+        }
+    }
+
     #expand contexts
     #Note: Assumes first address is first participant, second is second participant, etc.
+    my $participants_counter = 0;
     my $expanded_contexts = [];
     foreach my $context(@{$contexts}){
         # query https://pscheduler_server/pscheduler/tests/<test_name>/participants?spec={...}
@@ -279,50 +319,17 @@ sub next {
         # analyze reply
         # e.g. {"participants": ["147.91.1.235"]}
         # expand contexts only for multiparticipant tests
-
-        my $test_data = $self->test()->data();
-        my $test_data_spec = $self->test()->data()->{'spec'};
-        my %test_data_hash = ();
-        my %test_data_spec_hash = ();
-        foreach my $test_data_key (keys %$test_data_spec) {
-        my $test_data_value = $test_data_spec->{$test_data_key};
-            $test_data_spec_hash{ $test_data_key } = $test_data_value;
-            # expand address
-            foreach my $address_index (0 .. @addrs) {
-                my $address_value = ($addrs[$address_index]) ? $addrs[$address_index]->address() : $test_data_value;
-                my $expanded_value = $test_data_value;
-                if ($expanded_value =~ /\{\% address\[$address_index\] \%\}/) {
-                    $expanded_value =~ s/\{\% address\[$address_index\] \%\}/$address_value/;
-                    $test_data_spec_hash{ $test_data_key } = $expanded_value;
-                }
-            }
-
-        }
-
-        $test_data_hash{'type'} = $test_data->{'type'};
-        $test_data_hash{'spec'} = \%test_data_spec_hash;
-
-        my $test_data_json = encode_json \%test_data_hash;
-        # remove quotes around numbers
-        # I did't find more elegant way for unquoting numbers
-        $test_data_json =~ s/\"([0-9]+)\"/$1/g;
-#        my $test_data_json = "{\"type\":\"rtt\",\"spec\":{\"source-node\":\"147.91.1.235\",\"dest\":\"147.91.27.4\",\"source\":\"147.91.1.235\",\"ip-version\":4,\"ttl\":255,\"schema\":1}}";
-
-        #!!! hardcoded pscheduler_address and scheme in psc_url
-        # my $psc_url = "https://147.91.1.235/pscheduler/tests";
-        my $psc_url = $self->pscheduler_url() . "/pscheduler/tests";
-        my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url);
-        my $is_multiparticipant_test = $psc_client->get_test_is_multiparticipant($test_data_json); # "{\"type\":\"rtt\",\"spec\":{\"source-node\":\"147.91.1.235\",\"dest\":\"147.91.27.4\",\"source\":\"147.91.1.235\",\"ip-version\":4,\"ttl\":255,\"schema\":1}}");
-        if ($is_multiparticipant_test) {
+        if ($participants_counter < $number_of_participants) {
             my $expanded_context = $template->expand($context);
             unless($expanded_context){
                 return $self->_handle_next_error(\@addrs, "Error expanding context: " . $template->error());
             }
             push @{$expanded_contexts}, $expanded_context;
         }
+        ++$participants_counter;
     }
     $self->_set_expanded_contexts($expanded_contexts);
-    
+
     #expand reference
     my $reference;
     if($self->task()->reference()){
