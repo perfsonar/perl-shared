@@ -1,9 +1,9 @@
 libperfsonar-perl (4.4.0~a1.0-1) perfsonar-4.4-snapshot; urgency=low\n\n  * New upstream version.\n\n -- perfSONAR developers <debian@perfsonar.net>  Tue, 03 Nov 2020 14:09:25 +0000\n
-libperfsonar-perl (4.3.3-1) perfsonar-4.3; urgency=low
+libperfsonar-perl (4.3.4-1) perfsonar-4.3; urgency=low
 
   * New upstream version.
 
- -- perfSONAR developers <debian@perfsonar.net>  Tue, 02 Feb 2021 16:37:14 +0000
+ -- perfSONAR developers <debian@perfsonar.net>  Wed, 17 Mar 2021 01:10:01 +0000
 
 libperfsonar-perl (4.3.0-1) perfsonar-4.3; urgency=low
 
