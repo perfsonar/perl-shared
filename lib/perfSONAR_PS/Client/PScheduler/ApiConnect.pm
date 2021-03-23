@@ -563,7 +563,6 @@ sub get_hostname() {
     return $response_json;
 }
 
-# curl -k "https://147.91.1.235/pscheduler/tests/rtt/participants?spec=%7B%22source-node%22:%22147.91.1.235%22,%22dest%22:%22147.91.27.4%22,%22source%22:%22147.91.1.235%22,%22ip-version%22:4,%22ttl%22:255,%22schema%22:1%7D"
 sub get_number_of_participants {
     my ($self, $input_data) = @_;
     
@@ -572,23 +571,17 @@ sub get_number_of_participants {
         return -1;
     }
 
-    # $input_data: {"spec":{"ttl":255,"schema":1,"ip-version":4,"source":"147.91.1.235","source-node":"147.91.1.235","dest":"147.91.4.27"},"type":"rtt"}
-    # $input_data: {"type":"throughput","spec":{"dest":"host-a.perfsonar.net","source":"host-c.perfsonar.net","duration":"PT30S"}}
-
     #build url
     my $test_url = $self->url;
-#    my $test_url = "https://147.91.1.235/pscheduler/tests";
     chomp($test_url);
     $test_url .= "/" if($self->url !~ /\/$/);
-    my $test_type = decode_json($input_data)->{'type'}; # "rtt";
-    my $test_spec = encode_json(decode_json($input_data)->{'spec'}); # {"spec":{"ttl":255,"schema":1,"ip-version":4,"source":"147.91.1.235","source-node":"147.91.1.235","dest":"147.91.4.27"},"type":"rtt"};
+    my $test_type = decode_json($input_data)->{'type'};
+    my $test_spec = encode_json(decode_json($input_data)->{'spec'});
 
     $test_url = $test_url . $test_type ."/participants?spec=" . $test_spec;
     my $encoder = URI::Encode->new({encode_reserved => 0});
     my $test_spec_url = $encoder->encode($test_url);
 
-#    my $test_spec_url = "https://217.147.227.162/pscheduler/tests/trace/participants?spec=%7B%22source-node%22:%22217.147.227.162%22,%22dest%22:%22co.ge%22,%22source%22:%22217.147.227.138%22,%22ip-version%22:4,%22ttl%22:255,%22schema%22:1%7D";
-#    my $test_spec_url = "https://217.147.232.101/pscheduler/tests/trace/participants?spec=%7B%22source-node%22:%22217.147.232.101%22,%22dest%22:%22www.google.com%22,%22source%22:%22217.147.225.114%22,%22ip-version%22:4,%22ttl%22:255,%22schema%22:1%7D";
     my $response = send_http_request(
         connection_type => 'GET',
         url => $test_spec_url,
@@ -620,14 +613,12 @@ sub get_number_of_participants {
 
     my @participants_array = ();
     my $participants_json_array = $participants_json->{'participants'} if (ref($participants_json) eq 'HASH');
-    # @participants_array = decode_json($participants_json_array) if (ref($participants_json_array) eq 'ARRAY');
 
     unless(ref($participants_json_array) eq 'ARRAY'){
         my $message1 = "Expected participants JSON array is not an ARRAY" . $participants_json_array;
         $self->_set_error($message1);
         return -1;
     }
-    # my $participants_number = scalar(@$participants_json_array) if (ref($participants_json_array) eq 'ARRAY');
     my $participants_number = scalar(@$participants_json_array);
     return $participants_number;
 }

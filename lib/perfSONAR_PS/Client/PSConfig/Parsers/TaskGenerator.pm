@@ -270,9 +270,9 @@ sub next {
     }
     $self->_set_expanded_archives($expanded_archives);
 
-    my $test_data = $self->expanded_test(); # $self->test()->data();
+    my $test_data = $self->expanded_test();
 
-    my $test_data_spec = $self->expanded_test()->{'spec'}; #  $self->test()->data()->{'spec'};
+    my $test_data_spec = $self->expanded_test()->{'spec'};
     my %test_data_hash = ();
     my %test_data_spec_hash = ();
     foreach my $test_data_key (keys %$test_data_spec) {
@@ -300,7 +300,7 @@ sub next {
             $self->_set_error("psc_client is NULL");
         }
 
-        my $retrieved_number_of_participants = $psc_client->get_number_of_participants($test_data_json); # "{\"type\":\"rtt\",\"spec\":{\"source-node\":\"147.91.1.235\",\"dest\":\"147.91.27.4\",\"source\":\"147.91.1.235\",\"ip-version\":4,\"ttl\":255,\"schema\":1}}");
+        my $retrieved_number_of_participants = $psc_client->get_number_of_participants($test_data_json);
         if (($retrieved_number_of_participants == -1) || ($retrieved_number_of_participants eq "-1")) {
             $number_of_participants = scalar(@{$contexts});
             $self->_set_error("Invalid number of participants");
@@ -314,11 +314,7 @@ sub next {
     my $participants_counter = 0;
     my $expanded_contexts = [];
     foreach my $context(@{$contexts}){
-        # query https://pscheduler_server/pscheduler/tests/<test_name>/participants?spec={...}
-        # e. g. https://147.91.1.235/pscheduler/tests/rtt/participants?spec=%7B%22source-node%22:%22147.91.1.235%22,%22dest%22:%22147.91.27.4%22,%22source%22:%22147.91.1.235%22,%22ip-version%22:4,%22ttl%22:255,%22schema%22:1%7D
-        # analyze reply
-        # e.g. {"participants": ["147.91.1.235"]}
-        # expand contexts only for multiparticipant tests
+        # expand contexts according to number of participants
         if ($participants_counter < $number_of_participants) {
             my $expanded_context = $template->expand($context);
             unless($expanded_context){
