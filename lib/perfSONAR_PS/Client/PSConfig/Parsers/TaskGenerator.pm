@@ -289,8 +289,8 @@ sub next {
     $test_data_json =~ s/\"([0-9]+)\"/$1/g;
 
     my $number_of_participants = scalar(@{$contexts});
+    # $self->pscheduler_url() is uninitialized during template validation
     if ($self->pscheduler_url()) {
-
         my $psc_url = $self->pscheduler_url() . "/tests";
         unless($psc_url){
             $self->_set_error("psc_url is NULL");
