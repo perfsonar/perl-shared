@@ -326,27 +326,36 @@ sub _need_new_task {
         $new_task->refresh_lead();
     }
     
+    #calculate the checksum once
+    my $new_task_checksum = $new_task->checksum();
+
     #if we already have this task in the queue to be created, such as when it
     #is specified in multiple meshes, then we don't want to add it again
-    if($self->duplicate_new_task_map()->{$new_task->checksum()}){
+    if($self->duplicate_new_task_map()->{$new_task_checksum}){
         return (0, undef);
     }
     
     #if private ma params change, then need new task
     #also update new_archives here so we don't have to re-calculate all the checksums
+    #NOTE: Don't worry about removed archives since task checksum has that covered
     my $ma_changed = 0;
     foreach my $archive(@{$new_task->archives()}){
         my $opaque_new_checksum = $archive->checksum();
-        my $old_checksum = $self->existing_archives()->{$opaque_new_checksum};
+        #Key combines task and archive checksum since multiple tasks may have archive sthat only differ between opaque parts
+        #Likewise, within a task we may have archives that only differ by private fields
+        my $archive_key = $new_task_checksum . '__' . $opaque_new_checksum;
+        my $old_checksum = $self->existing_archives()->{$archive_key};
         my $new_checksum = $archive->checksum(include_private => 1);
-        $self->new_archives()->{$opaque_new_checksum} = $new_checksum;
-        if(!$old_checksum || $old_checksum ne $new_checksum){
+        $self->new_archives()->{$archive_key} = {} unless $self->new_archives()->{$archive_key};
+        $self->new_archives()->{$archive_key}->{$new_checksum} = 1;
+        if(!($old_checksum && $old_checksum->{$new_checksum})){
+            $self->log_info("MA changed for $archive_key -> $new_checksum");
             $ma_changed = 1;
         }
     }
     
     #if no matching checksum, then does not exist
-    if($ma_changed || !$existing->{$new_task->checksum()}){
+    if($ma_changed || !$existing->{$new_task_checksum}){
         return (1, undef);
     }
     
@@ -354,13 +363,13 @@ sub _need_new_task {
     my $need_new_task = 1;
     my $new_start_time;
     if(!$new_task->requested_tools()){
-        my $cmap = $existing->{$new_task->checksum()};
+        my $cmap = $existing->{$new_task_checksum};
         foreach my $tool(keys %{$cmap}){
             ($need_new_task, $new_start_time) = $self->_evaluate_task($cmap->{$tool}, $need_new_task, $new_start_time);
         }
     }else{
         #we have a matching checksum and we have an explicit tool, find one that matches
-        my $cmap = $existing->{$new_task->checksum()};
+        my $cmap = $existing->{$new_task_checksum};
         #search requested tools in order since that is preference order
         foreach my $req_tool(@{$new_task->requested_tools()}){
             if($cmap->{$req_tool}){
