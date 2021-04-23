@@ -348,7 +348,8 @@ sub _need_new_task {
         my $new_checksum = $archive->checksum(include_private => 1);
         $self->new_archives()->{$archive_key} = {} unless $self->new_archives()->{$archive_key};
         $self->new_archives()->{$archive_key}->{$new_checksum} = 1;
-        if(!($old_checksum && ref($old_checksum) eq 'HASH' && $old_checksum->{$new_checksum})){
+        if(!($old_checksum && $old_checksum->{$new_checksum})){
+            $self->log_info("MA changed for $archive_key -> $new_checksum");
             $ma_changed = 1;
         }
     }
