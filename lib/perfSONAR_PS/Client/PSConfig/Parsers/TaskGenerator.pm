@@ -18,6 +18,9 @@ use Log::Log4perl qw(get_logger);
 use perfSONAR_PS::Client::PSConfig::Config;
 use perfSONAR_PS::Client::PSConfig::Parsers::Template;
 use perfSONAR_PS::Client::PScheduler::Task;
+use perfSONAR_PS::Client::PScheduler::ApiConnect;
+
+use JSON qw(encode_json);
 
 our $VERSION = 4.1;
 
@@ -255,7 +258,7 @@ sub next {
     }else{
         return $self->_handle_next_error(\@addrs, "Error expanding test specification: " . $template->error());
     }
-    
+
     #expand archivers
     my $expanded_archives = [];
     foreach my $archive(@{$archives}){
@@ -266,19 +269,63 @@ sub next {
         push @{$expanded_archives}, $expanded_archive;
     }
     $self->_set_expanded_archives($expanded_archives);
-    
+
+    my $test_data = $self->expanded_test();
+
+    my $test_data_spec = $self->expanded_test()->{'spec'};
+    my %test_data_hash = ();
+    my %test_data_spec_hash = ();
+    foreach my $test_data_key (keys %$test_data_spec) {
+        my $test_data_value = $test_data_spec->{$test_data_key};
+        $test_data_spec_hash{ $test_data_key } = $test_data_value;
+    }
+
+    $test_data_hash{'type'} = $test_data->{'type'};
+    $test_data_hash{'spec'} = \%test_data_spec_hash;
+
+    my $test_data_json = encode_json \%test_data_hash;
+    # remove quotes around numbers
+    # I did't find more elegant way for unquoting numbers
+    $test_data_json =~ s/\"([0-9]+)\"/$1/g;
+
+    my $number_of_participants = scalar(@{$contexts});
+    # $self->pscheduler_url() is uninitialized during template validation
+    if ($self->pscheduler_url()) {
+        my $psc_url = $self->pscheduler_url() . "/tests";
+        unless($psc_url){
+            $self->_set_error("psc_url is NULL");
+        }
+        my $psc_client = new perfSONAR_PS::Client::PScheduler::ApiConnect(url => $psc_url);
+        unless($psc_client){
+            $self->_set_error("psc_client is NULL");
+        }
+
+        my $retrieved_number_of_participants = $psc_client->get_number_of_participants($test_data_json);
+        if (($retrieved_number_of_participants == -1) || ($retrieved_number_of_participants eq "-1")) {
+            $number_of_participants = scalar(@{$contexts});
+            $self->_set_error("Invalid number of participants");
+        } else {
+            $number_of_participants = $retrieved_number_of_participants;
+        }
+    }
+
     #expand contexts
     #Note: Assumes first address is first participant, second is second participant, etc.
+    my $participants_counter = 0;
     my $expanded_contexts = [];
     foreach my $context(@{$contexts}){
-        my $expanded_context = $template->expand($context);
-        unless($expanded_context){
-            return $self->_handle_next_error(\@addrs, "Error expanding context: " . $template->error());
+        # expand contexts according to number of participants
+        if ($participants_counter < $number_of_participants) {
+            my $expanded_context = $template->expand($context);
+            unless($expanded_context){
+                return $self->_handle_next_error(\@addrs, "Error expanding context: " . $template->error());
+            }
+            push @{$expanded_contexts}, $expanded_context;
         }
-        push @{$expanded_contexts}, $expanded_context;
+        ++$participants_counter;
     }
     $self->_set_expanded_contexts($expanded_contexts);
-    
+
     #expand reference
     my $reference;
     if($self->task()->reference()){
@@ -289,7 +336,7 @@ sub next {
             return $self->_handle_next_error(\@addrs, "Error expanding reference: " . $template->error());
         }
     }
-    
+
     #return the matching address set
     return @addrs;
 }
