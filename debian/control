@@ -7,7 +7,7 @@ Uploaders: Antoine Delvaux <antoine.delvaux@man.poznan.pl>,
 Build-Depends: debhelper (>= 9.0.0), perl, libdata-validate-domain-perl,
  libdata-validate-ip-perl, libipc-run-perl, libjson-perl, libjson-validator-perl,
  liblog-log4perl-perl, libmouse-perl, libnet-cidr-perl, libnet-dns-perl,
- libparams-validate-perl, libregexp-common-perl, liburi-perl,
+ libparams-validate-perl, libregexp-common-perl, liburi-perl, liburi-encode-perl,
  libmojolicious-perl, jq, libipc-run3-perl
 Standards-Version: 3.9.6
 Homepage: http://www.perfsonar.net
