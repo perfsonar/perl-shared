@@ -44,7 +44,8 @@ Description: perfSONAR perl libraries for esmond
 Package: libperfsonar-pscheduler-perl
 Architecture: all
 Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
- libjson-perl, libmouse-perl, libparams-validate-perl, liburi-perl
+ libjson-perl, libmouse-perl, libparams-validate-perl, liburi-perl,
+ liburi-encode-perl
 Description: perfSONAR perl libraries for pScheduler
  Client libraries for perfSONAR's pScheduler service
 

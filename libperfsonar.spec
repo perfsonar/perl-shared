@@ -135,6 +135,7 @@ Requires:		perl(JSON)
 Requires:		perl(Mouse)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
+Requires:		perl(URI::Encode)
 Requires:		perl(URI::Split)
 Requires:		perfsonar-common
 Requires:		libperfsonar-perl
