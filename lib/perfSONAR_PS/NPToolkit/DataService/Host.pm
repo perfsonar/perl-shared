@@ -67,10 +67,8 @@ sub get_allow_internal_addresses {
     my $self = shift;
     my $ls_conf = $self->{ls_conf};
 
-    my $info = {
-        int_addresses => $ls_conf->get_allow_internal_addresses(),        },
-    };
-
+    my $info = $ls_conf->get_allow_internal_addresses(),
+               
     return $info;
 
 }
