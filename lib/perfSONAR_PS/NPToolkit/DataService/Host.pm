@@ -31,7 +31,37 @@ use base qw(perfSONAR_PS::NPToolkit::DataService::BaseConfig);
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file start_service restart_service stop_service );
 
 
+sub get_admin_information {
+    my $self = shift;
+    my $ls_conf = $self->{ls_conf};
+    if (keys %$ls_conf < 1) {
+        return {
+		administrator => {
+        }, 
+        location => {
+        }
+	};
+    }
 
+    my $info = {
+        administrator => {
+            name => $ls_conf->get_administrator_name(),
+            email => $ls_conf->get_administrator_email(),
+            organization => $ls_conf->get_organization_name()
+        },
+        location => {
+            city => $ls_conf->get_city(),
+            state => $ls_conf->get_state(),
+            country => $ls_conf->get_country(),
+            zipcode => $ls_conf->get_zipcode(),
+            latitude => $ls_conf->get_latitude(),
+            longitude => $ls_conf->get_longitude(),
+        },
+    };
+
+    return $info;
+
+}
 
 sub get_allow_internal_addresses {
     my $self = shift;
