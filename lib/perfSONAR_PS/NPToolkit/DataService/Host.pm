@@ -8,7 +8,7 @@ use POSIX;
 
 use Sys::Hostname;
 
-use perfSONAR_PS::Utils::Host qw(get_allow_internal_addresses get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_counters get_interface_hostnames get_interface_mac get_dmi_info);
+use perfSONAR_PS::Utils::Host qw(get_ntp_info get_operating_system_info get_processor_info get_tcp_configuration get_ethernet_interfaces discover_primary_address get_health_info is_auto_updates_on get_interface_addresses get_interface_addresses_by_type get_interface_speed get_interface_mtu get_interface_counters get_interface_hostnames get_interface_mac get_dmi_info);
 
 use perfSONAR_PS::Utils::LookupService qw( is_host_registered get_client_uuid );
 use perfSONAR_PS::NPToolkit::Config::LSRegistrationDaemon;
