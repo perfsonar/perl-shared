@@ -75,6 +75,30 @@ sub get_allow_internal_addresses {
 
 }
 
+sub update_allow_internal_addresses {
+    my $self = shift;
+    my $caller = shift;
+    my $args = $caller->{'input_params'};
+    my $ls_conf = $self->{ls_conf};
+
+    my %config_args = ();
+    my @field_names = (
+        'allow_internal_addresses',
+    );
+
+    foreach my $field (@field_names) {
+        if ( defined ( $args->{$field} ) && $args->{$field}->{is_set} == 1) {
+            $config_args{$field} = $args->{$field}->{value};
+        }
+    }
+
+    my $allow_internal_addresses = $config_args{'allow_internal_addresses'};
+  
+    $ls_conf->set_allow_internal_addresses( { allow_internal_addresses => $allow_internal_addresses } ) if defined $allow_internal_addresses;
+ 
+    return $self->save_ls_config();
+}
+
 sub get_metadata {
     my $self = shift;
     my $meta = {};
