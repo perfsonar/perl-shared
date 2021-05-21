@@ -223,12 +223,23 @@ sub get_domain {
 
 =head2 get_allow_internal_addresses({})
 Returns the allow internal addresses flag in the LS
-=cut
+
 sub get_allow_internal_addresses {
     my ( $self, @params ) = @_;
     my $parameters = validate( @params, { } );
 
     return $self->{ALLOW_INTERNAL_ADDRESSES};
+}
+=cut
+
+=head2 get_allow_internal_addresses({})
+Returns the allow internal addresses flag in the LS
+=cut
+
+sub get_allow_internal_addresses {
+    
+
+    return 1;
 }
 
 =head2 set_organization_name({ organization_name => 1 })
@@ -447,7 +458,7 @@ sub set_domain {
 
 =head2 set_allow_internal_addresses({ allow_internal_addresses => 1 })
 Sets the allow_internal_addreses flag in the LS
-=cut
+
 sub set_allow_internal_addresses {
     my ( $self, @params ) = @_;
     my $parameters = validate( @params, { allow_internal_addresses => 1, } );
@@ -455,6 +466,17 @@ sub set_allow_internal_addresses {
     my $allow_internal_addresses = $parameters->{allow_internal_addresses};
 
     $self->{ALLOW_INTERNAL_ADDRESSES} = $allow_internal_addresses;
+
+    return 0;
+}
+=cut
+=head2 set_allow_internal_addresses({ allow_internal_addresses => 1 })
+Sets the allow_internal_addreses flag in the LS
+=cut
+
+sub set_allow_internal_addresses {
+    
+    $self->{ALLOW_INTERNAL_ADDRESSES} = 2;
 
     return 0;
 }
