@@ -63,40 +63,40 @@ sub get_admin_information {
 
 }
 
-sub get_allow_internal_addresses {
+#sub get_allow_internal_addresses {
 	
-    my $self = shift;
-    my $ls_conf = $self->{ls_conf};
+#    my $self = shift;
+ #   my $ls_conf = $self->{ls_conf};
 
-    my $info = $ls_conf->get_allow_internal_addresses();
+ #   my $info = $ls_conf->get_allow_internal_addresses();
                
-    return $info;
+#    return $info;
 
-}
+#}
 
-sub update_allow_internal_addresses {
-    my $self = shift;
-    my $caller = shift;
-    my $args = $caller->{'input_params'};
-    my $ls_conf = $self->{ls_conf};
+#sub update_allow_internal_addresses {
+#    my $self = shift;
+#    my $caller = shift;
+#    my $args = $caller->{'input_params'};
+#    my $ls_conf = $self->{ls_conf};
 
-    my %config_args = ();
-    my @field_names = (
-        'allow_internal_addresses',
-    );
+#    my %config_args = ();
+#    my @field_names = (
+#        'allow_internal_addresses',
+#    );
 
-    foreach my $field (@field_names) {
-        if ( defined ( $args->{$field} ) && $args->{$field}->{is_set} == 1) {
-            $config_args{$field} = $args->{$field}->{value};
-        }
-    }
+#    foreach my $field (@field_names) {
+#        if ( defined ( $args->{$field} ) && $args->{$field}->{is_set} == 1) {
+#            $config_args{$field} = $args->{$field}->{value};
+#        }
+#    }
 
-    my $allow_internal_addresses = $config_args{'allow_internal_addresses'};
+#    my $allow_internal_addresses = $config_args{'allow_internal_addresses'};
   
-    $ls_conf->set_allow_internal_addresses( { allow_internal_addresses => $allow_internal_addresses } ) if defined $allow_internal_addresses;
+#    $ls_conf->set_allow_internal_addresses( { allow_internal_addresses => $allow_internal_addresses } ) if defined $allow_internal_addresses;
  
-    return $self->save_ls_config();
-}
+#    return $self->save_ls_config();
+#}
 
 sub get_metadata {
     my $self = shift;
@@ -236,6 +236,8 @@ sub get_details {
 
     my $caller = shift;
     my %conf = %{$self->{config}};
+    
+    my $ls_conf = $self->{ls_conf};
 
     $self->{authenticated} = $caller->{authenticated};
 
@@ -417,6 +419,10 @@ sub get_details {
     # get TCP info
     my $tcp_info = get_tcp_configuration();
     $status->{tcp_info} = $tcp_info;
+    
+     #get allow internal addresses info
+     
+    $status->{allow_internal_addresses} = $ls_conf->get_allow_internal_addresses();
 
     return $status;
 
