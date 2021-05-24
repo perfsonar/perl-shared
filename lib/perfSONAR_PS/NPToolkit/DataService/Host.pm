@@ -43,8 +43,6 @@ sub get_admin_information {
 	};
     }
 
-
-
     my $info = {
         administrator => {
             name => $ls_conf->get_administrator_name(),
@@ -66,6 +64,7 @@ sub get_admin_information {
 }
 
 sub get_allow_internal_addresses {
+	
     my $self = shift;
     my $ls_conf = $self->{ls_conf};
 
