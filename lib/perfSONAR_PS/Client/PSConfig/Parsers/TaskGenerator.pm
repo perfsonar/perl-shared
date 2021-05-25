@@ -230,11 +230,13 @@ sub next {
          return $self->_handle_next_error(\@addrs, $self->error());
     }
     my $contexts = [];
+    my $has_contexts = 0;
     foreach my $addr(@addrs){
         my $addr_contexts = $self->_get_contexts($addr);
         if($self->error()){
             return $self->_handle_next_error(\@addrs, $self->error());
         }
+        $has_contexts = 1 if($addr_contexts && @{$addr_contexts});
         push @{$contexts}, $addr_contexts;
     }
     my $jq_obj = $self->_jq_obj($archives, $hosts, $contexts);
@@ -290,7 +292,8 @@ sub next {
 
     my $number_of_participants = scalar(@{$contexts});
     # $self->pscheduler_url() is uninitialized during template validation
-    if ($self->pscheduler_url()) {
+    # only do this check if we have contexts to determine and a pscheduler server we can contact
+    if ($has_contexts && $self->pscheduler_url()) {
         my $psc_url = $self->pscheduler_url() . "/tests";
         unless($psc_url){
             $self->_set_error("psc_url is NULL");
