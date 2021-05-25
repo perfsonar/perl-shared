@@ -415,7 +415,6 @@ sub get_details {
 
     }
 
-
     # get TCP info
     my $tcp_info = get_tcp_configuration();
     $status->{tcp_info} = $tcp_info;
