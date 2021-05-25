@@ -423,8 +423,6 @@ sub get_details {
      
     $status->{allow_internal_addresses} = $ls_conf->get_allow_internal_addresses() + 0;
     
-    print $status;
-
     return $status;
 
 }
