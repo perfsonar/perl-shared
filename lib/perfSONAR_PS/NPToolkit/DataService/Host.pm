@@ -63,7 +63,8 @@ sub get_admin_information {
 
 }
 
-
+#  update allow internal addressess
+ 
 sub update_allow_internal_addresses {
     my $self = shift;
     my $caller = shift;
@@ -222,7 +223,7 @@ sub get_calculated_lat_lon {
 sub get_details {
     my $self = shift;
     # get addresses, mtu, counters, ntp status, globally registered, toolkit version, toolkit rpm version
-    # external address, total RAM, interface details, etc
+    # external address, total RAM, interface details, allow internal addresses etc
 
     my $caller = shift;
     my %conf = %{$self->{config}};
@@ -409,7 +410,7 @@ sub get_details {
     my $tcp_info = get_tcp_configuration();
     $status->{tcp_info} = $tcp_info;
     
-     #get allow internal addresses info
+    # get allow internal addresses info
      
     $status->{allow_internal_addresses} = $ls_conf->get_allow_internal_addresses() + 0;
     
