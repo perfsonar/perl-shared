@@ -13,7 +13,8 @@ A client for interacting with pScheduler
 use Mouse;
 use Params::Validate qw(:all);
 use perfSONAR_PS::Client::Utils qw(send_http_request build_err_msg extract_url_uuid);
-use JSON qw(from_json to_json);
+use JSON qw(from_json to_json encode_json decode_json);
+use URI::Encode;
 
 use perfSONAR_PS::Client::PScheduler::ApiFilters;
 use perfSONAR_PS::Client::PScheduler::Task;
@@ -560,6 +561,66 @@ sub get_hostname() {
     }
     
     return $response_json;
+}
+
+sub get_number_of_participants {
+    my ($self, $input_data) = @_;
+    
+    unless ($input_data) {
+        $self->_set_error("get_number_of_participants: wrong test spec");
+        return -1;
+    }
+
+    #build url
+    my $test_url = $self->url;
+    chomp($test_url);
+    $test_url .= "/" if($self->url !~ /\/$/);
+    my $test_type = decode_json($input_data)->{'type'};
+    my $test_spec = encode_json(decode_json($input_data)->{'spec'});
+
+    $test_url = $test_url . $test_type ."/participants?spec=" . $test_spec;
+    my $encoder = URI::Encode->new({encode_reserved => 0});
+    my $test_spec_url = $encoder->encode($test_url);
+
+    my $response = send_http_request(
+        connection_type => 'GET',
+        url => $test_spec_url,
+        get_params => {},
+        timeout => $self->filters->timeout,
+        ca_certificate_file => $self->filters->ca_certificate_file,
+        ca_certificate_path => $self->filters->ca_certificate_path,
+        verify_hostname => $self->filters->verify_hostname,
+        local_address => $self->bind_address,
+        bind_map => $self->bind_map,
+        address_map => $self->lead_address_map,
+    );
+
+    unless($response){
+        $self->_set_error("Invalid response");
+        return -1;
+    }
+
+    unless($response->is_success){
+        $self->_set_error("Unsuccessful response");
+        return -1;
+    }
+    
+    my $participants_json = from_json($response->body);
+    unless ($participants_json){
+        $self->_set_error("No participants returned.");
+        return -1;
+    }
+
+    my @participants_array = ();
+    my $participants_json_array = $participants_json->{'participants'} if (ref($participants_json) eq 'HASH');
+
+    unless(ref($participants_json_array) eq 'ARRAY'){
+        my $message1 = "Expected participants JSON array is not an ARRAY" . $participants_json_array;
+        $self->_set_error($message1);
+        return -1;
+    }
+    my $participants_number = scalar(@$participants_json_array);
+    return $participants_number;
 }
 
 __PACKAGE__->meta->make_immutable;

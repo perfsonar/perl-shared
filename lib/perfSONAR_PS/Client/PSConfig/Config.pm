@@ -522,6 +522,144 @@ sub validate {
     return $validator->validate($self->data());
 }
 
+sub _ref_check_addr_select{
+    my ($self, $addr_sel, $group_name, $psconfig, $errors) = @_;
+    
+    if($addr_sel->can('name')){
+        my $addr_name = $addr_sel->name();
+        my $addr_obj = $psconfig->address($addr_name);
+        unless($addr_obj){
+            push @{$errors}, "Group $group_name references an address object $addr_name that does not exist.";
+            return;
+        }
+        my $addr_label_name = $addr_sel->label();
+        if($addr_label_name && !$addr_obj->label($addr_label_name)){
+            push @{$errors}, "Group $group_name references a label $addr_label_name for address object $addr_name that does not exist.";
+        }
+    }elsif($addr_sel->can('class')){
+        my $class_name = $addr_sel->class();
+        unless($psconfig->address_class()){
+            push @{$errors}, "Group $group_name references a class object $class_name that does not exist.";
+            return;
+        }
+    }
+}
+
+sub validate_refs {
+    my $self = shift;
+    my $ref_errors = [];
+
+    #check addresses
+    foreach my $addr_name(@{$self->address_names()}){
+        my $address = $self->address($addr_name);
+        my $host_ref = $address->host_ref();
+        my $context_refs = $address->context_refs();
+        #check host ref
+        if($host_ref && !$self->host($host_ref)){
+            push @{$ref_errors}, "Address $addr_name references a host object $host_ref that does not exist.";
+        }
+        #check context refs
+        if($context_refs){
+            foreach my $context_ref(@{$context_refs}){
+                if(!$self->context($context_ref)){
+                    push @{$ref_errors}, "Address $addr_name references a context object $context_ref that does not exist.";
+                }
+            }
+        }
+        #check remote addresses
+        foreach my $remote_name(@{$address->remote_address_names()}){
+            #check remote context refs
+            my $remote = $address->remote_address($remote_name);
+            if($remote->context_refs()){
+                foreach my $context_ref(@{$remote->context_refs()}){
+                    if(!$self->context($context_ref)){
+                        push @{$ref_errors}, "Address $addr_name has a remote definition for $remote_name using a context object $context_ref that does not exist.";
+                    }
+                }
+            }
+            #check remote labels
+            foreach my $label_name(@{$remote->label_names()}){
+                my $label = $address->label($label_name);
+                if($label->context_refs()){
+                    foreach my $context_ref(@{$label->context_refs()}){
+                        if(!$self->context($context_ref)){
+                            push @{$ref_errors}, "Address $addr_name has a label $label_name using a context object $context_ref that does not exist.";
+                        }
+                    }
+                }
+            }
+        }
+        #check labels
+        foreach my $label_name(@{$address->label_names()}){
+            my $label = $address->label($label_name);
+            #check label context refs
+            if($label->context_refs()){
+                foreach my $context_ref(@{$label->context_refs()}){
+                    if(!$self->context($context_ref)){
+                        push @{$ref_errors}, "Address $addr_name has a label $label_name using a context object $context_ref that does not exist.";
+                    }
+                }
+            }
+        }
+    }
+    #check groups
+    foreach my $group_name(@{$self->group_names()}){
+        my $group = $self->group($group_name);
+        if($group->type() eq 'disjoint'){
+            foreach my $a_addr_sel(@{$group->a_addresses()}){
+                $self->_ref_check_addr_select($a_addr_sel, $group_name, $self, $ref_errors);
+            }
+            foreach my $b_addr_sel(@{$group->b_addresses()}){
+                $self->_ref_check_addr_select($b_addr_sel, $group_name, $self, $ref_errors);
+            }
+        }elsif($group->can('addresses')){
+            foreach my $addr_sel(@{$group->addresses()}){
+                $self->_ref_check_addr_select($addr_sel, $group_name, $self, $ref_errors);
+            }
+        }
+    }
+    #check hosts
+    foreach my $host_name(@{$self->host_names()}){
+        my $host = $self->host($host_name);
+        if($host->archive_refs()){
+            foreach my $archive_ref(@{$host->archive_refs()}){
+                if($archive_ref && !$self->archive($archive_ref)){
+                    push @{$ref_errors}, "Host $host_name references an archive $archive_ref that does not exist.";
+                }
+            }
+        }
+    }
+    #check tasks
+    foreach my $task_name(@{$self->task_names()}){
+        my $task = $self->task($task_name);
+        my $group_ref = $task->group_ref();
+        my $test_ref = $task->test_ref();
+        my $schedule_ref = $task->schedule_ref();
+        
+        #check group ref
+        if($group_ref && !$self->group($group_ref)){
+            push @{$ref_errors}, "Task $task_name references a group $group_ref that does not exist.";
+        }
+        #check test ref
+        if($test_ref && !$self->test($test_ref)){
+            push @{$ref_errors}, "Task $task_name references a test $test_ref that does not exist.";
+        }
+        #check schedule ref
+        if($schedule_ref && !$self->schedule($schedule_ref)){
+            push @{$ref_errors}, "Task $task_name references a schedule $schedule_ref that does not exist.";
+        }
+        #check archive refs
+        if($task->archive_refs()){
+            foreach my $archive_ref(@{$task->archive_refs()}){
+                if($archive_ref && !$self->archive($archive_ref)){
+                    push @{$ref_errors}, "Task $task_name references an archive $archive_ref that does not exist.";
+                }
+            }
+        }
+    }
+
+    return @{$ref_errors};
+}
 
 __PACKAGE__->meta->make_immutable;
 

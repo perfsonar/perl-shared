@@ -1,7 +1,7 @@
 %define install_base /usr/lib/perfsonar/
 %define config_base  /etc/perfsonar
 
-%define perfsonar_auto_version 4.3.4
+%define perfsonar_auto_version 4.4.0
 %define perfsonar_auto_relnum 1
 
 Name:			libperfsonar
@@ -135,6 +135,7 @@ Requires:		perl(JSON)
 Requires:		perl(Mouse)
 Requires:		perl(POSIX)
 Requires:		perl(Params::Validate)
+Requires:		perl(URI::Encode)
 Requires:		perl(URI::Split)
 Requires:		perfsonar-common
 Requires:		libperfsonar-perl

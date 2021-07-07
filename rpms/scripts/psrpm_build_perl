@@ -82,6 +82,7 @@ if [ "$?" -ne "0" ]; then
 fi
 
 #Build RPM
+# TODO: correct this to build the latest src.rpm present in the directory (not the first)
 psrpm_mock /home/vagrant/rpmbuild/SRPMS/${PACKAGE}*.src.rpm
 if [ "$?" -ne "0" ]; then
     echo "Error building RPM"
