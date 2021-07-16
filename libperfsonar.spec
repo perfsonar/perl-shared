@@ -1,7 +1,7 @@
 %define install_base /usr/lib/perfsonar/
 %define config_base  /etc/perfsonar
 
-%define perfsonar_auto_version 4.5.0
+%define perfsonar_auto_version 5.0.0
 %define perfsonar_auto_relnum 0.a1.0
 
 Name:			libperfsonar
