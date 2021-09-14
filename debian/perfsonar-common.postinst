@@ -31,6 +31,7 @@ case "$1" in
     mkdir -p /var/log/perfsonar
     chown perfsonar:perfsonar /var/log/perfsonar
     mkdir -p /var/lib/perfsonar
+    # TODO: remove the recursive chown, generates lintian warning
     chown -R perfsonar:perfsonar /var/lib/perfsonar
 
     ;;
