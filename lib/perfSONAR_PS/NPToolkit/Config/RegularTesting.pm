@@ -136,7 +136,7 @@ sub save {
     
     ######## JOVANA - duplikat za poredjenje
     my jovana_psconfig_json = generate_json_testing_config();
-    ($jovana_status, $jovana-res) = save_file( { file => "jovana_$defaults{psconfig_file}", content => $jovana_psconfig_json->json({"pretty" => 1, "canonical" => 1}) } );
+    ($jovana_status, $jovana-res) = save_file( { file => "$defaults{psconfig_file}_jovana", content => $jovana_psconfig_json->json({"pretty" => 1, "canonical" => 1}) } );
     
     ######## JOVANA - kraj
     
