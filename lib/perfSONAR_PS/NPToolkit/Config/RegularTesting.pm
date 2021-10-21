@@ -1445,10 +1445,9 @@ sub generate_json_testing_config {
     #set meta
     $psconfig->psconfig_meta($top_meta);
     
-    # generisanje testova "po starom"
+    # generisanje testova "po starom"; stari poziv procedure ($status, $res) = $self->generate_regular_testing_config(); 
     # jovana - pocetak
     my @tests = ();
-
     # Build test objects
     foreach my $test_desc (values %{ $self->{TESTS} }) {
         my ($parameters, $schedule);
@@ -1552,17 +1551,18 @@ sub generate_json_testing_config {
     }
     # jovana - kraj
     
+        
     
-    
-    # ??? gde su generisani default parametes ????
+    # ??? gde su generisani default parametes ???? <-- u RegularTesting::Test su 
     #convert default parameters
     my $default_test_params = {};
-    # $self->data() to @tests 
-    if($self->data()->{'default_parameters'}){
-        unless(ref($self->data()->{'default_parameters'}) eq 'ARRAY'){
-            $self->data()->{'default_parameters'} = [ $self->data()->{'default_parameters'} ];
-        }
-        foreach my $default_test_param(@{$self->data()->{'default_parameters'}}){
+    # jovana: $self->data(){'default_parameters'} --> iterate @tests 
+#    if($self->data()->{'default_parameters'}){
+#        unless(ref($self->data()->{'default_parameters'}) eq 'ARRAY'){
+#            $self->data()->{'default_parameters'} = [ $self->data()->{'default_parameters'} ];
+#        }
+        foreach my $test_default_test_param(@tests){
+        	my $default_test_param = $test_default_test_param->{'default_parameters'};
             my $type = $default_test_param->{'type'};
             next unless($type);
             my $params = {};
@@ -1572,10 +1572,12 @@ sub generate_json_testing_config {
             }
             $default_test_params->{$type} = $params;
         }
-    }
+#    }
+        
     
     #iterate through tests and build psconfig tasks
-    foreach my $test(@{$self->data()->{'test'}}){
+    # jovana $self->data() --> @tests
+    foreach my $test(@tests){
         #skip tests added by mesh
         next if($test->{'added_by_mesh'} && !$self->include_added_by_mesh());
         
