@@ -114,10 +114,10 @@ sub save {
     ($status, $res) = $self->generate_regular_testing_config();
 
     my $local_regular_testing_config_output = $res;
-#    ($status, $res) = save_file( { file => $self->{REGULAR_TESTING_CONFIG_FILE}, content => $local_regular_testing_config_output } );
-#    if ( $status == -1 ) {
-#        return ( -1, "Couldn't save configuration file" );
-#    }
+    ($status, $res) = save_file( { file => $self->{REGULAR_TESTING_CONFIG_FILE}, content => $local_regular_testing_config_output } );
+    if ( $status == -1 ) {
+        return ( -1, "Couldn't save configuration file" );
+    }
 
     #translate for psconfig
     my $meshconfig_json_translator = new perfSONAR_PS::Client::PSConfig::Translators::MeshConfigTasks::Config();
@@ -133,6 +133,12 @@ sub save {
     if ( $status == -1 ) {
         return ( -1, "Couldn't save configuration file" );
     }
+    
+    ######## JOVANA - duplikat za poredjenje
+    my jovana_psconfig_json = generate_json_testing_config();
+    ($jovana_status, $jovana-res) = save_file( { file => "jovana_$defaults{psconfig_file}", content => $jovana_psconfig_json->json({"pretty" => 1, "canonical" => 1}) } );
+    
+    ######## JOVANA - kraj
     
     return ( 0, "" );
 }
