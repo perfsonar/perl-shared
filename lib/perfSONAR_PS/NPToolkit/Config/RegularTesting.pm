@@ -108,13 +108,40 @@ sub save {
     my ( $self, @params ) = @_;
     my $parameters = validate( @params, { restart_services => 0, } );
 
+
     my ($status, $res);
 
     # JOVANA: treba odmah generisati psConfig compliant JSON
     ($status, $res) = $self->generate_regular_testing_config();
 
+    # return (-1, Dumper($res));
+    # my $jovana = Dumper( $self->{TESTS} );
+    # return (-1, $jovana);
+    # return (-1, $self->{TESTS});
+
+    ######## JOVANA - duplikat za poredjenje
+    #
+    # my ($jovana_psconfig_json, $jovana_error) = $self->generate_json_testing_config();
+    #
+    #my $jovana = $jovana_psconfig_json;
+    # return (-1, to_json($jovana_psconfig_json, {"pretty" => 1, "canonical" => 1, "allow_nonref" => 1}));
+    #return (-1, Dumper($jovana_psconfig_json));
+    #return (-1, Dumper($self->{TESTS}));
+    #
+    #my ($jovana_status, $jovana_res); 
+    #if ($jovana_error) { 
+    #    return (0, $jovana_error);
+    #} else {
+    #    ($jovana_status, $jovana_res) = save_file( { file => "$defaults{psconfig_file}_jovana", content => $jovana_psconfig_json->json({"pretty" => 1, "canonical" => 1}) } );
+    #}
+    #
+    ######## JOVANA - kraj
+
+
     my $local_regular_testing_config_output = $res;
+    # return (-1, Dumper($res));
     ($status, $res) = save_file( { file => $self->{REGULAR_TESTING_CONFIG_FILE}, content => $local_regular_testing_config_output } );
+    #return ($status, $res);
     if ( $status == -1 ) {
         return ( -1, "Couldn't save configuration file" );
     }
@@ -122,6 +149,7 @@ sub save {
     #translate for psconfig
     my $meshconfig_json_translator = new perfSONAR_PS::Client::PSConfig::Translators::MeshConfigTasks::Config();
     my $psconfig = $meshconfig_json_translator->translate($local_regular_testing_config_output);
+    # return (-1, "JA". $meshconfig_json_translator->error() ."JOVANA" .Dumper($psconfig));
     if($meshconfig_json_translator->error()){
         $self->{LOGGER}->error( "Couldn't format pSConfig template file: " . $meshconfig_json_translator->error());
         return ( -1, "Couldn't format pSConfig template file" );
@@ -130,13 +158,33 @@ sub save {
     ############## JOVANA - dovde
     
     ($status, $res) = save_file( { file => $defaults{psconfig_file}, content => $psconfig->json({"pretty" => 1, "canonical" => 1}) } );
+    # return (-1, $psconfig->json({"pretty" => 1, "canonical" => 1}) );
+
     if ( $status == -1 ) {
-        return ( -1, "Couldn't save configuration file" );
+        return ( -1, "JOVANA: Couldn't save configuration file" );
     }
     
     ######## JOVANA - duplikat za poredjenje
-    my jovana_psconfig_json = generate_json_testing_config();
-    ($jovana_status, $jovana-res) = save_file( { file => "$defaults{psconfig_file}_jovana", content => $jovana_psconfig_json->json({"pretty" => 1, "canonical" => 1}) } );
+    my ($jovana_psconfig_json, $jovana_error) = $self->generate_json_testing_config();
+
+    # my $jovana_file = $defaults{psconfig_file} . "_jovana";
+    my $jovana_file = "/home/jovana/jovana.json"; # "/etc/perfsonar/psconfig/pscheduler.d/jovana.json";
+    # (my $jovana_file = $defaults{psconfig_file} ) =~ s/toolkit-webui.json/jovana.json/g;
+    # return (-1, $jovana_file);
+    # my $jovana_stari_json = $psconfig->json({"pretty" => 1, "canonical" => 1}); 
+    my ($status_j, $res_j);
+    ($status_j, $res_j) = save_file({file => $jovana_file, content => $jovana_psconfig_json});
+
+    # return (-1, $jovana_file);
+    return (-1, $jovana_file . "|" . $jovana_psconfig_json);
+    # return (-1, Dumper($jovana_psconfig_json));
+    # return (-1, to_json($jovana_psconfig_json, {"pretty" => 1, "canonical" => 1, "allow_nonref" => 1, "convert_blessed" => 1, "allow_tags" => 1, "allow_blessed" => 1 }));
+    my ($jovana_status, $jovana_res); 
+    if ($jovana_error) { 
+        return (0, $jovana_error);
+    } else {
+        ($jovana_status, $jovana_res) = save_file( { file => "/etc/perfsonar/psconfig/pscheduler.d/jovana", content => to_json($jovana_psconfig_json, {"pretty" => 1, "canonical" => 1, "allow_nonref" => 1})} );
+    }
     
     ######## JOVANA - kraj
     
@@ -1297,6 +1345,7 @@ sub generate_regular_testing_config {
     my $parameters = validate( @params, { include_mesh_tests => 0 } );
     my $include_mesh_tests = $parameters->{include_mesh_tests};
 
+    # return ("J", $self->{TESTS}); 
     my @tests = ();
 
     # Build test objects
@@ -1419,11 +1468,14 @@ sub generate_regular_testing_config {
 =head2 generate_json_testing_config()
     Generates a string representation of the tests compliant to pSConfig JSON schema.
 =cut
+#sub generate_regular_testing_config 
 sub generate_json_testing_config {
     my ( $self, @params ) = @_;
+   
+    # return ($self->{TESTS}, "JOVANA"); 
     # jovana - pocetak
     # validacija parametara "po starom"
-    my $parameters = validate( @params, { include_mesh_tests => 0 } );
+    my $parameters = validate( @params, { include_mesh_tests => 0, } );
     my $include_mesh_tests = $parameters->{include_mesh_tests};
     # jovana - kraj
 
@@ -1450,13 +1502,19 @@ sub generate_json_testing_config {
     };
     #set meta
     $psconfig->psconfig_meta($top_meta);
+
+    # return (Dumper($self->{TESTS}), "JOVANA"); # jovana - kraj
+    # return (join(',', @params), "JOVANA"); # jovana - kraj
+    # return ($parameters, "JOVANA");
     
     # generisanje testova "po starom"; stari poziv procedure ($status, $res) = $self->generate_regular_testing_config(); 
     # jovana - pocetak
     my @tests = ();
+    my $jovana_test_types = "";
     # Build test objects
     foreach my $test_desc (values %{ $self->{TESTS} }) {
         my ($parameters, $schedule);
+        $jovana_test_types = $jovana_test_types . " (" . $test_desc->{type} . "/" . $test_desc->{added_by_mesh} . ")"; 
 
         next if ($test_desc->{added_by_mesh} and not $include_mesh_tests);
 
@@ -1522,6 +1580,7 @@ sub generate_json_testing_config {
        
         $parameters->test_ipv4_ipv6(1);
 
+
         my @targets = ();
         foreach my $member (values %{ $test_desc->{members} }) {
             my $target = perfSONAR_PS::RegularTesting::Target->new();
@@ -1555,20 +1614,27 @@ sub generate_json_testing_config {
 
         push @tests, $test;
     }
-    # jovana - kraj
-    
+
+
+    my @jovana_tests_dumped;
+    foreach my $jovana_test (@tests) {
+    	    my $jovana_test_string = Dumper($jovana_test->{'schedule'}->{'type'});
+    	    push @jovana_tests_dumped, $jovana_test_string;
+    } 
+    # return (join("-", @jovana_tests_dumped), "JOVANA");
         
     
     # ??? gde su generisani default parametes ???? <-- u RegularTesting::Test su 
     #convert default parameters
     my $default_test_params = {};
+    my $jovana_test_params = " default params for test types";
     # jovana: $self->data(){'default_parameters'} --> iterate @tests 
 #    if($self->data()->{'default_parameters'}){
 #        unless(ref($self->data()->{'default_parameters'}) eq 'ARRAY'){
 #            $self->data()->{'default_parameters'} = [ $self->data()->{'default_parameters'} ];
 #        }
         foreach my $test_default_test_param(@tests){
-        	my $default_test_param = $test_default_test_param->{'default_parameters'};
+            my $default_test_param = $test_default_test_param->{'default_parameters'};
             my $type = $default_test_param->{'type'};
             next unless($type);
             my $params = {};
@@ -1577,15 +1643,26 @@ sub generate_json_testing_config {
                 $params->{$param_key} = $default_test_param->{$param_key};
             }
             $default_test_params->{$type} = $params;
+
+	    $jovana_test_params = $jovana_test_params . " " . $type;
         }
 #    }
-        
+	# return ($jovana_test_params, "JOVANA");
+       
+	# return($jovana_test_types . $default_test_params, "JOVANA");
+	# return($jovana_test_types . "|" . Dumper($jovana_test_params), "JOVANA");
     
     #iterate through tests and build psconfig tasks
     # jovana $self->data() --> @tests
+    my $translator = new perfSONAR_PS::Client::PSConfig::Translators::MeshConfigTasks::Config();
+    my $jovana_task_names = " task names ";
+    my $jovana_error = "";
+    my $generated_json = "";
     foreach my $test(@tests){
+	$jovana_task_names = $jovana_task_names . "(" . ($test->{'added_by_mesh'} && !$self->include_added_by_mesh()) . "|";
         #skip tests added by mesh
-        next if($test->{'added_by_mesh'} && !$self->include_added_by_mesh());
+	#JOVANA: otkomentarisati
+	#next if($test->{'added_by_mesh'} && !$self->include_added_by_mesh());
         
         #inherit default parameters
         next unless($test->{'parameters'});
@@ -1595,27 +1672,42 @@ sub generate_json_testing_config {
                 $test->{'parameters'}->{$param_key} = $default_test_params->{$test->{'parameters'}->{'type'}}->{$param_key};
             }
         }
+	$jovana_task_names = $jovana_task_names . ($test->{'description'} ? $test->{'description'} : "task") . ")";
         
         #build psconfig tasks
-        $self->_convert_tasks($test, $psconfig);
+	$translator->_jovana_convert_tasks($test, $psconfig);
+	#$jovana_error = $jovana_error . "|JOVANA_RegularTesting|" . $translator->_jovana_convert_tasks($test, $psconfig);
+	#$jovana_error = $jovana_error . "|" .  $translator->_jovana_convert_tasks($test, $psconfig); # join('-', $translator->_jovana_convert_tasks($test, $psconfig));
+	# my $jovana_name = "" . $translator->_jovana_convert_tasks($test, $psconfig);
+	# $jovana_task_names = $jovana_task_names . " " . $jovana_name;
     }
+
+    #return $jovana_error;
+    # return $psconfig->json({"pretty" => 1, "canonical" => 1}) ;
+
+
+    # return($jovana_task_names, "JOVANA");
+    # my $jovana_psconfig_tasks = @{$psconfig->task_names()};
+    # return ("JOVANA ERROR: " . $jovana_error, "JOVANA") if ($jovana_error);
+    # return (Dumper($psconfig), "JOVANa");
     
     #convert and save global archives
-    if($self->save_global_archives()){
-        my $global_archive_psconfig = new perfSONAR_PS::Client::PSConfig::Config();
-        my $global_archive_refs = {};
-        $self->_convert_measurement_archives($self->data(), $global_archive_psconfig, $global_archive_refs);
-        foreach my $global_archive_ref(keys %{$global_archive_refs}){
-            my $global_archive = $global_archive_psconfig->archive($global_archive_ref);
-            next unless($global_archive_ref);
-            $self->save_archive($global_archive, $global_archive_ref, {pretty => 1});
-        }
-    }
+    #my $save_global_archives = 0;
+#    if($save_global_archives){
+#	my $global_archive_psconfig = new perfSONAR_PS::Client::PSConfig::Config();
+#        my $global_archive_refs = {};
+#        $self->_convert_measurement_archives($self->data(), $global_archive_psconfig, $global_archive_refs);
+#        foreach my $global_archive_ref(keys %{$global_archive_refs}){
+#            my $global_archive = $global_archive_psconfig->archive($global_archive_ref);
+#            next unless($global_archive_ref);
+#            $self->save_archive($global_archive, $global_archive_ref, {pretty => 1});
+#        }
+#    }
     
     #check if we actually have anything we converted - if all remote mesh we may not
     unless(@{$psconfig->task_names()}){
-        $self->_set_error("Nothing to convert. This is not an error if all tests contain added_by_mesh. Ignore any errors above about malformed JSON string.");
-        return;
+	# $self->{LOGGER}->error("Nothing to convert. This is not an error if all tests contain added_by_mesh. Ignore any errors above about malformed JSON string.");
+        return (0, "Nothing to convert. This is not an error if all tests contain added_by_mesh. Ignore any errors above about malformed JSON string.");
     }
     
     #build pSConfig Object and validate
@@ -1626,11 +1718,12 @@ sub generate_json_testing_config {
             $err .= "   Node: " . $error->path . "\n";
             $err .= "   Error: " . $error->message . "\n\n";
         }
-        $self->_set_error($err);
-        return;
+	# $self->{LOGGER}->error($err);
+        return (0, $err);
     }
-    
-    return $psconfig;
+    my $psconfig_json_jovana = $psconfig->json({"pretty" => 1, "canonical" => 1});  
+#    return ($psconfig, "JOVANA_JOVANA");
+    return ($psconfig_json_jovana, "");
 
 
 

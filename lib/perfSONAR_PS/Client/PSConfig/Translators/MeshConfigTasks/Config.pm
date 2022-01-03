@@ -13,7 +13,7 @@ use perfSONAR_PS::Client::PSConfig::Schedule;
 use perfSONAR_PS::Client::PSConfig::Task;
 use perfSONAR_PS::Client::PSConfig::Test;
 use perfSONAR_PS::Client::PSConfig::Translators::MeshConfig::Schema qw(meshconfig_json_schema);
-use perfSONAR_PS::Utils::DNS qw(discover_source_address);
+use perfSONAR_PS::Utils::DNS qw(discover_source_address resolve_address);
 use perfSONAR_PS::Utils::Host qw(get_interface_addresses_by_type);
 
 use Data::Validate::Domain qw(is_hostname);
@@ -26,6 +26,10 @@ use JSON;
 use DateTime;
 use Config::General qw(ParseConfig);
 use Data::Dumper;
+
+
+
+
 
 use constant META_DISPLAY_NAME => 'display-name';
 
@@ -303,7 +307,6 @@ sub _convert_schedule {
     my ($self, $schedule_params) = @_;
     
     return unless($schedule_params->{'type'} eq 'regular_intervals');
-    
     my $psconfig_schedule = new perfSONAR_PS::Client::PSConfig::Schedule();
     
     #schedule params - not all of these are consistent so not moving to function
@@ -690,7 +693,8 @@ sub _convert_tasks{
         $interface_ips = get_interface_addresses_by_type(interface => $test->{'local_interface'});
         unless(@{$interface_ips->{ipv4_address}} || @{$interface_ips->{ipv6_address}}){
             $self->error("Unable to determine addresses for interface " . $test->{'local_interface'});
-            return;
+	    # jovana: dodato return
+            return ("Unable to determine addresses for interface " . $test->{'local_interface'});
         }
     }
     
@@ -702,7 +706,7 @@ sub _convert_tasks{
     #get schedule
     my $schedule =  $self->_convert_schedule($test->{'schedule'});
     $psconfig->schedule($name, $schedule) if($schedule);
-    
+
     my %test_name_tracker = ();
     my $test_name_count = 0;
     my %exclude_tracker = ();
@@ -1029,6 +1033,529 @@ sub _get_target_parameters {
     }
 
     return $merged_parameters;
+}
+
+sub _jovana_convert_schedule {
+    my ($self, $schedule_params) = @_;
+    
+    # return ref($schedule_params);
+    # jovana: kao da nije blessed
+    # return unless($schedule_params->{'type'} eq 'regular_intervals');
+    return unless(ref($schedule_params) eq 'perfSONAR_PS::RegularTesting::Schedulers::RegularInterval');
+    my $psconfig_schedule = new perfSONAR_PS::Client::PSConfig::Schedule();
+    
+    #schedule params - not all of these are consistent so not moving to function
+    $psconfig_schedule->repeat($self->_seconds_to_iso($schedule_params->{'interval'})) if($schedule_params->{'interval'});
+    if($schedule_params->{'slip'}){
+        $psconfig_schedule->slip($self->_seconds_to_iso($schedule_params->{'slip'}));
+    }elsif($schedule_params->{'interval'}){
+        if($schedule_params->{'interval'} > 43200){
+            $psconfig_schedule->slip($self->_seconds_to_iso(43200));
+        }else{
+            $psconfig_schedule->slip($self->_seconds_to_iso($schedule_params->{'interval'}));
+        }
+    }
+    $psconfig_schedule->sliprand(1) unless(defined $schedule_params->{'slip_randomize'} && !$schedule_params->{'slip_randomize'});
+    
+    return $psconfig_schedule;
+}
+
+sub _jovana_choose_endpoint_address{
+    my ($self, $ifname, $interface_ips, $target_address, $force_ipv4, $force_ipv6) = @_;
+    # return (0, ref($ifname) . " " . ref($interface_ips) . " " . ref($target_address) . " " . ref($force_ipv4) . " " . ref($force_ipv6));
+    # return (0, $ifname . " " . Dumper($interface_ips) . " " . Dumper($target_address) . " '" . $force_ipv4 . "' '" . $force_ipv6 . "'");
+    my $local_address;
+    
+    #if an interface was given, figure out which address to use
+    if($force_ipv4){
+        unless(@{$interface_ips->{ipv4_address}}){
+            return (-1, "No ipv4 address for interface " . $ifname . " but force_ipv4 enabled");
+        }
+        $local_address = $interface_ips->{ipv4_address}->[0]; #use first one in list
+    }elsif($force_ipv6){
+        unless(@{$interface_ips->{ipv6_address}}){
+            return (-1, "No ipv6 address for interface " . $ifname . " but force_ipv6 enabled");
+        }
+        $local_address = $interface_ips->{ipv6_address}->[0]; #use first one in list
+    }elsif(is_ipv4($target_address)){
+        unless(@{$interface_ips->{ipv4_address}}){
+            return (-1, "No ipv4 address for interface " . $ifname . " but target $target_address is IPv4");
+        }
+        $local_address = $interface_ips->{ipv4_address}->[0]; #use first one in list
+    }elsif(is_ipv6($target_address)){
+        unless(@{$interface_ips->{ipv6_address}}){
+            return (-1, "No ipv6 address for interface " . $ifname . " but target $target_address is IPv6");
+        }
+        $local_address = $interface_ips->{ipv6_address}->[0]; #use first one in list
+    }else{
+        my @target_ips = resolve_address($target_address);
+        my $ipv6;
+        my $ipv4;
+        foreach my $target_ip(@target_ips){
+            if(is_ipv4($target_ip)){
+                $ipv4 = $target_ip;
+            }elsif(is_ipv6($target_ip)){
+                $ipv6 = $target_ip;
+            }
+        }
+        if($ipv6 && @{$interface_ips->{ipv6_address}}){
+            $local_address = $interface_ips->{ipv6_address}->[0];
+        }elsif($ipv4 && @{$interface_ips->{ipv4_address}}){
+            $local_address = $interface_ips->{ipv4_address}->[0];
+        }else{
+            return (-1, "Unable to find a matching pair of IPv4 or IPv6 addresses for interface " . $ifname . " and target address $target_address"); 
+        }
+    }
+    
+    return (0, $local_address);
+}
+
+
+sub _jovana_get_individual_tests {
+    my ($self, $test) = @_;
+    #return Dumper($test->{'parameters'});
+    #return Dumper($test);
+    my @tests = ();
+        
+    #return Dumper($test->{'targets'});
+    unless(ref($test->{'targets'}) eq 'ARRAY' ){
+
+        $test->{'targets'} = [ $test->{'targets'} ];
+    }
+    my $jovana_target = "";
+    my $jovana_target_parameters = "";
+    # Build the set of set of tests that make up this bwctl test
+    foreach my $target (@{ $test->{'targets'} }) {
+        unless(ref($target) eq 'HASH' ){
+            $target = { 'address' => $target };
+        }
+	# $jovana_target_parameters = $jovana_target_parameters . "j" . to_json($test->{'parameters'}, { convert_blessed => 1});
+	# $jovana_target = $jovana_target . "J" . Dumper($target);
+        my $target_parameters = $self->_jovana_get_target_parameters($target, $test->{'parameters'});
+	#my $target_parameters = $self->_jovana_get_target_parameters($target, $test->{'parameters'});
+	#$jovana_target_parameters = $jovana_target_parameters . "J" . Dumper($test->{'parameters'});
+	$jovana_target_parameters = $jovana_target_parameters . "j" . to_json($target_parameters, { convert_blessed => 1, pretty => 1 });
+# next;   
+
+        unless ($target_parameters->{'send_only'}) {
+            if (is_hostname($target->{'address'}) and $target_parameters->{'test_ipv4_ipv6'} and not $target_parameters->{'force_ipv4'} and not $target_parameters->{'force_ipv6'}) {
+                push @tests, { target => $target, receiver => 1, force_ipv4 => 1, test_parameters => $target_parameters };
+                push @tests, { target => $target, receiver => 1, force_ipv6 => 1, test_parameters => $target_parameters };
+            }
+            else {
+                push @tests, {
+                               target => $target,
+                               receiver => 1,
+                               force_ipv4 => $target_parameters->{'force_ipv4'},
+                               force_ipv6 => $target_parameters->{'force_ipv6'},
+                               test_parameters => $target_parameters,
+                             };
+            }
+        }
+        unless ($target_parameters->{'receive_only'}) {
+            if (is_hostname($target->{'address'}) and $target_parameters->{'test_ipv4_ipv6'} and not $target_parameters->{'force_ipv4'} and not $target_parameters->{'force_ipv6'}) {
+                push @tests, { target => $target, sender => 1, force_ipv4 => 1, test_parameters => $target_parameters };
+                push @tests, { target => $target, sender => 1, force_ipv6 => 1, test_parameters => $target_parameters };
+            }
+            else {
+                push @tests, {
+                               target => $target,
+                               sender => 1,
+                               force_ipv4 => $target_parameters->{'force_ipv4'},
+                               force_ipv6 => $target_parameters->{'force_ipv6'},
+                               test_parameters => $target_parameters,
+                             };
+            }
+        }
+    }
+    #return $jovana_target;
+    # return $jovana_target_parameters;
+    my @jovana_tests_dumped;
+    foreach my $jovana_test (@tests) {
+        my $jovana_test_string = Dumper($jovana_test);
+        push @jovana_tests_dumped, $jovana_test_string;
+    }
+    # return Dumper(@jovana_tests_dumped);
+
+    return @tests;
+}
+
+sub _jovana_get_target_parameters {
+    my ($self, $target, $test_parameters) = @_;
+    # return "~" . Dumper($test_parameters);
+    # return "~" . to_json($test_parameters, { convert_blessed => 1 });
+    #return to_json($test_parameters, { allow_blessed => 1, allow_nonref => 1 });
+    #return $test_parameters;
+    #return Dumper($test_parameters);
+    #return $target;
+    
+    #copy parameters so don't overwrite
+    my $merged_parameters = from_json(to_json($test_parameters, { convert_blessed => 1 }), { convert_blessed => 1});
+    $merged_parameters->{'type'} = $test_parameters->type();
+    # return Dumper($merged_parameters);
+    if ($target->{'override_parameters'}) {
+	# get override_parameters type
+        foreach my $param_key(keys %{$target->{'override_parameters'}}){
+            # jovana: type je dodat ranije 
+	    next if($param_key eq 'type');
+            $merged_parameters->{$param_key} = $target->{'override_parameters'}->{$param_key};
+        }
+    }
+
+    # return Dumper($merged_parameters);
+    return $merged_parameters;
+}
+
+sub _jovana_parse_target {
+    my ($self, $target) = @_;
+    
+    return { address => undef, port => undef } unless($target);
+    
+    my ($address, $port);
+
+    if(is_ipv6($target)){
+        $address = $target;
+    }elsif(is_ipv4($target)){
+        $address = $target;
+    }elsif ($target =~ /^\[(.*)\]:(\d+)$/) {
+        $address = $1;
+        $port    = $2;
+    }
+    elsif ($target =~ /^\[(.*)\]$/) {
+        $address = $1;
+    }
+    elsif ($target =~ /^(.*):(\d+)$/) {
+        $address = $1;
+        $port    = $2;
+    }
+    else {
+        $address = $target;
+    }
+
+    return { address => $address, port => $port };
+}
+    
+sub _jovana_convert_powstream {
+    my ($self, $test_params, $force_ipv4, $force_ipv6) = @_;
+    return $test_params, [];
+    
+    #build test
+    my $psconfig_test = new perfSONAR_PS::Client::PSConfig::Test();
+    
+    #test type
+    $psconfig_test->type("latencybg");
+    
+    #test params (template)
+    $psconfig_test->spec_param('source', '{% address[0] %}');
+    $psconfig_test->spec_param('dest', '{% address[1] %}');
+    $psconfig_test->spec_param('source-node', '{% pscheduler_address[0] %}');
+    $psconfig_test->spec_param('dest-node', '{% pscheduler_address[1] %}');
+    $psconfig_test->spec_param('flip', '{% flip %}');
+    #test params (int)
+    $psconfig_test->spec_param('packet-count', int($test_params->{'resolution'})) if($test_params->{'resolution'});
+    $psconfig_test->spec_param('ip-tos', int($test_params->{'packet_tos_bits'})) if($test_params->{'packet_tos_bits'});
+    $psconfig_test->spec_param('packet-padding', int($test_params->{'packet_length'})) if(defined $test_params->{'packet_length'});
+    #test params (numeric)
+    $psconfig_test->spec_param('packet-interval', $test_params->{'inter_packet_time'} * 1.0) if($test_params->{'inter_packet_time'});
+    #test param (ip version)
+    $psconfig_test->spec_param('ip-version', 4) if($force_ipv4);
+    $psconfig_test->spec_param('ip-version', 6) if($force_ipv6);
+    #test params (boolean)
+    $psconfig_test->spec_param('output-raw', JSON::true) if($test_params->{'output_raw'});
+    #range
+    if($test_params->{'receive_port_range'}){
+        my @range_vals = split '-', $test_params->{'receive_port_range'};
+        if(@range_vals == 2){
+            eval {
+                $psconfig_test->spec_param('data-ports', {
+                    'lower' => int($range_vals[0]),
+                    'upper' => int($range_vals[1])
+                });
+            };
+        }
+    }
+    
+    return $psconfig_test, [];
+}
+
+sub _jovana_convert_tasks{
+    my ($self, $test, $psconfig) = @_;
+    
+    # SEE: perfSONAR_PS::RegularTesting::Tests::PSchedulerBase
+    
+    # get test name
+    my $name = $test->{'description'} ? $test->{'description'} : "task";
+    chomp $name;
+    $name = $self->_format_name($name);
+    my $i = 0;
+    while($psconfig->test("${name}_${i}_0")){
+        #nothing guarantees a unique description
+        $i++;
+    }
+    #return "${name}_${i}";
+    $name = "${name}_${i}";
+    
+    #handle interface definitions, which pscheduler does not support
+    my $interface_ips;
+    if($test->{'local_interface'} && !$test->{'local_address'}){
+        $interface_ips = get_interface_addresses_by_type(interface => $test->{'local_interface'});
+        unless(@{$interface_ips->{ipv4_address}} || @{$interface_ips->{ipv6_address}}){
+            $self->error("Unable to determine addresses for interface " . $test->{'local_interface'});
+            return;
+        }
+    }
+    # return $name . Dumper($interface_ips);
+    
+    #get archives
+    my $archive_refs_map = {};
+    $self->_convert_measurement_archives($test, $psconfig, $archive_refs_map);
+    my @archive_refs = keys %{$archive_refs_map};
+    # return @archive_refs;
+    
+    #get schedule
+    # return $name . Dumper($test->{'schedule'});
+    # return ($test->{'schedule'}->{'type'} eq 'regular_intervals');
+    my $schedule =  $self->_jovana_convert_schedule($test->{'schedule'});
+    #return $name . Dumper($schedule);
+    # return $name . "j" . Dumper($schedule); #->{'type'}); #eq 'regular_intervals'); #Dumper($schedule);
+    $psconfig->schedule($name, $schedule) if($schedule);
+    
+    my %test_name_tracker = ();
+    my $test_name_count = 0;
+    my %exclude_tracker = ();
+    my $parsed_targets = ""; 
+    #my $jovana_individual_tests = ""; # $self->_jovana_get_individual_tests($test);
+    my $jovana_individual_tests = "";  # $self->_jovana_get_individual_tests($test); #join("-", $self->_jovana_get_individual_tests($test));
+    # return $jovana_individual_tests;
+    my $jovana_parsed_targets = "";
+    my $jovana_local_addresses = "";
+    my $jovana_remote_addresses = "";
+    my $jovana_addresses = "";
+    my $jovana_destinations = "";
+    my $jovana_test_types = "";
+    my $jovana_test_parameters = "";
+    my $jovana_psconfig_tests = "";
+    foreach my $individual_test ($self->_jovana_get_individual_tests($test)) {
+        my $force_ipv4        = $individual_test->{force_ipv4};
+        my $force_ipv6        = $individual_test->{force_ipv6};
+        my $test_parameters   = $individual_test->{test_parameters};
+	$jovana_individual_tests = $jovana_individual_tests . Dumper($individual_test);
+	# $jovana_test_types = $jovana_test_types . " " . $individual_test->{target}->{override_paremeters}->{type}; 
+        
+        #determine local address which is only complicated if interface specified
+        my $parsed_target = $self->_jovana_parse_target($individual_test->{target}->{address});
+	# $jovana_parsed_targets = $jovana_parsed_targets . "|" . Dumper($parsed_target);
+	# $jovana_individual_tests = $jovana_individual_tests . $individual_test->{target}->{address};
+	# $jovana_individual_tests = $jovana_individual_tests . Dumper($parsed_target);
+        my ($local_address, $local_port, $source, $destination, $destination_port);
+	# $jovana_local_addresses = $jovana_local_addresses . "(~" . Dumper($individual_test->{target}->{'address'}) . "~" . $test->{'local_interface'} . "|" . $interface_ips . "|" . $parsed_target->{address} . "|" . $force_ipv4 . "|" . $force_ipv6 . ")";
+        if($interface_ips){
+            my ($choose_status, $choose_res) = $self->_jovana_choose_endpoint_address(
+	                                                $test->{'local_interface'},
+	                                                $interface_ips, 
+							$parsed_target->{address}->{address},
+	                                                $force_ipv4,
+	                                                $force_ipv6,
+	                                            );
+            # return ($choose_res);
+            $jovana_local_addresses = $jovana_local_addresses . "|" . $choose_res;
+            if($choose_status < 0){
+                next;
+            }else{
+                $local_address = $choose_res;
+            }
+        }
+	# $jovana_local_addresses = $jovana_local_addresses . $local_address;
+        #now determine source and destination - again only complicated by interface names
+        my $remote_address;
+        unless($local_address){
+            my $parsed_local = $self->_jovana_parse_target($test->{'local_address'});
+            $local_address = $parsed_local->{address};
+            $local_port = $parsed_local->{port};
+        }
+        if($individual_test->{receiver}){
+            #if we are receiving, we have to know the local address
+            if(!$local_address){
+                #no interface or address given, try to get the routing tables to tell us
+                $local_address = discover_source_address(address => $parsed_target->{address}, 
+                                                            force_ipv4 => $force_ipv4,
+                                                            force_ipv6 => $force_ipv6);
+                #its ok if no local address, powstream can handle it
+            }
+            $source = $parsed_target->{address}->{address};
+            $remote_address = $source;
+            $destination = $local_address;
+            $destination_port = $local_port;
+        }else{
+            #always set source so we don't end up with 127.0.0.1
+            $local_address = discover_source_address(address => $parsed_target->{address}, 
+                                                            force_ipv4 => $force_ipv4,
+                                                            force_ipv6 => $force_ipv6) unless($local_address);
+            $source = $local_address;
+            $destination = $parsed_target->{address}->{address};
+            $remote_address = $destination;
+            $destination_port = $parsed_target->{port};
+        }
+	$jovana_destinations = $jovana_destinations . "|" . $destination . ":" .$destination_port;
+        $jovana_remote_addresses = $jovana_remote_addresses . "|" . $remote_address; 
+        #add local and remote to addresses 
+	# $jovana_addresses = $jovana_addresses . "|" . $source . " " . $destination . " " . $local_address . " " . $remote_address;
+        next unless($source && $destination && $local_address && $remote_address); #skips bad hostnames
+        #create local address
+        unless($psconfig->address($local_address)){
+            my $psconfig_address = new perfSONAR_PS::Client::PSConfig::Addresses::Address();
+            $psconfig_address->address($local_address);
+            $psconfig->address($local_address, $psconfig_address);
+        }
+        #create remote address
+        unless($psconfig->address($remote_address)){
+            my $psconfig_address = new perfSONAR_PS::Client::PSConfig::Addresses::Address();
+            $psconfig_address->address($remote_address);
+            $psconfig_address->no_agent(1);
+$jovana_addresses = $jovana_addresses . "|j|" . Dumper($remote_address) . " " . Dumper($psconfig_address) . "|j|"; 
+# next;	    
+            $psconfig->address($remote_address, $psconfig_address);
+        }
+
+        #build test spec 
+        my $psconfig_test;
+        my $tools;
+	$jovana_test_parameters = $jovana_test_parameters . "test_parameters" . Dumper($test_parameters);
+	#if($test_parameters->{'type'} eq 'powstream'){
+	#    ($psconfig_test, $tools) = $self->convert_powstream($test_parameters, $force_ipv4, $force_ipv6);
+	#}elsif($test_parameters->{'type'} eq 'bwctl'){
+	#    ($psconfig_test, $tools) = $self->convert_bwctl($test_parameters, $force_ipv4, $force_ipv6);
+	#}elsif($test_parameters->{'type'} eq 'bwtraceroute'){
+	#    ($psconfig_test, $tools) = $self->convert_bwtraceroute($test_parameters, $force_ipv4, $force_ipv6);
+	#}elsif($test_parameters->{'type'} eq 'bwping'){
+	#    ($psconfig_test, $tools) = $self->convert_bwping($test_parameters, $force_ipv4, $force_ipv6);
+	#}elsif($test_parameters->{'type'} eq 'bwping/owamp'){
+	#    ($psconfig_test, $tools) = $self->convert_bwping_owamp($test_parameters, $force_ipv4, $force_ipv6);
+	#}elsif($test_parameters->{'type'} eq 'simplestream'){
+	#    ($psconfig_test, $tools) = $self->convert_simplestream($test_parameters, $force_ipv4, $force_ipv6);
+	#}
+	if($test_parameters->{'type'} eq 'powstream'){
+	    ($psconfig_test, $tools) = $self->convert_powstream($test_parameters, $force_ipv4, $force_ipv6);
+	}elsif($test_parameters->{'type'} eq 'bwctl'){
+	    ($psconfig_test, $tools) = $self->convert_bwctl($test_parameters, $force_ipv4, $force_ipv6);
+	}elsif($test_parameters->{'type'} eq 'bwtraceroute'){
+	    ($psconfig_test, $tools) = $self->convert_bwtraceroute($test_parameters, $force_ipv4, $force_ipv6);
+	}elsif($test_parameters->{'type'} eq 'bwping'){
+	    ($psconfig_test, $tools) = $self->convert_bwping($test_parameters, $force_ipv4, $force_ipv6);
+	}elsif($test_parameters->{'type'} eq 'bwping/owamp'){
+	    ($psconfig_test, $tools) = $self->convert_bwping_owamp($test_parameters, $force_ipv4, $force_ipv6);
+	}elsif($test_parameters->{'type'} eq 'simplestream'){
+	    ($psconfig_test, $tools) = $self->convert_simplestream($test_parameters, $force_ipv4, $force_ipv6);
+	}
+	$jovana_psconfig_tests = $jovana_psconfig_tests . "||" . Dumper($psconfig_test);
+        next unless($psconfig_test);
+        my $test_checksum = $psconfig_test->checksum();
+        my $test_name;
+        if($test_name_tracker{$test_checksum}){
+            $test_name = $test_name_tracker{$test_checksum};
+        }else{
+            $test_name = $name . '_' . $test_name_count;
+            $test_name_count++;
+            $test_name_tracker{$test_checksum} = $test_name;
+        }
+        $psconfig->test($test_name, $psconfig_test) unless($psconfig->test($test_name));
+
+        #determine group
+        my $group_name = $test_name . '_' . $local_address;
+        my $psconfig_group = $psconfig->group($group_name);
+        unless($psconfig_group){
+            $psconfig_group = new perfSONAR_PS::Client::PSConfig::Groups::Disjoint();
+            my $a_sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel();
+            $a_sel->name($local_address);
+            $psconfig_group->add_a_address($a_sel);
+            #single-ended tests always need to be unidirectional
+            if($psconfig_test->type() eq 'throughput' && $psconfig_test->spec_param('single-ended')){
+                $psconfig_group->unidirectional(1);
+            }
+            $psconfig->group($group_name, $psconfig_group);
+            $exclude_tracker{$group_name} = {};
+        }
+        unless($exclude_tracker{$group_name}->{$remote_address}){
+            #avoid adding duplicates
+            my $b_sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel();
+            $b_sel->name($remote_address);
+            $psconfig_group->add_b_address($b_sel);
+            $exclude_tracker{$group_name}->{$remote_address} = {};
+        }
+        if($remote_address eq $destination){
+            $exclude_tracker{$group_name}->{$remote_address}->{'forward'} = 1;
+        }else{
+            $exclude_tracker{$group_name}->{$remote_address}->{'reverse'} = 1;
+        }
+        
+        #build task if we needs it
+        unless($psconfig->task($group_name)){
+            my $psconfig_task = new perfSONAR_PS::Client::PSConfig::Task();
+            $psconfig_task->group_ref($group_name);
+            $psconfig_task->test_ref($test_name);
+            $psconfig_task->schedule_ref($name) if($schedule);
+            $psconfig_task->archive_refs(\@archive_refs) if(@archive_refs);
+            if($tools){
+                foreach my $tool(@{$tools}){
+                    $psconfig_task->add_tool($tool);
+                }
+            }
+            $self->_convert_reference($test->{'reference'}, $psconfig_task);
+            $psconfig_task->psconfig_meta_param(META_DISPLAY_NAME(), $test->{'description'}) if($test->{'description'});
+            $psconfig_task->disabled(1) if($test->{'disabled'});
+            $psconfig->task($test_name, $psconfig_task);
+        }
+    }
+    #return $jovana_test_parameters;
+    #return $jovana_test_types;
+    #return $jovana_psconfig_tests;
+    #return $jovana_destinations;
+    # return $jovana_addresses;
+    #return $jovana_local_addresses;
+    # return $jovana_parsed_targets;
+    # return $jovana_individual_tests;
+    # return $psconfig->json({"pretty" => 1, "canonical" => 1}); # $jovana_destinations; # $jovana_remote_addresses; # $jovana_local_addresses; # $jovana_individual_tests; # . "\n" . $jovana_parsed_targets;
+    
+    #build exclude maps
+    my %excl_pair_tracker = ();
+    foreach my $excl_test_name(keys %exclude_tracker){
+        my $group = $psconfig->group($excl_test_name);
+        next unless($group); #should not happen
+        my $local_address = $group->a_address(0)->name();
+        next unless($local_address); #should not happen
+        foreach my $remote_address(keys %{$exclude_tracker{$excl_test_name}}){
+            my $remote_map = $exclude_tracker{$excl_test_name}->{$remote_address};
+            unless($remote_map->{'forward'}){
+                unless($excl_pair_tracker{$local_address}){
+                    $excl_pair_tracker{$local_address} = new perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair();
+                    my $sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel();
+                    $sel->name($local_address);
+                    $excl_pair_tracker{$local_address}->local_address($sel);
+                    $group->add_exclude($excl_pair_tracker{$local_address});
+                }
+                my $sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel();
+                $sel->name($remote_address);
+                $excl_pair_tracker{$local_address}->add_target_address($sel);
+            }
+            unless($remote_map->{'reverse'}){
+                unless($excl_pair_tracker{$remote_address}){
+                    $excl_pair_tracker{$remote_address} = new perfSONAR_PS::Client::PSConfig::Groups::ExcludesAddressPair();
+                    my $sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel();
+                    $sel->name($remote_address);
+                    $excl_pair_tracker{$remote_address}->local_address($sel);
+                    $group->add_exclude($excl_pair_tracker{$remote_address});
+                }
+                my $sel = new perfSONAR_PS::Client::PSConfig::AddressSelectors::NameLabel();
+                $sel->name($local_address);
+                $excl_pair_tracker{$remote_address}->add_target_address($sel);
+            }
+        }
+    }
+    #JOVANA: dodato tokom testiranja
+    #return $name;
+    # return $test_name_count;
+    # return $jovana_local_addresses; # $jovana_individual_tests; # . "\n" . $jovana_parsed_targets;
+    return $psconfig; # ->json({"pretty" => 1, "canonical" => 1}); # $jovana_destinations; # $jovana_remote_addresses; # $jovana_local_addresses; # $jovana_individual_tests; # . "\n" . $jovana_parsed_targets;
 }
 
 __PACKAGE__->meta->make_immutable;
