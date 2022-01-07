@@ -164,7 +164,16 @@ sub save {
         return ( -1, "JOVANA: Couldn't save configuration file" );
     }
     
+    #JOVANA: dodato da bih videla kako translator vidi ucitani fajl
+    #my $jovana_meshconfig_json_translator = new perfSONAR_PS::Client::PSConfig::Translators::MeshConfigTasks::Config();
+    #my $jovana_loaded_config = $jovana_meshconfig_json_translator->_jovana_convert_tasks("", "",  $local_regular_testing_config_output);
+    #my $jovana_loaded_config_file = "/home/jovana/jovana.json"; # "/etc/perfsonar/psconfig/pscheduler.d/jovana.json";
+    #my ($status_config_j, $res_config_j) = save_file({file => $jovana_loaded_config_file, content => $jovana_loaded_config});
+    #return (-1, $jovana_loaded_config);
+    ######################################################
     ######## JOVANA - duplikat za poredjenje
+    
+    
     my ($jovana_psconfig_json, $jovana_error) = $self->generate_json_testing_config();
 
     # my $jovana_file = $defaults{psconfig_file} . "_jovana";
@@ -172,20 +181,18 @@ sub save {
     # (my $jovana_file = $defaults{psconfig_file} ) =~ s/toolkit-webui.json/jovana.json/g;
     # return (-1, $jovana_file);
     # my $jovana_stari_json = $psconfig->json({"pretty" => 1, "canonical" => 1}); 
-    my ($status_j, $res_j);
-    ($status_j, $res_j) = save_file({file => $jovana_file, content => $jovana_psconfig_json});
+    #my ($status_j, $res_j);
+    #($status_j, $res_j) = save_file({file => $jovana_file, content => $jovana_psconfig_json});
 
     # return (-1, $jovana_file);
-    return (-1, $jovana_file . "|" . $jovana_psconfig_json);
+    #return (-1, $jovana_psconfig_json);
     # return (-1, Dumper($jovana_psconfig_json));
     # return (-1, to_json($jovana_psconfig_json, {"pretty" => 1, "canonical" => 1, "allow_nonref" => 1, "convert_blessed" => 1, "allow_tags" => 1, "allow_blessed" => 1 }));
     my ($jovana_status, $jovana_res); 
-    if ($jovana_error) { 
-        return (0, $jovana_error);
-    } else {
-        ($jovana_status, $jovana_res) = save_file( { file => "/etc/perfsonar/psconfig/pscheduler.d/jovana", content => to_json($jovana_psconfig_json, {"pretty" => 1, "canonical" => 1, "allow_nonref" => 1})} );
+    ($jovana_status, $jovana_res) = save_file({file => $jovana_file, content => $jovana_psconfig_json});
+    if ( $jovana_status == -1 ) {
+        return ( -1, "JOVANA: Couldn't save json configuration file" );
     }
-    
     ######## JOVANA - kraj
     
     return ( 0, "" );
@@ -1618,7 +1625,7 @@ sub generate_json_testing_config {
 
     my @jovana_tests_dumped;
     foreach my $jovana_test (@tests) {
-    	    my $jovana_test_string = Dumper($jovana_test->{'schedule'}->{'type'});
+    	    my $jovana_test_string = Dumper($jovana_test);
     	    push @jovana_tests_dumped, $jovana_test_string;
     } 
     # return (join("-", @jovana_tests_dumped), "JOVANA");
@@ -1682,7 +1689,7 @@ sub generate_json_testing_config {
 	# $jovana_task_names = $jovana_task_names . " " . $jovana_name;
     }
 
-    #return $jovana_error;
+    #return ($jovana_error, $jovana_error);
     # return $psconfig->json({"pretty" => 1, "canonical" => 1}) ;
 
 
@@ -1723,7 +1730,8 @@ sub generate_json_testing_config {
     }
     my $psconfig_json_jovana = $psconfig->json({"pretty" => 1, "canonical" => 1});  
 #    return ($psconfig, "JOVANA_JOVANA");
-    return ($psconfig_json_jovana, "");
+    #return ($psconfig_json_jovana, "");
+    return ($psconfig_json_jovana, $psconfig_json_jovana);
 
 
 

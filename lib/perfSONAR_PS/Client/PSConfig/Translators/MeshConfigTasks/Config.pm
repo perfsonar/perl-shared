@@ -1134,7 +1134,8 @@ sub _jovana_get_individual_tests {
         my $target_parameters = $self->_jovana_get_target_parameters($target, $test->{'parameters'});
 	#my $target_parameters = $self->_jovana_get_target_parameters($target, $test->{'parameters'});
 	#$jovana_target_parameters = $jovana_target_parameters . "J" . Dumper($test->{'parameters'});
-	$jovana_target_parameters = $jovana_target_parameters . "j" . to_json($target_parameters, { convert_blessed => 1, pretty => 1 });
+	$jovana_target_parameters = $jovana_target_parameters . "J" . Dumper($target_parameters);
+	#$jovana_target_parameters = $jovana_target_parameters . "j" . to_json($target_parameters, { convert_blessed => 1, pretty => 1 });
 # next;   
 
         unless ($target_parameters->{'send_only'}) {
@@ -1238,7 +1239,14 @@ sub _jovana_parse_target {
 
 sub _jovana_convert_tasks{
     my ($self, $test, $psconfig) = @_;
-    
+
+    # jovana: dodato zbog provere ucitanog config fajla
+    #my ($self, $test, $psconfig, $raw_config) = @_;
+    #First validate this config
+    #my $config = $self->_load_config($raw_config);
+    #return " sadrzaj " . Dumper($config);
+    ####################################################
+
     # SEE: perfSONAR_PS::RegularTesting::Tests::PSchedulerBase
     
     # get test name
@@ -1262,7 +1270,7 @@ sub _jovana_convert_tasks{
             return ("Unable to determine addresses for interface " . $test->{'local_interface'});
         }
     }
-    # return $name . " " . Dumper($interface_ips) . " " . Dumper($test);
+    #return $name . " " . Dumper($interface_ips) . " " . Dumper($test);
     
     #get archives
     my $archive_refs_map = {};
@@ -1282,8 +1290,8 @@ sub _jovana_convert_tasks{
     my $test_name_count = 0;
     my %exclude_tracker = ();
     my $parsed_targets = ""; 
-    # my $jovana_individual_tests = ""; # $self->_jovana_get_individual_tests($test);
-    my $jovana_individual_tests = "" . Dumper($test) . " INDIVIDUAL " . $self->_jovana_get_individual_tests($test); # join("-", $self->_jovana_get_individual_tests($test));
+    my $jovana_individual_tests = "" . $self->_jovana_get_individual_tests($test);
+    # my $jovana_individual_tests = "" . Dumper($test) . " INDIVIDUAL " . $self->_jovana_get_individual_tests($test); # join("-", $self->_jovana_get_individual_tests($test));
     # return $jovana_individual_tests;
     my $jovana_parsed_targets = "";
     my $jovana_local_addresses = "";
@@ -1295,15 +1303,19 @@ sub _jovana_convert_tasks{
     my $jovana_psconfig_tests = "";
     my $jovana_choose_status_and_res = "|CHOOSE|" ;
     foreach my $individual_test ($self->_jovana_get_individual_tests($test)) {
-        my $force_ipv4        = $individual_test->{force_ipv4};
-        my $force_ipv6        = $individual_test->{force_ipv6};
+	my $force_ipv4 = $individual_test->{force_ipv4};
+	my $force_ipv6 = $individual_test->{force_ipv6};
+	#my $force_ipv4        = $individual_test->{force_ipv4};
+	#my $force_ipv6        = $individual_test->{force_ipv6};
         my $test_parameters   = $individual_test->{test_parameters};
 	$jovana_individual_tests = $jovana_individual_tests . Dumper($individual_test);
 	$jovana_test_types = $jovana_test_types . " " . $individual_test->{target}->{override_paremeters}->{type}; 
         
         #determine local address which is only complicated if interface specified
         my $parsed_target = $self->_jovana_parse_target($individual_test->{target}->{address});
-	# $jovana_parsed_targets = $jovana_parsed_targets . "|" . Dumper($parsed_target);
+        $force_ipv4 = $parsed_target->{address}->{override_parameters}->{force_ipv4} if ($parsed_target->{address} and $parsed_target->{address}->{override_parameters});
+        $force_ipv6 = $parsed_target->{address}->{override_parameters}->{force_ipv6} if ($parsed_target->{address} and $parsed_target->{address}->{override_parameters});
+	$jovana_parsed_targets = $jovana_parsed_targets . "|" . Dumper($parsed_target);
 	# $jovana_individual_tests = $jovana_individual_tests . $individual_test->{target}->{address};
 	# $jovana_individual_tests = $jovana_individual_tests . Dumper($parsed_target);
         my ($local_address, $local_port, $source, $destination, $destination_port);
@@ -1324,27 +1336,35 @@ sub _jovana_convert_tasks{
                 $local_address = $choose_res;
             }
         }
-	# $jovana_local_addresses = $jovana_local_addresses . $local_address;
+        my $jovana_discovered_local_address = $local_address . "_discovered_" . discover_source_address(address => $parsed_target->{address}->{address}, 
+                                                            force_ipv4 => $force_ipv4,
+                                                            force_ipv6 => $force_ipv6) . "from" . $parsed_target->{address}->{address};
+	$jovana_local_addresses = $jovana_local_addresses . "JJ" . $local_address;
         #now determine source and destination - again only complicated by interface names
         my $remote_address;
-        unless($local_address){
-            my $parsed_local = $self->_jovana_parse_target($test->{'local_address'});
-            $local_address = $parsed_local->{address};
-            $local_port = $parsed_local->{port};
-        }
+	# cannot be specified from interface
+	# unless($local_address){
+	#    my $parsed_local = $self->_jovana_parse_target($test->{'local_address'});
+	#    $local_address = $parsed_local->{address};
+	#    $local_port = $parsed_local->{port};
+	#}
+	$jovana_local_addresses = $jovana_local_addresses . "jj" . $local_address;
         if($individual_test->{receiver}){
             #if we are receiving, we have to know the local address
-            if(!$local_address){
+	    if(!$local_address){
                 #no interface or address given, try to get the routing tables to tell us
-                $local_address = discover_source_address(address => $parsed_target->{address}->{addess}, 
+                $local_address = discover_source_address(address => $parsed_target->{address}->{address}, 
                                                             force_ipv4 => $force_ipv4,
                                                             force_ipv6 => $force_ipv6);
+
                 #its ok if no local address, powstream can handle it
             }
+	    # next if ($local_address eq "0.0.0.0");
             $source = $parsed_target->{address}->{address};
             $remote_address = $source;
             $destination = $local_address;
             $destination_port = $local_port;
+	$jovana_local_addresses = $jovana_local_addresses . "jJj" . $local_address;
         }else{
             #always set source so we don't end up with 127.0.0.1
             $local_address = discover_source_address(address => $parsed_target->{address}->{address}, 
@@ -1354,13 +1374,14 @@ sub _jovana_convert_tasks{
             $destination = $parsed_target->{address}->{address};
             $remote_address = $destination;
             $destination_port = $parsed_target->{port};
+	$jovana_local_addresses = $jovana_local_addresses . "jjj" . $local_address;
         }
 	$jovana_destinations = $jovana_destinations . "|" . $destination . ":" .$destination_port;
         $jovana_remote_addresses = $jovana_remote_addresses . "|" . $remote_address; 
         #add local and remote to addresses 
 	my $jovana_bad_host_names = "false";
 	$jovana_bad_host_names = "true" unless ($source && $destination && $local_address && $remote_address);
-	$jovana_addresses = $jovana_addresses . "||" . $test_parameters->{'type'} . ":s" . $source . " d" . $destination . " l" . $local_address . " r" . $remote_address . " ?bad hostnames " . $jovana_bad_host_names; 
+	$jovana_addresses = $jovana_addresses . "||" . $test_parameters->{'type'} . ":s" . $source . " d" . $destination . " l" . $local_address . " r" . $remote_address . " ?bad hostnames " . $jovana_bad_host_names . "dl" . $jovana_discovered_local_address; 
         next unless($source && $destination && $local_address && $remote_address); #skips bad hostnames
         #create local address
         unless($psconfig->address($local_address)){
@@ -1467,6 +1488,7 @@ sub _jovana_convert_tasks{
             $psconfig->task($test_name, $psconfig_task);
         }
     }
+    #return Dumper(%exclude_tracker);
     #return $jovana_choose_status_and_res; 
     #return $jovana_test_parameters;
     #return $jovana_test_types;
@@ -1474,7 +1496,7 @@ sub _jovana_convert_tasks{
     #return $jovana_destinations;
     #return $jovana_addresses;
     #return $jovana_local_addresses;
-    # return $jovana_parsed_targets;
+    #return $jovana_parsed_targets;
     #return $jovana_individual_tests;
     # return $psconfig->json({"pretty" => 1, "canonical" => 1}); # $jovana_destinations; # $jovana_remote_addresses; # $jovana_local_addresses; # $jovana_individual_tests; # . "\n" . $jovana_parsed_targets;
     
@@ -1517,6 +1539,7 @@ sub _jovana_convert_tasks{
     #return $name;
     # return $test_name_count;
     # return $jovana_local_addresses; # $jovana_individual_tests; # . "\n" . $jovana_parsed_targets;
+    return $psconfig->json({"pretty" => 1, "canonical" => 1});
     return $psconfig; # ->json({"pretty" => 1, "canonical" => 1}); # $jovana_destinations; # $jovana_remote_addresses; # $jovana_local_addresses; # $jovana_individual_tests; # . "\n" . $jovana_parsed_targets;
 }
 
