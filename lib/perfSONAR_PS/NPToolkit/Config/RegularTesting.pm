@@ -110,86 +110,22 @@ sub save {
 
 
     my ($status, $res);
-
-    # JOVANA: treba odmah generisati psConfig compliant JSON
     ($status, $res) = $self->generate_regular_testing_config();
-
-    # return (-1, Dumper($res));
-    # my $jovana = Dumper( $self->{TESTS} );
-    # return (-1, $jovana);
-    # return (-1, $self->{TESTS});
-
-    ######## JOVANA - duplikat za poredjenje
-    #
-    # my ($jovana_psconfig_json, $jovana_error) = $self->generate_json_testing_config();
-    #
-    #my $jovana = $jovana_psconfig_json;
-    # return (-1, to_json($jovana_psconfig_json, {"pretty" => 1, "canonical" => 1, "allow_nonref" => 1}));
-    #return (-1, Dumper($jovana_psconfig_json));
-    #return (-1, Dumper($self->{TESTS}));
-    #
-    #my ($jovana_status, $jovana_res); 
-    #if ($jovana_error) { 
-    #    return (0, $jovana_error);
-    #} else {
-    #    ($jovana_status, $jovana_res) = save_file( { file => "$defaults{psconfig_file}_jovana", content => $jovana_psconfig_json->json({"pretty" => 1, "canonical" => 1}) } );
-    #}
-    #
-    ######## JOVANA - kraj
-
-
     my $local_regular_testing_config_output = $res;
-    # return (-1, Dumper($res));
     ($status, $res) = save_file( { file => $self->{REGULAR_TESTING_CONFIG_FILE}, content => $local_regular_testing_config_output } );
-    #return ($status, $res);
     if ( $status == -1 ) {
-        return ( -1, "Couldn't save configuration file" );
+	    return ( -1, "Couldn't save configuration file" );
     }
-
-    #translate for psconfig
-    my $meshconfig_json_translator = new perfSONAR_PS::Client::PSConfig::Translators::MeshConfigTasks::Config();
-    my $psconfig = $meshconfig_json_translator->translate($local_regular_testing_config_output);
-    # return (-1, "JA". $meshconfig_json_translator->error() ."JOVANA" .Dumper($psconfig));
-    if($meshconfig_json_translator->error()){
-        $self->{LOGGER}->error( "Couldn't format pSConfig template file: " . $meshconfig_json_translator->error());
-        return ( -1, "Couldn't format pSConfig template file" );
-    }
-    
-    ############## JOVANA - dovde
-    
-    ($status, $res) = save_file( { file => $defaults{psconfig_file}, content => $psconfig->json({"pretty" => 1, "canonical" => 1}) } );
-    # return (-1, $psconfig->json({"pretty" => 1, "canonical" => 1}) );
-
-    if ( $status == -1 ) {
-        return ( -1, "JOVANA: Couldn't save configuration file" );
-    }
-    
-    #JOVANA: dodato da bih videla kako translator vidi ucitani fajl
-    #my $jovana_meshconfig_json_translator = new perfSONAR_PS::Client::PSConfig::Translators::MeshConfigTasks::Config();
-    #my $jovana_loaded_config = $jovana_meshconfig_json_translator->_jovana_convert_tasks("", "",  $local_regular_testing_config_output);
-    #my $jovana_loaded_config_file = "/home/jovana/jovana.json"; # "/etc/perfsonar/psconfig/pscheduler.d/jovana.json";
-    #my ($status_config_j, $res_config_j) = save_file({file => $jovana_loaded_config_file, content => $jovana_loaded_config});
-    #return (-1, $jovana_loaded_config);
-    ######################################################
-    ######## JOVANA - duplikat za poredjenje
-    
+    # JOVANA: treba odmah generisati psConfig compliant JSON
     
     my ($jovana_psconfig_json, $jovana_error) = $self->generate_json_testing_config();
+    if ($jovana_error) {
+        $self->{LOGGER}->error( "Couldn't format pSConfig template file: " . $jovana_error );
+        return ( -1, "Couldn't format pSConfig template file" );
+    }
 
-    # my $jovana_file = $defaults{psconfig_file} . "_jovana";
-    my $jovana_file = "/home/jovana/jovana.json"; # "/etc/perfsonar/psconfig/pscheduler.d/jovana.json";
-    # (my $jovana_file = $defaults{psconfig_file} ) =~ s/toolkit-webui.json/jovana.json/g;
-    # return (-1, $jovana_file);
-    # my $jovana_stari_json = $psconfig->json({"pretty" => 1, "canonical" => 1}); 
-    #my ($status_j, $res_j);
-    #($status_j, $res_j) = save_file({file => $jovana_file, content => $jovana_psconfig_json});
-
-    # return (-1, $jovana_file);
-    #return (-1, $jovana_psconfig_json);
-    # return (-1, Dumper($jovana_psconfig_json));
-    # return (-1, to_json($jovana_psconfig_json, {"pretty" => 1, "canonical" => 1, "allow_nonref" => 1, "convert_blessed" => 1, "allow_tags" => 1, "allow_blessed" => 1 }));
     my ($jovana_status, $jovana_res); 
-    ($jovana_status, $jovana_res) = save_file({file => $jovana_file, content => $jovana_psconfig_json});
+    ($jovana_status, $jovana_res) = save_file({file => $defaults{psconfig_file}, content => $jovana_psconfig_json});
     if ( $jovana_status == -1 ) {
         return ( -1, "JOVANA: Couldn't save json configuration file" );
     }
@@ -1731,134 +1667,7 @@ sub generate_json_testing_config {
     my $psconfig_json_jovana = $psconfig->json({"pretty" => 1, "canonical" => 1});  
 #    return ($psconfig, "JOVANA_JOVANA");
     #return ($psconfig_json_jovana, "");
-    return ($psconfig_json_jovana, $psconfig_json_jovana);
-
-
-
-#sub generate_regular_testing_config {
-#    my ( $self, @params ) = @_;
-#    my $parameters = validate( @params, { include_mesh_tests => 0 } );
-#    my $include_mesh_tests = $parameters->{include_mesh_tests};
-#
-#    my @tests = ();
-#
-#    # Build test objects
-#    foreach my $test_desc (values %{ $self->{TESTS} }) {
-#        my ($parameters, $schedule);
-#
-#        next if ($test_desc->{added_by_mesh} and not $include_mesh_tests);
-#
-#        if ($test_desc->{parameters}->{test_interval}) {
-#            $schedule = perfSONAR_PS::RegularTesting::Schedulers::RegularInterval->new();
-#            $schedule->interval($test_desc->{parameters}->{test_interval});
-#        }
-#        elsif ($test_desc->{parameters}->{test_schedule}) {
-#            $schedule = perfSONAR_PS::RegularTesting::Schedulers::TimeBasedSchedule->new();
-#            $schedule->time_slots($test_desc->{parameters}->{test_schedule});
-#        }
-#        else {
-#            $schedule = perfSONAR_PS::RegularTesting::Schedulers::Streaming->new();
-#        }
-#
-#        if ($test_desc->{type} eq "owamp") {
-#            if ($schedule->type eq "streaming") {
-#                $parameters = perfSONAR_PS::RegularTesting::Tests::Powstream->new();
-#                my $resolution = $test_desc->{parameters}->{sample_count} * $test_desc->{parameters}->{packet_interval};
-#                $parameters->resolution($resolution);
-#            }
-#            else {
-#                $parameters = perfSONAR_PS::RegularTesting::Tests::BwpingOwamp->new();
-#                $parameters->packet_count($test_desc->{parameters}->{sample_count});
-#            }
-#
-#            $parameters->packet_length($test_desc->{parameters}->{packet_padding}) if defined $test_desc->{parameters}->{packet_padding};
-#            $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if defined $test_desc->{parameters}->{packet_interval};
-#        }
-#        elsif ($test_desc->{type} eq "bwctl/throughput") {
-#            $parameters = perfSONAR_PS::RegularTesting::Tests::Bwctl->new();
-#
-#            $parameters->tool($test_desc->{parameters}->{tool}) if defined $test_desc->{parameters}->{tool};
-#            $parameters->use_udp(1) if ($test_desc->{parameters}->{protocol} and $test_desc->{parameters}->{protocol} eq "udp");
-#            $parameters->duration($test_desc->{parameters}->{duration}) if defined $test_desc->{parameters}->{duration};
-#            $parameters->udp_bandwidth($test_desc->{parameters}->{udp_bandwidth}) if defined $test_desc->{parameters}->{udp_bandwidth};
-#            $parameters->buffer_length($test_desc->{parameters}->{buffer_length}) if defined $test_desc->{parameters}->{buffer_length};
-#            $parameters->window_size($test_desc->{parameters}->{window_size} * 1024 * 1024) if defined $test_desc->{parameters}->{window_size}; # convert to bps for the regular testing
-#            $parameters->packet_tos_bits($test_desc->{parameters}->{tos_bits}) if defined $test_desc->{parameters}->{tos_bits};
-#            $parameters->streams($test_desc->{parameters}->{streams}) if defined $test_desc->{parameters}->{streams};
-#            $parameters->omit_interval($test_desc->{parameters}->{omit_interval}) if defined $test_desc->{parameters}->{omit_interval};
-#            $parameters->zero_copy($test_desc->{parameters}->{zero_copy}) if defined $test_desc->{parameters}->{zero_copy};
-#            $parameters->single_ended($test_desc->{parameters}->{single_ended}) if defined $test_desc->{parameters}->{single_ended};
-#            $parameters->send_only($test_desc->{parameters}->{send_only}) if defined $test_desc->{parameters}->{send_only};
-#            $parameters->receive_only($test_desc->{parameters}->{receive_only}) if defined $test_desc->{parameters}->{receive_only};
-#        }
-#        elsif ($test_desc->{type} eq "pinger") {
-#            $parameters = perfSONAR_PS::RegularTesting::Tests::Bwping->new();
-#            $parameters->packet_count($test_desc->{parameters}->{packet_count}) if $test_desc->{parameters}->{packet_count};
-#            $parameters->packet_length($test_desc->{parameters}->{packet_size}) if $test_desc->{parameters}->{packet_size};
-#            $parameters->packet_ttl($test_desc->{parameters}->{ttl}) if $test_desc->{parameters}->{ttl};
-#            $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if $test_desc->{parameters}->{packet_interval};
-#            $parameters->send_only(1);
-#        }
-#        elsif ($test_desc->{type} eq "traceroute") {
-#            $parameters = perfSONAR_PS::RegularTesting::Tests::Bwtraceroute->new();
-#            $parameters->tool($test_desc->{parameters}->{tool}) if $test_desc->{parameters}->{tool};
-#            $parameters->packet_length($test_desc->{parameters}->{packet_size}) if defined $test_desc->{parameters}->{packet_size};
-#            $parameters->packet_first_ttl($test_desc->{parameters}->{first_ttl}) if defined $test_desc->{parameters}->{first_ttl};
-#            $parameters->packet_max_ttl($test_desc->{parameters}->{max_ttl}) if defined $test_desc->{parameters}->{max_ttl};
-#            $parameters->send_only(1);
-#        }
-#       
-#        $parameters->test_ipv4_ipv6(1);
-#
-#        my @targets = ();
-#        foreach my $member (values %{ $test_desc->{members} }) {
-#            my $target = perfSONAR_PS::RegularTesting::Target->new();
-#            $target->address($member->{address});
-#            $target->description($member->{description}) if $member->{description};
-#
-#            unless ($member->{test_ipv4}) {
-#                my $override_parameters = $parameters->meta->new_object();
-#                $override_parameters->force_ipv6(1);
-#                $target->override_parameters($override_parameters);
-#            }
-#
-#            unless ($member->{test_ipv6}) {
-#                my $override_parameters = $parameters->meta->new_object();
-#                $override_parameters->force_ipv4(1);
-#                $target->override_parameters($override_parameters);
-#            }
-#
-#            push @targets, $target;
-#        }
-#
-#        my $test = perfSONAR_PS::RegularTesting::Test->new();
-#        $test->description($test_desc->{description}) if $test_desc->{description};
-#        $test->local_interface($test_desc->{parameters}->{local_interface}) if $test_desc->{parameters}->{local_interface};
-#        $test->disabled($test_desc->{disabled}) if $test_desc->{disabled};
-#        $test->schedule($schedule);
-#        $test->parameters($parameters);
-#        $test->targets(\@targets);
-#
-#        $test->added_by_mesh(1) if $test_desc->{added_by_mesh};
-#
-#        push @tests, $test;
-#    }
-#
-#    # Copy the existing configuration
-#    my $new_config = perfSONAR_PS::RegularTesting::Config->parse($self->{EXISTING_CONFIGURATION});
-#
-#    # Add the newly generated tests to the config
-#    push @{ $new_config->tests },  @tests;
-#
-#    # Generate a Config::General version
-#    my ($status, $res) = save_string(config => $new_config->unparse());
-#
-#    return ($status, $res) unless $status == 0;
-#
-#    return (0, $res);
-#}
-
-
+    return ($psconfig_json_jovana, 0);
 
 
 }
