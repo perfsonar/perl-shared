@@ -1260,7 +1260,6 @@ sub _convert_toolkit_tasks{
 	                                                $force_ipv4,
 	                                                $force_ipv6,
 	                                            );
-            $jovana_choose_status_and_res = $jovana_local_addresses . "|CHOOSE|status:" . $choose_status . ":res:" . $choose_res;
             if($choose_status < 0){
                 next;
             }else{
