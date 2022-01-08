@@ -693,8 +693,6 @@ sub _convert_tasks{
         $interface_ips = get_interface_addresses_by_type(interface => $test->{'local_interface'});
         unless(@{$interface_ips->{ipv4_address}} || @{$interface_ips->{ipv6_address}}){
             $self->error("Unable to determine addresses for interface " . $test->{'local_interface'});
-	    # jovana: dodato return
-            return ("Unable to determine addresses for interface " . $test->{'local_interface'});
         }
     }
     
@@ -1038,8 +1036,6 @@ sub _get_target_parameters {
 sub _jovana_convert_schedule {
     my ($self, $schedule_params) = @_;
     
-    # return ref($schedule_params);
-    # jovana: kao da nije blessed
     # return unless($schedule_params->{'type'} eq 'regular_intervals');
     return unless(ref($schedule_params) eq 'perfSONAR_PS::RegularTesting::Schedulers::RegularInterval');
     my $psconfig_schedule = new perfSONAR_PS::Client::PSConfig::Schedule();
@@ -1207,45 +1203,8 @@ sub _jovana_get_target_parameters {
     return $merged_parameters;
 }
 
-sub _jovana_parse_target {
-    my ($self, $target) = @_;
-    
-    return { address => undef, port => undef } unless($target);
-    
-    my ($address, $port);
-
-    if(is_ipv6($target)){
-        $address = $target;
-    }elsif(is_ipv4($target)){
-        $address = $target;
-    }elsif ($target =~ /^\[(.*)\]:(\d+)$/) {
-        $address = $1;
-        $port    = $2;
-    }
-    elsif ($target =~ /^\[(.*)\]$/) {
-        $address = $1;
-    }
-    elsif ($target =~ /^(.*):(\d+)$/) {
-        $address = $1;
-        $port    = $2;
-    }
-    else {
-        $address = $target;
-    }
-
-    return { address => $address, port => $port };
-}
-    
-
-sub _jovana_convert_tasks{
+sub _convert_toolkit_tasks{
     my ($self, $test, $psconfig) = @_;
-
-    # jovana: dodato zbog provere ucitanog config fajla
-    #my ($self, $test, $psconfig, $raw_config) = @_;
-    #First validate this config
-    #my $config = $self->_load_config($raw_config);
-    #return " sadrzaj " . Dumper($config);
-    ####################################################
 
     # SEE: perfSONAR_PS::RegularTesting::Tests::PSchedulerBase
     
@@ -1258,7 +1217,6 @@ sub _jovana_convert_tasks{
         #nothing guarantees a unique description
         $i++;
     }
-    # return "${name}_${i}" . Dumper($test) . "(" . $test->{'local_interface'} . " && " . !$test->{'local_address'} . ")";
     $name = "${name}_${i}";
     
     #handle interface definitions, which pscheduler does not support
@@ -1270,65 +1228,38 @@ sub _jovana_convert_tasks{
             return ("Unable to determine addresses for interface " . $test->{'local_interface'});
         }
     }
-    #return $name . " " . Dumper($interface_ips) . " " . Dumper($test);
     
     #get archives
     my $archive_refs_map = {};
     $self->_convert_measurement_archives($test, $psconfig, $archive_refs_map);
     my @archive_refs = keys %{$archive_refs_map};
-    # return @archive_refs;
     
     #get schedule
-    # return $name . Dumper($test->{'schedule'});
-    # return ($test->{'schedule'}->{'type'} eq 'regular_intervals');
     my $schedule =  $self->_jovana_convert_schedule($test->{'schedule'});
-    #return $name . Dumper($schedule);
-    # return $name . "j" . Dumper($schedule); #->{'type'}); #eq 'regular_intervals'); #Dumper($schedule);
     $psconfig->schedule($name, $schedule) if($schedule);
     
     my %test_name_tracker = ();
     my $test_name_count = 0;
     my %exclude_tracker = ();
     my $parsed_targets = ""; 
-    my $jovana_individual_tests = "" . $self->_jovana_get_individual_tests($test);
-    # my $jovana_individual_tests = "" . Dumper($test) . " INDIVIDUAL " . $self->_jovana_get_individual_tests($test); # join("-", $self->_jovana_get_individual_tests($test));
-    # return $jovana_individual_tests;
-    my $jovana_parsed_targets = "";
-    my $jovana_local_addresses = "";
-    my $jovana_remote_addresses = "";
-    my $jovana_addresses = "";
-    my $jovana_destinations = "";
-    my $jovana_test_types = "";
-    my $jovana_test_parameters = "";
-    my $jovana_psconfig_tests = "";
-    my $jovana_choose_status_and_res = "|CHOOSE|" ;
     foreach my $individual_test ($self->_jovana_get_individual_tests($test)) {
-	my $force_ipv4 = $individual_test->{force_ipv4};
-	my $force_ipv6 = $individual_test->{force_ipv6};
-	#my $force_ipv4        = $individual_test->{force_ipv4};
-	#my $force_ipv6        = $individual_test->{force_ipv6};
+    	my $force_ipv4 = $individual_test->{force_ipv4};
+    	my $force_ipv6 = $individual_test->{force_ipv6};
         my $test_parameters   = $individual_test->{test_parameters};
-	$jovana_individual_tests = $jovana_individual_tests . Dumper($individual_test);
-	$jovana_test_types = $jovana_test_types . " " . $individual_test->{target}->{override_paremeters}->{type}; 
         
         #determine local address which is only complicated if interface specified
-        my $parsed_target = $self->_jovana_parse_target($individual_test->{target}->{address});
+        my $parsed_target = $self->_parse_target($individual_test->{target}->{address});
         $force_ipv4 = $parsed_target->{address}->{override_parameters}->{force_ipv4} if ($parsed_target->{address} and $parsed_target->{address}->{override_parameters});
         $force_ipv6 = $parsed_target->{address}->{override_parameters}->{force_ipv6} if ($parsed_target->{address} and $parsed_target->{address}->{override_parameters});
-	$jovana_parsed_targets = $jovana_parsed_targets . "|" . Dumper($parsed_target);
-	# $jovana_individual_tests = $jovana_individual_tests . $individual_test->{target}->{address};
-	# $jovana_individual_tests = $jovana_individual_tests . Dumper($parsed_target);
         my ($local_address, $local_port, $source, $destination, $destination_port);
-	# $jovana_local_addresses = $jovana_local_addresses . "(~" . Dumper($individual_test->{target}->{'address'}) . "~" . $test->{'local_interface'} . "|" . $interface_ips . "|" . $parsed_target->{address} . "|" . $force_ipv4 . "|" . $force_ipv6 . ")";
         if($interface_ips){
             my ($choose_status, $choose_res) = $self->_jovana_choose_endpoint_address(
 	                                                $test->{'local_interface'},
 	                                                $interface_ips, 
-							$parsed_target->{address}->{address},
+							                        $parsed_target->{address}->{address},
 	                                                $force_ipv4,
 	                                                $force_ipv6,
 	                                            );
-            # return ($choose_res);
             $jovana_choose_status_and_res = $jovana_local_addresses . "|CHOOSE|status:" . $choose_status . ":res:" . $choose_res;
             if($choose_status < 0){
                 next;
@@ -1336,52 +1267,32 @@ sub _jovana_convert_tasks{
                 $local_address = $choose_res;
             }
         }
-        my $jovana_discovered_local_address = $local_address . "_discovered_" . discover_source_address(address => $parsed_target->{address}->{address}, 
-                                                            force_ipv4 => $force_ipv4,
-                                                            force_ipv6 => $force_ipv6) . "from" . $parsed_target->{address}->{address};
-	$jovana_local_addresses = $jovana_local_addresses . "JJ" . $local_address;
         #now determine source and destination - again only complicated by interface names
         my $remote_address;
-	# cannot be specified from interface
-	# unless($local_address){
-	#    my $parsed_local = $self->_jovana_parse_target($test->{'local_address'});
-	#    $local_address = $parsed_local->{address};
-	#    $local_port = $parsed_local->{port};
-	#}
-	$jovana_local_addresses = $jovana_local_addresses . "jj" . $local_address;
         if($individual_test->{receiver}){
             #if we are receiving, we have to know the local address
-	    if(!$local_address){
+	        if(!$local_address){
                 #no interface or address given, try to get the routing tables to tell us
                 $local_address = discover_source_address(address => $parsed_target->{address}->{address}, 
-                                                            force_ipv4 => $force_ipv4,
-                                                            force_ipv6 => $force_ipv6);
-
+                                                                    force_ipv4 => $force_ipv4,
+                                                                    force_ipv6 => $force_ipv6);
                 #its ok if no local address, powstream can handle it
             }
-	    # next if ($local_address eq "0.0.0.0");
             $source = $parsed_target->{address}->{address};
             $remote_address = $source;
             $destination = $local_address;
             $destination_port = $local_port;
-	$jovana_local_addresses = $jovana_local_addresses . "jJj" . $local_address;
         }else{
             #always set source so we don't end up with 127.0.0.1
             $local_address = discover_source_address(address => $parsed_target->{address}->{address}, 
-                                                            force_ipv4 => $force_ipv4,
-                                                            force_ipv6 => $force_ipv6) unless($local_address);
+                                                                force_ipv4 => $force_ipv4,
+                                                                force_ipv6 => $force_ipv6) unless($local_address);
             $source = $local_address;
             $destination = $parsed_target->{address}->{address};
             $remote_address = $destination;
             $destination_port = $parsed_target->{port};
-	$jovana_local_addresses = $jovana_local_addresses . "jjj" . $local_address;
         }
-	$jovana_destinations = $jovana_destinations . "|" . $destination . ":" .$destination_port;
-        $jovana_remote_addresses = $jovana_remote_addresses . "|" . $remote_address; 
         #add local and remote to addresses 
-	my $jovana_bad_host_names = "false";
-	$jovana_bad_host_names = "true" unless ($source && $destination && $local_address && $remote_address);
-	$jovana_addresses = $jovana_addresses . "||" . $test_parameters->{'type'} . ":s" . $source . " d" . $destination . " l" . $local_address . " r" . $remote_address . " ?bad hostnames " . $jovana_bad_host_names . "dl" . $jovana_discovered_local_address; 
         next unless($source && $destination && $local_address && $remote_address); #skips bad hostnames
         #create local address
         unless($psconfig->address($local_address)){
@@ -1394,42 +1305,25 @@ sub _jovana_convert_tasks{
             my $psconfig_address = new perfSONAR_PS::Client::PSConfig::Addresses::Address();
             $psconfig_address->address($remote_address);
             $psconfig_address->no_agent(1);
-#$jovana_addresses = $jovana_addresses . "|j|" . Dumper($remote_address) . " " . Dumper($psconfig_address) . "|j|"; 
-# next;	    
             $psconfig->address($remote_address, $psconfig_address);
         }
 
         #build test spec 
         my $psconfig_test;
         my $tools;
-	$jovana_test_parameters = $jovana_test_parameters . "test_parameters " . $test_parameters->{'type'} . ":"  . Dumper($test_parameters);
-	#if($test_parameters->{'type'} eq 'powstream'){
-	#    ($psconfig_test, $tools) = $self->convert_powstream($test_parameters, $force_ipv4, $force_ipv6);
-	#}elsif($test_parameters->{'type'} eq 'bwctl'){
-	#    ($psconfig_test, $tools) = $self->convert_bwctl($test_parameters, $force_ipv4, $force_ipv6);
-	#}elsif($test_parameters->{'type'} eq 'bwtraceroute'){
-	#    ($psconfig_test, $tools) = $self->convert_bwtraceroute($test_parameters, $force_ipv4, $force_ipv6);
-	#}elsif($test_parameters->{'type'} eq 'bwping'){
-	#    ($psconfig_test, $tools) = $self->convert_bwping($test_parameters, $force_ipv4, $force_ipv6);
-	#}elsif($test_parameters->{'type'} eq 'bwping/owamp'){
-	#    ($psconfig_test, $tools) = $self->convert_bwping_owamp($test_parameters, $force_ipv4, $force_ipv6);
-	#}elsif($test_parameters->{'type'} eq 'simplestream'){
-	#    ($psconfig_test, $tools) = $self->convert_simplestream($test_parameters, $force_ipv4, $force_ipv6);
-	#}
-	if($test_parameters->{'type'} eq 'powstream'){
+    	if($test_parameters->{'type'} eq 'powstream'){
             ($psconfig_test, $tools) = $self->convert_powstream($test_parameters, $force_ipv4, $force_ipv6);
-	}elsif($test_parameters->{'type'} eq 'bwctl'){
-	    ($psconfig_test, $tools) = $self->convert_bwctl($test_parameters, $force_ipv4, $force_ipv6);
-	}elsif($test_parameters->{'type'} eq 'bwtraceroute'){
-	    ($psconfig_test, $tools) = $self->convert_bwtraceroute($test_parameters, $force_ipv4, $force_ipv6);
-	}elsif($test_parameters->{'type'} eq 'bwping'){
-	    ($psconfig_test, $tools) = $self->convert_bwping($test_parameters, $force_ipv4, $force_ipv6);
-	}elsif($test_parameters->{'type'} eq 'bwping/owamp'){
-	    ($psconfig_test, $tools) = $self->convert_bwping_owamp($test_parameters, $force_ipv4, $force_ipv6);
-	}elsif($test_parameters->{'type'} eq 'simplestream'){
-	    ($psconfig_test, $tools) = $self->convert_simplestream($test_parameters, $force_ipv4, $force_ipv6);
-	}
-	$jovana_psconfig_tests = $jovana_psconfig_tests . "||" . $test_parameters->{'type'} . ":" . Dumper($psconfig_test);
+    	}elsif($test_parameters->{'type'} eq 'bwctl'){
+	        ($psconfig_test, $tools) = $self->convert_bwctl($test_parameters, $force_ipv4, $force_ipv6);
+	    }elsif($test_parameters->{'type'} eq 'bwtraceroute'){
+	        ($psconfig_test, $tools) = $self->convert_bwtraceroute($test_parameters, $force_ipv4, $force_ipv6);
+    	}elsif($test_parameters->{'type'} eq 'bwping'){
+	        ($psconfig_test, $tools) = $self->convert_bwping($test_parameters, $force_ipv4, $force_ipv6);
+    	}elsif($test_parameters->{'type'} eq 'bwping/owamp'){
+	        ($psconfig_test, $tools) = $self->convert_bwping_owamp($test_parameters, $force_ipv4, $force_ipv6);
+    	}elsif($test_parameters->{'type'} eq 'simplestream'){
+	        ($psconfig_test, $tools) = $self->convert_simplestream($test_parameters, $force_ipv4, $force_ipv6);
+	    }
         next unless($psconfig_test);
         my $test_checksum = $psconfig_test->checksum();
         my $test_name;
@@ -1488,17 +1382,6 @@ sub _jovana_convert_tasks{
             $psconfig->task($test_name, $psconfig_task);
         }
     }
-    #return Dumper(%exclude_tracker);
-    #return $jovana_choose_status_and_res; 
-    #return $jovana_test_parameters;
-    #return $jovana_test_types;
-    # return $jovana_psconfig_tests;
-    #return $jovana_destinations;
-    #return $jovana_addresses;
-    #return $jovana_local_addresses;
-    #return $jovana_parsed_targets;
-    #return $jovana_individual_tests;
-    # return $psconfig->json({"pretty" => 1, "canonical" => 1}); # $jovana_destinations; # $jovana_remote_addresses; # $jovana_local_addresses; # $jovana_individual_tests; # . "\n" . $jovana_parsed_targets;
     
     #build exclude maps
     my %excl_pair_tracker = ();
@@ -1535,12 +1418,6 @@ sub _jovana_convert_tasks{
             }
         }
     }
-    #JOVANA: dodato tokom testiranja
-    #return $name;
-    # return $test_name_count;
-    # return $jovana_local_addresses; # $jovana_individual_tests; # . "\n" . $jovana_parsed_targets;
-    return $psconfig->json({"pretty" => 1, "canonical" => 1});
-    return $psconfig; # ->json({"pretty" => 1, "canonical" => 1}); # $jovana_destinations; # $jovana_remote_addresses; # $jovana_local_addresses; # $jovana_individual_tests; # . "\n" . $jovana_parsed_targets;
 }
 
 __PACKAGE__->meta->make_immutable;
