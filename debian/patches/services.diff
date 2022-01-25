@@ -1,5 +1,5 @@
---- a/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2020-03-16 22:57:50.692050011 +0000
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2021-08-26 02:36:00.818687985 +0100
+--- a/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2022-01-12 09:33:41.214148074 -0500
++++ b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2022-01-12 09:33:42.844466950 -0500
 @@ -11,10 +11,10 @@
      my ( $self, %conf ) = @_;
  
@@ -15,8 +15,8 @@
  
      $self->SUPER::init( %conf );
  
---- a/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2020-03-16 22:57:50.689231542 +0000
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2021-08-26 02:36:00.819959279 +0100
+--- a/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2022-01-12 09:33:41.211750071 -0500
++++ b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2022-01-12 09:33:42.845055970 -0500
 @@ -15,7 +15,7 @@
      #Cassandra does not properly create /var/run/cassandra directory on boot, only creates
      #  on install which then gets removed on reboot. Removing this for now.
@@ -26,8 +26,8 @@
  
      $self->SUPER::init( %conf );
  
---- a/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2021-08-26 02:36:00.576299054 +0100
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2021-08-26 02:36:00.820883844 +0100
+--- a/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2022-01-12 09:33:42.631251372 -0500
++++ b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2022-01-12 09:33:42.845643009 -0500
 @@ -8,6 +8,7 @@
  use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES';
  use Dpkg::Control;
@@ -134,8 +134,8 @@
  
      $self->{LOGGER}->debug($shell_cmd);
  
---- a/lib/perfSONAR_PS/Utils/Host.pm	2020-03-16 22:57:50.709772760 +0000
-+++ b/lib/perfSONAR_PS/Utils/Host.pm	2021-08-26 02:36:00.822465663 +0100
+--- a/lib/perfSONAR_PS/Utils/Host.pm	2022-01-12 09:33:41.224421138 -0500
++++ b/lib/perfSONAR_PS/Utils/Host.pm	2022-01-12 09:33:42.846246218 -0500
 @@ -509,7 +509,7 @@
  sub get_ntp_info {
      my $ntp;
@@ -182,8 +182,8 @@
      if($?){
          return;
      }
---- a/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2020-03-16 22:57:50.691634439 +0000
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2021-08-26 02:36:00.823250389 +0100
+--- a/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2022-01-12 09:33:41.213856736 -0500
++++ b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2022-01-12 09:33:42.846748139 -0500
 @@ -8,40 +8,42 @@
  sub init {
      my ( $self, %conf ) = @_;
@@ -250,8 +250,8 @@
  }
  
  1;
---- a/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2020-03-16 22:57:50.690303076 +0000
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2021-08-26 02:36:00.823880260 +0100
+--- a/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2022-01-12 09:33:41.212806550 -0500
++++ b/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2022-01-12 09:33:42.847086817 -0500
 @@ -47,7 +47,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
@@ -261,8 +261,8 @@
  
      $self->{LOGGER}->debug($shell_cmd);
  
---- a/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2020-03-16 22:57:50.690099484 +0000
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2021-08-26 02:36:00.824590113 +0100
+--- a/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2022-01-12 09:33:41.212583892 -0500
++++ b/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2022-01-12 09:33:42.847404513 -0500
 @@ -9,7 +9,7 @@
  sub init {
      my ( $self, %conf ) = @_;
