@@ -9,7 +9,7 @@ use Params::Validate qw(:all);
 
 use perfSONAR_PS::NPToolkit::Services::Cassandra;
 use perfSONAR_PS::NPToolkit::Services::ConfigDaemon;
-use perfSONAR_PS::NPToolkit::Services::esmond;
+use perfSONAR_PS::NPToolkit::Services::Archive;
 use perfSONAR_PS::NPToolkit::Services::httpd;
 use perfSONAR_PS::NPToolkit::Services::LSCacheDaemon;
 use perfSONAR_PS::NPToolkit::Services::LSRegistrationDaemon;
@@ -28,7 +28,6 @@ my %name_to_service_map = (
     archive => "perfSONAR_PS::NPToolkit::Services::Archive",
     cassandra => "perfSONAR_PS::NPToolkit::Services::Cassandra",
     config_daemon => "perfSONAR_PS::NPToolkit::Services::ConfigDaemon",
-    esmond => "perfSONAR_PS::NPToolkit::Services::esmond",
     httpd => "perfSONAR_PS::NPToolkit::Services::httpd",
     ls_cache_daemon => "perfSONAR_PS::NPToolkit::Services::LSCacheDaemon",
     lsregistration => "perfSONAR_PS::NPToolkit::Services::LSRegistrationDaemon",
