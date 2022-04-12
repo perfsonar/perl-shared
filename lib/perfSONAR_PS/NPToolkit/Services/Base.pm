@@ -84,6 +84,9 @@ sub check_running {
 
     unless ($self->{PID_FILES}) {
         foreach my $pname ( @{ $self->{PROCESS_NAMES} } ) {
+        	
+        	$self->{LOGGER}->debug("check_running : process name : ".$pname);
+        	        	
             my $results = `pgrep -f $pname`;
             chomp($results);
             return unless ($results);
@@ -92,6 +95,10 @@ sub check_running {
     else {
         my $i = 0;
         foreach my $pid_file ( @{ $self->{PID_FILES} } ) {
+        	        	
+        	$self->{LOGGER}->debug("check_running : pid files : ".$pid_file);
+        	
+        		
             open( PIDFILE, $pid_file ) or return;
             my $p_id = <PIDFILE>;
             close( PIDFILE );
