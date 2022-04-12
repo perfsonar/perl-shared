@@ -457,9 +457,8 @@ sub get_services {
         my $service = get_service_object($service_name);
 
         $self->{LOGGER}->debug("Checking ".$service_name);
-      #   my $is_running = $service->check_running();
-          my $is_running = "no";
-
+         my $is_running = $service->check_running();
+  
         my $daemon_port = -1;
         my @addr_list;
         if ($service->can("get_addresses")) {
@@ -474,7 +473,9 @@ sub get_services {
             }
         }
 
-        my $is_running_output = ($is_running)?"yes":"no";
+        # my $is_running_output = ($is_running)?"yes":"no";
+         my $is_running_output = "no";
+        
 
         if ($service->disabled) {
             $is_running_output = "disabled" unless $is_running;
