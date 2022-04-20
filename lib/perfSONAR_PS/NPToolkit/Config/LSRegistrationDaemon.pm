@@ -21,7 +21,7 @@ use Template;
 
 use base 'perfSONAR_PS::NPToolkit::Config::Base';
 
-use fields 'CONFIG_FILE', 'ORGANIZATION_NAME', 'PROJECTS', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL', 'ROLE', 'ACCESS_POLICY', 'ACCESS_POLICY_NOTES', 'SITE_NAME', 'DOMAIN';
+use fields 'CONFIG_FILE', 'ORGANIZATION_NAME', 'PROJECTS', 'CITY', 'REGION', 'COUNTRY', 'ZIP_CODE','LATITUDE','LONGITUDE', 'ADMINISTRATOR_NAME', 'ADMINISTRATOR_EMAIL', 'ROLE', 'ACCESS_POLICY', 'ACCESS_POLICY_NOTES', 'SITE_NAME', 'DOMAIN', 'ALLOW_INTERNAL_ADDRESSES';
 
 use Params::Validate qw(:all);
 use Storable qw(store retrieve freeze thaw dclone);
@@ -219,6 +219,16 @@ sub get_domain {
     my $parameters = validate( @params, { } );
 
     return $self->{DOMAIN};
+}
+
+=head2 get_allow_internal_addresses({})
+Returns the allow internal addresses flag in the LS
+=cut
+sub get_allow_internal_addresses {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { } );
+
+    return $self->{ALLOW_INTERNAL_ADDRESSES};
 }
 
 =head2 set_organization_name({ organization_name => 1 })
@@ -435,6 +445,20 @@ sub set_domain {
     return 0;
 }
 
+=head2 set_allow_internal_addresses({ allow_internal_addresses => 1 })
+Sets the allow_internal_addreses flag in the LS
+=cut
+sub set_allow_internal_addresses {
+    my ( $self, @params ) = @_;
+    my $parameters = validate( @params, { allow_internal_addresses => 1, } );
+
+    my $allow_internal_addresses = $parameters->{allow_internal_addresses};
+
+    $self->{ALLOW_INTERNAL_ADDRESSES} = $allow_internal_addresses;
+
+    return 0;
+}
+
 =head2 last_modified()
     Returns when the site information was last saved.
 =cut
@@ -506,6 +530,9 @@ sub save {
 
     delete($config->{domain});
     $config->{domain} = $self->{DOMAIN} if $self->{DOMAIN};
+    
+    delete($config->{allow_internal_addresses});
+    $config->{allow_internal_addresses} = $self->{ALLOW_INTERNAL_ADDRESSES} if defined $self->{ALLOW_INTERNAL_ADDRESSES};
 
     my $content = Config::General->new(-ConfigHash => $config, -SaveSorted => 1)->save_string();
 
@@ -556,6 +583,7 @@ sub reset_state {
     $self->{ACCESS_POLICY_NOTES}    = $config->{access_policy_notes};
     $self->{SITE_NAME}              = $config->{site_name};
     $self->{DOMAIN}                 = $config->{domain};
+    $self->{ALLOW_INTERNAL_ADDRESSES}   = $config->{allow_internal_addresses};
     return 0;
 }
 
@@ -606,6 +634,7 @@ sub save_state {
         access_policy_notes         => $self->{ACCESS_POLICY_NOTES},
         site_name                   => $self->{SITE_NAME},
         domain                      => $self->{DOMAIN},
+        allow_internal_addresses    => $self->{ALLOW_INTERNAL_ADDRESSES},
     );
 
     my $str = freeze( \%state );
@@ -641,6 +670,7 @@ sub restore_state {
     $self->{ACCESS_POLICY_NOTES}         = $state->{access_policy_notes};
     $self->{SITE_NAME}                   = $state->{site_name};
     $self->{DOMAIN}                      = $state->{domain};
+    $self->{ALLOW_INTERNAL_ADDRESSES}    = $state->{allow_internal_addresses};
      
     return;
 }
