@@ -23,7 +23,8 @@ sub get_addresses {
 
     my @addresses = ();
     foreach my $address (@interfaces) {
-        push @addresses, "https://".$address."/elastic";
+        push @addresses, "https://".$address."/opensearch";
+        push @addresses, "https://".$address."/logstash";
         push @addresses, "https://".$address."/esmond/perfsonar/archive/";
     }
 
