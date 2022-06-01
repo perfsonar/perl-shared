@@ -1,29 +1,39 @@
-PACKAGE=libperfsonar
-ROOTPATH=/usr/lib/perfsonar
-CONFIGPATH=/etc/perfsonar
-PERFSONAR_AUTO_VERSION=5.0.0
-PERFSONAR_AUTO_RELNUM=0.b1.1
-VERSION=${PERFSONAR_AUTO_VERSION}
-RELEASE=${PERFSONAR_AUTO_RELNUM}
+#
+# Makefile for unibuild top-level directory
+#
 
-default:
-	@echo No need to build the package. Just run \"make install\"
-
-dist:
-	mkdir /tmp/$(PACKAGE)-$(VERSION).$(RELEASE)
-	tar ch -T MANIFEST | tar x -C /tmp/$(PACKAGE)-$(VERSION).$(RELEASE)
-	tar czf $(PACKAGE)-$(VERSION).$(RELEASE).tar.gz -C /tmp $(PACKAGE)-$(VERSION).$(RELEASE)
-	rm -rf /tmp/$(PACKAGE)-$(VERSION).$(RELEASE)
+default: build
 
 
-install:
-	mkdir -p ${ROOTPATH}
-	tar ch --exclude=etc/* --exclude=*spec --exclude=dependencies --exclude=MANIFEST --exclude=LICENSE --exclude=Makefile -T MANIFEST | tar x -C ${ROOTPATH}
-	for i in `cat MANIFEST | grep ^etc/ | sed "s/^etc\///"`; do  mkdir -p `dirname $(CONFIGPATH)/$${i}`; if [ -e $(CONFIGPATH)/$${i} ]; then install -m 640 -c etc/$${i} $(CONFIGPATH)/$${i}.new; else install -m 640 -c etc/$${i} $(CONFIGPATH)/$${i}; fi; done
+BUILD_LOG=unibuild-log
 
-test:
-	PERL_DL_NONLAZY=1 /usr/bin/perl "-MExtUtils::Command::MM" "-e" "test_harness(0)" t/*.t
+ifdef START
+UNIBUILD_OPTS += --start $(START)
+endif
+ifdef STOP
+UNIBUILD_OPTS += --stop $(STOP)
+endif
 
-test_jenkins:
-	mkdir -p tap_output
-	PERL5OPT=-MDevel::Cover prove t/ --archive tap_output/
+# The shell command below does the equivalent of BASH's pipefail
+# within the confines of POSIX.
+# Source: https://unix.stackexchange.com/a/70675/15184
+build:
+	rm -rf $(BUILD_LOG)
+	((( \
+	(unibuild build $(UNIBUILD_OPTS); echo $$? >&3) \
+	| tee $(BUILD_LOG) >&4) 3>&1) \
+	| (read XS; exit $$XS) \
+	) 4>&1
+TO_CLEAN += $(BUILD_LOG)
+
+
+uninstall:
+	unibuild make --reverse $@
+
+fresh: uninstall build
+
+clean:
+	unibuild make $(UNIBUILD_OPTS) clean
+	unibuild clean
+	rm -rf $(TO_CLEAN)
+	find . -name '*~' | xargs rm -f
