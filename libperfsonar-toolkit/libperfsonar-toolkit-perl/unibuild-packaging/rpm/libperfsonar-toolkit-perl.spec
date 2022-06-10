@@ -105,7 +105,7 @@ make ROOTPATH=%{buildroot}/%{install_base} CONFIGPATH=%{buildroot}/%{config_base
 %clean
 rm -rf %{buildroot}
 
-%files toolkit-perl
+%files
 %license LICENSE
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/perfSONAR_PS/NPToolkit/*

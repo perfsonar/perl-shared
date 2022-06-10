@@ -25,6 +25,8 @@ libperfsonar
 # Build some additional dependencies needed by
 # libperfsonar-toolkit-perl but that depend on other
 # libperfsonar packages
+submodules/psconfig/psconfig-utils
+submodules/psconfig/psconfig-pscheduler-devel
 
 # Build libperfsonar-toolkit
-# libperfsonar-toolkit
+libperfsonar-toolkit
