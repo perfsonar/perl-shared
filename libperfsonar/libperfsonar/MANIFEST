@@ -131,6 +131,8 @@ lib/perfSONAR_PS/Client/LS/PSRecords/PSService.pm
 lib/perfSONAR_PS/Client/LS/PSRecords/PSTest.pm
 lib/perfSONAR_PS/Client/LS/PSRecords/PSSignature.pm
 lib/perfSONAR_PS/Common.pm
+lib/perfSONAR_PS/Utils/Config/NTP.pm
+lib/perfSONAR_PS/Utils/Config/OWAMP.pm
 lib/perfSONAR_PS/NPToolkit/Config/AdministrativeInfo.pm
 lib/perfSONAR_PS/NPToolkit/Config/Base.pm
 lib/perfSONAR_PS/NPToolkit/Config/LSRegistrationDaemon.pm

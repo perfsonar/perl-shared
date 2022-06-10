@@ -1,0 +1,3 @@
+lib/perfSONAR_PS/NPToolkit/* /usr/share/perl5/perfSONAR_PS/NPToolkit/
+lib/perfSONAR_PS/Web/Sidebar.pm /usr/share/perl5/perfSONAR_PS/Web/
+lib/perfSONAR_PS/Client/gLS/Keywords.pm /usr/share/perl5/perfSONAR_PS/Client/gLS/

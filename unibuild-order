@@ -19,5 +19,12 @@ submodules/minor-packages/perl-IPC-DirQueue
 submodules/minor-packages/perl-JSON-Validator
 submodules/minor-packages/perl-Net-Traceroute
 
-# Build the primary package
+# Build the first set of the libperfsonar packages
 libperfsonar
+
+# Build some additional dependencies needed by
+# libperfsonar-toolkit-perl but that depend on other
+# libperfsonar packages
+
+# Build libperfsonar-toolkit
+# libperfsonar-toolkit
