@@ -1,0 +1,6 @@
+[submodule "submodules/bundles"]
+	path = submodules/bundles
+	url = https://github.com/perfsonar/bundles
+[submodule "submodules/minor-packages"]
+	path = submodules/minor-packages
+	url = https://github.com/perfsonar/minor-packages
