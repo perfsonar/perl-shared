@@ -1,3 +1,9 @@
+libperfsonar-perl (4.4.5-2) perfsonar-4.4; urgency=low
+
+  * Backporting unit-tests from 5.0.0
+
+ -- perfSONAR developers <debian@perfsonar.net>  Mon, 26 Sep 2022 14:01:07 +0000
+
 libperfsonar-perl (4.4.5-1) perfsonar-4.4; urgency=low
 
   * New upstream version.
