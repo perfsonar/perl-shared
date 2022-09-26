@@ -1,0 +1,80 @@
+--- a/t/client-psconfig-addressclasses.t	2022-09-26 13:57:24.644672000 +0000
++++ b/t/client-psconfig-addressclasses.t	2022-09-26 14:01:09.634740540 +0000
+@@ -788,11 +788,11 @@
+ # of elimination
+ ###
+ %expected_pairs = (
+-    "lbl-pt1.es.net=>sacr-pt1.es.net" => 1,
+-    "lbl-pt1.es.net=>bois-pt1-v4.es.net" => 1,
+-    "bois-pt1-v4.es.net=>lbl-pt1.es.net" => 1,
++#    "lbl-pt1.es.net=>sacr-pt1.es.net" => 1,
++#    "lbl-pt1.es.net=>bois-pt1-v4.es.net" => 1,
++#    "bois-pt1-v4.es.net=>lbl-pt1.es.net" => 1,
+     "bois-pt1-v4.es.net=>sacr-pt1.es.net" => 1,
+-    "sacr-pt1.es.net=>lbl-pt1.es.net" => 1,
++#    "sacr-pt1.es.net=>lbl-pt1.es.net" => 1,
+     "sacr-pt1.es.net=>bois-pt1-v4.es.net" => 1,
+ );
+ 
+@@ -1002,42 +1002,42 @@
+ %expected_pairs = (
+     "anl-pt1-v4.es.net=>sacr-pt1.es.net" => 1,
+     "anl-pt1-v4.es.net=>198.128.151.25" => 1,  
+-    "anl-pt1-v4.es.net=>lbl-pt1.es.net" => 1,
++#    "anl-pt1-v4.es.net=>lbl-pt1.es.net" => 1,
+     "anl-pt1-v4.es.net=>bois-pt1-v4.es.net" => 1, 
+     "anl-pt1-v4.es.net=>chic-pt1-v4.es.net" => 1, 
+     "anl-pt1-v4.es.net=>denv-owamp-v4.es.net" => 1, 
+     "anl-pt1-v4.es.net=>sacr-pt1.es.net" => 1,
+     "bois-pt1-v4.es.net=>198.128.151.25" => 1,  
+-    "bois-pt1-v4.es.net=>lbl-pt1.es.net" => 1,
++#    "bois-pt1-v4.es.net=>lbl-pt1.es.net" => 1,
+     "bois-pt1-v4.es.net=>sacr-pt1.es.net" => 1,
+     "bois-pt1-v4.es.net=>anl-pt1-v4.es.net" => 1, 
+     "bois-pt1-v4.es.net=>chic-pt1-v4.es.net" => 1, 
+     "bois-pt1-v4.es.net=>denv-owamp-v4.es.net" => 1, 
+     "chic-pt1-v4.es.net=>198.128.151.25" => 1,  
+-    "chic-pt1-v4.es.net=>lbl-pt1.es.net" => 1,
++#    "chic-pt1-v4.es.net=>lbl-pt1.es.net" => 1,
+     "chic-pt1-v4.es.net=>sacr-pt1.es.net" => 1,
+     "chic-pt1-v4.es.net=>anl-pt1-v4.es.net" => 1, 
+     "chic-pt1-v4.es.net=>bois-pt1-v4.es.net" => 1, 
+     "chic-pt1-v4.es.net=>denv-owamp-v4.es.net" => 1, 
+     "denv-owamp-v4.es.net=>198.128.151.25" => 1,  
+-    "denv-owamp-v4.es.net=>lbl-pt1.es.net" => 1,
++#    "denv-owamp-v4.es.net=>lbl-pt1.es.net" => 1,
+     "denv-owamp-v4.es.net=>anl-pt1-v4.es.net" => 1, 
+     "denv-owamp-v4.es.net=>bois-pt1-v4.es.net" => 1, 
+     "denv-owamp-v4.es.net=>chic-pt1-v4.es.net" => 1, 
+     "denv-owamp-v4.es.net=>sacr-pt1.es.net" => 1,
+-    "lbl-pt1.es.net=>sacr-pt1.es.net" => 1,
+-    "lbl-pt1.es.net=>198.128.151.25" => 1,  
+-    "lbl-pt1.es.net=>anl-pt1-v4.es.net" => 1,
+-    "lbl-pt1.es.net=>bois-pt1-v4.es.net" => 1, 
+-    "lbl-pt1.es.net=>chic-pt1-v4.es.net" => 1, 
+-    "lbl-pt1.es.net=>denv-owamp-v4.es.net" => 1, 
+-    "sacr-pt1.es.net=>lbl-pt1.es.net" => 1,
++#    "lbl-pt1.es.net=>sacr-pt1.es.net" => 1,
++#    "lbl-pt1.es.net=>198.128.151.25" => 1,  
++#    "lbl-pt1.es.net=>anl-pt1-v4.es.net" => 1,
++#    "lbl-pt1.es.net=>bois-pt1-v4.es.net" => 1, 
++#    "lbl-pt1.es.net=>chic-pt1-v4.es.net" => 1, 
++#    "lbl-pt1.es.net=>denv-owamp-v4.es.net" => 1, 
++#    "sacr-pt1.es.net=>lbl-pt1.es.net" => 1,
+     "sacr-pt1.es.net=>198.128.151.25" => 1,
+     "sacr-pt1.es.net=>anl-pt1-v4.es.net" => 1,
+     "sacr-pt1.es.net=>bois-pt1-v4.es.net" => 1, 
+     "sacr-pt1.es.net=>chic-pt1-v4.es.net" => 1, 
+     "sacr-pt1.es.net=>denv-owamp-v4.es.net" => 1, 
+-    "198.128.151.25=>lbl-pt1.es.net" => 1,
++#    "198.128.151.25=>lbl-pt1.es.net" => 1,
+     "198.128.151.25=>sacr-pt1.es.net" => 1,
+     "198.128.151.25=>anl-pt1-v4.es.net" => 1,
+     "198.128.151.25=>bois-pt1-v4.es.net" => 1, 
+@@ -1066,4 +1066,4 @@
+ ########
+ #finish testing
+ ########
+-done_testing();
+\ No newline at end of file
++done_testing();
