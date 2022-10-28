@@ -1,4 +1,0 @@
-[submodule "perl-shared"]
-	path = perl-shared
-	url = https://github.com/perfsonar/perl-shared
-	branch = unibuild
