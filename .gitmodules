@@ -1,14 +1,4 @@
-[submodule "submodules/bundles"]
-	path = submodules/bundles
-	url = https://github.com/perfsonar/bundles
-[submodule "submodules/minor-packages"]
-	path = submodules/minor-packages
-	url = https://github.com/perfsonar/minor-packages
 [submodule "perl-shared"]
 	path = perl-shared
 	url = https://github.com/perfsonar/perl-shared
 	branch = unibuild
-[submodule "submodules/psconfig"]
-	path = submodules/psconfig
-	url = https://github.com/perfsonar/psconfig
-	branch = feature/unibuild
