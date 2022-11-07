@@ -1,5 +1,5 @@
---- a/t/client-psconfig-addressclasses.t	2022-09-26 13:57:24.644672000 +0000
-+++ b/t/client-psconfig-addressclasses.t	2022-09-26 14:01:09.634740540 +0000
+--- a/t/client-psconfig-addressclasses.t	2022-11-07 09:19:42.601661084 -0800
++++ b/t/client-psconfig-addressclasses.t	2022-11-07 09:19:44.126617707 -0800
 @@ -788,11 +788,11 @@
  # of elimination
  ###
