@@ -1,6 +1,0 @@
-#!/bin/sh
-
-set -e
-
-getent passwd perfsonar
-getent group perfsonar

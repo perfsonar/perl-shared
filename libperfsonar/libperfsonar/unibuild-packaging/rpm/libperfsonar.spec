@@ -103,7 +103,7 @@ Obsoletes:      perl-perfSONAR_PS-Nagios
 Obsoletes:      perl-perfSONAR-graphs
 
 %description sls-perl
-Client libraries for perfSONAR's Simple Lookup Service (sLS)
+Client libraries for the perfSONAR Simple Lookup Service (sLS)
 
 %package esmond-perl
 Summary:        perfSONAR Meaurement Archive perl clients for esmond
@@ -160,6 +160,86 @@ Requires:		libperfsonar-perl
 
 %description psconfig-perl
 pSConfig perl client libraries
+
+
+%package toolkit-perl
+Summary:        Shared libraries for perfSONAR Toolkit distributions
+Group:          Applications/Communications
+Requires:		perl(CGI)
+Requires:		perl(CGI::Ajax)
+Requires:		perl(CGI::Carp)
+Requires:		perl(CGI::Session)
+Requires:		perl(Carp)
+Requires:		perl(Class::MOP::Class)
+Requires:		perl(Config::General)
+Requires:		perl(DBI)
+Requires:		perl(Data::Dumper)
+Requires:		perl(Data::UUID)
+Requires:		perl(Data::Validate::Domain)
+Requires:		perl(Data::Validate::IP)
+Requires:		perl(DateTime)
+Requires:		perl(DateTime::Format::ISO8601)
+Requires:		perl(Digest::MD5)
+Requires:		perl(English)
+Requires:		perl(Exporter)
+Requires:		perl(File::Basename)
+Requires:		perl(File::Path)
+Requires:		perl(File::Spec)
+Requires:		perl(File::Temp)
+Requires:		perl(IO::File)
+Requires:		perl(IO::Select)
+Requires:		perl(IO::Socket::SSL)
+Requires:		perl(IO::Socket::INET6)
+Requires:		perl(IPC::Open3)
+Requires:		perl(IPC::Run)
+Requires:		perl(JSON)
+Requires:		perl(JSON::XS)
+Requires:		perl(Log::Log4perl)
+Requires:		perl(Math::Int64)
+Requires:		perl(Module::Load)
+Requires:		perl(Moose)
+Requires:		perl(Net::CIDR)
+Requires:		perl(Net::DNS)
+Requires:		perl(Net::IP)
+Requires:		perl(Net::NTP)
+Requires:		perl(Net::Server)
+Requires:		perl(Net::Traceroute)
+Requires:		perl(NetAddr::IP)
+Requires:		perl(POSIX)
+Requires:		perl(Params::Validate)
+Requires:		perl(RPC::XML)
+Requires:		perl(RPC::XML::Client)
+Requires:		perl(RPC::XML::Server)
+Requires:		perl(RPM2)
+Requires:		perl(Regexp::Common)
+Requires:		perl(Scalar::Util)
+Requires:		perl(Socket)
+Requires:		perl(Socket6)
+Requires:		perl(Statistics::Descriptive)
+Requires:		perl(Storable)
+Requires:		perl(Symbol)
+Requires:		perl(Sys::Hostname)
+Requires:		perl(Sys::Statistics::Linux)
+Requires:		perl(Template)
+Requires:		perl(Template::Filters)
+Requires:		perl(Time::HiRes)
+Requires:		perl(URI)
+Requires:		perl(URI::Split)
+Requires:		perl(XML::LibXML)
+Requires:		perfsonar-common
+Requires:		libperfsonar-perl
+Requires:		libperfsonar-sls-perl
+Requires:		libperfsonar-regulartesting-perl
+Requires:		perfsonar-psconfig-pscheduler-devel
+Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
+Obsoletes:      perl-perfSONAR_PS-serviceTest
+Obsoletes:      perl-perfSONAR_PS-Toolkit
+Obsoletes:      perl-perfSONAR-graphs
+Obsoletes:      perl-perfSONAR_PS-MeshConfig-Shared
+Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
+
+%description toolkit-perl
+Shared libraries for perfSONAR Toolkit distributions
 
 %package regulartesting-perl
 Summary:        Shared libaries for perfSONAR regular testing
@@ -271,6 +351,14 @@ rm -rf %{buildroot}
 %license LICENSE
 %defattr(0644,perfsonar,perfsonar,0755)
 %{install_base}/lib/perfSONAR_PS/Client/PSConfig/*
+
+%files toolkit-perl
+%license LICENSE
+%defattr(0644,perfsonar,perfsonar,0755)
+%{install_base}/lib/perfSONAR_PS/NPToolkit/*
+%{install_base}/lib/perfSONAR_PS/Utils/Config/*
+%{install_base}/lib/perfSONAR_PS/Web/Sidebar.pm
+%{install_base}/lib/perfSONAR_PS/Client/gLS/Keywords.pm
 
 %files regulartesting-perl
 %license LICENSE
