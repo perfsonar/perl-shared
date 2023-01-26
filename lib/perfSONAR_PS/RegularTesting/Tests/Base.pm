@@ -154,8 +154,7 @@ sub allows_bidirectional {
 }
 
 sub TO_JSON {
-	        return { %{ shift() } };
-}
-
+    return { %{ shift() } };
+};
 
 1;

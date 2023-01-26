@@ -37,7 +37,8 @@ has 'timeout' => (is => 'rw', isa => 'Int');
 
 my $logger = get_logger(__PACKAGE__);
 
-override 'type' => sub { "bwping" };
+#override 'type' => sub { "bwping" };
+override 'type' => sub { "rtt" };
 
 override 'build_cmd' => sub {
     my ($self, @args) = @_;

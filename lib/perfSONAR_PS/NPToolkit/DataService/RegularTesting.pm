@@ -27,6 +27,7 @@ use perfSONAR_PS::Utils::DNS qw( reverse_dns resolve_address reverse_dns_multi r
 use perfSONAR_PS::Utils::Host qw( get_ethernet_interfaces get_interface_addresses discover_primary_address );
 use perfSONAR_PS::Client::gLS::Keywords;
 use perfSONAR_PS::NPToolkit::Config::RegularTesting;
+use perfSONAR_PS::NPToolkit::Config::PSConfigWriter;
 use perfSONAR_PS::Common qw(find findvalue extract genuid);
 use perfSONAR_PS::Web::Sidebar qw(set_sidebar_vars);
 
@@ -59,6 +60,13 @@ sub new {
     $self->{test_config_defaults_file} = $parameters->{test_config_defaults_file};
     $self->{regular_testing_conf} = $regular_testing_conf;
 
+    my $params = ();
+    my $psconfig_file = '/etc/perfsonar/psconfig/pscheduler.d/toolkit-webui.json';
+    $params->{psconfig_config_file} = $psconfig_file;
+    my $psconfig_writer = perfSONAR_PS::NPToolkit::Config::PSConfigWriter->new( $params );
+    $psconfig_writer->init;
+    $self->{psconfig_writer} = $psconfig_writer;
+
     return $self;
 
 }
@@ -80,8 +88,10 @@ sub add_test_configuration {
 
 sub delete_all_tests{
     my $self = shift;
-    my $regular_testing_conf = $self->{regular_testing_conf};
-    my ($ret_val, $ret_message) = $regular_testing_conf->delete_all_tests();
+    #my $regular_testing_conf = $self->{regular_testing_conf};
+    #my ($ret_val, $ret_message) = $regular_testing_conf->delete_all_tests();
+    my $psconfig_writer = $self->{psconfig_writer};
+    my ($ret_val, $ret_message) = $psconfig_writer->delete_all_psconfig_tests();
 
     my $result = ();
     $result->{"Error message"} = $ret_message;
@@ -102,6 +112,8 @@ sub update_test_configuration{
 
     utf8::encode($json_text) if utf8::is_utf8($json_text);
     my $data = from_json($json_text, {utf8 => 1});
+
+    #print("JOVANA: " . $data);
 
     my $response = $self->delete_all_tests();
 
@@ -283,41 +295,55 @@ sub _add_test_configuration{
                 $parameters->{'description'} = $description;
                 $parameters->{'disabled'} = $disabled;
                 $parameters->{'added_by_mesh'} = $added_by_mesh;
+                $parameters->{'members'} = $members;
 
                 my $test_id;
-                if($test_type eq 'owamp'){
+                if($test_type eq 'latencybg'){
 
-                    $test_id = $regular_testing_conf->add_test_owamp($parameters);
+#    my $response = ();
+#        $response->{"Return code"}= -1;
+#        $response->{"Error message"}= "". Dumper($parameters);
+#        $response->{"tests_added"} = \@result;
+#return $response;
+#		    print($parameters);
+		    #$test_id = $regular_testing_conf->add_test_owamp($parameters);
+                    $test_id = $self->{psconfig_writer}->add_test_owamp($parameters) ;
 
-                }elsif($test_type eq 'bwctl/throughput'){
+                }elsif($test_type eq 'throughput'){
 
-                    $test_id = $regular_testing_conf->add_test_bwctl_throughput($parameters);
+                    #$test_id = $regular_testing_conf->add_test_bwctl_throughput($parameters);
+		    $test_id = $self->{psconfig_writer}->add_test_bwctl_throughput($parameters);
 
-                }elsif($test_type eq 'pinger'){
+                }elsif($test_type eq 'rtt'){
 
-                    $test_id = $regular_testing_conf->add_test_pinger($parameters);
+	            #$test_id = $regular_testing_conf->add_test_pinger($parameters);
+		    $test_id = $self->{psconfig_writer}->add_test_pinger($parameters);
 
-                }elsif($test_type eq 'traceroute'){
-                    $test_id = $regular_testing_conf->add_test_traceroute($parameters);
+                }elsif($test_type eq 'trace'){
+
+		    #$test_id = $regular_testing_conf->add_test_traceroute($parameters);
+		    $test_id = $self->{psconfig_writer}->add_test_traceroute($parameters);;
 
                 }
 
-                if($test_id){
-                    foreach my $member (@{$members}){
-                        $member->{'test_id'} = $test_id;
-                        my $ret = $regular_testing_conf->add_test_member($member);
-
-                    }
-                push @result, $test;
-                }
+		#if($test_id){
+		#    foreach my $member (@{$members}){
+		#        $member->{'test_id'} = $test_id;
+		#        my $ret = $self->{psconfig_writer}->add_test_member($member);
+		#
+		#    }
+		#    push @result, $test;
+		#}
 
             }
+	    $self->{psconfig_writer}->add_default_trace_tests();
         }
     }
-
+    #
     my $response = ();
     if(@result){
-        my ($ret_val, $ret_message) = $regular_testing_conf->save( { restart_services => 0 } );
+	#my ($ret_val, $ret_message) = $regular_testing_conf->save( { restart_services => 0 } );
+        my ($ret_val, $ret_message) = $self->{psconfig_writer}->save_psconfig_tasks( \@result );
         $response->{"tests_added"} = \@result;
         $response->{"Return code"}= $ret_val;
         $response->{"Error message"}= $ret_message;

@@ -34,6 +34,7 @@ use Data::Validate::IP qw(is_ipv4);
 use Data::Validate::Domain qw(is_hostname);
 use Net::IP;
 
+use perfSONAR_PS::NPToolkit::Config::PSConfigParser;
 use perfSONAR_PS::RegularTesting::Config;
 use perfSONAR_PS::RegularTesting::Test;
 use perfSONAR_PS::RegularTesting::Target;
@@ -63,11 +64,9 @@ my %defaults = (
 );
 
 =head2 init({ perfsonarbuoy_conf_template => 0, perfsonarbuoy_conf_file => 0, pinger_landmarks_file => 0 })
-
 Initializes the client. Returns 0 on success and -1 on failure. The parameters
 can be specified to set which files the module should use for reading/writing
 the configuration.
-
 =cut
 
 sub init {
@@ -108,27 +107,31 @@ sub save {
     my ( $self, @params ) = @_;
     my $parameters = validate( @params, { restart_services => 0, } );
 
-    my ($status, $res);
 
-    ($status, $res) = $self->generate_regular_testing_config();
-
-    my $local_regular_testing_config_output = $res;
-    ($status, $res) = save_file( { file => $self->{REGULAR_TESTING_CONFIG_FILE}, content => $local_regular_testing_config_output } );
-    if ( $status == -1 ) {
-        return ( -1, "Couldn't save configuration file" );
+#    my ($status, $res);
+#    ($status, $res) = $self->generate_regular_testing_config();
+#    my $local_regular_testing_config_output = $res;
+#    ($status, $res) = save_file( { file => $self->{REGULAR_TESTING_CONFIG_FILE}, content => $local_regular_testing_config_output } );
+#    if ( $status == -1 ) {
+#	    return ( -1, "Couldn't save configuration file" );
+#    }
+    # JOVANA: treba odmah generisati psConfig compliant JSON
+    
+    my ($jovana_psconfig_json, $jovana_error) = $self->generate_json_testing_config();
+    return (-1, $jovana_psconfig_json);
+    if ($jovana_error) {
+        $self->{LOGGER}->error( "Couldn't format pSConfig template file: " . $jovana_error );
+	#return ( -1, "Couldn't format pSConfig template file" );
+        return ( -1, $jovana_error );
     }
 
-    #translate for psconfig
-    my $meshconfig_json_translator = new perfSONAR_PS::Client::PSConfig::Translators::MeshConfigTasks::Config();
-    my $psconfig = $meshconfig_json_translator->translate($local_regular_testing_config_output);
-    if($meshconfig_json_translator->error()){
-        $self->{LOGGER}->error( "Couldn't format pSConfig template file: " . $meshconfig_json_translator->error());
-        return ( -1, "Couldn't format pSConfig template file" );
+    my ($jovana_status, $jovana_res); 
+    #($jovana_status, $jovana_res) = save_file({file => $defaults{psconfig_file}, content => $jovana_psconfig_json});
+    ($jovana_status, $jovana_res) = save_file({file => "$defaults{psconfig_file}", content => $jovana_psconfig_json});
+    if ( $jovana_status == -1 ) {
+        return ( -1, "JOVANA: Couldn't save json configuration file" );
     }
-    ($status, $res) = save_file( { file => $defaults{psconfig_file}, content => $psconfig->json({"pretty" => 1, "canonical" => 1}) } );
-    if ( $status == -1 ) {
-        return ( -1, "Couldn't save configuration file" );
-    }
+    ######## JOVANA - kraj
     
     return ( 0, "" );
 }
@@ -157,16 +160,31 @@ sub reset_state {
     # Reset the tests
     $self->{TESTS} = ();
 
+    my $params = {};
+    $params->{test_config_defaults_file} = "/usr/lib/perfsonar/web-ng/etc/test_config_defaults.conf";
+    $params->{config_file} = "/etc/perfsonar/psconfig/pscheduler.d/toolkit-webui.json";
+#    my $params = {};
+#    $params->{psconfig_config_file} = "/etc/perfsonar/psconfig/pscheduler.d/toolkit-webui.json";
+    
+    my $psconfig_testing_info = perfSONAR_PS::NPToolkit::Config::PSConfigParser->new( $params );
+    $psconfig_testing_info->init;
     my ( $status, $res );
-
-    # JOVANA
-    #( $status, $res ) = $self->parse_regular_testing_config({ file => $self->{REGULAR_TESTING_CONFIG_FILE} });
-    ( $status, $res ) = $self->parse_psconfig_json_testing_config({ file => $self->{REGULAR_TESTING_CONFIG_FILE} });
+    ( $status, $res ) =  $psconfig_testing_info->parse_psconfig_testing_config();
+#print("JOVANA: $status " . Dumper($res));
     if ( $status != 0 ) {
         $self->{TESTS} = {};
         $self->{LOGGER}->error( "Problem reading Regular Testing JSON: $res" );
         return ( -1, "Problem reading Regular Testing Configuration: $res" );
     }
+
+#    my ( $status, $res );
+#
+#    ( $status, $res ) = $self->parse_regular_testing_config({ file => $self->{REGULAR_TESTING_CONFIG_FILE} });
+#    if ( $status != 0 ) {
+#        $self->{TESTS} = {};
+#        $self->{LOGGER}->error( "Problem reading Regular Testing JSON: $res" );
+#        return ( -1, "Problem reading Regular Testing Configuration: $res" );
+#    }
 
     return ( 0, "" );
 }
@@ -310,6 +328,7 @@ sub add_test_owamp {
             added_by_mesh    => 0,
             local_interface  => 0,
             disabled         => 0,
+	    protocol         => 0,
         }
     );
 
@@ -406,7 +425,6 @@ sub update_test_owamp {
     udp_bandwidth, buffer_length, window_size, report_interval,
     test_interval_start_alpha, tos_bits, omit_interval, zero_copy, single_ended, send_only,
     receive_only  all correspond to the pSB throughput test parameters.
-
     Returns (-1, $error_msg) on failure and (0, $test_id) on success.
 =cut
 
@@ -558,12 +576,10 @@ sub update_test_bwctl_throughput {
 }
 
 =head2 add_test_pinger({ description => 0, packet_size => 1, packet_count => 1, packet_interval => 1, test_interval => 1, test_offset => 1, ttl => 1, disabled => 0 })
-
     Adds a new ping test to the list. packet_size, packet_count,
     packet_interval, test_interval, test_offset, ttl all correspond to ping
     test parameters. Returns (-1, $error_msg) on failure and (0, $test_id) on
     success.
-
 =cut
 
 sub add_test_pinger {
@@ -629,12 +645,10 @@ sub add_test_pinger {
 }
 
 =head2 update_test_pinger({ description => 0, packet_size => 0, packet_count => 0, packet_interval => 0, test_interval => 0, test_offset => 0, ttl => 0, disabled => 0 })
-
     Updates an existing ping test. packet_size, packet_count,
     packet_interval, test_interval, test_offset, ttl all correspond to ping
     test parameters. Returns (-1, $error_msg) on failure and (0, $test_id) on
     success.
-
 =cut
 
 sub update_test_pinger {
@@ -748,7 +762,6 @@ sub add_test_traceroute {
 =head2 update_test_traceroute({ name => 0, description => 1, test_interval => 1, packet_size => 0, timeout => 0, waittime => 0, first_ttl => 0, max_ttl => 0, pause => 0, protocol => 0, disabled => 0 })
     Updates an existing traceroute test. All other parameters corresponf to
     test parameters.
-
     Returns (-1, $error_msg) on failure and (0, "") on success.
 =cut
 
@@ -1113,237 +1126,6 @@ sub configure_default_tests {
     return (0, "");
 }
 
-#JOVANA 
-
-sub parse_psconfig_json {
-	my ( $self, $file_name ) = @_;
-	
-	unless ($file_name) {
-		return (-1, "File $file_name doesn't exist");
-	}
-	
-	
-	my $json_text = do {
-		open(my $json_fh, "<:encoding(UTF-8)", $file_name)
-		or die("Can't open \"$file_name\": $!\n");
-		local $/;
-		<$json_fh>
-	};
-	
-	my $json = JSON->new;
-	my $decoded_json = $json->decode($json_text);
-
-        $self->{LOGGER}->error("JOVANA: parsed psconfig file ".$decoded_json);
-	print("JOVANA: parsed psconfig file ".$decoded_json);
-
-	
-	return (0, $decoded_json);
-}
-
-sub psconfig_json_to_tests {
-	my ( $self, $json_obj ) = @_;
-	my $addresses_element = $json_obj->{'addresses'};
-
-
-}
-
-# JOVANA - ova metoda koristi parser i zajednicki kod
-#JOVANA
-=head2 parse_psconfig_json_testing_config
-    Parses the specified psconfig json file, and loads the tests into the object's
-    configuration.
-=cut
-
-sub parse_psconfig_json_testing_config {
-    my ( $self, @params ) = @_;
-
-    #JOVANA
-
-    my $psconfig = new perfSONAR_PS::NPToolkit::Config::PSConfigParser();
-    my @psconfig_tasks = @$psconfig->tasks();
-                
-    #return (-1, Dumper \@psconfig_tasks);
-    #JOVANA
-    my $tasks = Dumper \@psconfig_tasks;
-    
-    
-    my $parameters = validate( @params, { file => 1, } );
-    my $file = $parameters->{file};
-
-    return ( 0, {} ) unless ( -e $file );
-
-    my $config;
-    my $status_j;
-    my $res_j;
-
-    eval {
-	# JOVANA: 
-        $file = "/etc/perfsonar/psconfig/pscheduler.d/toolkit-webui.json";
-        my ($status, $res) = parse_psconfig_json( file => $file );
-	# $self->{LOGGER}->error( $res );
-	# return ( -1, $res );	
-
-	#$config = perfSONAR_PS::RegularTesting::Config->parse($res);
-	$res_j = $res;
-	$status_j = $status;
-    };
-    if ($@) {
-        my $res = "Problem reading Regular Testing configuration: $@";
-        $self->{LOGGER}->error( $res );
-        return ( -1, $res );
-    }
-
-    $self->{LOGGER}->error( "JOVANA ".$status_j." res ".$res_j );
-    my $psconfig_json_addresses = $res_j->{'addresses'};
-    my $psconfig_json_groups = $res_j->{'groups'};
-    my $psconfig_json_tasks = $res_j->{'tasks'};
-    my $psconfig_json_tests = $res_j->{'tests'};
-    return (-1, $psconfig_json_addresses);
-    my @unhandled_tests = ();
-
-    foreach my $test (@{ $config->tests }) {
-        my ($status, $res);
-
-        my ($test_schedule, $test_interval);
-        if ($test->schedule->can("interval")) {
-            $test_interval = $test->schedule->interval;
-        }
-        elsif ($test->schedule->can("time_slots")) {
-            $test_schedule = $test->schedule->time_slots;
-        }
-
-        if ($test->parameters->type eq "powstream") {
-            ($status, $res) = $self->add_test_owamp({
-                                          description => $test->description,
-                                          local_interface => $test->local_interface,
-                                          packet_interval => $test->parameters->inter_packet_time,
-                                          packet_padding => $test->parameters->packet_length,
-                                          sample_count => $test->parameters->resolution / $test->parameters->inter_packet_time,
-                                          added_by_mesh => $test->added_by_mesh,
-                              });
-        }
-        elsif ($test->parameters->type eq "bwping/owamp") {
-            my $interval;
-            ($status, $res) = $self->add_test_owamp({
-                                          description => $test->description,
-                                          local_interface => $test->local_interface,
-                                          packet_interval => $test->parameters->inter_packet_time,
-                                          packet_padding => $test->parameters->packet_length,
-                                          sample_count => $test->parameters->packet_count,
-                                          test_interval => $test_interval,
-                                          test_schedule => $test_schedule,
-                                          added_by_mesh => $test->added_by_mesh,
-                              });
-        }
-        elsif ($test->parameters->type eq "bwping") {
-            ($status, $res) = $self->add_test_pinger({
-                                          description => $test->description,
-                                          local_interface => $test->local_interface,
-                                          packet_size => $test->parameters->packet_length,
-                                          ttl => $test->parameters->packet_ttl,
-                                          packet_count => $test->parameters->packet_count,
-                                          packet_interval => $test->parameters->inter_packet_time,
-
-                                          test_interval => $test_interval,
-                                          test_schedule => $test_schedule,
-                                          added_by_mesh => $test->added_by_mesh,
-                              });
-        }
-        elsif ($test->parameters->type eq "bwtraceroute") {
-            ($status, $res) = $self->add_test_traceroute({
-                                          description => $test->description,
-                                          local_interface => $test->local_interface,
-                                          tool => $test->parameters->tool,
-                                          packet_size => $test->parameters->packet_length,
-                                          first_ttl => $test->parameters->packet_first_ttl,
-                                          max_ttl  => $test->parameters->packet_max_ttl,
-
-                                          test_interval => $test_interval,
-                                          test_schedule => $test_schedule,
-                                          added_by_mesh => $test->added_by_mesh,
-                              });
-        }
-        elsif ($test->parameters->type eq "bwctl") {
-            my $protocol = ($test->parameters->use_udp?"udp":"tcp");
-            my $window_size = $test->parameters->window_size;
-            $window_size /= 1048576 if ( defined ( $window_size ) && $window_size >= 1048576);
-
-            ($status, $res) = $self->add_test_bwctl_throughput({
-                                          description => $test->description,
-                                          local_interface => $test->local_interface,
-                                          tool => $test->parameters->tool,
-                                          protocol => $protocol,
-                                          duration => $test->parameters->duration,
-                                          udp_bandwidth => $test->parameters->udp_bandwidth,
-                                          buffer_length => $test->parameters->buffer_length,
-
-                                          tos_bits => $test->parameters->packet_tos_bits,
-                                          streams  => $test->parameters->streams,
-                                          omit_interval  => $test->parameters->omit_interval,
-                                          zero_copy => $test->parameters->zero_copy,
-                                          single_ended => $test->parameters->single_ended,
-                                          send_only  => $test->parameters->send_only,
-                                          receive_only  => $test->parameters->receive_only,
-                                            
-                                          #report_interval => $test->parameters->report_interval,
-                                          window_size => $window_size,
-                                          #test_interval_start_alpha => $test->parameters->random_start_percentage,
-
-                                          test_interval => $test_interval,
-                                          test_schedule => $test_schedule,
-                                          added_by_mesh => $test->added_by_mesh,
-                              });
-        }
-        else {
-            $res = "Invalid test type: ".$test->parameters->type;
-            $self->{LOGGER}->error( $res );
-            return ( -1, $res );
-        }
-
-        if ($status != 0) {
-            $res = "Problem adding test: ".$res;
-            $self->{LOGGER}->error( $res );
-            return ( -1, $res );
-        }
-
-        my $test_id = $res;
-
-        foreach my $target (@{ $test->targets }) {
-            my ($ipv4, $ipv6) = (1, 1);
-
-            foreach my $params ($test->parameters, $target->override_parameters) {
-                next unless $params;
-
-                if ($params->force_ipv4) {
-                    $ipv4 = 1;
-                    $ipv6 = 0;
-                }
-                elsif ($params->force_ipv6) {
-                    $ipv4 = 0;
-                    $ipv6 = 1;
-                }
-            }
-
-            $self->add_test_member({ test_id => $test_id, address => $target->address, description => $target->description, sender => 1, receiver => 1, test_ipv4 => $ipv4, test_ipv6 => $ipv6 });
-        }
-
-        if ($test->disabled) {
-            $self->disable_test({ test_id => $test_id });
-        }
-
-        push @unhandled_tests, $test if $test->added_by_mesh;
-    }
-
-    # Clear out the tests we've handled above
-    $config->tests(\@unhandled_tests);
-
-    $self->{EXISTING_CONFIGURATION} = $config->unparse();
-
-    return ( 0, "" );
-}
-
-#JOVANA
-
 =head2 parse_regular_testing_config
     Parses the specified mesh file, and loads the tests into the object's
     configuration.
@@ -1520,6 +1302,7 @@ sub generate_regular_testing_config {
     my $parameters = validate( @params, { include_mesh_tests => 0 } );
     my $include_mesh_tests = $parameters->{include_mesh_tests};
 
+    # return ("J", $self->{TESTS}); 
     my @tests = ();
 
     # Build test objects
@@ -1638,53 +1421,308 @@ sub generate_regular_testing_config {
     return (0, $res);
 }
 
+############### JOVANA
+=head2 generate_json_testing_config()
+    Generates a string representation of the tests compliant to pSConfig JSON schema.
+=cut
+#sub generate_regular_testing_config 
+sub generate_json_testing_config {
+    my ( $self, @params ) = @_;
+   
+    # return ($self->{TESTS}, "JOVANA"); 
+    # jovana - pocetak
+    # validacija parametara "po starom"
+    my $parameters = validate( @params, { include_mesh_tests => 0, } );
+    my $include_mesh_tests = $parameters->{include_mesh_tests};
+    # jovana - kraj
+
+    #First validate this $config <- MeshConfig parsed to hash
+    #convert tests ($config->{'test'}) to array if needed
+#    unless(ref($config->{'test'}) eq 'ARRAY'){
+#        $config->{'test'} = [ $config->{'test'} ];
+#    }
+#    #set to data (HashRef in BaseNode.pm)
+#    $self->data($config);
+    
+    #init translation
+    my $psconfig = new perfSONAR_PS::Client::PSConfig::Config();
+    
+    #set description
+    my $now=DateTime->now;
+    $now->set_time_zone("UTC");
+    my $iso_now = $now->ymd('-') . 'T' . $now->hms(':') . '+00:00';
+    my $top_meta = {
+        "psconfig-translation" => {
+            "source-format" => 'mesh-config-tasks-conf',
+            "time-translated" => $iso_now
+        }
+    };
+    #set meta
+    $psconfig->psconfig_meta($top_meta);
+
+    # return (Dumper($self->{TESTS}), "JOVANA"); # jovana - kraj
+    # return (join(',', @params), "JOVANA"); # jovana - kraj
+    # return ($parameters, "JOVANA");
+    
+    # generisanje testova "po starom"; stari poziv procedure ($status, $res) = $self->generate_regular_testing_config(); 
+    # jovana - pocetak
+    my @tests = ();
+    my $jovana_test_types = "";
+    # Build test objects
+    foreach my $test_desc (values %{ $self->{TESTS} }) {
+        my ($parameters, $schedule);
+        $jovana_test_types = $jovana_test_types . " (" . $test_desc->{type} . "/" . $test_desc->{added_by_mesh} . ")"; 
+
+        next if ($test_desc->{added_by_mesh} and not $include_mesh_tests);
+
+        if ($test_desc->{parameters}->{test_interval}) {
+            $schedule = perfSONAR_PS::RegularTesting::Schedulers::RegularInterval->new();
+            $schedule->interval($test_desc->{parameters}->{test_interval});
+        }
+        elsif ($test_desc->{parameters}->{test_schedule}) {
+            $schedule = perfSONAR_PS::RegularTesting::Schedulers::TimeBasedSchedule->new();
+            $schedule->time_slots($test_desc->{parameters}->{test_schedule});
+        }
+        else {
+            $schedule = perfSONAR_PS::RegularTesting::Schedulers::Streaming->new();
+        }
+
+        if ($test_desc->{type} eq "latencybg") {
+            if ($schedule->type eq "streaming") {
+                $parameters = perfSONAR_PS::RegularTesting::Tests::Powstream->new();
+                my $resolution = $test_desc->{parameters}->{sample_count} * $test_desc->{parameters}->{packet_interval};
+                $parameters->resolution($resolution);
+            }
+            else {
+                $parameters = perfSONAR_PS::RegularTesting::Tests::BwpingOwamp->new();
+                $parameters->packet_count($test_desc->{parameters}->{sample_count});
+            }
+
+            $parameters->packet_length($test_desc->{parameters}->{packet_padding}) if defined $test_desc->{parameters}->{packet_padding};
+            $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if defined $test_desc->{parameters}->{packet_interval};
+        }
+        elsif ($test_desc->{type} eq "throughput") {
+            $parameters = perfSONAR_PS::RegularTesting::Tests::Bwctl->new();
+
+            $parameters->tool($test_desc->{parameters}->{tool}) if defined $test_desc->{parameters}->{tool};
+            $parameters->use_udp(1) if ($test_desc->{parameters}->{protocol} and $test_desc->{parameters}->{protocol} eq "udp");
+            $parameters->duration($test_desc->{parameters}->{duration}) if defined $test_desc->{parameters}->{duration};
+            $parameters->udp_bandwidth($test_desc->{parameters}->{udp_bandwidth}) if defined $test_desc->{parameters}->{udp_bandwidth};
+            $parameters->buffer_length($test_desc->{parameters}->{buffer_length}) if defined $test_desc->{parameters}->{buffer_length};
+            $parameters->window_size($test_desc->{parameters}->{window_size} * 1024 * 1024) if defined $test_desc->{parameters}->{window_size}; # convert to bps for the regular testing
+            $parameters->packet_tos_bits($test_desc->{parameters}->{tos_bits}) if defined $test_desc->{parameters}->{tos_bits};
+            $parameters->streams($test_desc->{parameters}->{streams}) if defined $test_desc->{parameters}->{streams};
+            $parameters->omit_interval($test_desc->{parameters}->{omit_interval}) if defined $test_desc->{parameters}->{omit_interval};
+            $parameters->zero_copy($test_desc->{parameters}->{zero_copy}) if defined $test_desc->{parameters}->{zero_copy};
+            $parameters->single_ended($test_desc->{parameters}->{single_ended}) if defined $test_desc->{parameters}->{single_ended};
+            $parameters->send_only($test_desc->{parameters}->{send_only}) if defined $test_desc->{parameters}->{send_only};
+            $parameters->receive_only($test_desc->{parameters}->{receive_only}) if defined $test_desc->{parameters}->{receive_only};
+        }
+        elsif ($test_desc->{type} eq "rtt") {
+            $parameters = perfSONAR_PS::RegularTesting::Tests::Bwping->new();
+            $parameters->packet_count($test_desc->{parameters}->{packet_count}) if $test_desc->{parameters}->{packet_count};
+            $parameters->packet_length($test_desc->{parameters}->{packet_size}) if $test_desc->{parameters}->{packet_size};
+            $parameters->packet_ttl($test_desc->{parameters}->{ttl}) if $test_desc->{parameters}->{ttl};
+            $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if $test_desc->{parameters}->{packet_interval};
+            $parameters->send_only(1);
+        }
+        elsif ($test_desc->{type} eq "trace") {
+            $parameters = perfSONAR_PS::RegularTesting::Tests::Bwtraceroute->new();
+            $parameters->tool($test_desc->{parameters}->{tool}) if $test_desc->{parameters}->{tool};
+            $parameters->packet_length($test_desc->{parameters}->{packet_size}) if defined $test_desc->{parameters}->{packet_size};
+            $parameters->packet_first_ttl($test_desc->{parameters}->{first_ttl}) if defined $test_desc->{parameters}->{first_ttl};
+            $parameters->packet_max_ttl($test_desc->{parameters}->{max_ttl}) if defined $test_desc->{parameters}->{max_ttl};
+            $parameters->send_only(1);
+       }
+       elsif ($test_desc->{type} eq $test_desc->{type}) {
+            $parameters = perfSONAR_PS::RegularTesting::Tests::Bwtraceroute->new();
+            $parameters->tool($test_desc->{parameters}->{tool}) if $test_desc->{parameters}->{tool};
+            $parameters->packet_length($test_desc->{parameters}->{packet_size}) if defined $test_desc->{parameters}->{packet_size};
+            $parameters->packet_first_ttl($test_desc->{parameters}->{first_ttl}) if defined $test_desc->{parameters}->{first_ttl};
+            $parameters->packet_max_ttl($test_desc->{parameters}->{max_ttl}) if defined $test_desc->{parameters}->{max_ttl};
+            $parameters->send_only(1);
+        }
+#print("JOVANA: " . $test_desc->{type});       
+        $parameters->test_ipv4_ipv6(1);
+
+
+        my @targets = ();
+        foreach my $member (values %{ $test_desc->{members} }) {
+            my $target = perfSONAR_PS::RegularTesting::Target->new();
+            $target->address($member->{address});
+            $target->description($member->{description}) if $member->{description};
+
+            unless ($member->{test_ipv4}) {
+                my $override_parameters = $parameters->meta->new_object();
+                $override_parameters->force_ipv6(1);
+                $target->override_parameters($override_parameters);
+            }
+
+            unless ($member->{test_ipv6}) {
+                my $override_parameters = $parameters->meta->new_object();
+                $override_parameters->force_ipv4(1);
+                $target->override_parameters($override_parameters);
+            }
+
+            push @targets, $target;
+        }
+
+        my $test = perfSONAR_PS::RegularTesting::Test->new();
+        $test->description($test_desc->{description}) if $test_desc->{description};
+        $test->local_interface($test_desc->{parameters}->{local_interface}) if $test_desc->{parameters}->{local_interface};
+        $test->disabled($test_desc->{disabled}) if $test_desc->{disabled};
+        $test->schedule($schedule);
+        $test->parameters($parameters);
+        $test->targets(\@targets);
+
+        $test->added_by_mesh(1) if $test_desc->{added_by_mesh};
+
+        push @tests, $test;
+    }
+
+
+    my @jovana_tests_dumped;
+    foreach my $jovana_test (@tests) {
+    	    my $jovana_test_string = Dumper($jovana_test);
+    	    push @jovana_tests_dumped, $jovana_test_string;
+    } 
+#    return (join("-", @jovana_tests_dumped), join("-", @jovana_tests_dumped));
+        
+    
+    # ??? gde su generisani default parametes ???? <-- u RegularTesting::Test su 
+    #convert default parameters
+    my $default_test_params = {};
+    my $jovana_test_params = " default params for test types";
+    # jovana: $self->data(){'default_parameters'} --> iterate @tests 
+#    if($self->data()->{'default_parameters'}){
+#        unless(ref($self->data()->{'default_parameters'}) eq 'ARRAY'){
+#            $self->data()->{'default_parameters'} = [ $self->data()->{'default_parameters'} ];
+#        }
+        foreach my $test_default_test_param(@tests){
+            my $default_test_param = $test_default_test_param->{'default_parameters'};
+            my $type = $default_test_param->{'type'};
+            next unless($type);
+            my $params = {};
+            foreach my $param_key(keys %{$default_test_param}){
+                next if($param_key eq 'type');
+                $params->{$param_key} = $default_test_param->{$param_key};
+            }
+            $default_test_params->{$type} = $params;
+
+	    $jovana_test_params = $jovana_test_params . " " . $type;
+        }
+#    }
+	# return ($jovana_test_params, "JOVANA");
+       
+	# return($jovana_test_types . $default_test_params, "JOVANA");
+	# return($jovana_test_types . "|" . Dumper($jovana_test_params), "JOVANA");
+    
+    #iterate through tests and build psconfig tasks
+    # jovana $self->data() --> @tests
+    my $translator = new perfSONAR_PS::Client::PSConfig::Translators::MeshConfigTasks::Config();
+    my $jovana_task_names = " task names ";
+    my $jovana_error = "";
+    my $generated_json = "";
+    foreach my $test(@tests){
+	$jovana_task_names = $jovana_task_names . "(" . ($test->{'added_by_mesh'} && !$self->include_added_by_mesh()) . "|";
+        #skip tests added by mesh
+	#JOVANA: otkomentarisati
+	#next if($test->{'added_by_mesh'} && !$self->include_added_by_mesh());
+        
+        #inherit default parameters
+        next unless($test->{'parameters'});
+        if($default_test_params->{$test->{'parameters'}->{'type'}}){
+            foreach my $param_key(keys %{$default_test_params->{$test->{'parameters'}->{'type'}}}){
+                next if($param_key eq 'type');
+                $test->{'parameters'}->{$param_key} = $default_test_params->{$test->{'parameters'}->{'type'}}->{$param_key};
+            }
+        }
+	$jovana_task_names = $jovana_task_names . ($test->{'description'} ? $test->{'description'} : "task") . ")";
+        
+        #build psconfig tasks
+	$translator->_jovana_convert_tasks($test, $psconfig);
+	#$jovana_error = $jovana_error . "|JOVANA_RegularTesting|" . $translator->_jovana_convert_tasks($test, $psconfig);
+	#$jovana_error = $jovana_error . "|" .  $translator->_jovana_convert_tasks($test, $psconfig); # join('-', $translator->_jovana_convert_tasks($test, $psconfig));
+	# my $jovana_name = "" . $translator->_jovana_convert_tasks($test, $psconfig);
+	# $jovana_task_names = $jovana_task_names . " " . $jovana_name;
+    }
+
+    #return ($jovana_error, $jovana_error);
+    #return $psconfig->json({"pretty" => 1, "canonical" => 1}) ;
+
+
+    # return($jovana_task_names, "JOVANA");
+    # my $jovana_psconfig_tasks = @{$psconfig->task_names()};
+    # return ("JOVANA ERROR: " . $jovana_error, "JOVANA") if ($jovana_error);
+    # return (Dumper($psconfig), "JOVANa");
+    
+    #convert and save global archives
+    #my $save_global_archives = 0;
+#    if($save_global_archives){
+#	my $global_archive_psconfig = new perfSONAR_PS::Client::PSConfig::Config();
+#        my $global_archive_refs = {};
+#        $self->_convert_measurement_archives($self->data(), $global_archive_psconfig, $global_archive_refs);
+#        foreach my $global_archive_ref(keys %{$global_archive_refs}){
+#            my $global_archive = $global_archive_psconfig->archive($global_archive_ref);
+#            next unless($global_archive_ref);
+#            $self->save_archive($global_archive, $global_archive_ref, {pretty => 1});
+#        }
+#    }
+    
+    #check if we actually have anything we converted - if all remote mesh we may not
+    unless(@{$psconfig->task_names()}){
+	# $self->{LOGGER}->error("Nothing to convert. This is not an error if all tests contain added_by_mesh. Ignore any errors above about malformed JSON string.");
+        return (0, "Nothing to convert. This is not an error if all tests contain added_by_mesh. Ignore any errors above about malformed JSON string.");
+    }
+    
+    #build pSConfig Object and validate
+    my @errors = $psconfig->validate();
+    if(@errors){
+        my $err = "Generated PSConfig JSON is not valid. Encountered the following validation errors:\n\n";
+        foreach my $error(@errors){
+#            $err .= "   Node: " . $error->path . "\n";
+#            $err .= "   Error: " . $error->message . "\n\n";
+        }
+	# $self->{LOGGER}->error($err);
+        return (0, $err);
+    }
+    my $psconfig_json_jovana = $psconfig->json({"pretty" => 1, "canonical" => 1});  
+#    return ($psconfig, "JOVANA_JOVANA");
+    #return ($psconfig_json_jovana, "");
+    return (0, $psconfig_json_jovana);
+    return ($psconfig_json_jovana, 0);
+
+
+}
+
+
 1;
 
 __END__
-
 =head1 SEE ALSO
-
 To join the 'perfSONAR-PS Users' mailing list, please visit:
-
   https://lists.internet2.edu/sympa/info/perfsonar-ps-users
-
 The perfSONAR-PS git repository is located at:
-
   https://code.google.com/p/perfsonar-ps/
-
 Questions and comments can be directed to the author, or the mailing list.
 Bugs, feature requests, and improvements can be directed here:
-
   http://code.google.com/p/perfsonar-ps/issues/list
-
 =head1 VERSION
-
 $Id$
-
 =head1 AUTHOR
-
 Aaron Brown, aaron@internet2.edu
-
 =head1 LICENSE
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-
 =head1 COPYRIGHT
-
 Copyright (c) 2008-2010, Internet2
-
 All rights reserved.
-
 =cut
-
 # vim: expandtab shiftwidth=4 tabstop=4

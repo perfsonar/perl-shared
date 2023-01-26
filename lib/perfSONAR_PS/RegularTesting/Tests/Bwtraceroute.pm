@@ -36,7 +36,8 @@ has 'wait' => (is => 'rw', isa => 'Int');
             
 my $logger = get_logger(__PACKAGE__);
 
-override 'type' => sub { "bwtraceroute" };
+#override 'type' => sub { "bwtraceroute" };
+override 'type' => sub { "trace" };
 
 override 'build_cmd' => sub {
     my ($self, @args) = @_;
@@ -235,5 +236,10 @@ override 'build_pscheduler_task' => sub {
 override 'pscheduler_archive_type' => sub {
     return 'esmond/traceroute';
 };
+
+sub TO_JSON {
+    return { %{ shift() } };
+};
+
 
 1;

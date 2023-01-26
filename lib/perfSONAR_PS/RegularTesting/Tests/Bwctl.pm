@@ -41,7 +41,8 @@ has 'server_cpu_affinity' => (is => 'rw', isa => 'Int');
         
 my $logger = get_logger(__PACKAGE__);
 
-override 'type' => sub { "bwctl" };
+#override 'type' => sub { "bwctl" };
+override 'type' => sub { "throughput" };
 
 override 'build_cmd' => sub {
     my ($self, @args) = @_;

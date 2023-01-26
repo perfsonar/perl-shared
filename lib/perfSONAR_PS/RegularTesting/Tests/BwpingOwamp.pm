@@ -29,7 +29,8 @@ has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
 
 my $logger = get_logger(__PACKAGE__);
 
-override 'type' => sub { "bwping/owamp" };
+#override 'type' => sub { "bwping/owamp" };
+override 'type' => sub { "latencybg" };
 
 override 'build_cmd' => sub {
     my ($self, @args) = @_;

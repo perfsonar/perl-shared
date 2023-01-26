@@ -52,7 +52,8 @@ has '_runner'           => (is => 'rw', isa => 'perfSONAR_PS::RegularTesting::Ut
 
 my $logger = get_logger(__PACKAGE__);
 
-override 'type' => sub { "powstream" };
+#override 'type' => sub { "powstream" };
+override 'type' => sub { "latencybg" };
 
 override 'allows_bidirectional' => sub { 1 };
 

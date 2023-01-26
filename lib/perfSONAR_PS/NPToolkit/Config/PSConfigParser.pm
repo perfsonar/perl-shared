@@ -13,6 +13,7 @@ use File::Basename;
 use JSON qw/ from_json /;
 use Log::Log4perl qw(get_logger);
 use URI;
+use Params::Validate qw(:all);
 
 use perfSONAR_PS::Common qw(genuid);
 
@@ -34,6 +35,8 @@ our $VERSION = 4.1;
 
 
 has 'config_file' => (is => 'rw', isa => 'Str', default => '/etc/perfsonar/psconfig/pscheduler.d/toolkit-webui.json');
+has 'test_config_defaults_file' => (is => 'rw', isa => 'Str', default => '/etc/perfsonar/psconfig/pscheduler.d/toolkit-webui.json');
+has 'default_test_parameters' => (is => 'rw', isa => 'HashRef|Undef', writer => '_set_default_test_parameters');
 has 'psconfig' => (is => 'rw', isa => 'perfSONAR_PS::Client::PSConfig::Config', default => sub { new perfSONAR_PS::Client::PSConfig::Config(); });
 
 
@@ -66,19 +69,34 @@ has 'addresses' => (is => 'ro', isa => 'ArrayRef[perfSONAR_PS::Client::PSConfig:
 #has 'toolkit_tests' => (is => 'rw', isa => 'ArrayRef[]', default => sub {[]});
 
 
+
 #private
 has '_match_addresses_map' => (is => 'ro', isa => 'HashRef|Undef', writer => '_set_match_addresses_map');
 
 
 sub new {
-    my ($self, $params) = @_;
-    #print ("\n\nKONSTRUKTOR\n" . Dumper($params) . "\n");
+    my ($self, @params) = @_;
+    #print("\nJovana: konstruktor\n");
+    #print("\n\n\n\ndefaults parametar " . Dumper(@params) . "\n\n\n");
+    my $parameters = validate(@params, { test_config_defaults_file => 1, config_file => 1 });
+    $self->test_config_defaults_file($parameters->{test_config_defaults_file});
+    $self->config_file($parameters->{config_file});
+    #print("\n\n\n\ndefaults " . $self->test_config_defaults_file . "\n\n\n");
+    #print ("\n\nKONSTRUKTOR\n" . Dumper(@params) . "\n");
+    #print ("\n\nKONSTRUKTOR\n" . Dumper($parameters->{test_config_defaults_file}) . "\n");
 }
 
 sub init {
     # my ( $class, @params ) = @_;
     my ( $self, $params) = @_;
-    my $config_file = $params if $params;
+    #print("\n\n\n\ninit parametar " . Dumper($params) . "\n\n\n");
+    #print("\n\n\n\nmy parametar " . $self->config_file . "\n\n\n");
+    #print("\n\n\n\nmy parametar " . $self->test_config_defaults_file . "\n\n\n");
+
+    my $conf_obj = Config::General->new( -ConfigFile => $self->test_config_defaults_file );
+    my %conf = $conf_obj->getall;
+    $self->_set_default_test_parameters(\%conf);
+    #my $config_file = $params if $params;
 
     $self->config_file("/etc/perfsonar/psconfig/pscheduler.d/toolkit-webui.json");
     #print ("init parametar " . $self->config_file . "\n");
@@ -106,7 +124,7 @@ sub init {
 
 #    my $self = fields::new( $class );
 
-    $self->config_file('/etc/perfsonar/psconfig/pscheduler.d/toolkit-webui.json'); # $config_file);
+#    $self->config_file('/etc/perfsonar/psconfig/pscheduler.d/toolkit-webui.json'); # $config_file);
     # $self->config_file($config_file);
     # #print ("init self " . $self->config_file . "\n\t " . Dumper($self->psconfig) . "\n");
 }
@@ -141,6 +159,24 @@ sub map_psconfig_tasks_to_toolkit_UI() {
 	my $task_tool = $task->{tools};
 	my $task_value = $task->{details};
 	my $task_type = $task->{type};
+#	if ($task->{type} eq 'latencybg') {
+#            $task_type = 'powstream';
+#	} elsif ($task->{type} eq 'throughput') {
+#            $task_type = 'bwctl';
+#	} elsif ($task->{type} eq 'trace') {
+#            $task_type = 'bwtraceroute';
+#	} elsif ($task->{type} eq 'rtt') {
+	#jovana: gde se mapira u pinger???
+#            $task_type = 'pinger';
+#	} elsif ($task->{type} eq 'rtt') {
+#            $task_type = 'bwping';
+#	} elsif ($task->{type} eq 'latency') {
+#            $task_type = 'bwping/owamp';
+#	} elsif ($task->{type} eq 'simplestream') {
+#            $task_type = 'simplestream';
+#	} else {
+#            $task_type = $task->{type};
+#	}
 	#print("ps_tasks " . Dumper(@pscheduler_tasks) . "\n\n");
 		#foreach my $pscheduler_task(@pscheduler_tasks) {
 		#}
@@ -148,16 +184,26 @@ sub map_psconfig_tasks_to_toolkit_UI() {
 
 
 	$test->{description} = $task_name; 
+#	print('JOVANA JOVANA JOVANA mapped task type ' . $task_type);
 	$test->{type} = $task_type;
 	$parameters->{tool} = $task_tool if $task_tool;
+	$parameters->{ttl} = $task->{ttl} if $task->{ttl};
+	$parameters->{packet_interval} = $task->{packet_interval} if $task->{packet_interval};
+	$parameters->{packet_size} = $task->{packet_size} if $task->{packet_size};
+	$parameters->{packet_count} = $task->{packet_count} if $task->{packet_count};
+	$parameters->{packet_padding} = $task->{packet_padding} if $task->{packet_padding};
 	$parameters->{tos_bits} = $task->{tos_bits} if $task->{tos_bits};
-	$parameters->{protocol} = $task->{protocol};
+	if ($task_type eq 'throughput') {
+	    $parameters->{protocol} = $task->{protocol};
+        }
+	$parameters->{duration} = $task->{duration} if $task->{duration};
 	$parameters->{test_interval} = $task->{test_interval} if $task->{test_interval};
 	$test->{disabled} = undef;
 	$test->{added_by_mesh} = undef;
 	$test->{id} = $task->{id} ;
 	$test->{test_id} = $task->{test_id} ;
-	$parameters->{local_interface} = undef;
+	#JOVANA ovo treba da postane IP ili 127.0.0.1
+	$parameters->{local_interface} = $task->{local_interface}; #undef;
 	$test->{parameters} = $parameters;
 	$test->{members} = $task->{members};
 	#foreach my $member(@members) {
@@ -189,14 +235,14 @@ sub get_test_configuration {
     #$self->log_debug("JOVANA get_testing_config Tasks: " . Dumper(@tasks));  
     #print("JOVANA get_testing_config Tasks: " . Dumper(@tasks));  
     my $tests = [];
-    my $test_defaults;
-    $test_defaults->{type}->{'bwctl/throughput'}->{window_size} = "0";
-    $test_defaults->{type}->{'bwctl/throughput'}->{local_interface} = "default";
-    $test_defaults->{type}->{'bwctl/throughput'}->{tos_bits} = "0";
-    $test_defaults->{type}->{'bwctl/throughput'}->{duration} = "20";
-    $test_defaults->{type}->{'bwctl/throughput'}->{tools} = "iperf3,iperf";
-    $test_defaults->{type}->{'bwctl/throughput'}->{protocol} = "tcp";
-    $test_defaults->{type}->{'bwctl/throughput'}->{test_interval} = "21600";
+#    my $test_defaults;
+#    $test_defaults->{type}->{'bwctl/throughput'}->{window_size} = "0";
+#    $test_defaults->{type}->{'bwctl/throughput'}->{local_interface} = "default";
+#    $test_defaults->{type}->{'bwctl/throughput'}->{tos_bits} = "0";
+#    $test_defaults->{type}->{'bwctl/throughput'}->{duration} = "20";
+#    $test_defaults->{type}->{'bwctl/throughput'}->{tools} = "iperf3,iperf";
+#    $test_defaults->{type}->{'bwctl/throughput'}->{protocol} = "tcp";
+#    $test_defaults->{type}->{'bwctl/throughput'}->{test_interval} = "21600";
 
 #    $test_defaults{"type"}{"pinger"}{"local_interface"} = "default";
 #    $test_defaults{"type"}{"pinger"}{"packet_interval"} = "1";
@@ -238,9 +284,19 @@ sub get_test_configuration {
     return {
         test_configuration => ($test_configuration),
 	status => $status_vars,
-	test_defaults => {} #$test_defaults
+	test_defaults => $self->default_test_parameters #{} #$test_defaults
     };
 
+}
+
+# JOVANA: potrebna za reset
+#
+sub parse_psconfig_testing_config {
+    my($self, $params) = @_;
+    my $test_configuration = $self->map_psconfig_tasks_to_toolkit_UI();
+    #return { 0, "" };
+    #return { 0, $test_configuration };
+    return ( 0, $test_configuration );
 }
 
 =head2 _run_handle_psconfig save
@@ -250,7 +306,7 @@ sub get_test_configuration {
 sub _run_handle_psconfig {
     my($self, $agent_conf, $remote) = @_;
     my $psconfig = $self->psconfig;
-    
+    #print("JOVANA _run_handle_psconfig pocetak\n"); 
     #Init variables
     my $configure_archives = 0; #make sure defined
     if(!$remote){
@@ -280,6 +336,20 @@ sub _run_handle_psconfig {
         my $task = $psconfig->task($task_name);
         next if(!$task || $task->disabled());
 
+	my $task_group = $task->group_ref();
+	my $local_interface_ip;
+       	if ($task_group) {
+	    my $last_index = rindex($task_group, "_");
+	    if ($last_index > 0) { 
+                $local_interface_ip = substr($task_group, $last_index + 1);
+            } else {
+                $local_interface_ip = 'default';
+	    }
+        } else {
+            $local_interface_ip = 'default';
+	}
+
+	#print("Local interface for task_name $task_name " . $local_interface_ip . " (group: " . $task_group . ")\n");
 #JOVANA	
 #        $self->logf->global_context()->{'task_name'} = $task_name;
 	#print ("JOVANA: " . Dumper($task) . "\n");
@@ -326,6 +396,8 @@ sub _run_handle_psconfig {
         my @pair;
 	my @task_generator_pscheduler_tasks = ();
 	my $task_type;
+	my $psconfig_test_ip_v4;
+	my $psconfig_test_ip_v6;
 	my $psconfig_test_duration;
 	my $psconfig_test_zero_copy;
 	my $psconfig_test_udp = 0;
@@ -335,6 +407,11 @@ sub _run_handle_psconfig {
 	my $psconfig_test_single_ended;
 	my $psconfig_test_omit_interval;
 	my $psconfig_test_bandwidth;
+	my $psconfig_test_ttl;
+	my $psconfig_test_packet_count;
+	my $psconfig_test_packet_interval;
+	my $psconfig_test_packet_size;
+	my $psconfig_test_packet_padding;
 	my @members = ();
 	my $jovana_brojac = 0;
 	my %members_hash;
@@ -351,6 +428,7 @@ sub _run_handle_psconfig {
 	    $task_type = $psc_task->test_type();
 	    # task and test have the same name
 	    my $test_spec = $psc_task->test_spec();
+	    #print($toolkit_ui_taskname . " test_spec " . Dumper($test_spec) . "\n");
 	    if ($test_spec->{'bandwidth'}) {
                 $psconfig_test_bandwidth = int($test_spec->{'bandwidth'});	
             }  
@@ -377,10 +455,37 @@ sub _run_handle_psconfig {
 	    if ($test_spec->{'zero-copy'}) {
                 $psconfig_test_zero_copy = int($test_spec->{'zero-copy'});	
             }  
+	    if ($test_spec->{'ip-version'} eq '4') {
+                $psconfig_test_ip_v4 = int(1);	
+            } else {
+                $psconfig_test_ip_v4 = int(0);	
+	    }
+	    if ($test_spec->{'ip-version'} eq '6') {
+                $psconfig_test_ip_v6 = int(1);	
+            } else {
+                $psconfig_test_ip_v6 = int(0);	
+            }  
+	    if ($test_spec->{'ttl'}) {
+                $psconfig_test_ttl = "$test_spec->{'ttl'}";	
+            }  
+	    if ($test_spec->{'packet-padding'}) {
+                $psconfig_test_packet_padding = "$test_spec->{'packet-padding'}";	
+            }  
+	    if ($test_spec->{'packet-size'}) {
+                $psconfig_test_packet_size = "$test_spec->{'packet-size'}";	
+            }  
+	    if ($test_spec->{'packet-interval'}) {
+                $psconfig_test_packet_interval = "$test_spec->{'packet-interval'}";	
+            }  
+	    if ($test_spec->{'packet-count'}) {
+                $psconfig_test_packet_count = "$test_spec->{'packet-count'}";	
+            }  
+	    #print($toolkit_ui_taskname . " $psconfig_test_packet_padding test_spec.padding " . $test_spec->{'packet-padding'} . "\n");
+	    #print($toolkit_ui_taskname . " $psconfig_test_packet_interval test_spec.interval " . $test_spec->{'packet-interval'} . "\n");
 	    $psconfig_test_duration = $test_spec->{duration};
 	    if ($psconfig_test_duration) {
-	    my $psconfig_test_duration_length = length($psconfig_test_duration) - 3; #PT...S
-	    $psconfig_test_duration = substr($psconfig_test_duration, 2, $psconfig_test_duration_length);
+	        my $psconfig_test_duration_length = length($psconfig_test_duration) - 3; #PT...S
+	        $psconfig_test_duration = substr($psconfig_test_duration, 2, $psconfig_test_duration_length);
             }
 	    #print("$toolkit_ui_taskname $jovana_brojac psc_task->test_spec " . Dumper($test_spec) . "\n");
 	    #foreach my $key (keys %test) {	  
@@ -400,6 +505,8 @@ sub _run_handle_psconfig {
     		$members_hash{$source_address}{id} = $member_source_id;
     		$members_hash{$source_address}{member_id} = $source_id;
     		$members_hash{$source_address}{address} = $test_spec->{'source'};
+    		$members_hash{$source_address}{test_ipv4} = $psconfig_test_ip_v4;
+    		$members_hash{$source_address}{test_ipv6} = $psconfig_test_ip_v6;
             }
 
             my $destination_address = $test_spec->{'dest'};
@@ -410,6 +517,8 @@ sub _run_handle_psconfig {
     		$members_hash{$destination_address}{id} = $member_destination_id;
     		$members_hash{$destination_address}{member_id} = $destination_id;
     		$members_hash{$destination_address}{address} = $test_spec->{'dest'};
+    		$members_hash{$destination_address}{test_ipv4} = $psconfig_test_ip_v4;
+    		$members_hash{$destination_address}{test_ipv6} = $psconfig_test_ip_v6;
             }
 	    push(@task_generator_pscheduler_tasks, $psc_task);
 
@@ -420,7 +529,7 @@ sub _run_handle_psconfig {
 			next;
 		}
 		#print("************************************\n");
-		#print("JOVANA $key " . Dumper($members_hash{$key}) . "\n");
+		#print("JOVANA member $key " . Dumper($members_hash{$key}) . "\n");
 		#print("************************************\n");
 		push(@members, $members_hash{$key});
 	    }
@@ -431,10 +540,17 @@ sub _run_handle_psconfig {
         $jovana_task->{name} = $toolkit_ui_taskname;
 	$jovana_task->{id} = $jovana_id;
 	$jovana_task->{test_id} = $jovana_test_id;
-	$jovana_task->{interval} = $psconfig_schedule;
+	$jovana_task->{test_interval} = $psconfig_schedule;
         $jovana_task->{tools} = $toolkit_ui_tool;
 	$jovana_task->{type} = $task_type;
 	$jovana_task->{duration} = $psconfig_test_duration;
+	$jovana_task->{ttl} = $psconfig_test_ttl if defined $psconfig_test_ttl;
+	#print($toolkit_ui_taskname . " J " . $psconfig_test_packet_padding . "\n");
+	#print($toolkit_ui_taskname . " J " . $psconfig_test_packet_interval . "\n");
+	$jovana_task->{packet_count} = $psconfig_test_packet_count if defined $psconfig_test_packet_count;
+	$jovana_task->{packet_interval} = $psconfig_test_packet_interval if defined $psconfig_test_packet_interval;
+	$jovana_task->{packet_size} = $psconfig_test_packet_size if defined $psconfig_test_packet_size;
+	$jovana_task->{packet_padding} = $psconfig_test_packet_padding if defined $psconfig_test_packet_padding;
 	$jovana_task->{zero_copy} = $psconfig_test_zero_copy if defined $psconfig_test_zero_copy;
 	$jovana_task->{window_size} = $psconfig_test_window_size if defined $psconfig_test_window_size;
 	$jovana_task->{tos_bits} = $psconfig_test_tos_bits if defined $psconfig_test_tos_bits;
@@ -449,6 +565,7 @@ sub _run_handle_psconfig {
 	    $jovana_task->{tcp_bandwidth} = $psconfig_test_bandwidth if defined $psconfig_test_bandwidth;
 	}
         $jovana_task->{members} = \@members;
+	$jovana_task->{local_interface} = $local_interface_ip;
 	$jovana_task->{disabled} = undef; # null;
 	$jovana_task->{added_by_mesh} = undef; # null;
 
