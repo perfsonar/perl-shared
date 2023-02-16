@@ -31,7 +31,7 @@ use perfSONAR_PS::Client::PSConfig::Parsers::TaskGenerator;
 #use perfSONAR_PS::Utils::ISO8601 qw/duration_to_seconds/;
 
 use perfSONAR_PS::NPToolkit::ConfigManager::Utils qw( save_file restart_service stop_service );
-
+use perfSONAR_PS::Utils::Host qw(get_interface_addresses);
 
 our $VERSION = 4.1;
 
@@ -41,6 +41,7 @@ has 'psconfig_file' => (is => 'rw', isa => 'Str', default => '/etc/perfsonar/psc
 has 'test_config_defaults_file' => (is => 'rw', isa => 'Str', default => '/usr/lib/perfsonar/web-ng/etc/test_config_defaults.conf');
 has 'default_test_parameters' => (is => 'rw', isa => 'HashRef|Undef', writer => '_set_default_test_parameters');
 has 'psconfig' => (is => 'rw', isa => 'perfSONAR_PS::Client::PSConfig::Config', default => sub { new perfSONAR_PS::Client::PSConfig::Config(); });
+#has 'default_trace_local_address' => (is => 'rw', isa => 'Str', default => 'localhost');
 has 'default_trace_test_parameters' => (is => 'ro', isa => 'HashRef', default => sub { { description => "perfSONAR Toolkit Default Traceroute Test", test_interval => 600 } });
 
 
@@ -72,7 +73,7 @@ has 'addresses' => (is => 'ro', isa => 'ArrayRef[perfSONAR_PS::Client::PSConfig:
 #
 has 'toolkit_tests' => (is => 'rw', isa => 'HashRef', default => sub { {} });
 has 'members_without_trace_tests' => (is => 'rw', isa => 'HashRef', default => sub { {} });
-#has 'member_ids_with_trace_tests' => (is => 'rw', isa => 'HahsRef', default => sub { {} });
+has 'trace_test_ids' => (is => 'rw', isa => 'ArrayRef[Str]', default => sub {[]});
 
 
 
@@ -143,11 +144,13 @@ sub init {
 sub delete_all_psconfig_tests {
     my ( $self ) = shift;
     my ($jovana_status, $jovana_res); 
-    my %empty_hash = ( );
-    my $empty_json = encode_json( \%empty_hash);
+    my %empty_hash_json = ( );
+    my %empty_hash_tests = ( );
+    my %empty_hash_members = ( );
+    my $empty_json = encode_json( \%empty_hash_json);
 
-    $self->toolkit_tests( \%empty_hash );
-    $self->members_without_trace_tests( \%empty_hash );
+    $self->toolkit_tests( \%empty_hash_tests );
+    $self->members_without_trace_tests( \%empty_hash_members );
 
     ($jovana_status, $jovana_res) = save_file( {file => $self->psconfig_file, content => $empty_json });
 
@@ -293,16 +296,23 @@ sub generate_json_testing_config {
         elsif ($test_desc->{type} eq "rtt") {
 #return (-1, Dumper($test_desc));
             $parameters = perfSONAR_PS::RegularTesting::Tests::Bwping->new();
-            $parameters->packet_count($test_desc->{parameters}->{packet_count}) if $test_desc->{parameters}->{packet_count};
-            $parameters->packet_length($test_desc->{parameters}->{packet_size}) if $test_desc->{parameters}->{packet_size};
-            $parameters->packet_ttl($test_desc->{parameters}->{ttl}) if $test_desc->{parameters}->{ttl};
-            $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if $test_desc->{parameters}->{packet_interval};
+            $parameters->packet_count($test_desc->{parameters}->{packet_count}) if defined $test_desc->{parameters}->{packet_count};
+            $parameters->packet_length($test_desc->{parameters}->{packet_size}) if defined $test_desc->{parameters}->{packet_size};
+
+            if (defined $test_desc->{parameters}->{ttl}) {
+                my $ttl_string = $test_desc->{parameters}->{ttl};
+		my $ttl_integer_value_length = length($ttl_string) - 3; #PT...S
+		my $ttl_integer_value = substr($ttl_string, 2, $ttl_integer_value_length);  
+	        $parameters->packet_ttl($ttl_integer_value);
+	    }  
+								 
+            $parameters->inter_packet_time($test_desc->{parameters}->{packet_interval}) if defined $test_desc->{parameters}->{packet_interval};
             $parameters->send_only(1);
         }
         elsif ($test_desc->{type} eq "trace") {
 #return (-1, Dumper($test_desc));
             $parameters = perfSONAR_PS::RegularTesting::Tests::Bwtraceroute->new();
-            $parameters->tool($test_desc->{parameters}->{tool}) if $test_desc->{parameters}->{tool};
+            $parameters->tool($test_desc->{parameters}->{tool}) if defined $test_desc->{parameters}->{tool};
             $parameters->packet_length($test_desc->{parameters}->{packet_size}) if defined $test_desc->{parameters}->{packet_size};
             $parameters->packet_first_ttl($test_desc->{parameters}->{first_ttl}) if defined $test_desc->{parameters}->{first_ttl};
             $parameters->packet_max_ttl($test_desc->{parameters}->{max_ttl}) if defined $test_desc->{parameters}->{max_ttl};
@@ -319,7 +329,7 @@ sub generate_json_testing_config {
         my @targets = ();
 #return(Dumper($test_desc->{members}), Dumper($test_desc->{members}));		
         foreach my $member (@{$test_desc->{members}}) {
-#return(Dumper($member), Dumper($member));		
+return(Dumper($member), Dumper($member)) unless (ref($member) eq ref({}));		
             my $target = perfSONAR_PS::RegularTesting::Target->new();
             $target->address($member->{address});
             $target->description($member->{description}) if $member->{description};
@@ -425,6 +435,9 @@ sub generate_json_testing_config {
 #return (-1, Dumper($tests[0]->{'parameters'}->type()));
 #return (-1, Dumper($default_test_params));
 #return (-1, Dumper(@tests));
+
+my $jovana_converted_tasks; 
+
     foreach my $test(@tests){
 	#$jovana_task_names = $jovana_task_names . "(" . ($test->{'added_by_mesh'} && !$self->include_added_by_mesh()) . "|";
         #skip tests added by mesh
@@ -443,15 +456,36 @@ sub generate_json_testing_config {
         }
 	#$jovana_task_names = $jovana_task_names . ($test->{'description'} ? $test->{'description'} : "task") . ")";
         
+        #handle interface definitions, which pscheduler does not support
+        if ($test->{'local_interface'}){
+            my @interface_ips = get_interface_addresses(interface => $test->{'local_interface'});
+            if (@interface_ips) {
+		$test->{'local_interface'} = $interface_ips[0];
+		$test->{'local_address'} = $interface_ips[0];
+	        # $self->error("Unable to determine addresses for interface " . $test->{'local_interface'});
+
+            }
+        }
+
+
         #build psconfig tasks
 	##$translator->_jovana_convert_tasks($test, $psconfig);
 	#$jovana_error = $jovana_error . "|JOVANA_RegularTesting|" . $translator->_jovana_convert_tasks($test, $psconfig);
 	#$jovana_error = $jovana_error . "|" .  $translator->_jovana_convert_tasks($test, $psconfig); # join('-', $translator->_jovana_convert_tasks($test, $psconfig));
 	#my $jovana_converted_tasks; 
-	my $jovana_converted_tasks = $translator->_jovana_convert_tasks($test, $psconfig);
+	$jovana_converted_tasks = $translator->_jovana_convert_tasks($test, $psconfig);
+#return $jovana_converted_tasks if ($test->{'parameters'}->type() eq 'rtt'); 
 	$jovana_task_names = $jovana_task_names . "|" . Dumper($jovana_converted_tasks);
     }
+#return(-1, Dumper($jovana_converted_tasks->task('kjl12_0_0')));
+#return(-1, Dumper($jovana_converted_tasks->test('kjl123_0_0')));
 #return(-1, $jovana_task_names);
+#foreach my $jovana_d_task (@{ $jovana_converted_tasks->tasks() } ) {
+#    if ($jovana_d_task->{type} eq 'rtt') {
+#        return(-1, Dumper($jovana_d_task));
+#    }
+#} 
+#return(-1, Dumper($jovana_converted_tasks->tasks()));
 
 #my @jovana_tests_dumped;
 my $jovana_d_tests_string = "With defaults size:" .  scalar @tests . ":";
@@ -533,6 +567,7 @@ sub add_test_owamp {
 			packet_interval=>1,
 			packet_count=>1,
 			packet_padding => 1,
+	    packet_length   => 0,
 			loss_threshold => 0,
 			session_count => 0,
 			bucket_width => 0,
@@ -540,9 +575,11 @@ sub add_test_owamp {
 			test_schedule => 0,
 			added_by_mesh => 0,
 			local_interface => 0,
+                        local_address => 0,
 			disabled => 0,
 			protocol => 0,
 			members => 1,
+			tool => 0,
 		}
 	);
 
@@ -573,6 +610,7 @@ sub add_test_owamp {
         $test_parameters{test_schedule}= $parameters->{test_schedule}if ( defined $parameters->{test_schedule} );
         $test_parameters{local_interface}= $parameters->{local_interface}if ( defined $parameters->{local_interface} );
         $test_parameters{local_address}= $parameters->{local_interface}if ( defined $parameters->{local_interface} );
+	#$self->{default_trace_local_address} = $parameters->{local_interface} if ( defined $parameters->{local_interface} );
 
         $test{parameters} = \%test_parameters;
 
@@ -612,6 +650,7 @@ sub add_test_bwctl_throughput {
             tool                      => 1,
             test_interval             => 0,
             test_schedule             => 0,
+	    packet_length   => 0,
             duration                  => 1,
             protocol                  => 1,
             udp_bandwidth             => 0,
@@ -628,8 +667,10 @@ sub add_test_bwctl_throughput {
             send_only                 => 0,
             receive_only              => 0,
             local_interface           => 0,
+            local_address => 0,
             disabled                  => 0,
             members                   => 0,
+            tool => 0,
         }
     );
 
@@ -669,6 +710,7 @@ sub add_test_bwctl_throughput {
     $test_parameters{receive_only}              = $parameters->{receive_only}              if ( defined $parameters->{receive_only} );
     $test_parameters{local_interface} = $parameters->{local_interface} if ( defined $parameters->{local_interface} );
     $test_parameters{local_address}= $parameters->{local_interface} if ( defined $parameters->{local_interface} );
+    #$self->{default_trace_local_address} = $parameters->{local_interface} if ( defined $parameters->{local_interface} );
 
     $test{parameters} = \%test_parameters;
 
@@ -705,64 +747,64 @@ sub add_test_pinger {
             packet_size     => 1,
             packet_count    => 1,
             packet_interval => 1,
+	    packet_length   => 0,
             test_interval   => 1,
             test_schedule   => 0,
             test_offset     => 0,
             ttl             => 1,
             added_by_mesh   => 0,
             local_interface => 0,
+            local_address => 0,
             disabled        => 0,
 	    members         => 1,
+            tool => 0,
         }
     );
 
-    my $description     = $parameters->{description};
-    my $packet_interval = $parameters->{packet_interval};
-    my $packet_count    = $parameters->{packet_count};
-    my $packet_size     = $parameters->{packet_size};
-    my $test_interval   = $parameters->{test_interval};
-    my $test_schedule   = $parameters->{test_schedule};
-    my $test_offset     = $parameters->{test_offset};
-    my $ttl             = $parameters->{ttl};
-    my $local_interface = $parameters->{local_interface};
-    my $disabled        = $parameters->{disabled};
-    my $members         = $parameters->{members};
-
     my $test_id;
-
-    # Find an empty domain
     do {
         $test_id = "test." . genuid();
     } while ( $self->{toolkit_tests}->{$test_id} );
+    
+    my %test = ();
+    $test{id}= $test_id;
+    $test{type}= "rtt";
+    $test{name}= $parameters->{name};
+    $test{description} = $parameters->{description} if ( defined $parameters->{description} );
+    $test{added_by_mesh} = $parameters->{added_by_mesh};
+    $test{disabled} = $parameters->{disabled} if ( defined $parameters->{disabled} );
+    my $members          = $parameters->{members};
+    
+    my %test_parameters = ();
+    $test_parameters{packet_interval}= $parameters->{packet_interval} if ( defined $parameters->{packet_interval} );
+    $test_parameters{packet_count}= $parameters->{packet_count} if ( defined $parameters->{packet_count} );
+    $test_parameters{packet_size}= $parameters->{packet_size} if ( defined $parameters->{packet_size} );
+    $test_parameters{packet_length}= $parameters->{packet_length} if ( defined $parameters->{packet_length} );
+    $test_parameters{test_interval}= $parameters->{test_interval} if ( defined $parameters->{test_interval} );
+    $test_parameters{test_schedule}= $parameters->{test_schedule} if ( defined $parameters->{test_schedule} );
+    $test_parameters{test_offset}= $parameters->{test_offset} if ( defined $parameters->{test_offset} );
+    $test_parameters{ttl}= $parameters->{ttl} if ( defined $parameters->{ttl} );
+    $test_parameters{flowlabel}= $parameters->{flowlabel} if ( defined $parameters->{flowlabel} );
+    $test_parameters{deadline}= $parameters->{flowlabel} if ( defined $parameters->{flowlabel} );
+    $test_parameters{packet_tos_bits}= $parameters->{packet_tos_bits} if ( defined $parameters->{packet_tos_bits} );
+    $test_parameters{disabled}= $parameters->{disabled} if ( defined $parameters->{disabled} );
+    $test_parameters{local_interface}= $parameters->{local_interface}if ( defined $parameters->{local_interface} );
+    $test_parameters{local_address}= $parameters->{local_interface}if ( defined $parameters->{local_interface} );
+    #$self->{default_trace_local_address} = $parameters->{local_interface} if ( defined $parameters->{local_interface} );
+    
+    $test{parameters} = \%test_parameters;
+    
+    #my %tmp = ();
+    ##$test{members} = \%tmp;
+    $test{members} = $members;
 
-    #my %members   = ();
-    my %test_info = (
-        id          => $test_id,
-        type        => "rtt",
-        description => $description,
-        added_by_mesh => $parameters->{added_by_mesh},
-        disabled        => $disabled,
-        parameters  => {
-            packet_interval => $packet_interval,
-            packet_count    => $packet_count,
-            packet_size     => $packet_size,
-            test_interval   => $test_interval,
-            test_schedule   => $test_schedule,
-            test_offset     => $test_offset,
-            ttl             => $ttl,
-            local_interface => $local_interface,
-            local_address => $local_interface,
-        },
-        members => $members,
-    );
+    $self->{toolkit_tests}->{$test_id} = \%test;
 
-    $self->{toolkit_tests}->{$test_id} = \%test_info;
-
-    foreach my $member (@{$members}){
-	    next if exists($self->{members_without_trace_tests}->{$member->{address}});
-	    $self->{members_without_trace_tests}->{$member->{address}} = $member;
+    foreach my $member (@{$members}) {
+        next if exists($self->{members_without_trace_tests}->{$member->{address}});
+	#next if exists($self->{members_without_trace_tests}->{"123"});
+	$self->{members_without_trace_tests}->{$member->{address}} = $member;
     }
-
 
     return ( 0, $test_id );
 }
@@ -771,9 +813,7 @@ sub add_test_pinger {
     Add a new traceroute test of type STAR to the owmesh file. All parameters correspond
     to test parameters. Returns (-1, error_msg)  on failure and (0, $test_id) on success.
 =cut
-
 sub add_test_traceroute {
-    #my ( $self, @params, @members ) = @_;
     my ( $self, @params ) = @_;
     my $parameters = validate(
         @params,
@@ -783,6 +823,7 @@ sub add_test_traceroute {
             test_interval => 1,
             test_schedule => 0,
             packet_size   => 0,
+	    packet_length   => 0,
             timeout       => 0,
             waittime      => 0,
             first_ttl     => 0,
@@ -790,14 +831,25 @@ sub add_test_traceroute {
             pause         => 0,
             protocol      => 0,
             added_by_mesh => 0,
+            local_address => 0,
             local_interface => 0,
             tool            => 0,
             disabled        => 0,
-	    members         => 1
+	    members         => 1,
+            tool => 0,
         }
     );
 
+    return $self->_add_test_traceroute(@params) unless ($parameters->{description} eq $self->{default_trace_test_parameters}->{description});
+}
+
+sub _add_test_traceroute {
+    #my ( $self, @params, @members ) = @_;
+    #my ( $self, @params ) = @_;
+    my ( $self, $parameters ) = @_;
+
     #$self->{LOGGER}->debug( "Add: " . Dumper( $parameters ) );
+    #return (0, "") if ($self->{ default_trace_test_parameters }->{ description } eq $parameters->{description});
 
     my $test_id;
     do {
@@ -826,6 +878,7 @@ sub add_test_traceroute {
     $test_parameters{local_interface} = $parameters->{local_interface} if ( defined $parameters->{local_interface} );
     $test_parameters{local_address} = $parameters->{local_interface} if ( defined $parameters->{local_interface} );
     $test_parameters{tool}                      = $parameters->{tool}                      if ( defined $parameters->{tool} );
+    #$self->{default_trace_local_address} = $parameters->{local_interface} if ( defined $parameters->{local_interface} );
 
     $test{parameters} = \%test_parameters;
 
@@ -834,6 +887,7 @@ sub add_test_traceroute {
     $test{members} = $members;
 
     $self->{toolkit_tests}->{$test_id} = \%test;
+    push @{ $self->trace_test_ids }, $test_id; 
 
     return ( 0, $test_id );
 }
@@ -850,41 +904,45 @@ sub add_test_traceroute {
 sub add_default_trace_tests {
     my ( $self ) = shift;
    
-#    my $parameters = validate(
-#        @params,
-#        {
-#            test_id     => 1,
-#            address     => 1,
-#            port        => 0,
-#            name        => 0,
-#            description => 0,
-#            sender      => 0,
-#            receiver    => 0,
-#            test_ipv4   => 0,
-#            test_ipv6   => 0,
-#            skip_default_rules => 0,
-#            id          => 0
-#        }
-#    );
+    if ($self->{trace_test_ids}) {
+        foreach my $trace_test_id(@{$self->{trace_test_ids}}) {
+	    my $trace_test = $self->{'toolkit_tests'}->{$trace_test_id} ;
+        
+	    #foreach my $trace_test_id (@$self->{trace_test_ids}) {
+	    if ($trace_test->{members} and (ref($trace_test->{members}) eq ref({}))) {
+	        foreach my $trace_member_address ($trace_test->{members}->keys()) {
+	            delete $self->{members_without_trace_tests}->{$trace_member_address};
+                }
+            }
+        }
+    }
+#return (-1, [ Dumper($self->{members_without_trace_tests}) ]);
 
-    #$self->{LOGGER}->debug( "Adding address " . $parameters->{address} . " to test " . $parameters->{test_id} );
-
-    #my $test = $self->{TESTS}->{ $parameters->{test_id} };
-    #foreach my $member_address($self->{members_wothout_trace_tests}->keys()) {
-    #    my $member = $self->{members_wothout_trace_tests}->{ $member_address };
-
-
-    my $parameters = {};
-    $parameters->{ description } = $self->{ default_trace_test_parameters }->{ description };
-    $parameters->{ test_interval } = $self->{ default_trace_test_parameters }->{ test_interval };
+    my $jovana_members = $self->{members_without_trace_tests}; 
     #$parameters->{ members } = $self->{members_without_trace_tests}->values();
-    $parameters->{ members } = $self->members_without_trace_tests()->values();
-    #$parameters->{ members } = values $self->{members_without_trace_tests};
-    my ($status, $res) = $self->add_test_traceroute($parameters);
+    #$parameters->{ members } = %{ $self->members_without_trace_tests() }->values();
+    #$parameters->{ members } = %members_hash->values(); # $self->{members_without_trace_tests};
+    my ($status, $res);
+    if ($self->{members_without_trace_tests}) {
+        my $parameters = {};
+	$parameters->{ description } = $self->{ default_trace_test_parameters }->{ description };
+    	$parameters->{ test_interval } = $self->{ default_trace_test_parameters }->{ test_interval };
+	#$parameters->{local_interface} = $self->{default_trace_local_address};
+	#$parameters->{local_address} = $self->{default_trace_local_address};
+	my @array_members = values %{ $self->{members_without_trace_tests} }; 
+	$parameters->{ members } = \@array_members;
+	($status, $res) = $self->_add_test_traceroute($parameters);
+	#($status, $res) = (-1, [ "Jovana if",  Dumper($parameters->{ members }) ]);
+	#($status, $res) = (-1, [ "Jovana if",  Dumper($parameters) ]);
+    } else {
+        ($status, $res) = (0, "");
+    }
+
+    return ($status, $res);
 
 }
 
-sub configure_default_tests {
+sub ne_ova_configure_default_tests {
     my ( $self, @params ) = @_;
     my $parameters = validate( @params, { } );
 

@@ -9,6 +9,8 @@ use JSON;
 
 use base 'perfSONAR_PS::NPToolkit::DataService::BaseConfig';
 
+use fields qw( psconfig_writer );
+
 # BEGIN use statements copied from old regular testing
 
 use CGI qw/:standard/;
@@ -116,6 +118,7 @@ sub update_test_configuration{
     #print("JOVANA: " . $data);
 
     my $response = $self->delete_all_tests();
+#return $response;
 
     if($response->{"Return code"} == 0 and $input_data){
         my $update_response = $self->_add_test_configuration($data);
@@ -276,7 +279,7 @@ sub _add_test_configuration{
     my @result=[];
     my $ret_val=-1;
 
-    my $regular_testing_conf = $self->{regular_testing_conf};
+    #my $regular_testing_conf = $self->{regular_testing_conf};
 
     if($data){
 
@@ -289,26 +292,37 @@ sub _add_test_configuration{
                 my $test_type =  $test->{'type'};
                 my $disabled = $test->{'disabled'};
                 my $description = $test->{'description'};
-                my $members = $test->{'members'};
+		#my @members = $test->{'members'};
+		#my $members = $test->{'members'};
                 my $parameters =  $test->{'parameters'};
                 my $added_by_mesh = $test->{'added_by_mesh'};
                 $parameters->{'description'} = $description;
                 $parameters->{'disabled'} = $disabled;
                 $parameters->{'added_by_mesh'} = $added_by_mesh;
-                $parameters->{'members'} = $members;
+		#$parameters->{'members'} = \@members;
+		$parameters->{'members'} = $test->{'members'}; #$members;
 
+#my $response1 = ();
+#        $response1->{"Return code"}= -1;
+#	#$response1->{"Error message"}= "JOVANA " . Dumper(@members);
+#	#$response1->{"Error message"}= "JOVANA " . Dumper($members);
+#	$response1->{"Error message"}= "". Dumper($parameters);
+#        $response1->{"tests_added"} = \@result;
+#return $response1;
                 my $test_id;
                 if($test_type eq 'latencybg'){
 
-#    my $response = ();
-#        $response->{"Return code"}= -1;
-#        $response->{"Error message"}= "". Dumper($parameters);
-#        $response->{"tests_added"} = \@result;
-#return $response;
 #		    print($parameters);
 		    #$test_id = $regular_testing_conf->add_test_owamp($parameters);
                     $test_id = $self->{psconfig_writer}->add_test_owamp($parameters) ;
 
+#my $response1 = ();
+#        $response1->{"Return code"}= -1;
+#	#$response1->{"Error message"}= "JOVANA " . Dumper(@members);
+#	#$response1->{"Error message"}= "JOVANA " . Dumper($members);
+#	$response1->{"Error message"}= "Latency-bg ". Dumper($parameters);
+#        $response1->{"tests_added"} = \@result;
+#return $response1;
                 }elsif($test_type eq 'throughput'){
 
                     #$test_id = $regular_testing_conf->add_test_bwctl_throughput($parameters);
@@ -318,6 +332,13 @@ sub _add_test_configuration{
 
 	            #$test_id = $regular_testing_conf->add_test_pinger($parameters);
 		    $test_id = $self->{psconfig_writer}->add_test_pinger($parameters);
+#my $response1 = ();
+#        $response1->{"Return code"}= -1;
+#	#$response1->{"Error message"}= "JOVANA " . Dumper(@members);
+#	#$response1->{"Error message"}= "JOVANA " . Dumper($members);
+#	$response1->{"Error message"}= "Pre save ". Dumper($test_id);
+#        $response1->{"tests_added"} = \@result;
+#return $response1;
 
                 }elsif($test_type eq 'trace'){
 
@@ -335,10 +356,25 @@ sub _add_test_configuration{
 		#    push @result, $test;
 		#}
 
-            }
-	    $self->{psconfig_writer}->add_default_trace_tests();
-        }
-    }
+            } #foreach test
+#my $response1 = ();
+#        $response1->{"Return code"}= -1;
+#	#$response1->{"Error message"}= "JOVANA " . Dumper(@members);
+#	#$response1->{"Error message"}= "JOVANA " . Dumper($members);
+#	$response1->{"Error message"}= "Pre default ". Dumper($data);
+#        $response1->{"tests_added"} = \@result;
+#return $response1;
+    my ($status, $res) = $self->{psconfig_writer}->add_default_trace_tests();
+#my $response1 = ();
+#        $response1->{"Return code"}= -1;
+#	#$response1->{"Error message"}= "JOVANA " . Dumper(@members);
+#	#$response1->{"Error message"}= "JOVANA " . Dumper($members);
+#	$response1->{"Error message"}= "Posle default ". Dumper($data);
+#	$response1->{"Error message"}= $res;
+#        $response1->{"tests_added"} = \@result;
+#return $response1;
+        } # if tests
+    } # if data
     #
     my $response = ();
     if(@result){

@@ -78,9 +78,15 @@ sub new {
     my ($self, @params) = @_;
     #print("\nJovana: konstruktor\n");
     #print("\n\n\n\ndefaults parametar " . Dumper(@params) . "\n\n\n");
-    my $parameters = validate(@params, { test_config_defaults_file => 1, config_file => 1 });
-    $self->test_config_defaults_file($parameters->{test_config_defaults_file});
-    $self->config_file($parameters->{config_file});
+    my $parameters = validate(@params, { test_config_defaults_file => 1, psconfig_config_file => 1 });
+   $self->test_config_defaults_file($parameters->{test_config_defaults_file});
+    #unless (-e $parameters->{psconfig_config_file}) {
+    #my $file_name = '/etc/perfsonar/psconfig/pscheduler.d/toolkit-webui.json';
+    #unless (-e $file_name) {
+    #    save_file({ file => $file_name, content => "{}" } );
+    #}
+    #$self->config_file($parameters->{psconfig_config_file});
+    $self->config_file($parameters->{psconfig_config_file});
     #print("\n\n\n\ndefaults " . $self->test_config_defaults_file . "\n\n\n");
     #print ("\n\nKONSTRUKTOR\n" . Dumper(@params) . "\n");
     #print ("\n\nKONSTRUKTOR\n" . Dumper($parameters->{test_config_defaults_file}) . "\n");
@@ -101,12 +107,15 @@ sub init {
     $self->config_file("/etc/perfsonar/psconfig/pscheduler.d/toolkit-webui.json");
     #print ("init parametar " . $self->config_file . "\n");
 
-    my $json_text = do {
-        open(my $json_fh, "<:encoding(UTF-8)", $self->config_file)
- 	    or die("Can't open \"$self->config_file\": $!\n");
-        local $/;
-     	<$json_fh>
-    };
+    my $json_text = "{}";
+    if (-e $self->config_file) {
+        $json_text = do {
+            open(my $json_fh, "<:encoding(UTF-8)", $self->config_file)
+ 	        or die("Can't open \"$self->config_file\": $!\n");
+                local $/;
+     	    <$json_fh>
+        };
+    }
     
     my $json = JSON->new;
     my $data = $json->decode($json_text);
@@ -135,6 +144,7 @@ sub init {
 
 sub map_psconfig_tasks_to_toolkit_UI() {
     my $self = shift;
+#return [];    
     my @tasks = $self->_run_handle_psconfig();
     
     #my $tests = {};
@@ -186,18 +196,24 @@ sub map_psconfig_tasks_to_toolkit_UI() {
 	$test->{description} = $task_name; 
 #	print('JOVANA JOVANA JOVANA mapped task type ' . $task_type);
 	$test->{type} = $task_type;
-	$parameters->{tool} = $task_tool if $task_tool;
-	$parameters->{ttl} = $task->{ttl} if $task->{ttl};
-	$parameters->{packet_interval} = $task->{packet_interval} if $task->{packet_interval};
-	$parameters->{packet_size} = $task->{packet_size} if $task->{packet_size};
-	$parameters->{packet_count} = $task->{packet_count} if $task->{packet_count};
-	$parameters->{packet_padding} = $task->{packet_padding} if $task->{packet_padding};
-	$parameters->{tos_bits} = $task->{tos_bits} if $task->{tos_bits};
+	$parameters->{tool} = $task_tool if (defined $task_tool);
+	$parameters->{ttl} = $task->{ttl} if (defined $task->{ttl});
+	$parameters->{packet_interval} = $task->{packet_interval} if (defined $task->{packet_interval});
+	$parameters->{packet_size} = $task->{packet_size} if (defined $task->{packet_size});
+	$parameters->{packet_count} = $task->{packet_count} if (defined $task->{packet_count});
+	$parameters->{packet_padding} = $task->{packet_padding} if (defined $task->{packet_padding});
+	$parameters->{packet_length} = $task->{packet_length} if (defined $task->{packet_length});
+	$parameters->{tos_bits} = $task->{tos_bits} if (defined $task->{tos_bits});
+	#$parameters->{packet_interval} = $task->{ 'packet-interval' } if $task->{ 'packet-interval' };
+	#$parameters->{packet_size} = $task->{ 'packet-size' } if $task->{ 'packet-size' };
+	#$parameters->{packet_count} = $task->{ 'packet-count' } if $task->{ 'packet-count' };
+	#$parameters->{packet_padding} = $task->{ 'packet-padding' } if $task->{ 'packet-padding' };
+	#$parameters->{tos_bits} = $task->{ 'tos-bits' } if $task->{ 'tos-bits' };
 	if ($task_type eq 'throughput') {
 	    $parameters->{protocol} = $task->{protocol};
         }
-	$parameters->{duration} = $task->{duration} if $task->{duration};
-	$parameters->{test_interval} = $task->{test_interval} if $task->{test_interval};
+	$parameters->{duration} = $task->{duration} if (defined $task->{duration});
+	$parameters->{test_interval} = $task->{test_interval} if (defined $task->{test_interval});
 	$test->{disabled} = undef;
 	$test->{added_by_mesh} = undef;
 	$test->{id} = $task->{id} ;
@@ -218,6 +234,7 @@ sub map_psconfig_tasks_to_toolkit_UI() {
     #my @tests_1 = ();
     #return @tests_1;
 #print(Dumper($tests));
+    #return \@tasks;
     return $tests;
 
 }
@@ -275,7 +292,7 @@ sub get_test_configuration {
 #    return {
 #	test_configuration => {},
 #	status => $status_vars,
-#	test_defaults => $test_defaults
+#	test_defaults => $self->default_test_parameters
 #    };
 
 
@@ -318,6 +335,7 @@ sub _run_handle_psconfig {
     }
     
     my @psconfig_tasks = [];
+#return @psconfig_tasks;
     my $brojac = 1;
 
     my @group_names =  @{$psconfig->group_names()};
@@ -386,7 +404,7 @@ sub _run_handle_psconfig {
             default_archives => $self->default_archives(),
             use_psconfig_archives => $configure_archives,
 #JOVANA	    
-#            bind_map => $agent_conf->pscheduler_bind_map()
+#            bind_map => $agebuffer_nt_conf->pscheduler_bind_map()
             bind_map => {} #$agent_conf->pscheduler_bind_map()
         );
         unless($tg->start()){
@@ -412,6 +430,38 @@ sub _run_handle_psconfig {
 	my $psconfig_test_packet_interval;
 	my $psconfig_test_packet_size;
 	my $psconfig_test_packet_padding;
+	my $psconfig_test_length;
+	my $psconfig_test_packet_first_ttl;
+	my $psconfig_test_hops;
+	my $psconfig_test_count;
+	my $psconfig_test_client_cpu_affinity;
+	my $psconfig_test_server_cpu_affinity;
+	my $psconfig_test_flow_label;
+	my $psconfig_test_flowlabel;
+	my $psconfig_test_parallel;
+	my $psconfig_test_mss;
+	my $psconfig_test_dscp;
+	my $psconfig_test_no_delay;
+	my $psconfig_test_reverse;
+	my $psconfig_test_congestion;
+	my $psconfig_test_deadline;
+	my $psconfig_test_interval;
+	my $psconfig_test_timeout;
+	my $psconfig_test_ip_tos;
+	my $psconfig_test_output_raw;
+	my $psconfig_test_data_ports;
+	my $psconfig_test_data_ports_lower;
+	my $psconfig_test_data_ports_upper;
+	my $psconfig_test_buffer_length;
+	my $psconfig_test_suppress_loopback;
+	#my $psconfig_test_output_raw;
+	my $psconfig_test_queries;
+	my $psconfig_test_as;
+	my $psconfig_test_fragment;
+	my $psconfig_test_wait;
+	my $psconfig_test_sendwait;
+	my $psconfig_test_algorithm;
+	my $psconfig_test_probe_type;
 	my @members = ();
 	my $jovana_brojac = 0;
 	my %members_hash;
@@ -429,30 +479,30 @@ sub _run_handle_psconfig {
 	    # task and test have the same name
 	    my $test_spec = $psc_task->test_spec();
 	    #print($toolkit_ui_taskname . " test_spec " . Dumper($test_spec) . "\n");
-	    if ($test_spec->{'bandwidth'}) {
+	    if (defined $test_spec->{'bandwidth'}) {
                 $psconfig_test_bandwidth = int($test_spec->{'bandwidth'});	
             }  
             $psconfig_test_omit_interval = $test_spec->{'omit'};	
-	    if ($test_spec->{'omit'}) {
+	    if (defined $test_spec->{'omit'}) {
 	        my $psconfig_test_omit_interval_length = length($psconfig_test_omit_interval) - 3; #PT...S
                 $psconfig_test_omit_interval = substr($psconfig_test_omit_interval, 2, $psconfig_test_omit_interval_length);	
             }  
-	    if ($test_spec->{'single-ended'}) {
+	    if (defined $test_spec->{'single-ended'}) {
                 $psconfig_test_single_ended = int($test_spec->{'single-ended'});	
             }  
-	    if ($test_spec->{'parallel'}) {
+	    if (defined $test_spec->{'parallel'}) {
                 $psconfig_test_streams = int($test_spec->{'parallel'});	
             }  
-	    if ($test_spec->{'ip-tos'}) {
+	    if (defined $test_spec->{'ip-tos'}) {
                 $psconfig_test_tos_bits = int($test_spec->{'ip-tos'});	
             }  
-	    if ($test_spec->{'window-size'}) {
+	    if (defined $test_spec->{'window-size'}) {
                 $psconfig_test_window_size = int($test_spec->{'window-size'});	
             }  
-	    if ($test_spec->{'udp'}) {
+	    if (defined $test_spec->{'udp'}) {
                 $psconfig_test_udp = int($test_spec->{'udp'});	
             }  
-	    if ($test_spec->{'zero-copy'}) {
+	    if (defined $test_spec->{'zero-copy'}) {
                 $psconfig_test_zero_copy = int($test_spec->{'zero-copy'});	
             }  
 	    if ($test_spec->{'ip-version'} eq '4') {
@@ -465,25 +515,114 @@ sub _run_handle_psconfig {
             } else {
                 $psconfig_test_ip_v6 = int(0);	
             }  
-	    if ($test_spec->{'ttl'}) {
+	    if (defined $test_spec->{'ttl'}) {
                 $psconfig_test_ttl = "$test_spec->{'ttl'}";	
             }  
-	    if ($test_spec->{'packet-padding'}) {
+	    if (defined $test_spec->{'packet-padding'}) {
                 $psconfig_test_packet_padding = "$test_spec->{'packet-padding'}";	
             }  
-	    if ($test_spec->{'packet-size'}) {
+	    if (defined $test_spec->{'packet-size'}) {
                 $psconfig_test_packet_size = "$test_spec->{'packet-size'}";	
             }  
-	    if ($test_spec->{'packet-interval'}) {
+	    if (defined $test_spec->{'packet-interval'}) {
                 $psconfig_test_packet_interval = "$test_spec->{'packet-interval'}";	
             }  
-	    if ($test_spec->{'packet-count'}) {
+	    if (defined $test_spec->{'count'}) {
+                $psconfig_test_packet_count = "$test_spec->{'count'}";	
+            }  
+	    if (defined $test_spec->{'packet-count'}) {
                 $psconfig_test_packet_count = "$test_spec->{'packet-count'}";	
+            }  
+	    if (defined $test_spec->{'length'}) {
+                $psconfig_test_length = "$test_spec->{'length'}";	
+            }  
+	    if (defined $test_spec->{'first-ttl'}) {
+                $psconfig_test_packet_first_ttl = "$test_spec->{'first-ttl'}";	
+            }  
+	    if (defined $test_spec->{'hops'}) {
+                $psconfig_test_hops = "$test_spec->{'hops'}";	
+            }  
+	    if (defined $test_spec->{'suppress-loopback'}) {
+	        $psconfig_test_suppress_loopback = "$test_spec->{'suppress-loopback'}";	
+	    }  
+	    if (defined $test_spec->{'buffer-length'}) {
+                $psconfig_test_buffer_length = "$test_spec->{'buffer-length'}";	
+            }  
+	    if (defined $test_spec->{'client-cpu-affinity'}) {
+                $psconfig_test_client_cpu_affinity = "$test_spec->{'client-cpu-affinity'}";	
+            }  
+	    if (defined $test_spec->{'server-cpu-affinity'}) {
+                $psconfig_test_server_cpu_affinity = "$test_spec->{'server-cpu-affinity'}";	
+            }  
+	    if (defined $test_spec->{'flow-label'}) {
+                $psconfig_test_flow_label = "$test_spec->{'flow-label'}";	
+            }  
+	    if (defined $test_spec->{'flowlabel'}) {
+                $psconfig_test_flowlabel = "$test_spec->{'flowlabel'}";	
+            }  
+	    if (defined $test_spec->{'mss'}) {
+                $psconfig_test_mss = "$test_spec->{'mss'}";	
+            }  
+	    if (defined $test_spec->{'dscp'}) {
+                $psconfig_test_dscp = "$test_spec->{'dscp'}";	
+            }  
+	    if (defined $test_spec->{'no-delay'}) {
+                $psconfig_test_no_delay = "$test_spec->{'no-delay'}";	
+            }  
+	    if (defined $test_spec->{'reverse'}) {
+                $psconfig_test_reverse = "$test_spec->{'reverse'}";	
+            }  
+	    if (defined $test_spec->{'congestion'}) {
+                $psconfig_test_congestion = "$test_spec->{'congestion'}";	
+            }  
+	    if (defined $test_spec->{'deadline'}) {
+                $psconfig_test_deadline = "$test_spec->{'deadline'}";	
+            }  
+	    if (defined $test_spec->{'interval'}) {
+                $psconfig_test_interval = "$test_spec->{'interval'}";	
+            }  
+	    if (defined $test_spec->{'timeout'}) {
+                $psconfig_test_timeout = "$test_spec->{'timeout'}";	
+            }  
+	    if (defined $test_spec->{'output-raw'}) {
+                $psconfig_test_output_raw = "$test_spec->{'output-raw'}";	
+            }  
+	    if (defined $test_spec->{'data-ports'}) {
+                $psconfig_test_data_ports = "$test_spec->{'data-ports'}";	
+                $psconfig_test_data_ports_lower = "$test_spec->{'data-ports'}->{'lower'}";	
+                $psconfig_test_data_ports_upper = "$test_spec->{'data-ports'}->{'upper'}";	
+            }  
+	    if (defined $test_spec->{'deadline'}) {
+	        $psconfig_test_deadline = "$test_spec->{'deadline'}";	
+	    }  
+	    if (defined $test_spec->{'output-raw'}) {
+	        $psconfig_test_output_raw = "$test_spec->{'output-raw'}";	
+	    }  
+	    if (defined $test_spec->{'queries'}) {
+                $psconfig_test_queries = "$test_spec->{'queries'}";	
+            }  
+	    if (defined $test_spec->{'as'}) {
+                $psconfig_test_as = "$test_spec->{'as'}";	
+            }  
+	    if (defined $test_spec->{'fragment'}) {
+                $psconfig_test_fragment = "$test_spec->{'fragment'}";	
+            }  
+	    if (defined $test_spec->{'wait'}) {
+                $psconfig_test_wait = "$test_spec->{'wait'}";	
+            }  
+	    if (defined $test_spec->{'sendwait'}) {
+                $psconfig_test_sendwait = "$test_spec->{'sendwait'}";	
+            }  
+	    if (defined $test_spec->{'algorithm'}) {
+                $psconfig_test_algorithm = "$test_spec->{'algorithm'}";	
+            }  
+	    if (defined $test_spec->{'probe-type'}) {
+                $psconfig_test_probe_type = "$test_spec->{'probe-type'}";	
             }  
 	    #print($toolkit_ui_taskname . " $psconfig_test_packet_padding test_spec.padding " . $test_spec->{'packet-padding'} . "\n");
 	    #print($toolkit_ui_taskname . " $psconfig_test_packet_interval test_spec.interval " . $test_spec->{'packet-interval'} . "\n");
 	    $psconfig_test_duration = $test_spec->{duration};
-	    if ($psconfig_test_duration) {
+	    if (defined $psconfig_test_duration) {
 	        my $psconfig_test_duration_length = length($psconfig_test_duration) - 3; #PT...S
 	        $psconfig_test_duration = substr($psconfig_test_duration, 2, $psconfig_test_duration_length);
             }
@@ -543,7 +682,7 @@ sub _run_handle_psconfig {
 	$jovana_task->{test_interval} = $psconfig_schedule;
         $jovana_task->{tools} = $toolkit_ui_tool;
 	$jovana_task->{type} = $task_type;
-	$jovana_task->{duration} = $psconfig_test_duration;
+	$jovana_task->{duration} = $psconfig_test_duration if defined $psconfig_test_duration;
 	$jovana_task->{ttl} = $psconfig_test_ttl if defined $psconfig_test_ttl;
 	#print($toolkit_ui_taskname . " J " . $psconfig_test_packet_padding . "\n");
 	#print($toolkit_ui_taskname . " J " . $psconfig_test_packet_interval . "\n");
@@ -551,9 +690,11 @@ sub _run_handle_psconfig {
 	$jovana_task->{packet_interval} = $psconfig_test_packet_interval if defined $psconfig_test_packet_interval;
 	$jovana_task->{packet_size} = $psconfig_test_packet_size if defined $psconfig_test_packet_size;
 	$jovana_task->{packet_padding} = $psconfig_test_packet_padding if defined $psconfig_test_packet_padding;
+	$jovana_task->{packet_length} = $psconfig_test_packet_padding if defined $psconfig_test_packet_padding;
 	$jovana_task->{zero_copy} = $psconfig_test_zero_copy if defined $psconfig_test_zero_copy;
 	$jovana_task->{window_size} = $psconfig_test_window_size if defined $psconfig_test_window_size;
 	$jovana_task->{tos_bits} = $psconfig_test_tos_bits if defined $psconfig_test_tos_bits;
+	$jovana_task->{packet_tos_bits} = $psconfig_test_tos_bits if defined $psconfig_test_tos_bits;
 	$jovana_task->{streams} = $psconfig_test_streams if defined $psconfig_test_streams;
 	$jovana_task->{single_ended} = $psconfig_test_single_ended if defined $psconfig_test_single_ended;
 	$jovana_task->{omit_interval} = $psconfig_test_omit_interval if defined $psconfig_test_omit_interval;
@@ -568,6 +709,45 @@ sub _run_handle_psconfig {
 	$jovana_task->{local_interface} = $local_interface_ip;
 	$jovana_task->{disabled} = undef; # null;
 	$jovana_task->{added_by_mesh} = undef; # null;
+	$jovana_task->{packet_count} = $psconfig_test_count if (defined $psconfig_test_count and (not defined $jovana_task->{packet_count}));
+	$jovana_task->{resolution} = $psconfig_test_count if defined $psconfig_test_count;
+	$jovana_task->{packet_first_ttl} = $psconfig_test_packet_first_ttl if defined $psconfig_test_packet_first_ttl;
+	$jovana_task->{packet_max_ttl} = $psconfig_test_hops if defined $psconfig_test_hops;
+	$jovana_task->{packet_length} = $psconfig_test_length if defined $psconfig_test_length;
+	$jovana_task->{packet_length} = $psconfig_test_buffer_length if (defined $psconfig_test_buffer_length and (not defined $jovana_task->{packet_length}));
+	$jovana_task->{buffer_length} = $psconfig_test_buffer_length if defined $psconfig_test_buffer_length;
+	$jovana_task->{client_cpu_affinity} = $psconfig_test_client_cpu_affinity if defined $psconfig_test_client_cpu_affinity;
+	$jovana_task->{server_cpu_affinity} = $psconfig_test_server_cpu_affinity if defined $psconfig_test_server_cpu_affinity;
+	$jovana_task->{flow_label} = $psconfig_test_flow_label if defined $psconfig_test_flow_label;
+	$jovana_task->{flowlabel} = $psconfig_test_flowlabel if defined $psconfig_test_flowlabel;
+	$jovana_task->{mss} = $psconfig_test_mss if defined $psconfig_test_mss;
+	$jovana_task->{dscp} = $psconfig_test_dscp if defined $psconfig_test_dscp;
+	$jovana_task->{no_delay} = $psconfig_test_no_delay if defined $psconfig_test_no_delay;
+	$jovana_task->{reverse} = $psconfig_test_reverse if defined $psconfig_test_reverse;
+	$jovana_task->{congestion} = $psconfig_test_congestion if defined $psconfig_test_congestion;
+	$jovana_task->{deadline} = $psconfig_test_deadline if defined $psconfig_test_deadline;
+	$jovana_task->{receive_port_range} = $psconfig_test_data_ports_lower . "-" . $psconfig_test_data_ports_upper if ((defined $psconfig_test_data_ports) and (defined $psconfig_test_data_ports_lower) and (defined $psconfig_test_data_ports_upper));
+	$jovana_task->{ttl} = $psconfig_test_interval if defined $psconfig_test_interval;
+	$jovana_task->{timeout} = $psconfig_test_timeout if defined $psconfig_test_timeout;
+	$jovana_task->{packet_tos_bits} = $psconfig_test_ip_tos if defined $psconfig_test_ip_tos;
+	$jovana_task->{ttl} = $psconfig_test_output_raw if defined $psconfig_test_output_raw;
+	$jovana_task->{ttl} = $psconfig_test_data_ports if defined $psconfig_test_data_ports;
+	$jovana_task->{ttl} = $psconfig_test_data_ports_lower if defined $psconfig_test_data_ports_lower;
+	$jovana_task->{ttl} = $psconfig_test_data_ports_upper if defined $psconfig_test_data_ports_upper;
+	$jovana_task->{suppress_loopback} = $psconfig_test_suppress_loopback if defined $psconfig_test_suppress_loopback;
+	$jovana_task->{inter_packet_time} = $psconfig_test_interval if defined $psconfig_test_interval;
+	$jovana_task->{inter_packet_time} = $psconfig_test_packet_interval if (defined $psconfig_test_packet_interval and (not defined $jovana_task->{inter_packet_time}));
+	$jovana_task->{streams} = $psconfig_test_parallel if defined $psconfig_test_parallel;
+	$jovana_task->{output_raw} = $psconfig_test_output_raw if defined $psconfig_test_output_raw;
+	$jovana_task->{queries} = $psconfig_test_queries if defined $psconfig_test_queries;
+	$jovana_task->{as} = $psconfig_test_as if defined $psconfig_test_as;
+	$jovana_task->{fragment} = $psconfig_test_fragment if defined $psconfig_test_fragment;
+	$jovana_task->{wait} = $psconfig_test_wait if defined $psconfig_test_wait;
+	$jovana_task->{sendwait} = $psconfig_test_sendwait if defined $psconfig_test_sendwait;
+	$jovana_task->{algorithm} = $psconfig_test_algorithm if defined $psconfig_test_algorithm;
+	$jovana_task->{probe_type} = $psconfig_test_probe_type if defined $psconfig_test_probe_type;
+
+
 
 
 
@@ -576,7 +756,7 @@ sub _run_handle_psconfig {
 	    #$self->task_manager()->add_task(task => $psc_task);
             #log task to task log. Do here because even if was not added, want record that
             # it is a task that this host manages
-#            $task_logger->info($self->logf()->format_task($psc_task));
+#            $task_logger->info($self->logf()->format_task($psc_ask));
         
 	#print("JOVANA: brojac $brojac " . Dumper($jovana_task) . "\n");
 	push(@psconfig_tasks, $jovana_task);

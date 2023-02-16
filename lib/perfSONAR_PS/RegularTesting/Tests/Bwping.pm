@@ -23,12 +23,15 @@ extends 'perfSONAR_PS::RegularTesting::Tests::BwctlBase';
 
 has 'bwping_cmd' => (is => 'rw', isa => 'Str', default => '/usr/bin/bwping');
 has 'tool' => (is => 'rw', isa => 'Str', default => 'ping');
+has 'packet_interval' => (is => 'rw', isa => 'Int', default => 1);
+has 'packet_size' => (is => 'rw', isa => 'Int', default => 1000);
 has 'packet_count' => (is => 'rw', isa => 'Int', default => 10);
 has 'packet_length' => (is => 'rw', isa => 'Int', default => 1000);
 has 'packet_ttl' => (is => 'rw', isa => 'Int', );
 has 'inter_packet_time' => (is => 'rw', isa => 'Num', default => 1.0);
 has 'packet_tos_bits' => (is => 'rw', isa => 'Int');
 #new pscheduler fields
+has 'flowlabel' => (is => 'rw', isa => 'Int');
 has 'flow_label' => (is => 'rw', isa => 'Int');
 has 'hostnames' => (is => 'rw', isa => 'Bool');
 has 'suppress_loopback' => (is => 'rw', isa => 'Bool');

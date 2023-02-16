@@ -488,6 +488,48 @@ sub convert_bwping {
     return $psconfig_test, [];
 }
 
+
+sub _jovana_convert_bwping {
+    my ($self, $test_params, $force_ipv4, $force_ipv6) = @_;
+    
+    #build test
+    my $psconfig_test = new perfSONAR_PS::Client::PSConfig::Test();
+    
+    #test type
+    $psconfig_test->type("rtt");
+        
+    #test params (template)
+    $psconfig_test->spec_param('jovana', 'jovana');
+    $psconfig_test->spec_param('jovana-packet-size', $test_params->{'packet_size'});
+    $psconfig_test->spec_param('jovana-packet-length', $test_params->{'packet_length'});
+    $psconfig_test->spec_param('jovana-packet-interval', $test_params->{'packet_interval'});
+    $psconfig_test->spec_param('source', '{% address[0] %}');
+    $psconfig_test->spec_param('dest', '{% address[1] %}');
+    $psconfig_test->spec_param('source-node', '{% pscheduler_address[0] %}');
+    #test params (int)
+    $psconfig_test->spec_param('count', int($test_params->{'packet_count'})) if(defined $test_params->{'packet_count'});
+    $psconfig_test->spec_param('length', int($test_params->{'packet_length'})) if(defined $test_params->{'packet_length'});
+    $psconfig_test->spec_param('packet-size', int($test_params->{'packet_size'})) if(defined $test_params->{'packet_size'});
+    #$psconfig_test->spec_param('packet-interval', int($test_params->{'packet_interval'})) if(defined $test_params->{'packet_interval'});
+    $psconfig_test->spec_param('packet-interval', int("5")) if(defined $test_params->{'packet_interval'});
+    $psconfig_test->spec_param('ttl', int($test_params->{'packet_ttl'})) if(defined $test_params->{'packet_ttl'});
+    $psconfig_test->spec_param('ip-tos', int($test_params->{'packet_tos_bits'})) if(defined $test_params->{'packet_tos_bits'});
+    $psconfig_test->spec_param('flowlabel', int($test_params->{'flowlabel'})) if(defined $test_params->{'flowlabel'});
+    $psconfig_test->spec_param('deadline', int($test_params->{'deadline'})) if(defined $test_params->{'flowlabel'});
+    #test param (ip version)
+    $psconfig_test->spec_param('ip-version', 4) if($force_ipv4);
+    $psconfig_test->spec_param('ip-version', 6) if($force_ipv6);
+    #test params (boolean)
+    $psconfig_test->spec_param('hostnames', JSON::true) if($test_params->{'hostnames'});
+    $psconfig_test->spec_param('suppress-loopback', JSON::true) if($test_params->{'suppress_loopback'});
+    #test params (duration)
+    $psconfig_test->spec_param('interval', $self->_seconds_to_iso($test_params->{'inter_packet_time'})) if($test_params->{'inter_packet_time'});
+    $psconfig_test->spec_param('deadline', $self->_seconds_to_iso($test_params->{'deadline'})) if($test_params->{'deadline'});
+    $psconfig_test->spec_param('timeout', $self->_seconds_to_iso($test_params->{'timeout'})) if($test_params->{'timeout'});
+    
+    return $psconfig_test, [];
+}
+
 sub convert_bwping_owamp {
     my ($self, $test_params, $force_ipv4, $force_ipv6) = @_;
     
@@ -1327,6 +1369,7 @@ sub _jovana_convert_tasks{
 	#my $force_ipv4        = $individual_test->{force_ipv4};
 	#my $force_ipv6        = $individual_test->{force_ipv6};
         my $test_parameters   = $individual_test->{test_parameters};
+#return Dumper($test_parameters) if ($test->{'parameters'}->type() eq 'rtt');
 	$jovana_individual_tests = $jovana_individual_tests . Dumper($individual_test);
 	$jovana_test_types = $jovana_test_types . " " . $individual_test->{target}->{override_paremeters}->{type}; 
         
@@ -1423,6 +1466,7 @@ sub _jovana_convert_tasks{
         }
 #return Dumper($psconfig->address($local_address)) . " " . Dumper($psconfig->address($remote_address));
 
+#return Dumper($test_parameters) if ($test->{'parameters'}->type() eq 'rtt');
         #build test spec 
         my $psconfig_test;
         my $tools;
@@ -1447,7 +1491,7 @@ sub _jovana_convert_tasks{
 	}elsif($test->{'parameters'}->type() eq 'trace'){
 	    ($psconfig_test, $tools) = $self->convert_bwtraceroute($test_parameters, $force_ipv4, $force_ipv6);
 	}elsif($test->{'parameters'}->type() eq 'rtt'){
-	    ($psconfig_test, $tools) = $self->convert_bwping($test_parameters, $force_ipv4, $force_ipv6);
+	    ($psconfig_test, $tools) = $self->_jovana_convert_bwping($test_parameters, $force_ipv4, $force_ipv6);
 	}elsif($test->{'parameters'}->type() eq 'bwping/owamp'){
 	    ($psconfig_test, $tools) = $self->convert_bwping_owamp($test_parameters, $force_ipv4, $force_ipv6);
 	}elsif($test->{'parameters'}->type() eq 'simplestream'){
