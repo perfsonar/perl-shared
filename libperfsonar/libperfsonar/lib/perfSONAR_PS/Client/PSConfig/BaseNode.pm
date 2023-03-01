@@ -548,6 +548,16 @@ sub _field_bool{
     return $self->data->{$field} ? 1 : 0;
 }
 
+sub _field_bool_default_true{
+    my ($self, $field, $val) = @_;
+    #if not setting the value and the existing field value is undefined, default to true
+    if(!defined $val and !defined $self->data->{$field}){
+        return 1;
+    }
+    #otherwise, do the normal boolean operation
+    return $self->_field_bool($field, $val);
+}
+
 sub _field_ipversion{
     my ($self, $field, $val) = @_;
     if(defined $val){
