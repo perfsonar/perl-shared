@@ -28,7 +28,7 @@ Depends: ${misc:Depends}, ${perl:Depends}, liblog-log4perl-perl,
  libnet-traceroute-perl, libparams-validate-perl, libstatistics-descriptive-perl,
  liburi-perl, librpc-xml-perl, libnet-ntp-perl, libtemplate-perl, libdpkg-perl,
  libsys-statistics-linux-perl, libsocket6-perl, libgeo-ip-perl (>= 1.43),
- geoip-database, geoip-database-extra, jq
+ geoip-database, jq
 Description: perfSONAR common perl libraries
  The perfSONAR perl library provides all common perl modules for all
  perfSONAR related services.
