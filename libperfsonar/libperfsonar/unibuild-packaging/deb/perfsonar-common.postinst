@@ -20,7 +20,7 @@ set -e
 
 case "$1" in
     configure)
-    # Creating perfsonar user if he isn't already there
+    # Creating perfsonar user if it isn't already there
     if ! getent passwd perfsonar >/dev/null ; then
         echo "Adding system user: perfsonar."
         # We use --force-badname in case of a not compatible NAME_REGEX in /etc/adduser.conf
