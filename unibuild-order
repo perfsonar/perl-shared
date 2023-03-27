@@ -9,4 +9,4 @@ changecom()dnl
 #
 
 # Build the first set of the libperfsonar packages
-libperfsonar
+libperfsonar --no-install
