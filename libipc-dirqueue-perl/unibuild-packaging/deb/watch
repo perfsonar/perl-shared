@@ -1,0 +1,2 @@
+version=3
+https://metacpan.org/dist/IPC-DirQueue .*/IPC-DirQueue-v?(\d[\d.-]+)\.(?:tar(?:\.gz|\.bz2)?|tgz|zip)$

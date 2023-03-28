@@ -9,4 +9,5 @@ changecom()dnl
 #
 
 # Build the first set of the libperfsonar packages
+libipc-dirqueue-perl
 libperfsonar --no-install

@@ -1,0 +1,17 @@
+Source: libipc-dirqueue-perl
+Section: perl
+Priority: optional
+Maintainer: perfSONAR developers <debian@perfsonar.net>
+Uploaders: Lætitia Delvaux <adelvaux@man.poznan.pl>
+Build-Depends: debhelper (>= 10)
+Build-Depends-Indep: perl
+Standards-Version: 3.9.8
+Homepage: https://metacpan.org/dist/IPC-DirQueue
+
+Package: libipc-dirqueue-perl
+Architecture: all
+Depends: libpoe-perl, ${misc:Depends}, ${perl:Depends}
+Description: disk-based many-to-many task queue
+ IPC::DirQueue implements a FIFO queueing infrastructure, using a directory as
+ the communications and storage media. No daemon process is required to manage
+ the queue; all communication takes place via the filesystem.

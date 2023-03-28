@@ -1,0 +1,35 @@
+libipc-dirqueue-perl (1.0.0-6) perfsonar-release; urgency=low
+
+  * Rebuild for buster.
+
+ -- Lætitia Delvaux <adelvaux@man.poznan.pl>  Mon, 27 Mar 2023 23:23:43 +0000 
+
+libipc-dirqueue-perl (1.0-5) perfsonar-release; urgency=low
+
+  * Rebuild for perfsonar-release
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Tue, 06 Oct 2020 21:43:26 +0000
+
+libipc-dirqueue-perl (1.0-4) perfsonar-minor-staging; urgency=low
+
+  * Rebuild for stretch.
+
+ -- Antoine Delvaux <antoine.delvaux@man.poznan.pl>  Wed, 24 Jul 2019 16:07:47 +0000
+
+libipc-dirqueue-perl (1.0-3~bpo8+1) perfsonar-jessie-staging; urgency=medium
+
+  * Rebuild for jessie staging.
+
+ -- Valentin Vidic <Valentin.Vidic@CARNet.hr>  Fri, 13 Oct 2017 12:39:14 +0200
+
+libipc-dirqueue-perl (1.0-3) unstable; urgency=medium
+
+  * Add libpoe-perl dependency.
+
+ -- Valentin Vidic <Valentin.Vidic@CARNet.hr>  Tue, 15 Mar 2016 14:05:00 +0100
+
+libipc-dirqueue-perl (1.0-2) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Valentin Vidic <Valentin.Vidic@CARNet.hr>  Mon, 16 Feb 2015 14:43:41 +0100
