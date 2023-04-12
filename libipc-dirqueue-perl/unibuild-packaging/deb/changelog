@@ -1,8 +1,8 @@
-libipc-dirqueue-perl (5.0.0~b2.8-1) perfsonar-5.0; urgency=low
+libipc-dirqueue-perl (5.0.0~b2.8-2) perfsonar-5.0; urgency=low
 
   * Rebuild for buster.
 
- -- perfSONAR developers <debian@perfsonar.net>  Mon, 10 Apr 2023 09:22:36 -0400 
+ -- Lætitia Delvaux <adelvaux@man.poznan.pl>  Wed, 12 Apr 2023 15:53:02 +0200 
 
 libipc-dirqueue-perl (1.0-5) perfsonar-release; urgency=low
 
