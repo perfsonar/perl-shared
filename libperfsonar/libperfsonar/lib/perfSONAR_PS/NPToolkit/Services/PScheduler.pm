@@ -16,7 +16,7 @@ sub init {
                             "/var/run/pscheduler-server/ticker/pid"
                         ] unless $conf{pid_files};
     #one for each pid
-    $conf{process_names} = [ "python3", "python3", "python3", "python3" ] unless $conf{process_names};
+    $conf{process_names} = [ "python", "python", "python", "python" ] unless $conf{process_names};
     #Note pscheduler is more than one script, but this will indicate if enabled
     $conf{init_script} = 'pscheduler-scheduler' unless $conf{init_script}; 
     $conf{package_names} = [ "pscheduler-server" ] unless $conf{package_names};
