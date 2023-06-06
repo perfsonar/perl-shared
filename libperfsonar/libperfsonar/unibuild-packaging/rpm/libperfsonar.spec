@@ -60,6 +60,8 @@ Requires:		iproute
 Requires:		jq
 %if 0%{?el7}
 Requires:		GeoIP-data
+%else
+Requires:               perl-Geo-IP
 %endif
 Obsoletes:      perl-perfSONAR_PS-Toolkit
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
