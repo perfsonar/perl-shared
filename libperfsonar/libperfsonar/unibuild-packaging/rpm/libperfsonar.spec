@@ -60,8 +60,6 @@ Requires:		iproute
 Requires:		jq
 %if 0%{?el7}
 Requires:		GeoIP-data
-%else
-Requires:               perl-Geo-IP
 %endif
 Obsoletes:      perl-perfSONAR_PS-Toolkit
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
@@ -321,7 +319,9 @@ rm -rf %{buildroot}
 %{install_base}/lib/perfSONAR_PS/Common.pm
 %{install_base}/lib/perfSONAR_PS/Utils/DNS.pm
 %{install_base}/lib/perfSONAR_PS/Utils/Daemon.pm
+%if 0%{?el7}
 %{install_base}/lib/perfSONAR_PS/Utils/GeoLookup.pm
+%endif
 %{install_base}/lib/perfSONAR_PS/Utils/HTTPS.pm
 %{install_base}/lib/perfSONAR_PS/Utils/Host.pm
 %{install_base}/lib/perfSONAR_PS/Utils/ISO8601.pm
