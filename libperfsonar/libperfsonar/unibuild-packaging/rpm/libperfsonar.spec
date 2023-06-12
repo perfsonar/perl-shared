@@ -70,6 +70,7 @@ Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
 Obsoletes:      perl-perfSONAR_PS-RegularTesting
 Obsoletes:      perl-perfSONAR_PS-Nagios
 Obsoletes:      perl-perfSONAR_PS-LSCacheDaemon
+Patch0:         geoip.patch
 
 %description perl
 Libraries common to many of the perfSONAR perl components
@@ -302,6 +303,10 @@ Shared libaries for perfSONAR regular testing
 
 %prep
 %setup -q -n libperfsonar-%{version}
+%if 0%{?el7}
+%else
+%patch0 -p3
+%endif
 
 %build
 
