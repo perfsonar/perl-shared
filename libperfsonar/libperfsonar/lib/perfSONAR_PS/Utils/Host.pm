@@ -765,9 +765,6 @@ sub is_auto_updates_on{
     }
     if ( $is_el7 ) {
         $result = `/bin/systemctl is-enabled yum-cron`;
-
-    } else {
-        $result = `/etc/init.d/yum-cron status`;
     }
 
     if(index($result, $enabled) != -1){
