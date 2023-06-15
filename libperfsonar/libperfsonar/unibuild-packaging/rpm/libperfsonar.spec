@@ -13,7 +13,7 @@ Group:			Development/Libraries
 URL:			http://www.perfsonar.net
 Source0:		libperfsonar-%{version}.tar.gz
 BuildArch:		noarch
-
+Patch0:         geoip.patch
 %description
 perfSONAR shared libraries
 
@@ -70,7 +70,6 @@ Obsoletes:      perl-perfSONAR_PS-LSRegistrationDaemon
 Obsoletes:      perl-perfSONAR_PS-RegularTesting
 Obsoletes:      perl-perfSONAR_PS-Nagios
 Obsoletes:      perl-perfSONAR_PS-LSCacheDaemon
-Patch0:         geoip.patch
 
 %description perl
 Libraries common to many of the perfSONAR perl components
