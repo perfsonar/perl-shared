@@ -29,6 +29,7 @@ use Regexp::Common;
 use Data::Dumper;
 use Socket;
 use Socket6 qw(inet_ntop);
+use IO::Socket::INET6;
 
 our @EXPORT_OK = qw( reverse_dns resolve_address resolve_address_multi reverse_dns_multi query_location discover_source_address );
 

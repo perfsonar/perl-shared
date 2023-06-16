@@ -4,6 +4,12 @@ libperfsonar-perl (5.1.0~a1.0-1) perfsonar-5.1-snapshot; urgency=low
 
  -- Lætitia Delvaux <adelvaux@man.poznan.pl>  Tue, 18 Apr 2023 22:47:20 +0200
 
+libperfsonar-perl (5.0.3-1) perfsonar-5.0; urgency=low
+
+  * New upstream version.
+
+ -- perfSONAR developers <debian@perfsonar.net>  Fri, 16 Jun 2023 12:44:26 -0400
+
 libperfsonar-perl (5.0.2-1) perfsonar-5.0; urgency=low
 
   * New upstream version.

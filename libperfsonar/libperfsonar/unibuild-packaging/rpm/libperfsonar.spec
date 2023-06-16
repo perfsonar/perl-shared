@@ -13,7 +13,7 @@ Group:			Development/Libraries
 URL:			http://www.perfsonar.net
 Source0:		libperfsonar-%{version}.tar.gz
 BuildArch:		noarch
-
+Patch0:         geoip.patch
 %description
 perfSONAR shared libraries
 
@@ -302,6 +302,10 @@ Shared libaries for perfSONAR regular testing
 
 %prep
 %setup -q -n libperfsonar-%{version}
+%if 0%{?el7}
+%else
+%patch0 -p3
+%endif
 
 %build
 
@@ -319,7 +323,9 @@ rm -rf %{buildroot}
 %{install_base}/lib/perfSONAR_PS/Common.pm
 %{install_base}/lib/perfSONAR_PS/Utils/DNS.pm
 %{install_base}/lib/perfSONAR_PS/Utils/Daemon.pm
+%if 0%{?el7}
 %{install_base}/lib/perfSONAR_PS/Utils/GeoLookup.pm
+%endif
 %{install_base}/lib/perfSONAR_PS/Utils/HTTPS.pm
 %{install_base}/lib/perfSONAR_PS/Utils/Host.pm
 %{install_base}/lib/perfSONAR_PS/Utils/ISO8601.pm

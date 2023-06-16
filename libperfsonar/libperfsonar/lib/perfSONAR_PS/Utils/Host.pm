@@ -755,6 +755,7 @@ sub is_auto_updates_on{
     my $result;
 
     my $is_el7 = 0;
+    my $is_debian = 0;
 
     if (    (   $os_info->{'distribution_name'}     =~ /^CentOS/
                 || $os_info->{'distribution_name'}  =~ /^Red Hat/
@@ -762,12 +763,18 @@ sub is_auto_updates_on{
             )
             && $os_info->{'distribution_version'} =~ /^7\.\d/ ) {
                 $is_el7 = 1;
+    } elsif ($os_info->{'distribution_name'} =~ /^Debian/
+            || $os_info->{'distribution_name'}  =~ /^Ubuntu/ ) {
+            $is_debian = 1;
     }
     if ( $is_el7 ) {
         $result = `/bin/systemctl is-enabled yum-cron`;
-
-    } else {
-        $result = `/etc/init.d/yum-cron status`;
+    } elsif ( $is_debian ) {
+        if (-e '/etc/apt/apt.conf.d/60unattended-upgrades-perfsonar') {
+            $result = "enabled";
+        } else {
+            $result = "disabled";
+        }
     }
 
     if(index($result, $enabled) != -1){
@@ -836,7 +843,7 @@ sub is_web_url {
 sub _call_sysctl {
     my ($var_name) = @_;
 
-    my $result = `sysctl $var_name`;
+    my $result = `/sbin/sysctl $var_name`;
     if($?){
         return;
     }
