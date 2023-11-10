@@ -5,7 +5,7 @@ use warnings;
 
 use Log::Log4perl qw(:easy);
 use File::Spec;
-use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES';
+use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES', 'SYSTEMD_SERVICES';
 use RPM2;
 
 sub new {
@@ -24,6 +24,7 @@ sub init {
 
     $self->{DESCRIPTION}  = $params{description};
     $self->{INIT_SCRIPT}  = $params{init_script};
+    $self->{SYSTEMD_SERVICES}  = $params{systemd_services};
     $self->{CAN_DISABLE}  = $params{can_disable};
 
     if ( $params{pid_files} and ref( $params{pid_files} ) ne "ARRAY" ) {
@@ -82,7 +83,18 @@ sub needs_regular_restart {
 sub check_running {
     my ($self) = @_;
 
-    unless ($self->{PID_FILES}) {
+    if($self->{SYSTEMD_SERVICES}){
+        foreach my $systemd_service(@{$self->{SYSTEMD_SERVICES}}){
+            #if non-zero then not running
+            my $ret = $self->run_systemctl("is-active" => $systemd_service);
+            $ret >>= 8;
+            $self->{LOGGER}->info("$systemd_service return $ret");
+            if($ret){
+                return;
+            }
+        }
+    }
+    elsif (!$self->{PID_FILES}) {
         foreach my $pname ( @{ $self->{PROCESS_NAMES} } ) {
             my $results = `pgrep -f $pname`;
             chomp($results);
