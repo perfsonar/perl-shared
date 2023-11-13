@@ -18,7 +18,8 @@ sub init {
     #one for each pid
     $conf{process_names} = [ "python", "python", "python", "python" ] unless $conf{process_names};
     #Note pscheduler is more than one script, but this will indicate if enabled
-    $conf{init_script} = 'pscheduler-scheduler' unless $conf{init_script}; 
+    $conf{init_script} = 'pscheduler-scheduler' unless $conf{init_script};
+    $conf{systemd_services} = ['pscheduler-scheduler', 'pscheduler-archiver', 'pscheduler-ticker', 'pscheduler-runner'];
     $conf{package_names} = [ "pscheduler-server" ] unless $conf{package_names};
 
     $self->SUPER::init( %conf );

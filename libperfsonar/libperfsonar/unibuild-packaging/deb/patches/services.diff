@@ -1,7 +1,7 @@
 Index: b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
 ===================================================================
---- a/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2023-09-27 10:29:17.738286650 -0400
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2023-09-27 10:29:18.652658598 -0400
+--- a/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2023-11-13 11:34:53.502855000 +0100
++++ b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2023-11-13 11:35:58.020113576 +0100
 @@ -11,10 +11,10 @@
      my ( $self, %conf ) = @_;
  
@@ -19,8 +19,8 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
  
 Index: b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
 ===================================================================
---- a/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2023-09-27 10:29:17.737464231 -0400
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2023-09-27 10:29:18.653035098 -0400
+--- a/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2023-11-13 11:34:53.502746000 +0100
++++ b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2023-11-13 11:35:58.021291113 +0100
 @@ -15,7 +15,7 @@
      #Cassandra does not properly create /var/run/cassandra directory on boot, only creates
      #  on install which then gets removed on reboot. Removing this for now.
@@ -32,17 +32,17 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
  
 Index: b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
 ===================================================================
---- a/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2023-09-27 10:29:18.572072020 -0400
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2023-09-27 10:29:18.653296641 -0400
+--- a/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2023-11-13 11:35:57.788321375 +0100
++++ b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2023-11-13 11:35:58.022064593 +0100
 @@ -8,6 +8,7 @@
- use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES';
+ use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES', 'SYSTEMD_SERVICES';
  use Dpkg::Control;
  use Dpkg::Version;
 +use File::Basename;
  
  sub new {
      my ( $package ) = @_;
-@@ -150,7 +151,7 @@
+@@ -162,7 +163,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
  
@@ -51,7 +51,7 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
  
      # restore stderr + stdout
      open(STDERR, ">&", $stderr);
-@@ -169,7 +170,7 @@
+@@ -181,7 +182,7 @@
  
      # Use systemd if available
      return $self->run_systemctl( 'is-enabled' => $self->{INIT_SCRIPT} )
@@ -60,7 +60,7 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
  
      # Check if the service is "on" in this run level.
      my $curr_runlevel;
-@@ -184,17 +185,12 @@
+@@ -196,17 +197,12 @@
  
      my $disabled = 1;
  
@@ -83,7 +83,7 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
      }
  
      return $disabled;
-@@ -210,7 +206,7 @@
+@@ -222,7 +218,7 @@
  
      # Use systemd if available
      return $self->run_systemctl( 'enable' => $self->{INIT_SCRIPT} )
@@ -92,7 +92,7 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
  
      # turn off stderr + stdout
      open(my $stderr, ">&STDERR");
-@@ -218,9 +214,9 @@
+@@ -230,9 +226,9 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
  
@@ -104,7 +104,7 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
  
      # restore stderr + stdout
      open(STDERR, ">&", $stderr);
-@@ -239,7 +235,7 @@
+@@ -251,7 +247,7 @@
  
      # Use systemd if available
      return $self->run_systemctl( 'disable' => $self->{INIT_SCRIPT} )
@@ -113,7 +113,7 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
  
      # turn off stderr + stdout
      open(my $stderr, ">&STDERR");
-@@ -247,7 +243,7 @@
+@@ -259,7 +255,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
  
@@ -122,7 +122,7 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
  
      # restore stderr + stdout
      open(STDERR, ">&", $stderr);
-@@ -266,7 +262,7 @@
+@@ -278,7 +274,7 @@
  
      # Use systemd if available
      return $self->run_systemctl( $cmd => $self->{INIT_SCRIPT} )
@@ -131,7 +131,7 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
  
      # turn off stderr + stdout
      open(my $stderr, ">&STDERR");
-@@ -274,7 +270,7 @@
+@@ -286,7 +282,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
  
@@ -142,8 +142,8 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
  
 Index: b/lib/perfSONAR_PS/Utils/Host.pm
 ===================================================================
---- a/lib/perfSONAR_PS/Utils/Host.pm	2023-09-27 10:29:17.744364412 -0400
-+++ b/lib/perfSONAR_PS/Utils/Host.pm	2023-09-27 10:29:18.653604683 -0400
+--- a/lib/perfSONAR_PS/Utils/Host.pm	2023-11-13 11:34:53.502593000 +0100
++++ b/lib/perfSONAR_PS/Utils/Host.pm	2023-11-13 11:35:58.022706025 +0100
 @@ -509,7 +509,7 @@
  sub get_ntp_info {
      my $ntp;
@@ -155,8 +155,8 @@ Index: b/lib/perfSONAR_PS/Utils/Host.pm
      
 Index: b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
 ===================================================================
---- a/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2023-09-27 10:29:17.738231024 -0400
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2023-09-27 10:29:18.653852725 -0400
+--- a/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2023-11-13 11:34:53.503291000 +0100
++++ b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2023-11-13 11:35:58.023355494 +0100
 @@ -8,40 +8,42 @@
  sub init {
      my ( $self, %conf ) = @_;
@@ -225,8 +225,8 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
  1;
 Index: b/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
 ===================================================================
---- a/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2023-09-27 10:29:17.737810815 -0400
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2023-09-27 10:29:18.654026809 -0400
+--- a/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2023-11-13 11:34:53.502959000 +0100
++++ b/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2023-11-13 11:35:58.023829388 +0100
 @@ -47,7 +47,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
@@ -238,8 +238,8 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
  
 Index: b/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm
 ===================================================================
---- a/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2023-09-27 10:29:17.737745523 -0400
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2023-09-27 10:29:18.654200934 -0400
+--- a/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2023-11-13 11:34:53.503090000 +0100
++++ b/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2023-11-13 11:35:58.024301509 +0100
 @@ -9,7 +9,7 @@
  sub init {
      my ( $self, %conf ) = @_;
