@@ -83,8 +83,7 @@ Architecture: all
 Depends: ${misc:Depends}, ${perl:Depends}, libperfsonar-perl,
  libnet-server-perl, libcgi-ajax-perl, libcgi-session-perl,
  libxml-parser-perl, libperfsonar-sls-perl, libwww-perl,
- libperfsonar-regulartesting-perl,
- perfsonar-psconfig-pscheduler-dev
+ libperfsonar-regulartesting-perl
 Description: perfSONAR perl libraries for Toolkit
  Client libraries for perfSONAR's Toolkit distributions
 
