@@ -2,7 +2,7 @@
 %define config_base  /etc/perfsonar
 
 %define perfsonar_auto_version 5.0.8
-%define perfsonar_auto_relnum 0.a1.0
+%define perfsonar_auto_relnum 1
 
 Name:			libperfsonar
 Version:		%{perfsonar_auto_version}
