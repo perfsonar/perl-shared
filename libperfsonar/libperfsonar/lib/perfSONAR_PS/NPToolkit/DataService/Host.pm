@@ -19,10 +19,10 @@ use perfSONAR_PS::NPToolkit::Config::OWAMP;
 use perfSONAR_PS::NPToolkit::Config::TWAMP;
 use perfSONAR_PS::NPToolkit::DataService::Communities;
 use perfSONAR_PS::Utils::GeoLookup qw(geoIPLookup);
-use perfSONAR_PS::PSConfig::PScheduler::ConfigConnect;
+
 
 use Data::Dumper;
-
+use JSON qw(from_json to_json);
 
 use Time::HiRes qw(gettimeofday tv_interval);
 
@@ -627,30 +627,17 @@ sub get_templates {
     eval {
         #get file
         my $config_file = '/etc/perfsonar/psconfig/pscheduler-agent.json';
-        my $agent_conf_client = new perfSONAR_PS::PSConfig::PScheduler::ConfigConnect(
-            url => $config_file
-        );
-        if($agent_conf_client->error()){
-            die "Error opening $config_file: " . $agent_conf_client->error();
-        } 
-        #parse config
-        my $agent_conf = $agent_conf_client->get_config();
-        if($agent_conf_client->error()){
-            die "Error parsing $config_file: " . $agent_conf_client->error();
-        }
-        #validate config
-        my @agent_conf_errors = $agent_conf->validate();
-        if(@agent_conf_errors){
-            my $err = "$config_file is not valid. The following errors were encountered: \n";
-            foreach my $error(@agent_conf_errors){
-                $err .= "    JSON Path: " . $error->path . "\n";
-                $err .= "    Error: " . $error->message . "\n";
+        my $json_text = do {
+           open(my $fh, "<:encoding(UTF-8)", $config_file) or die("Can't open $config_file: $!");
+           local $/;
+           <$fh>
+        };
+        my $json_obj = from_json($json_text);
+        if(exists $json_obj->{"remotes"} && defined $json_obj->{"remotes"} && ref($json_obj->{"remotes"}) eq 'ARRAY') {
+            #load urls into array
+            foreach my $remote(@{$json_obj->{"remotes"}}){
+                push @template_urls, $remote->{"url"} if(exists $remote->{"url"} && defined $remote->{"url"});
             }
-            die $err;
-        }
-        #load urls into array
-        foreach my $remote(@{$agent_conf->remotes()}){
-            push @template_urls, $remote->url();
         }
     };
     if ($@) {

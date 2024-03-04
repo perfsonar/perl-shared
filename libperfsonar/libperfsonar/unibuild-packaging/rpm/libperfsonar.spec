@@ -230,7 +230,6 @@ Requires:		perfsonar-common
 Requires:		libperfsonar-perl
 Requires:		libperfsonar-sls-perl
 Requires:		libperfsonar-regulartesting-perl
-Requires:		perfsonar-psconfig-pscheduler-devel
 Obsoletes:      perl-perfSONAR_PS-Toolkit-Library
 Obsoletes:      perl-perfSONAR_PS-serviceTest
 Obsoletes:      perl-perfSONAR_PS-Toolkit

@@ -19,7 +19,7 @@ index b67df98..f9f2932 100644
  use perfSONAR_PS::NPToolkit::Config::TWAMP;
  use perfSONAR_PS::NPToolkit::DataService::Communities;
 -use perfSONAR_PS::Utils::GeoLookup qw(geoIPLookup);
- use perfSONAR_PS::PSConfig::PScheduler::ConfigConnect;
+
  
  use Data::Dumper;
 @@ -208,16 +207,7 @@ sub get_calculated_lat_lon {
