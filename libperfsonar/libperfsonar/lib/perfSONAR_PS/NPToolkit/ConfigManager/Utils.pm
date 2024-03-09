@@ -29,7 +29,7 @@ use base 'Exporter';
 
 our @EXPORT_OK = qw( save_file restart_service stop_service start_service config_firewall );
 
-my $default_url = "http://127.0.0.1:9000/";
+my $default_url = "http://localhost:9000/";
 
 =head2 save_file({ file => 1, content => 1 })
 

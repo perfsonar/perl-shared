@@ -205,7 +205,7 @@ is($psched_task->checksum(), 'k9sS9NwyA9vqGXIpK0o2dQ'); #verify we got the JSON 
 # test with use_psconfig_archives disabled and default archives enabled (with duplicate)
 my $default_archive = new perfSONAR_PS::Client::PSConfig::Archive();
 $default_archive->archiver("esmond");
-$default_archive->archiver_data_param("url", "http://127.0.0.1/");
+$default_archive->archiver_data_param("url", "http://localhost/");
 ok($tg = new perfSONAR_PS::Client::PSConfig::Parsers::TaskGenerator(
                                                             psconfig => $psconfig, 
                                                             task_name => "example-task-latencybg",
@@ -219,7 +219,7 @@ ok($tg->start());
 ok($tg->next());
 is(@{$tg->expanded_archives()}, 1);
 is($tg->expanded_archives()->[0]->{'archiver'}, 'esmond');
-is($tg->expanded_archives()->[0]->{'data'}->{'url'}, "http://127.0.0.1/");
+is($tg->expanded_archives()->[0]->{'data'}->{'url'}, "http://localhost/");
 
 ##
 # test invalid archive ref
