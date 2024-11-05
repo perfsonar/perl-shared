@@ -1,0 +1,5 @@
+geoip-database-extra:
+  rpm_url:
+  rpm_name:
+  deb_url: http://ftp.pl.debian.org/debian/pool/main/g/geoip-database/geoip-database-extra_20181108-1_all.deb
+  deb_name: geoip-database-extra_20181108-1_all.deb

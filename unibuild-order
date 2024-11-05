@@ -9,5 +9,6 @@ changecom()dnl
 #
 
 # Build the first set of the libperfsonar packages
+ifelse(FAMILY,Debian,geoip,)
 libipc-dirqueue-perl
 libperfsonar --no-install
