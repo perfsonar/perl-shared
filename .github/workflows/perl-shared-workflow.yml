@@ -1,0 +1,72 @@
+name: perl-shared-workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      OS:
+        description: 'OS to build'
+        required: true
+      MINORPACKAGEID:
+        description: 'Minor Package run id'
+        required: true
+      I2UTILID:
+        description: 'I2util build run id'
+        required: true
+      OWAMPID:
+        description: 'Owamp build run id'
+        required: true
+      PSCHEDULERID:
+        description: 'Pscheduler build run id'
+        required: true
+  workflow_run:
+    workflows: "Create Artifacts and pass runid"
+    branches: 'github-docker'
+    types:
+      - completed
+
+jobs:
+
+  build-perl-shared:
+
+     runs-on: ubuntu-latest
+
+     steps:
+        - name: Check out Repo
+          uses: actions/checkout@v4
+          with:
+           ref: 5.2.0
+
+        - name: Create a temporary artifact downloads folder
+          run: mkdir aritfacts
+
+        - name: run docker oneshot builder
+          run: |
+           curl -s https://raw.githubusercontent.com/perfsonar/docker-oneshot-builder/main/build | sh -s - . '${{ github.event.inputs.OS }}'
+        - uses: actions/upload-artifact@v3
+          with:
+          #Name the artifact uniquely
+            name: ${{ github.event.repository.name }}-${{ github.event.inputs.OS }}
+            #Where the finished product lives after the build
+            path: unibuild-repo
+            #Don't keep these for long.  This is just a test.
+            retention-days: 5
+
+        - name: Pass workflow to psconfig repo
+          uses: actions/github-script@v6
+          with:
+            github-token: ${{ secrets.GIT_ACTIONS }}
+            script: |
+              await github.rest.actions.createWorkflowDispatch({
+              owner: 'perfsonar',
+              repo: 'host-metrics',
+              workflow_id: 'host-metrics-workflow.yml',
+              ref: 'perfsonar',
+               inputs: {
+                OS:  '${{ github.event.inputs.OS }}',
+                MINORPACKAGEID:  '${{ github.event.inputs.MINORPACKAGEID }}',
+                I2UTILID: '${{ github.event.inputs.I2UTILID }}',
+                OWAMPID: '${{ github.event.inputs.OWAMPID }}',
+                PSCHEDULERID: '${{ github.event.inputs.PSCHEDULERID }}',
+                PERLSHAREDID: '${{ github.run_id }}'
+              }
+              })
