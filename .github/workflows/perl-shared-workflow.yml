@@ -3,70 +3,38 @@ name: perl-shared-workflow
 on:
   workflow_dispatch:
     inputs:
-      OS:
-        description: 'OS to build'
+      BUILD_VARS_JSON:
+        description: 'Build var json file'
         required: true
-      MINORPACKAGEID:
-        description: 'Minor Package run id'
-        required: true
-      I2UTILID:
-        description: 'I2util build run id'
-        required: true
-      OWAMPID:
-        description: 'Owamp build run id'
-        required: true
-      PSCHEDULERID:
-        description: 'Pscheduler build run id'
-        required: true
-  workflow_run:
-    workflows: "Create Artifacts and pass runid"
-    branches: 'github-docker'
-    types:
-      - completed
 
 jobs:
 
-  build-perl-shared:
+  prepare-build:
+    uses: perfsonar/project/.github/workflows/prepare-build.yml@master
+    with:
+      BUILD_VARS_JSON: ${{ inputs.BUILD_VARS_JSON }}
 
-     runs-on: ubuntu-latest
+  oneshot-scripted-build:
+    needs: prepare-build
+    uses: perfsonar/project/.github/workflows/oneshot-scripted-build.yml@master
+    secrets:
+      GIT_ACTIONS: ${{ secrets.GIT_ACTIONS }}
+    with:
+      BUILD_OS: ${{ needs.prepare-build.outputs.BUILD_OS }}
+      BUILD_TYPE: ${{ needs.prepare-build.outputs.BUILD_TYPE }}
+      BUILD_BRANCH: ${{ needs.prepare-build.outputs.BUILD_BRANCH }}
+      BUILD_VARS_JSON: ${{ needs.prepare-build.outputs.BUILD_VARS_JSON }}
 
-     steps:
-        - name: Check out Repo
-          uses: actions/checkout@v4
-          with:
-           ref: 5.2.0
-
-        - name: Create a temporary artifact downloads folder
-          run: mkdir aritfacts
-
-        - name: run docker oneshot builder
-          run: |
-           curl -s https://raw.githubusercontent.com/perfsonar/docker-oneshot-builder/main/build | sh -s - . '${{ github.event.inputs.OS }}'
-        - uses: actions/upload-artifact@v3
-          with:
-          #Name the artifact uniquely
-            name: ${{ github.event.repository.name }}-${{ github.event.inputs.OS }}
-            #Where the finished product lives after the build
-            path: unibuild-repo
-            #Don't keep these for long.  This is just a test.
-            retention-days: 5
-
-        - name: Pass workflow to psconfig repo
-          uses: actions/github-script@v6
-          with:
-            github-token: ${{ secrets.GIT_ACTIONS }}
-            script: |
-              await github.rest.actions.createWorkflowDispatch({
-              owner: 'perfsonar',
-              repo: 'host-metrics',
-              workflow_id: 'host-metrics-workflow.yml',
-              ref: 'perfsonar',
-               inputs: {
-                OS:  '${{ github.event.inputs.OS }}',
-                MINORPACKAGEID:  '${{ github.event.inputs.MINORPACKAGEID }}',
-                I2UTILID: '${{ github.event.inputs.I2UTILID }}',
-                OWAMPID: '${{ github.event.inputs.OWAMPID }}',
-                PSCHEDULERID: '${{ github.event.inputs.PSCHEDULERID }}',
-                PERLSHAREDID: '${{ github.run_id }}'
-              }
-              })
+  post-build:
+    needs: 
+      - prepare-build
+      - oneshot-scripted-build
+    uses: perfsonar/project/.github/workflows/post-build.yml@master
+    secrets:
+      GIT_ACTIONS: ${{ secrets.GIT_ACTIONS }}
+    with:
+      BUILD_OS: ${{ needs.prepare-build.outputs.BUILD_OS }}
+      BUILD_TYPE: ${{ needs.prepare-build.outputs.BUILD_TYPE }}
+      BUILD_BRANCH: ${{ needs.prepare-build.outputs.BUILD_BRANCH }}
+      BUILD_VARS_JSON: ${{ needs.prepare-build.outputs.BUILD_VARS_JSON }}
+ 
