@@ -6,7 +6,6 @@ use warnings;
 use Log::Log4perl qw(:easy);
 use File::Spec;
 use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES', 'SYSTEMD_SERVICES';
-use RPM2;
 
 sub new {
     my ( $package ) = @_;
@@ -47,18 +46,21 @@ sub init {
 
 sub package_version {
     my ($self) = @_;
-
     my $version;
-    if ($self->{PACKAGE_NAMES}) {
-        my $min;
 
+    my sub command_exists {
+        my ($cmd) = @_;
+        return !system("which $cmd > /dev/null 2>&1");
+    }
+
+    if (command_exists('rpm')) {
+        eval { require RPM2; };
+        my $min;
         if (my $db = RPM2->open_rpm_db()) {
             foreach my $package_name (@{ $self->{PACKAGE_NAMES} }) {
                 my @packages = $db->find_by_name($package_name);
-    
                 foreach my $package (@packages) {
                     $min = $package unless $min;
-    
                     my $result = ($package <=> $min);
                     if ($result < 0) {
                         $min = $package;
@@ -66,8 +68,21 @@ sub package_version {
                 }
             }
         }
-
-        $version = $min->version."-".$min->release if $min;
+        $version = $min->version . "-" . $min->release if $min;
+    }
+    elsif (command_exists('dpkg')) {
+        eval { require Dpkg::Version; Dpkg::Version->import(qw(dpkg_version_compare)); };
+        my $min_version;
+        foreach my $package_name (@{ $self->{PACKAGE_NAMES} }) {
+            my $current_version = `dpkg-query -W -f='\${Version}' $package_name 2>/dev/null`;
+            chomp $current_version;
+            if ($current_version) {
+                if (!defined $min_version || dpkg_version_compare($current_version, $min_version) < 0) {
+                    $min_version = $current_version;
+                }
+            }
+        }
+        $version = $min_version;
     }
 
     return $version;
