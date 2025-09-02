@@ -9,8 +9,6 @@ use Time::HiRes qw( time );
 use Params::Validate;
 use Data::Dumper;
 
-use RPM2;
-
 use perfSONAR_PS::NPToolkit::Config::AdministrativeInfo;
 
 use perfSONAR_PS::NPToolkit::Services::ServicesMap qw(get_service_object);
@@ -36,15 +34,29 @@ sub set_sidebar_vars {
     $vars->{ntp_nav_class} = "warning" unless $ntpinfo->is_synced();
 
     my $cacti_available;
-    # TODO-debian: this will need a patch
-    if (my $db = RPM2->open_rpm_db()) {
-       my @packages = $db->find_by_name("cacti");
- 
-       $cacti_available = 1 if scalar(@packages) > 0;
+
+    my sub command_exists {
+        my ($cmd) = @_;
+        return !system("which $cmd > /dev/null 2>&1");
     }
 
-    $vars->{cacti_available} = $cacti_available;
-  
+    if (command_exists('rpm')) {
+        eval { require RPM2; };
+
+        if (my $db = RPM2->open_rpm_db()) {
+           my @packages = $db->find_by_name("cacti");
+
+           $cacti_available = 1 if scalar(@packages) > 0;
+        }
+
+        $vars->{cacti_available} = $cacti_available;
+    }
+    elsif (command_exists('dpkg')) {
+        if ( system("dpkg -s cacti > /dev/null 2>&1") == 0 ) {
+            $cacti_available = 1;
+        }
+    }
+
     return $vars;
 
 }
