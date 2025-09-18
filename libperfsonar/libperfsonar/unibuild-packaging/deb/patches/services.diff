@@ -1,7 +1,7 @@
 Index: b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
 ===================================================================
---- a/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2025-09-04 10:37:30.494235064 -0400
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2025-09-04 10:37:32.121902358 -0400
+--- a/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2025-09-18 14:29:35.940225082 -0400
++++ b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm	2025-09-18 14:29:37.485132647 -0400
 @@ -11,10 +11,10 @@
      my ( $self, %conf ) = @_;
  
@@ -19,8 +19,8 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/httpd.pm
  
 Index: b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
 ===================================================================
---- a/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2025-09-04 10:37:30.492595861 -0400
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2025-09-04 10:37:32.122885521 -0400
+--- a/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2025-09-18 14:29:35.938411697 -0400
++++ b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm	2025-09-18 14:29:37.486072985 -0400
 @@ -15,7 +15,7 @@
      #Cassandra does not properly create /var/run/cassandra directory on boot, only creates
      #  on install which then gets removed on reboot. Removing this for now.
@@ -32,8 +32,8 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/Cassandra.pm
  
 Index: b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
 ===================================================================
---- a/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2025-09-04 10:37:31.856105388 -0400
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2025-09-04 10:37:32.123451436 -0400
+--- a/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2025-09-18 14:29:37.224495403 -0400
++++ b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm	2025-09-18 14:29:37.486593655 -0400
 @@ -8,6 +8,7 @@
  use fields 'LOGGER', 'INIT_SCRIPT', 'PID_FILES', 'PROCESS_NAMES', 'DESCRIPTION', 'CAN_DISABLE', 'REGULAR_RESTART', 'PACKAGE_NAMES', 'SYSTEMD_SERVICES';
  use Dpkg::Control;
@@ -142,8 +142,8 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/Base.pm
  
 Index: b/lib/perfSONAR_PS/Utils/Host.pm
 ===================================================================
---- a/lib/perfSONAR_PS/Utils/Host.pm	2025-09-04 10:37:30.507523688 -0400
-+++ b/lib/perfSONAR_PS/Utils/Host.pm	2025-09-04 10:37:32.124181309 -0400
+--- a/lib/perfSONAR_PS/Utils/Host.pm	2025-09-18 14:29:35.950718097 -0400
++++ b/lib/perfSONAR_PS/Utils/Host.pm	2025-09-18 14:29:37.487218533 -0400
 @@ -509,7 +509,7 @@
  sub get_ntp_info {
      my $ntp;
@@ -155,8 +155,8 @@ Index: b/lib/perfSONAR_PS/Utils/Host.pm
      
 Index: b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
 ===================================================================
---- a/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2025-09-04 10:37:30.494134064 -0400
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2025-09-04 10:37:32.124718515 -0400
+--- a/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2025-09-18 14:29:35.940137331 -0400
++++ b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm	2025-09-18 14:29:37.487760744 -0400
 @@ -8,40 +8,42 @@
  sub init {
      my ( $self, %conf ) = @_;
@@ -225,8 +225,8 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/YumCron.pm
  1;
 Index: b/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
 ===================================================================
---- a/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2025-09-04 10:37:30.493339275 -0400
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2025-09-04 10:37:32.125145056 -0400
+--- a/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2025-09-18 14:29:35.939153701 -0400
++++ b/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm	2025-09-18 14:29:37.488146580 -0400
 @@ -47,7 +47,7 @@
      open(STDERR, ">", File::Spec->devnull());
      open(STDOUT, ">", File::Spec->devnull());
@@ -238,8 +238,8 @@ Index: b/lib/perfSONAR_PS/NPToolkit/Services/NetworkBase.pm
  
 Index: b/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm
 ===================================================================
---- a/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2025-09-04 10:37:30.493238776 -0400
-+++ b/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2025-09-04 10:37:32.126088844 -0400
+--- a/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2025-09-18 14:29:35.939036867 -0400
++++ b/lib/perfSONAR_PS/NPToolkit/Services/NTP.pm	2025-09-18 14:29:37.488546749 -0400
 @@ -9,7 +9,7 @@
  sub init {
      my ( $self, %conf ) = @_;
