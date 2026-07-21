@@ -1,8 +1,8 @@
-libperfsonar-perl (5.2.6~a1.0-1) perfsonar-5.2-snapshot; urgency=low
+libperfsonar-perl (5.2.6-1) perfsonar-5.2; urgency=low
 
   * New upstream version.
 
- -- perfSONAR developers <debian@perfsonar.net>  Wed, 27 May 2026 10:00:49 -0400
+ -- perfSONAR developers <debian@perfsonar.net>  Tue, 21 Jul 2026 10:24:08 -0400
 
 libperfsonar-perl (5.2.5-1) perfsonar-5.2; urgency=low
 
