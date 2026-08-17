@@ -301,9 +301,11 @@ Shared libaries for perfSONAR regular testing
 
 %prep
 %setup -q -n libperfsonar-%{version}
-%if 0%{?el7}
-%else
+# This patch is for post-EL7, which we don't build anymore.
+%if 0%{?el8}%{?ol8}
 %patch0 -p3
+%else
+%patch 0 -p3
 %endif
 
 %build
